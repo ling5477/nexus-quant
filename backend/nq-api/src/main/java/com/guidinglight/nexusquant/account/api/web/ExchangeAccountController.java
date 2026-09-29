@@ -123,6 +123,15 @@ public class ExchangeAccountController {
         ));
     }
 
+    @PostMapping("/{accountId}/resolve-sim-identity")
+    @Operation(summary = "补齐既有 SIM 账户兼容身份", description = "按当前 owner 定向补齐，重复调用返回同一身份。",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    public ExchangeAccountResponse resolveSimIdentity(
+            @PathVariable @Positive(message = "accountId must be positive") Long accountId) {
+        return ExchangeAccountResponse.from(exchangeAccountCommandService.resolveSimIdentity(
+                resolveCurrentUserId(), accountId));
+    }
+
     @PatchMapping("/{accountId}")
     @Operation(
             summary = "更新账户基础信息",

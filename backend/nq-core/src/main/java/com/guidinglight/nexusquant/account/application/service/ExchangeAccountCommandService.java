@@ -6,6 +6,8 @@ import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCr
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountUpdateCommand;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.domain.port.SimAccountIdentityBridge;
+import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -25,25 +27,30 @@ import org.springframework.transaction.annotation.Transactional;
 public class ExchangeAccountCommandService {
 
     private final ExchangeAccountRepository exchangeAccountRepository;
+    private final SimAccountIdentityBridge simIdentityBridge;
     private final Clock clock;
 
-    public ExchangeAccountCommandService(ExchangeAccountRepository exchangeAccountRepository) {
-        this(exchangeAccountRepository, Clock.systemUTC());
+    public ExchangeAccountCommandService(ExchangeAccountRepository exchangeAccountRepository,
+            SimAccountIdentityBridge simIdentityBridge) {
+        this(exchangeAccountRepository, simIdentityBridge, Clock.systemUTC());
     }
 
-    ExchangeAccountCommandService(ExchangeAccountRepository exchangeAccountRepository, Clock clock) {
+    ExchangeAccountCommandService(ExchangeAccountRepository exchangeAccountRepository,
+            SimAccountIdentityBridge simIdentityBridge, Clock clock) {
         this.exchangeAccountRepository = Objects.requireNonNull(
                 exchangeAccountRepository,
                 "exchangeAccountRepository must not be null"
         );
+        this.simIdentityBridge = Objects.requireNonNull(simIdentityBridge, "simIdentityBridge must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
     @Transactional
     public ExchangeAccountSummary create(Long ownerUserId, ExchangeAccountCreateCommand command) {
         Instant now = Instant.now(clock);
+        ExchangeAccountSummary created;
         try {
-            return exchangeAccountRepository.create(
+            created = exchangeAccountRepository.create(
                     requirePositive(ownerUserId, "ownerUserId"),
                     normalizeText(command.exchangeCode(), "exchangeCode").toUpperCase(Locale.ROOT),
                     normalizeTradeEnv(command.tradeEnv()),
@@ -54,6 +61,20 @@ public class ExchangeAccountCommandService {
         } catch (DataIntegrityViolationException ex) {
             throw conflict(ex);
         }
+        if (!"SIM".equals(created.tradeEnv())) {
+            return created;
+        }
+        // 创建与兼容身份绑定共用事务，不能向调用方返回无法用于既有 Strategy FK 的半完成账户。
+        simIdentityBridge.resolveOrCreateSim(created, TraceIdContext.getOrCreate(), now);
+        return requireOwnedAccount(ownerUserId, created.exchangeAccountId());
+    }
+
+    /** 仅按当前 owner 定向补齐旧 SIM 账户，不扫描或改写其他账户。 */
+    @Transactional
+    public ExchangeAccountSummary resolveSimIdentity(Long ownerUserId, Long exchangeAccountId) {
+        ExchangeAccountSummary account = requireOwnedAccount(ownerUserId, exchangeAccountId);
+        simIdentityBridge.resolveOrCreateSim(account, TraceIdContext.getOrCreate(), Instant.now(clock));
+        return requireOwnedAccount(ownerUserId, exchangeAccountId);
     }
 
     @Transactional

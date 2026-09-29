@@ -31,7 +31,7 @@ class SchedulerJobControlsMigrationPostgresTest {
             Flyway.configure().dataSource(admin.getDataSource()).schemas(schema)
                     .locations("classpath:db/migration").target("56").load().migrate();
             Flyway latest = Flyway.configure().dataSource(admin.getDataSource()).schemas(schema)
-                    .locations("classpath:db/migration").load();
+                    .locations("classpath:db/migration").target("57").load();
             assertEquals(1, latest.migrate().migrationsExecuted);
             latest.validate();
             assertEquals("57", latest.info().current().getVersion().getVersion());

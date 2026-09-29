@@ -9,6 +9,7 @@ import com.guidinglight.nexusquant.account.application.service.ExchangeAccountQu
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialVerifier;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.domain.port.SimAccountIdentityBridge;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectation;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountCredentialRepository;
@@ -24,6 +25,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -37,6 +39,7 @@ import java.time.Clock;
  */
 @Configuration
 @EnableConfigurationProperties(AccountCredentialRuntimeProperties.class)
+@Import(AccountIdentityBridgeConfiguration.class)
 public class AccountModuleConfiguration {
 
     private static final String STABLE_READ_ONLY_PREFIX = "nq.okx.private-readonly-diagnostics";
@@ -53,8 +56,9 @@ public class AccountModuleConfiguration {
     }
 
     @Bean
-    public ExchangeAccountCommandService exchangeAccountCommandService(ExchangeAccountRepository exchangeAccountRepository) {
-        return new ExchangeAccountCommandService(exchangeAccountRepository);
+    public ExchangeAccountCommandService exchangeAccountCommandService(ExchangeAccountRepository exchangeAccountRepository,
+            SimAccountIdentityBridge simAccountIdentityBridge) {
+        return new ExchangeAccountCommandService(exchangeAccountRepository, simAccountIdentityBridge);
     }
 
     @Bean
