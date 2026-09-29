@@ -107,7 +107,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/AccountModuleConfiguration.java",
-      "sha256": "e9445ef296c95d3ae3ea92f0a0ea24a82e403b1fd633a42b3cf1e82ac5171fdd",
+      "sha256": "def04e7009acb9d28b1174c55734d895e188aa855cd62a03fe63e9b7b052348e",
       "kind": "RETIRED_INPUT_REJECTION",
       "reason": "Retired input names occur only as deny-only keys or persisted permission expectation; old profiles/keys cannot select runtime composition.",
       "owner": "Runtime configuration owner",
@@ -131,7 +131,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-      "sha256": "fbffa35d002aa2893436bb21a346256ff43420d0b95472df94928988328c6cb4",
+      "sha256": "81e4dba3640ff22b36167f38caacddf4784eed01d781303a1d78f46b54d3c6c0",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-app / MinimalLivePilotConfiguration contract owner",
