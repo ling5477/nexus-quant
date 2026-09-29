@@ -1,18 +1,23 @@
 package com.guidinglight.nexusquant.account.infra.jdbc;
 
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
+import com.guidinglight.nexusquant.account.domain.port.SimAccountIdentityBridge;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.Locale;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 /** 为既有order/ledger链物化稳定的一对一legacy account identity；不读取credential。 */
-public class CanonicalLegacyAccountBridgeService {
+public class CanonicalLegacyAccountBridgeService implements SimAccountIdentityBridge {
+
+    private static final Set<String> SIM_VENUES = Set.of("OKX", "BINANCE");
 
     private final JdbcTemplate jdbc;
 
@@ -22,6 +27,17 @@ public class CanonicalLegacyAccountBridgeService {
 
     @Transactional
     public long resolveOrCreate(ExchangeAccountSummary supplied, String traceId, Instant occurredAt) {
+        return resolveOrCreate(supplied, traceId, occurredAt, "LIVE");
+    }
+
+    @Override
+    @Transactional
+    public long resolveOrCreateSim(ExchangeAccountSummary supplied, String traceId, Instant occurredAt) {
+        return resolveOrCreate(supplied, traceId, occurredAt, "SIM");
+    }
+
+    private long resolveOrCreate(ExchangeAccountSummary supplied, String traceId,
+            Instant occurredAt, String expectedEnvironment) {
         if (supplied == null || traceId == null || traceId.isBlank() || occurredAt == null) {
             throw new IllegalArgumentException("canonical legacy bridge input is required");
         }
@@ -40,20 +56,24 @@ public class CanonicalLegacyAccountBridgeService {
         }
         ExchangeAccountSummary account = locked.getFirst();
         if (!account.ownerUserId().equals(supplied.ownerUserId())
-                || !"OKX".equals(account.exchangeCode()) || !"LIVE".equals(account.tradeEnv())
+                || !account.exchangeAccountId().equals(supplied.exchangeAccountId())
+                || !expectedEnvironment.equals(account.tradeEnv())
+                || !("LIVE".equals(expectedEnvironment) ? "OKX".equals(account.exchangeCode())
+                        : SIM_VENUES.contains(account.exchangeCode()))
                 || !"ACTIVE".equals(account.status())) {
             throw rejected("CANONICAL_LEGACY_ACCOUNT_BRIDGE_SCOPE_MISMATCH");
         }
-        String accountCode = "nq-okx-live-" + account.exchangeAccountId();
+        String accountCode = "nq-" + account.exchangeCode().toLowerCase(Locale.ROOT)
+                + "-" + expectedEnvironment.toLowerCase(Locale.ROOT) + "-" + account.exchangeAccountId();
         if (account.legacyAccountId() == null) {
             jdbc.update("""
                     INSERT INTO accounts(account_code,venue,status,created_at)
-                    VALUES (?,'OKX','ACTIVE',?) ON CONFLICT (account_code) DO NOTHING
-                    """, accountCode, Timestamp.from(occurredAt));
+                    VALUES (?,?,'ACTIVE',?) ON CONFLICT (account_code) DO NOTHING
+                    """, accountCode, account.exchangeCode(), Timestamp.from(occurredAt));
             Long legacyId = jdbc.queryForObject("""
                     SELECT account_id FROM accounts
-                    WHERE account_code=? AND venue='OKX' AND status='ACTIVE' FOR UPDATE
-                    """, Long.class, accountCode);
+                    WHERE account_code=? AND venue=? AND status='ACTIVE' FOR UPDATE
+                    """, Long.class, accountCode, account.exchangeCode());
             if (legacyId == null || jdbc.update("""
                     UPDATE exchange_accounts SET legacy_account_id=?,updated_at=?
                     WHERE exchange_account_id=? AND owner_user_id=? AND legacy_account_id IS NULL
@@ -71,8 +91,8 @@ public class CanonicalLegacyAccountBridgeService {
         }
         Integer exact = jdbc.queryForObject("""
                 SELECT count(*) FROM accounts
-                WHERE account_id=? AND account_code=? AND venue='OKX' AND status='ACTIVE'
-                """, Integer.class, account.legacyAccountId(), accountCode);
+                WHERE account_id=? AND account_code=? AND venue=? AND status='ACTIVE'
+                """, Integer.class, account.legacyAccountId(), accountCode, account.exchangeCode());
         if (exact == null || exact != 1) {
             throw rejected("CANONICAL_LEGACY_ACCOUNT_BRIDGE_READBACK_MISMATCH");
         }

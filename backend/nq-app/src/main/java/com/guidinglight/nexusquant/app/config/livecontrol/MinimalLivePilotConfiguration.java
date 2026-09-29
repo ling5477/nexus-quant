@@ -2,9 +2,10 @@ package com.guidinglight.nexusquant.app.config.livecontrol;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.infra.jdbc.CanonicalLegacyAccountBridgeService;
 import com.guidinglight.nexusquant.account.application.service.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
-import com.guidinglight.nexusquant.account.infra.jdbc.CanonicalLegacyAccountBridgeService;
+import com.guidinglight.nexusquant.app.config.account.AccountIdentityBridgeConfiguration;
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
 import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotEndpointGuard;
 import com.guidinglight.nexusquant.adapter.okx.provider.OkxSpotProviderAdapter;
@@ -65,6 +66,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -72,6 +74,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 /** 默认关闭的single-purpose minimal live pilot composition；普通runtime不装配provider。 */
 @Configuration(proxyBeanMethods = false)
+@Import(AccountIdentityBridgeConfiguration.class)
 @ConditionalOnProperty(
         prefix = "nq.runtime.minimal-live-pilot",
         name = "enabled",
@@ -103,11 +106,6 @@ public class MinimalLivePilotConfiguration {
     ) {
         return new PilotExecutionLeaseService(
                 leases, recoveries, sessions, killSwitchService, Clock.systemUTC());
-    }
-
-    @Bean
-    public CanonicalLegacyAccountBridgeService canonicalLegacyAccountBridgeService(JdbcTemplate jdbc) {
-        return new CanonicalLegacyAccountBridgeService(jdbc);
     }
 
     @Bean

@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
+import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCreateCommand;
+import com.guidinglight.nexusquant.account.application.service.ExchangeAccountCommandService;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 
 import java.math.BigDecimal;
@@ -49,6 +51,9 @@ class ResearchBacktestHappyPathLocalTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private ExchangeAccountCommandService exchangeAccountCommandService;
+
     @Test
     void shouldRunMinimalDbBackedResearchBacktestEvalHappyPath() throws Exception {
         String suffix = String.valueOf(System.nanoTime());
@@ -57,14 +62,16 @@ class ResearchBacktestHappyPathLocalTest {
         String researchConfigId = null;
         String backtestConfigId = null;
         String backtestRunId = null;
-        Long accountId = jdbcTemplate.queryForObject(
-                "SELECT account_id FROM accounts ORDER BY account_id LIMIT 1",
-                Long.class
-        );
-        if (accountId == null) {
-            throw new IllegalStateException("accounts table must contain at least one legacy account for strategy seed");
-        }
-        jdbcTemplate.update(
+        Long exchangeAccountId = null;
+        Long accountId = null;
+        try {
+            Long ownerUserId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE username='admin'", Long.class);
+            // 每次经正式账户创建链取得兼容身份，避免依赖本地库遗留的 accounts fixture。
+            var exchangeAccount = exchangeAccountCommandService.create(ownerUserId,
+                    new ExchangeAccountCreateCommand("BINANCE", "SIM", "research-backtest-" + suffix, null));
+            exchangeAccountId = exchangeAccount.exchangeAccountId();
+            accountId = exchangeAccount.legacyAccountId();
+            jdbcTemplate.update(
                 """
                         INSERT INTO strategy_definitions (
                             strategy_id,
@@ -93,9 +100,7 @@ class ResearchBacktestHappyPathLocalTest {
                 1,
                 Timestamp.from(Instant.parse("2026-04-06T00:00:00Z")),
                 Timestamp.from(Instant.parse("2026-04-06T00:00:00Z"))
-        );
-
-        try {
+            );
             mockMvc.perform(post("/api/marketdata/bars/ingestions/fixture")
                             .with(csrf())
                             .header(TraceIdContext.TRACE_ID_HEADER, "trc-rc15-ingest")
@@ -232,6 +237,12 @@ class ResearchBacktestHappyPathLocalTest {
                 jdbcTemplate.update("DELETE FROM research_configs WHERE research_config_id = ?", researchConfigId);
             }
             jdbcTemplate.update("DELETE FROM strategy_definitions WHERE strategy_id = ?", sourceStrategyId);
+            if (exchangeAccountId != null) {
+                jdbcTemplate.update("DELETE FROM exchange_accounts WHERE exchange_account_id = ?", exchangeAccountId);
+            }
+            if (accountId != null) {
+                jdbcTemplate.update("DELETE FROM accounts WHERE account_id = ?", accountId);
+            }
         }
     }
 }

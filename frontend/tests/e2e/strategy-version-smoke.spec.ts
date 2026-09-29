@@ -4,8 +4,7 @@ import {loginToConsole} from '@/../tests/e2e/support';
 
 test.describe('GateI-1 strategy version smoke', () => {
     test('策略详情可查看并创建策略版本', async ({page}) => {
-        const defaultAccount = await loginToConsole(page);
-        const legacyAccountId = defaultAccount.legacyAccountId ?? Number(process.env.E2E_STRATEGY_ACCOUNT_ID ?? 3001);
+        await loginToConsole(page);
 
         await page.getByRole('menuitem', {name: '策略定义'}).click();
         await expect(page).toHaveURL(/\/strategies$/);
@@ -23,17 +22,31 @@ test.describe('GateI-1 strategy version smoke', () => {
                 window.localStorage.getItem('nexus-quant.console.auth') ?? '{}',
             ));
             expect(session.accessToken, '创建策略版本前需要登录态 accessToken').toBeTruthy();
+            const headers = {
+                Authorization: `${session.tokenType ?? 'Bearer'} ${session.accessToken}`,
+            };
+            const createAccountResponse = await page.request.post('/api/exchange-accounts', {
+                headers,
+                data: {
+                    exchangeCode: 'OKX',
+                    tradeEnv: 'SIM',
+                    accountAlias: `strategy-version-e2e-${Date.now()}`,
+                    externalAccountRef: null,
+                },
+                timeout: 30_000,
+            });
+            expect(createAccountResponse.ok(), await createAccountResponse.text()).toBeTruthy();
+            const createdAccount = await createAccountResponse.json() as {legacyAccountId: number | null};
+            expect(createdAccount.legacyAccountId).toBeGreaterThan(0);
             const strategyCode = `gatei1-e2e-${Date.now()}`;
             const createStrategyResponse = await page.request.post('/api/strategies', {
-                headers: {
-                    Authorization: `${session.tokenType ?? 'Bearer'} ${session.accessToken}`,
-                },
+                headers,
                 data: {
                     strategyCode,
                     strategyName: `GateI-1 E2E Strategy ${Date.now()}`,
                     strategyType: 'E2E_SMOKE',
-                    exchangeCode: 'BINANCE',
-                    accountId: legacyAccountId,
+                    exchangeCode: 'OKX',
+                    accountId: createdAccount.legacyAccountId,
                     tradeEnv: 'SIM',
                     configSnapshot: '{"source":"gatei1-e2e"}',
                 },

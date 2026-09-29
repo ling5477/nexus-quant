@@ -29,7 +29,7 @@ class ExchangeAccountCommandServiceTest {
     @Test
     void shouldCreateUpdateEnableDisableAndSwitchDefaultAccount() {
         InMemoryExchangeAccountRepository repository = new InMemoryExchangeAccountRepository();
-        ExchangeAccountCommandService service = new ExchangeAccountCommandService(repository, fixedClock);
+        ExchangeAccountCommandService service = service(repository);
 
         ExchangeAccountSummary first = service.create(1L, new ExchangeAccountCreateCommand("okx", "sim", "demo-a", "acc-a"));
         ExchangeAccountSummary second = service.create(1L, new ExchangeAccountCreateCommand("okx", "sim", "demo-b", "acc-b"));
@@ -55,7 +55,7 @@ class ExchangeAccountCommandServiceTest {
     @Test
     void shouldRejectSettingDisabledAccountAsDefault() {
         InMemoryExchangeAccountRepository repository = new InMemoryExchangeAccountRepository();
-        ExchangeAccountCommandService service = new ExchangeAccountCommandService(repository, fixedClock);
+        ExchangeAccountCommandService service = service(repository);
         ExchangeAccountSummary summary = service.create(1L, new ExchangeAccountCreateCommand("OKX", "SIM", "demo-a", "acc-a"));
         service.disable(1L, summary.exchangeAccountId());
 
@@ -65,14 +65,29 @@ class ExchangeAccountCommandServiceTest {
     @Test
     void shouldTranslateConflictToStateConflict() {
         ConflictRepository repository = new ConflictRepository();
-        ExchangeAccountCommandService service = new ExchangeAccountCommandService(repository, fixedClock);
+        ExchangeAccountCommandService service = service(repository);
 
         assertThrows(IllegalStateException.class, () -> service.create(1L, new ExchangeAccountCreateCommand("OKX", "SIM", "demo-a", "acc-a")));
+    }
+
+    private ExchangeAccountCommandService service(InMemoryExchangeAccountRepository repository) {
+        return new ExchangeAccountCommandService(repository, (account, traceId, occurredAt) -> {
+            long legacyId = account.exchangeAccountId() + 10_000;
+            repository.bindLegacy(account.exchangeAccountId(), legacyId);
+            return legacyId;
+        }, fixedClock);
     }
 
     private static class InMemoryExchangeAccountRepository implements ExchangeAccountRepository {
         private final Map<Long, ExchangeAccountSummary> storage = new LinkedHashMap<>();
         private long nextId = 1000L;
+
+        void bindLegacy(long exchangeAccountId, long legacyId) {
+            ExchangeAccountSummary current = storage.get(exchangeAccountId);
+            storage.put(exchangeAccountId, new ExchangeAccountSummary(current.exchangeAccountId(), legacyId,
+                    current.ownerUserId(), current.exchangeCode(), current.tradeEnv(), current.accountAlias(),
+                    current.externalAccountRef(), current.isDefault(), current.status()));
+        }
 
         @Override
         public List<ExchangeAccountSummary> listByOwnerUserId(Long ownerUserId) {
