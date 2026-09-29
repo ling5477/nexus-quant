@@ -8,7 +8,7 @@
 2. Git、代码、测试与 CI：能力与验证事实。
 3. [ROADMAP.md](ROADMAP.md)：下一允许动作，不覆盖 STATUS。
 4. [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md)：通用 lifecycle/checker 说明，不决定 current Gate。
-5. [GATEZ_PLAN.md](GATEZ_PLAN.md)：GateZ 当前范围、第一里程碑与后续扩展，不覆盖 STATUS。
+5. [GateZ strict archive](../gates/gate-z/README.md)：pre-tag 候选与已接受能力索引；[历史计划](../gates/gate-z/GATEZ_PLAN.md) 不覆盖 STATUS。
 
 冲突时输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`；历史材料不得覆盖 current authority。
 
@@ -22,7 +22,7 @@
 
 `GATEV_PLAN.md`、`GATEW_PLAN.md`、`NQ_DOCS_ARCHIVE_RULE_HARDENING_AND_RESIDUAL_MOVE_PLAN.md` 与 `docs/current/evidence/**` 均为 `HISTORICAL / NON_AUTHORITATIVE / RETAIN_IN_PLACE`。保留原路径是为了不改写append-only历史链接；其中阶段、状态和下一动作均为当时快照，不参与current authority、runtime routing、Skill routing或Phase4/5 disposition。
 
-[NQ V1 当前能力盘点](evidence/NQ-V1-CURRENT-CAPABILITY-ASSESSMENT-AND-NEXT-TASK.md)按原文件身份纳入，归类为 `SUPPORTING_ANALYSIS_SNAPSHOT / NON_RUNTIME_AUTHORITY`；其 `76caf387` 源码与 CI 身份只属于分析时点，文内旧 cleanup next action 不覆盖 STATUS。GateZ-1 的当前计划由 [GATEZ_PLAN.md](GATEZ_PLAN.md) 维护。
+[NQ V1 历史能力盘点](../archive/gate-z/evidence/NQ-V1-CURRENT-CAPABILITY-ASSESSMENT-AND-NEXT-TASK.md)按原文件身份归档，分类为 `SUPPORTING_ANALYSIS_SNAPSHOT / NON_RUNTIME_AUTHORITY`；其 `76caf387` 身份只属于分析时点，旧 cleanup next action 不覆盖 STATUS。GateZ 的冻结范围见 [strict archive](../gates/gate-z/README.md)。
 
 ## 3. Capability Owners
 
@@ -35,9 +35,9 @@
 
 ## 4. Evidence Ledgers
 
-- [OKX 模式 2 与当前公开规则只读资格](evidence/gate-z/OKX_ACCOUNT_FACTS_READONLY_COVERAGE.md)：绑定 PR #40 的技术合并/CI、canonical release、两次独立 run 和最终完整只读观察；分类为 `ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。不覆盖 STATUS，也不授予 LIVE 或交易权限。
-- [OKX 账户差异只读根因检查](evidence/gate-z/OKX_ACCOUNT_DIVERGENCE_READONLY_ROOT_CAUSE.md)：绑定 PR #42 技术合并/CI、canonical release、唯一新观察、`UNKNOWN / BALANCE_SEMANTIC_MISMATCH`、原始采集器失败与安全终态；分类为 `BLOCKED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。存在性差异已确认，精确余额根因与时间因果未证明；不覆盖 STATUS，也不授予交易或账户修复权限。
-- [账户快照 provenance 生产 V55 与 release](evidence/gate-z/ACCOUNT_SNAPSHOT_PROVENANCE_PRODUCTION_V55.md)：绑定 PR #44 精确 HEAD CI、canonical backup/隔离恢复、生产唯一 V55、历史 UNKNOWN 行保护、普通 activation 与安全终态；分类为 `ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。未执行新 OKX private observation；collector 源码缺失的延期事实不覆盖 STATUS，也不授予交易权限。
+- [OKX 模式 2 与当前公开规则只读资格](../archive/gate-z/evidence/gate-z/OKX_ACCOUNT_FACTS_READONLY_COVERAGE.md)：绑定 PR #40 的技术合并/CI、canonical release、两次独立 run 和最终完整只读观察；分类为 `ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。不覆盖 STATUS，也不授予 LIVE 或交易权限。
+- [OKX 账户差异只读根因检查](../archive/gate-z/evidence/gate-z/OKX_ACCOUNT_DIVERGENCE_READONLY_ROOT_CAUSE.md)：绑定 PR #42 技术合并/CI、canonical release、唯一新观察、`UNKNOWN / BALANCE_SEMANTIC_MISMATCH`、原始采集器失败与安全终态；分类为 `BLOCKED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。存在性差异已确认，精确余额根因与时间因果未证明；不覆盖 STATUS，也不授予交易或账户修复权限。
+- [账户快照 provenance 生产 V55 与 release](../archive/gate-z/evidence/gate-z/ACCOUNT_SNAPSHOT_PROVENANCE_PRODUCTION_V55.md)：绑定 PR #44 精确 HEAD CI、canonical backup/隔离恢复、生产唯一 V55、历史 UNKNOWN 行保护、普通 activation 与安全终态；分类为 `ACCEPTED_EXECUTION_EVIDENCE / NON_RUNTIME_AUTHORITY`。未执行新 OKX private observation；collector 源码缺失的延期事实不覆盖 STATUS，也不授予交易权限。
 
 - [TESTING.md](TESTING.md)：append-only 验证证据。
 - [WORKLOG.md](WORKLOG.md)：append-only 工作证据。
