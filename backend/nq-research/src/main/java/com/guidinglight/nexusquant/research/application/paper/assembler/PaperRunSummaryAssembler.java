@@ -54,6 +54,23 @@ public final class PaperRunSummaryAssembler {
             List<PaperRunRecoveryEvent> recoveryEvents,
             Instant now
     ) {
+        return assemble(run, orders, trades, positions, riskResults, equityCurve,
+                dailyReports, alerts, recoveryEvents, now, null);
+    }
+
+    public static PaperRunSummary assemble(
+            PaperTradingRun run,
+            List<PaperTradingOrder> orders,
+            List<PaperTradingTrade> trades,
+            List<PaperTradingPosition> positions,
+            List<PaperRiskCheckResult> riskResults,
+            List<EquityCurveSnapshot> equityCurve,
+            List<PaperRunDailyReport> dailyReports,
+            List<PaperRunAlert> alerts,
+            List<PaperRunRecoveryEvent> recoveryEvents,
+            Instant now,
+            BigDecimal canonicalPnl
+    ) {
         List<PaperTradingOrder> orderList = orders != null ? orders : List.of();
         List<PaperTradingTrade> tradeList = trades != null ? trades : List.of();
         List<PaperTradingPosition> positionList = positions != null ? positions : List.of();
@@ -88,7 +105,9 @@ public final class PaperRunSummaryAssembler {
 
         // ---- net PnL（优先权益快照，其次持仓汇总，最后日报）----
         BigDecimal netPnl;
-        if (latestEquity != null) {
+        if (canonicalPnl != null) {
+            netPnl = canonicalPnl;
+        } else if (latestEquity != null) {
             netPnl = sum(latestEquity.realizedPnl(), latestEquity.unrealizedPnl());
         } else if (latestPosition != null) {
             netPnl = sum(latestPosition.realizedPnl(), latestPosition.unrealizedPnl());

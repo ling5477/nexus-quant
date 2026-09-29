@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -27,6 +30,15 @@ import com.guidinglight.nexusquant.research.application.command.BacktestPublishR
 import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
 import com.guidinglight.nexusquant.research.application.eval.BacktestEvaluationService;
 import com.guidinglight.nexusquant.research.application.paper.service.PaperTradingRunService;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperTradingRunCreateCommand;
+import com.guidinglight.nexusquant.research.domain.paper.PaperOrderStatus;
+import com.guidinglight.nexusquant.research.domain.paper.PaperTradingOrder;
+import com.guidinglight.nexusquant.research.domain.paper.PaperTradingTrade;
+import com.guidinglight.nexusquant.research.domain.paper.PaperTradingPosition;
+import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingOrderRepository;
+import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingTradeRepository;
+import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingPositionRepository;
+import com.guidinglight.nexusquant.paper.api.web.PaperTradingController;
 import com.guidinglight.nexusquant.scheduler.paper.StrategySimRunService;
 import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRepository;
 import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRunService;
@@ -96,6 +108,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 /** 一次性 PostgreSQL 中验证合成研究服务链与隔离 SIM 的 canonical 事实。 */
 @EnabledIfSystemProperty(named = "nq.strategy-sim.pg.required", matches = "true")
@@ -167,6 +180,10 @@ class StrategySimPostgresIntegrationTest {
     @Autowired private StrategySimRunService sim;
     @Autowired private ContinuousSimRepository continuousProgress;
     @Autowired private PaperTradingRunService runs;
+    @Autowired private PaperTradingController paperApi;
+    @Autowired private PaperTradingOrderRepository legacyOrders;
+    @Autowired private PaperTradingTradeRepository legacyTrades;
+    @Autowired private PaperTradingPositionRepository legacyPositions;
     @Autowired private PaperMatchingService matching;
     @Autowired private ContinuousSimRunService scheduledContinuous;
     @Autowired private ScheduledJobManagementService scheduledJobs;
@@ -629,7 +646,7 @@ class StrategySimPostgresIntegrationTest {
     }
 
     @Test
-    void syntheticBudgetCreatesOneCanonicalFillAndLedgerWithoutPrivateProvider() {
+    void syntheticBudgetCreatesOneCanonicalFillAndLedgerWithoutPrivateProvider() throws Exception {
         Fixture fixture = seed();
         // 此状态只写入本类随机 schema，正式全局 kill switch 仍保持 ENGAGED。
         jdbc.update("""
@@ -680,6 +697,72 @@ class StrategySimPostgresIntegrationTest {
         assertEquals(0, facts.cash().add(facts.positionQuantity().multiply(facts.markPrice()))
                 .compareTo(facts.equity()));
         assertEquals(0, facts.equity().subtract(facts.initialBudget()).compareTo(facts.pnl()));
+        // Paper 旧详情 API 必须与同一个隔离账户的 canonical DB 事实及 /facts 身份一致。
+        var projectedOrders = paperApi.orders(created.paperRunId());
+        var projectedTrades = paperApi.trades(created.paperRunId());
+        var projectedPositions = paperApi.positions(created.paperRunId());
+        var projectedSummary = paperApi.summary(created.paperRunId());
+        assertEquals(1, projectedOrders.size());
+        assertEquals(facts.orders().getFirst().get("order_id"), projectedOrders.getFirst().paperOrderId());
+        assertEquals(facts.orders().getFirst().get("status"), projectedOrders.getFirst().status());
+        assertEquals(1, projectedTrades.size());
+        assertEquals(trade.get("trade_id"), projectedTrades.getFirst().paperTradeId());
+        assertEquals(0, tradedQuantity.compareTo(projectedTrades.getFirst().quantity()));
+        assertEquals(0, tradedPrice.compareTo(projectedTrades.getFirst().price()));
+        assertEquals(1, projectedPositions.size());
+        assertEquals(0, facts.positionQuantity().compareTo(projectedPositions.getFirst().quantity()));
+        assertEquals(1, projectedSummary.counts().orderCount());
+        assertEquals(1, projectedSummary.counts().tradeCount());
+        assertEquals(1, projectedSummary.counts().fillCount());
+        assertEquals(1, projectedSummary.counts().positionCount());
+        assertEquals(0, facts.pnl().compareTo(projectedSummary.resultReview().netPnl()));
+        var http = MockMvcBuilders.standaloneSetup(paperApi).build();
+        http.perform(get("/api/paper-trading/runs/{id}/orders", created.paperRunId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].paperOrderId").value(accepted.orderId()));
+        http.perform(get("/api/paper-trading/runs/{id}/trades", created.paperRunId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].paperTradeId").value(trade.get("trade_id")));
+        http.perform(get("/api/paper-trading/runs/{id}/positions", created.paperRunId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].quantity").isNumber());
+        http.perform(get("/api/paper-trading/runs/{id}/summary", created.paperRunId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.counts.orderCount").value(1))
+                .andExpect(jsonPath("$.counts.tradeCount").value(1))
+                .andExpect(jsonPath("$.counts.positionCount").value(1));
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM paper_trading_orders WHERE paper_run_id=?",
+                Integer.class, created.paperRunId()));
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM paper_trading_trades WHERE paper_run_id=?",
+                Integer.class, created.paperRunId()));
+        assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM paper_trading_positions WHERE paper_run_id=?",
+                Integer.class, created.paperRunId()));
+
+        var emptyRun = sim.create(fixture.publishId(), new BigDecimal("100.00000000"), "synthetic-test");
+        assertTrue(sim.facts(emptyRun.paperRunId()).orders().isEmpty());
+        assertTrue(paperApi.orders(emptyRun.paperRunId()).isEmpty());
+        assertTrue(paperApi.trades(emptyRun.paperRunId()).isEmpty());
+        assertTrue(paperApi.positions(emptyRun.paperRunId()).isEmpty());
+        assertEquals(0, paperApi.summary(emptyRun.paperRunId()).counts().orderCount());
+        assertEquals(0, paperApi.summary(emptyRun.paperRunId()).counts().tradeCount());
+        assertEquals(0, paperApi.summary(emptyRun.paperRunId()).counts().positionCount());
+        var legacyRun = runs.create(new PaperTradingRunCreateCommand(fixture.publishId(),
+                "SIM", "OKX", "SPOT", "BTC-USDT", "1h", "{}", "synthetic-test"));
+        String legacyId = legacyRun.paperRunId();
+        Instant legacyTime = Instant.parse("2026-09-29T00:00:00Z");
+        legacyOrders.insert(new PaperTradingOrder("legacy-order", legacyId, "BTC-USDT",
+                "BUY", "MARKET", BigDecimal.ONE, new BigDecimal("100"),
+                PaperOrderStatus.FILLED, null, "{}", legacyTime, legacyTime));
+        legacyTrades.insert(new PaperTradingTrade("legacy-trade", "legacy-order", legacyId,
+                "BTC-USDT", "BUY", BigDecimal.ONE, new BigDecimal("100"), BigDecimal.ZERO,
+                legacyTime, legacyTime));
+        legacyPositions.insert(new PaperTradingPosition("legacy-position", legacyId, "BTC-USDT",
+                BigDecimal.ONE, new BigDecimal("100"), BigDecimal.ZERO, BigDecimal.ZERO,
+                legacyTime, legacyTime));
+        assertEquals("legacy-order", paperApi.orders(legacyId).getFirst().paperOrderId());
+        assertEquals("legacy-trade", paperApi.trades(legacyId).getFirst().paperTradeId());
+        assertEquals("legacy-position", paperApi.positions(legacyId).getFirst().paperPositionId());
+        assertEquals(1, paperApi.summary(legacyId).counts().orderCount());
         assertEquals(1, jdbc.queryForObject("""
                 SELECT COUNT(*) FROM strategy_sim_decisions WHERE paper_run_id=? AND status='ACCEPTED'
                 """, Integer.class, created.paperRunId()));
