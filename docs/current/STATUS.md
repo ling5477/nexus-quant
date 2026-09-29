@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-GATEZ-FINAL-FREEZE-CLOSEOUT
+accepted_batch=NQ-V1-CLOSURE-PLAN
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
-accepted_batch_acceptance_head=d106775b6c8a9e17cddb6b99e96c9420fa46df63
-accepted_batch_ci_run=36540779142
+accepted_batch_implementation_commit=fcce148101c05eec24377686495b00939c0a8121
+accepted_batch_acceptance_head=7efb9efb33ecad512d6dfb5180a890c07ad960d2
+accepted_batch_ci_run=36549515053
 work_batch=NQ-V1-CLOSURE-PLAN
-work_batch_status=COMMITTED|CI_PENDING
-work_batch_commit=fcce148101c05eec24377686495b00939c0a8121
-work_batch_ci_run=PENDING
-next_action=NQ-WAIT-CI
+work_batch_status=ACCEPTED|CI_GREEN
+work_batch_commit=7efb9efb33ecad512d6dfb5180a890c07ad960d2
+work_batch_ci_run=36549515053
+next_action=NQ-V1-C1-FRESH-INSTALL-GOLDEN-PATH-CLOSURE-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,7 +31,7 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
-V1 产品收敛的待接受计划见 [NQ_V1_CLOSURE_PLAN.md](NQ_V1_CLOSURE_PLAN.md)。规划文档已提交，CI 与合并验收待完成；当前机器区块保留 GateZ 冻结及 accepted batch 身份。取得真实合并与 exact-head CI 前，不得标记本计划 `ACCEPTED|CI_GREEN` 或把 V1-C1 标为已实现。
+V1 产品收敛计划见 [NQ_V1_CLOSURE_PLAN.md](NQ_V1_CLOSURE_PLAN.md)。计划本体提交 `fcce148101c05eec24377686495b00939c0a8121` 经 PR #59 合并于 `7efb9efb33ecad512d6dfb5180a890c07ad960d2`，该 head 的 push CI `36549515053` 为 9/9 SUCCESS。规划已接受；V1-C1 是下一实现任务，尚未开始。GateZ 冻结身份不变。
 
 ## 1. 当前阶段
 
