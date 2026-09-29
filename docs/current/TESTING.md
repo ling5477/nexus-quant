@@ -15254,3 +15254,7 @@ Attempt-01=`FAIL / CHANGES_REQUIRED`：P1-01=`INTERPROCESS_DURABILITY_CHECK_ABSE
 ## GateZ pre-tag archive checks (2026-09-29)
 
 13/13 strict archive roles substantive; pre-tag archive errors=0, current authority errors=0, authority next-action fixture failed=0, lifecycle 20/20, archive manifest 6/6, stage assets errors=0, doc links errors=0 (historical warnings=123). Historical technical CI in GateZ evidence matrix was read back from GitHub; this closeout did not rerun backend, frontend, PostgreSQL, exchange observations, or production qualification. Freeze candidate exact-head CI remains pending until merge.
+
+## GateZ post-tag current authority validation (2026-09-29)
+
+Freeze candidate d106775b6c8a9e17cddb6b99e96c9420fa46df63 / tree 1bf0f4734b02cbc7f2b4a48ce308c9f492f26e98 passed dev push exact-head NQ CI Baseline 36540779142, completed/success, 9/9 jobs. Annotated nq-gatez-freeze object 05f3f31975394aa787745adf5414ad8467b8c17b and local/remote peeled commit match the candidate. Release and strict archive check errors=0; post-tag current authority errors=0, next-action fixtures failed=0, lifecycle 20/20, doc links errors=0 with 123 historical warnings, stage asset and semantic guard errors=0. This authority sync commit will require its own exact-head CI after merge; it does not replace the freeze commit or move the tag.
