@@ -2,9 +2,12 @@ package com.guidinglight.nexusquant.app.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -41,6 +44,8 @@ import com.guidinglight.nexusquant.scheduler.api.web.ScheduledJobController;
 import com.guidinglight.nexusquant.scheduler.control.ScheduledJobManagementService;
 import com.guidinglight.nexusquant.scheduler.control.ScheduledJobControl;
 import com.guidinglight.nexusquant.scheduler.control.SchedulerDispatcher;
+import com.guidinglight.nexusquant.gateway.infra.security.SecurityContextGatewayAuthFacade;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -57,6 +62,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.web.FilterChainProxy;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.test.context.ActiveProfiles;
@@ -373,6 +381,44 @@ class AuthSecurityWebMvcTest {
         mockMvc.perform(post("/api/scheduler/jobs/PAPER_MATCHING/run-once")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + admin))
                 .andExpect(status().isOk());
+        verify(scheduledJobManagementService).patch(eq("PAPER_MATCHING"), eq(true), eq(null),
+                eq(0L), eq("admin"), any());
+        verify(scheduledJobManagementService).runOnce(eq("PAPER_MATCHING"), eq("admin"), any());
+    }
+
+    @Test
+    void schedulerActorFailsClosedWithoutAuthenticatedTokenClaimsAndUsername() {
+        ScheduledJobManagementService management = mock(ScheduledJobManagementService.class);
+        ScheduledJobController controller = new ScheduledJobController(
+                management, new SecurityContextGatewayAuthFacade());
+        try {
+            SecurityContextHolder.clearContext();
+            assertSchedulerActorUnavailable(controller);
+
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken("admin", "irrelevant",
+                            List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+            assertSchedulerActorUnavailable(controller);
+
+            TokenClaims blankUsername = new TokenClaims("subject-1", " ", List.of("ADMIN"),
+                    Instant.parse("2026-09-29T00:00:00Z"), Instant.parse("2026-09-29T01:00:00Z"),
+                    "nexus-quant-test", "token-1");
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(blankUsername, "irrelevant",
+                            List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))));
+            assertSchedulerActorUnavailable(controller);
+            verifyNoInteractions(management);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    private static void assertSchedulerActorUnavailable(ScheduledJobController controller) {
+        assertEquals("SCHEDULER_ACTOR_UNAVAILABLE", assertThrows(IllegalStateException.class,
+                () -> controller.patch("PAPER_MATCHING",
+                        new ScheduledJobController.PatchRequest(true, null, 0L))).getMessage());
+        assertEquals("SCHEDULER_ACTOR_UNAVAILABLE", assertThrows(IllegalStateException.class,
+                () -> controller.runOnce("PAPER_MATCHING")).getMessage());
     }
 
     private String loginAndExtractToken(String username, String password) throws Exception {

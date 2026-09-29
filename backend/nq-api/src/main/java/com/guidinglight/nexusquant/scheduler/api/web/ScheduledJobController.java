@@ -1,6 +1,8 @@
 package com.guidinglight.nexusquant.scheduler.api.web;
 
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 import com.guidinglight.nexusquant.scheduler.control.ScheduledJobControl;
 import com.guidinglight.nexusquant.scheduler.control.ScheduledJobManagementService;
 import com.guidinglight.nexusquant.scheduler.control.SchedulerDispatcher;
@@ -13,8 +15,6 @@ import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,9 +30,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/scheduler/jobs")
 public class ScheduledJobController {
     private final ScheduledJobManagementService management;
+    private final GatewayAuthFacade auth;
 
-    public ScheduledJobController(ScheduledJobManagementService management) {
+    public ScheduledJobController(ScheduledJobManagementService management, GatewayAuthFacade auth) {
         this.management = Objects.requireNonNull(management);
+        this.auth = Objects.requireNonNull(auth);
     }
 
     @GetMapping
@@ -59,12 +61,11 @@ public class ScheduledJobController {
                 management.runOnce(jobKey, actor(), TraceIdContext.getOrCreate()));
     }
 
-    private static String actor() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !auth.isAuthenticated()) {
-            throw new IllegalStateException("SCHEDULER_ACTOR_UNAVAILABLE");
-        }
-        return auth.getName();
+    private String actor() {
+        // 审计身份取认证链的规范用户名，不能序列化包含其他声明的 principal。
+        return auth.currentUser().map(TokenClaims::username)
+                .filter(username -> !username.isBlank())
+                .orElseThrow(() -> new IllegalStateException("SCHEDULER_ACTOR_UNAVAILABLE"));
     }
 
     public record PatchRequest(Boolean enabled, Long fixedDelayMs, @NotNull Long expectedVersion) { }
