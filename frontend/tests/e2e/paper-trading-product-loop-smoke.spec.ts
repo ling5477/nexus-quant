@@ -456,4 +456,38 @@ test.describe('paper trading runs slimmer', () => {
         await expect(detail.getByRole('button', {name: '启动 Paper Run'})).toBeDisabled();
         await expect(detail.getByRole('button', {name: '停止 Paper Run'})).toBeEnabled();
     });
+
+    test('Strategy SIM canonical 事实在 Paper 详情的摘要与三个事实页签一致', async ({page}) => {
+        await seedAuthAndPaperLoopStubs(page, true);
+        const order = {...defaultOrders[0], paperOrderId: 'canonical-order-1', quantity: '1.25'};
+        const trade = {...defaultTrades[0], paperTradeId: 'canonical-trade-1',
+            paperOrderId: order.paperOrderId, quantity: '1.25'};
+        const position = {...defaultPositions[0], paperPositionId: 'canonical-position-41',
+            quantity: '1.25', unrealizedPnl: null, realizedPnl: null};
+        await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/orders`, route => route.fulfill({json: [order]}));
+        await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/trades`, route => route.fulfill({json: [trade]}));
+        await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/positions`, route => route.fulfill({json: [position]}));
+        await page.route(`**/api/paper-trading/runs/${PAPER_RUN_ID}/summary`, route => route.fulfill({json: {
+            run: paperRun,
+            counts: {orderCount: 1, tradeCount: 1, fillCount: 1, positionCount: 1,
+                openAlertCount: 0, recoveryEventCount: 0},
+            latest: {order, trade, position, equitySnapshot: null, dailyReport: null,
+                riskResult: null, alert: null, recoveryEvent: null},
+            resultReview: {netPnl: '12.50'}, diagnoses: [], timeline: [],
+        }}));
+
+        await page.goto('/paper-trading/runs');
+        await page.getByRole('button', {name: /查\s*询/}).click();
+        await page.locator(`tr[data-row-key="${PAPER_RUN_ID}"]`).getByRole('button', {name: '查看详情'}).click();
+        const detail = page.getByRole('region', {name: 'Paper Trading 详情'});
+        await expect(detail.getByText('订单事实').first()).toBeVisible();
+        await expect(detail.getByText('12.50').first()).toBeVisible();
+        await detail.getByRole('tab', {name: '订单'}).click();
+        await expect(detail.getByText(order.paperOrderId).last()).toBeVisible();
+        await detail.getByRole('tab', {name: '成交'}).click();
+        await expect(detail.getByText(trade.paperTradeId)).toBeVisible();
+        await expect(detail.getByText(order.paperOrderId).last()).toBeVisible();
+        await detail.getByRole('tab', {name: '持仓', exact: true}).click();
+        await expect(detail.getByText('1.25').last()).toBeVisible();
+    });
 });

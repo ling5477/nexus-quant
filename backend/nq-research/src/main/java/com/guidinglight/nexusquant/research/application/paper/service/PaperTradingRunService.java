@@ -13,6 +13,7 @@ import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingOrderR
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingPositionRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingRunRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingTradeRepository;
+import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunCanonicalFactsRepository;
 import com.guidinglight.nexusquant.research.domain.port.BacktestPublishRecordRepository;
 import com.guidinglight.nexusquant.research.domain.port.BacktestRunRepository;
 
@@ -35,6 +36,7 @@ public class PaperTradingRunService {
     private final BacktestPublishRecordRepository publishRecordRepository;
     private final BacktestRunRepository backtestRunRepository;
     private final Clock clock;
+    private final PaperRunCanonicalFactsRepository canonicalFacts;
 
     @Autowired
     public PaperTradingRunService(
@@ -43,10 +45,11 @@ public class PaperTradingRunService {
             PaperTradingTradeRepository tradeRepository,
             PaperTradingPositionRepository positionRepository,
             BacktestPublishRecordRepository publishRecordRepository,
-            BacktestRunRepository backtestRunRepository
+            BacktestRunRepository backtestRunRepository,
+            PaperRunCanonicalFactsRepository canonicalFacts
     ) {
         this(runRepository, orderRepository, tradeRepository, positionRepository,
-                publishRecordRepository, backtestRunRepository, Clock.systemUTC());
+                publishRecordRepository, backtestRunRepository, Clock.systemUTC(), canonicalFacts);
     }
 
     public PaperTradingRunService(
@@ -58,6 +61,20 @@ public class PaperTradingRunService {
             BacktestRunRepository backtestRunRepository,
             Clock clock
     ) {
+        this(runRepository, orderRepository, tradeRepository, positionRepository,
+                publishRecordRepository, backtestRunRepository, clock, null);
+    }
+
+    public PaperTradingRunService(
+            PaperTradingRunRepository runRepository,
+            PaperTradingOrderRepository orderRepository,
+            PaperTradingTradeRepository tradeRepository,
+            PaperTradingPositionRepository positionRepository,
+            BacktestPublishRecordRepository publishRecordRepository,
+            BacktestRunRepository backtestRunRepository,
+            Clock clock,
+            PaperRunCanonicalFactsRepository canonicalFacts
+    ) {
         this.runRepository = Objects.requireNonNull(runRepository);
         this.orderRepository = Objects.requireNonNull(orderRepository);
         this.tradeRepository = Objects.requireNonNull(tradeRepository);
@@ -65,6 +82,7 @@ public class PaperTradingRunService {
         this.publishRecordRepository = Objects.requireNonNull(publishRecordRepository);
         this.backtestRunRepository = Objects.requireNonNull(backtestRunRepository);
         this.clock = Objects.requireNonNull(clock);
+        this.canonicalFacts = canonicalFacts;
     }
 
     public PaperTradingRun create(PaperTradingRunCreateCommand command) {
@@ -140,15 +158,28 @@ public class PaperTradingRunService {
         return runRepository.list(publishId, status);
     }
 
+    public boolean isStrategySim(String paperRunId) {
+        return canonicalFacts != null && canonicalFacts.isStrategySim(paperRunId);
+    }
+
     public List<PaperTradingOrder> listOrders(String paperRunId) {
+        if (isStrategySim(paperRunId)) {
+            return canonicalFacts.orders(paperRunId);
+        }
         return orderRepository.listByRunId(paperRunId);
     }
 
     public List<PaperTradingTrade> listTrades(String paperRunId) {
+        if (isStrategySim(paperRunId)) {
+            return canonicalFacts.trades(paperRunId);
+        }
         return tradeRepository.listByRunId(paperRunId);
     }
 
     public List<PaperTradingPosition> listPositions(String paperRunId) {
+        if (isStrategySim(paperRunId)) {
+            return canonicalFacts.positions(paperRunId);
+        }
         return positionRepository.listByRunId(paperRunId);
     }
 }
