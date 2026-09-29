@@ -6,7 +6,7 @@ NexusQuant 是通用量化交易平台。当前状态唯一 authority 是 [docs/
 
 <!-- nq-current-summary:start -->
 - 最近冻结的业务阶段已接受并打 tag；固定身份及 CI 以 [STATUS.md](docs/current/STATUS.md) 为准，13-role [strict archive](docs/gates/gate-z/README.md) 保留冻结前历史快照。
-- 下一动作是 V1 Closure 规划，详见 [ROADMAP.md](docs/current/ROADMAP.md)；上一历史阶段证据见 [其 archive](docs/gates/gate-audit/README.md)。
+- V1 Closure 规划正在交付；当前唯一动作见 [STATUS.md](docs/current/STATUS.md)，产品顺序见 [ROADMAP.md](docs/current/ROADMAP.md)。
 - accepted batch、work batch 与唯一下一允许动作以 [STATUS.md](docs/current/STATUS.md) 为准；[ROADMAP.md](docs/current/ROADMAP.md) 解释后续工作。
 - 已完成的 GateY pilot 事实见 [STATUS.md](docs/current/STATUS.md)；该历史验收不授予再次执行权。
 - Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
@@ -14,6 +14,7 @@ NexusQuant 是通用量化交易平台。当前状态唯一 authority 是 [docs/
 
 ## Current Authority
 
+- [NQ V1 产品收敛计划](docs/current/NQ_V1_CLOSURE_PLAN.md)：基于当前代码的主链、事实归属、阻塞项与交付顺序；接受状态仍以 STATUS 为准。
 - [STATUS.md](docs/current/STATUS.md)：唯一阶段状态 authority。
 - [ROADMAP.md](docs/current/ROADMAP.md)：下一允许动作和路线。
 - [FACT_SOURCE_INDEX.md](docs/current/FACT_SOURCE_INDEX.md)：authority 分层与 archive 边界。
