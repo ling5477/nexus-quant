@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 accepted_batch_acceptance_head=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 accepted_batch_ci_run=36540779142
 work_batch=NQ-V1-CLOSURE-PLAN
-work_batch_status=IMPLEMENTED|SELF_REVIEWED
-work_batch_commit=NONE
-work_batch_ci_run=NOT_RUN
-next_action=NQ-V1-DOCS-COMMIT
+work_batch_status=COMMITTED|CI_PENDING
+work_batch_commit=fcce148101c05eec24377686495b00939c0a8121
+work_batch_ci_run=PENDING
+next_action=NQ-WAIT-CI
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,7 +31,7 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
-V1 产品收敛的待接受计划见 [NQ_V1_CLOSURE_PLAN.md](NQ_V1_CLOSURE_PLAN.md)。规划文档已自查，处于交付 lifecycle；当前机器区块保留 GateZ 冻结及 accepted batch 身份。取得真实合并与 exact-head CI 前，不得标记本计划 `ACCEPTED|CI_GREEN` 或把 V1-C1 标为已实现。
+V1 产品收敛的待接受计划见 [NQ_V1_CLOSURE_PLAN.md](NQ_V1_CLOSURE_PLAN.md)。规划文档已提交，CI 与合并验收待完成；当前机器区块保留 GateZ 冻结及 accepted batch 身份。取得真实合并与 exact-head CI 前，不得标记本计划 `ACCEPTED|CI_GREEN` 或把 V1-C1 标为已实现。
 
 ## 1. 当前阶段
 
