@@ -1,6 +1,6 @@
 # NexusQuant V1 产品收敛计划
 
-> 规划基线：`dev=origin/dev=7cbc7a96a1f7ea2c587c562dba8e7bc503312858`，2026-09-29。本文是待交付、待接受的产品计划；当前机器状态、CI 与授权仍以 [STATUS.md](STATUS.md) 为准。GateZ 已冻结于 `d106775b6c8a9e17cddb6b99e96c9420fa46df63`，tag `nq-gatez-freeze` peeled commit 与之相同。本文不声明 fresh install、服务器连续运行或 V1 发布已通过。
+> 规划基线：`dev=origin/dev=7cbc7a96a1f7ea2c587c562dba8e7bc503312858`，2026-09-29。计划接受身份与当前 next action 以 [STATUS.md](STATUS.md) 为准。GateZ 已冻结于 `d106775b6c8a9e17cddb6b99e96c9420fa46df63`，tag `nq-gatez-freeze` peeled commit 与之相同。本文不声明 fresh install、服务器连续运行或 V1 发布已通过。
 
 ## 1. WHY、范围与唯一主链
 

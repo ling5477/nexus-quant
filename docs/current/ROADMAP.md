@@ -4,7 +4,7 @@
 
 ## 当前产品方向：NQ V1 PRODUCT CLOSURE
 
-GateZ=`FROZEN / ACCEPTED / TAGGED`。13-role [strict archive](../gates/gate-z/README.md) 保留 pre-tag 历史快照；冻结提交、tree、annotated tag、远端回读与 exact-head CI 由 [STATUS](STATUS.md) 和 [FACT_SOURCE_INDEX](FACT_SOURCE_INDEX.md) 记录。V1 planning 正在交付，唯一当前动作以 STATUS 机器区块为准；本次不启动 C1 实现。
+GateZ=`FROZEN / ACCEPTED / TAGGED`。13-role [strict archive](../gates/gate-z/README.md) 保留 pre-tag 历史快照；冻结提交、tree、annotated tag、远端回读与 exact-head CI 由 [STATUS](STATUS.md) 和 [FACT_SOURCE_INDEX](FACT_SOURCE_INDEX.md) 记录。V1 计划已由 PR #59 与合并后 exact-head CI 接受；当前唯一下一动作是 `NQ-V1-C1-FRESH-INSTALL-GOLDEN-PATH-CLOSURE-IMPLEMENTATION`，本次不启动 C1。
 
 V1 的可执行范围、事实归属、阻塞项、四个产品包及关键路径见 [NQ V1 产品收敛计划](NQ_V1_CLOSURE_PLAN.md)。首个实现任务定义为 `NQ-V1-C1-FRESH-INSTALL-GOLDEN-PATH-CLOSURE`：从空库用正式 UI/API 闭合整条主链；OKX public capture UI 是已知第一断点，不是 C1 的独立产品目标。本次不启动 C1。第二策略、组合、Binance、衍生品、AI/DH 与 LIVE 自动交易不属于 V1。
 
@@ -96,7 +96,9 @@ repository topology / shared capability consolidation = MERGED / PR #21 / dev CI
   ↓
 GateZ = FROZEN / ACCEPTED / TAGGED
   ↓
-GateZ-1 through Paper Detail canonical projection = ACCEPTED; account divergence root cause = historical BLOCKED; freeze commit = d106775b6c8a9e17cddb6b99e96c9420fa46df63; next_action = NQ-V1-CLOSURE-PLAN
+GateZ-1 through Paper Detail canonical projection = ACCEPTED; account divergence root cause = historical BLOCKED; freeze commit = d106775b6c8a9e17cddb6b99e96c9420fa46df63; then next_action = NQ-V1-CLOSURE-PLAN
+  ↓
+V1 Closure Plan = ACCEPTED / CI_GREEN; PR #59 merge = 7efb9efb33ecad512d6dfb5180a890c07ad960d2; exact-head CI = 36549515053; next_action = NQ-V1-C1-FRESH-INSTALL-GOLDEN-PATH-CLOSURE-IMPLEMENTATION
 ```
 
 ## Phase4 accepted foundation
