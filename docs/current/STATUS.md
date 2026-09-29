@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 accepted_batch_acceptance_head=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 accepted_batch_ci_run=36540779142
-work_batch=NQ-GATEZ-FINAL-FREEZE-CLOSEOUT
-work_batch_status=FROZEN|ACCEPTED|TAGGED
-work_batch_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
-work_batch_ci_run=36540779142
-next_action=NQ-V1-CLOSURE-PLAN
+work_batch=NQ-V1-CLOSURE-PLAN
+work_batch_status=IMPLEMENTED|SELF_REVIEWED
+work_batch_commit=NONE
+work_batch_ci_run=NOT_RUN
+next_action=NQ-V1-DOCS-COMMIT
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,11 +31,13 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
+V1 产品收敛的待接受计划见 [NQ_V1_CLOSURE_PLAN.md](NQ_V1_CLOSURE_PLAN.md)。规划文档已自查，处于交付 lifecycle；当前机器区块保留 GateZ 冻结及 accepted batch 身份。取得真实合并与 exact-head CI 前，不得标记本计划 `ACCEPTED|CI_GREEN` 或把 V1-C1 标为已实现。
+
 ## 1. 当前阶段
 
 - GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/README.md](../gates/gate-y/README.md)，freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`，annotated tag=`nq-gatey-freeze`，tag object=`c84f412e1da652e85158c5478997945d3065e575`，peeled commit 与 freeze commit 一致。
 - GateAUDIT：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`，tree=`557bb3fa6549732cc5bdf2d40251c31a963f83a0`，annotated tag=`nq-gateaudit-freeze`，tag object=`4ee65d68471c5e25874ab6a08c3e9fc420f667b7`，peeled commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`。`dev` exact-head CI=`35840126216 / push / completed / success / 9 of 9`；release checker 与 release-mode archive checker 均 `PASS / errors=0`。13-role archive 保持 pre-tag snapshot 语义；post-tag freeze 由 Git tag 与本 current authority 表达。Phase7-E 与 Phase7-F authority synchronization 已完成；post-GateAUDIT Git cleanup 按用户接受的 disposition 为 `COMPLETE`，保留的历史本地分支及 worktree 属于非阻断残余。
-- GateZ：`FROZEN / ACCEPTED / TAGGED`。13-role strict archive 见 [GateZ archive](../gates/gate-z/README.md)；freeze commit=`d106775b6c8a9e17cddb6b99e96c9420fa46df63`、tree=`1bf0f4734b02cbc7f2b4a48ce308c9f492f26e98`、annotated tag=`nq-gatez-freeze`、tag object=`05f3f31975394aa787745adf5414ad8467b8c17b`，本地与远端 peeled commit 均为 freeze commit。`dev` exact-head push CI=`36540779142 / completed / success / 9 of 9`；release 与 strict archive 检查 errors=0。归档中的 `PRETAG / TAG_PENDING` 保持历史快照原义；post-tag current authority 由本机器区块表达。下一动作仅为 `NQ-V1-CLOSURE-PLAN`。
+- GateZ：`FROZEN / ACCEPTED / TAGGED`。13-role strict archive 见 [GateZ archive](../gates/gate-z/README.md)；freeze commit=`d106775b6c8a9e17cddb6b99e96c9420fa46df63`、tree=`1bf0f4734b02cbc7f2b4a48ce308c9f492f26e98`、annotated tag=`nq-gatez-freeze`、tag object=`05f3f31975394aa787745adf5414ad8467b8c17b`，本地与远端 peeled commit 均为 freeze commit。`dev` exact-head push CI=`36540779142 / completed / success / 9 of 9`；release 与 strict archive 检查 errors=0。归档中的 `PRETAG / TAG_PENDING` 保持历史快照原义；post-tag current authority 由本机器区块表达。V1 planning 交付动作以顶部机器区块为准。
 - GateZ 账户差异根因检查：技术 PR #42 合并于 `f7a5faa782e55a87f263f7fefba4b717599396d9`，其 `dev` exact-head CI `36302559099` 为 9/9 SUCCESS；release `nq-f7a5faa782e5-20670623964ad074` 已普通 install/activate，PG16/V54 只读 validate 通过，migration 执行数 0。本轮唯一新 OKX 观察的 typed 结果为 `UNKNOWN / BALANCE_SEMANTIC_MISMATCH`：本地账户快照无 SIM/LIVE 环境语义，不能与 OKX 余额同口径比较。确认 7 种外部正余额资产、其中 5 种无本地快照行；BTC 为正且低于当次公开最小数量；本地 BTC/USDT 快照为 2026-08-26，时间因果未证明。正式采集器因空 `expiresAt` 触发 `AttributeError`，原始验收为 `QUALIFICATION_BLOCKED_COLLECTOR_ATTRIBUTEERROR`，不追认 PASS，也不标记 `ACCOUNT_DIVERGENCE=EXPLAINED`。10 次固定 GET、交易 mutation 0、五类 canonical 交易事实内容未变；终态 Java/MainPID=0、LIVE=DISABLED、kill=ENGAGED。先解决快照余额的 LIVE/SIM 语义与新鲜度来源，再决定是否有精确金额差；详见[本轮只读根因检查证据](../archive/gate-z/evidence/gate-z/OKX_ACCOUNT_DIVERGENCE_READONLY_ROOT_CAUSE.md)。
 - GateZ 账户快照 provenance：技术 PR #44 的 `dev=5197b128131aa21be7705ee6cf3619db3cec00bb / exact-head CI 36314244328 / 9 of 9 SUCCESS` 已接受。PG16/V54 的 canonical backup 与隔离恢复通过后，生产仅执行 V55，Flyway validate 为 V55/pending=0/failed=0；两条历史快照的新 provenance 字段仍全为 NULL，旧字段指纹不变。`nq-5197b128131a-39f54b083d7e0571` 已普通 install/activate，`/current` 与 activation head/journal 一致，终态无 Java 进程、LIVE=DISABLED、kill=ENGAGED。没有新的 OKX private observation；collector 原正式源码未找回，状态为 `COLLECTOR_SOURCE_UNAVAILABLE / DEFERRED_NON_BLOCKING_FOR_SNAPSHOT_SEMANTICS`。既有 divergence 仍为 UNKNOWN，不追认 `ACCOUNT_DIVERGENCE=EXPLAINED`。详见[生产 V55 与 release 证据](../archive/gate-z/evidence/gate-z/ACCOUNT_SNAPSHOT_PROVENANCE_PRODUCTION_V55.md)。
 - GateZ 账户只读对账模型修复：技术 PR #46 已合并，`dev=dc0b01e5653d6718a00b0d667bc2440c47b49b55 / exact-head CI 36326961228 / 9 of 9 SUCCESS`。`WHOLE_VENUE_BALANCE_RETIRED_FROM_MANAGED_DIVERGENCE`、`EXTERNAL_ACCOUNT_CONTEXT_SEPARATED`、`NQ_MANAGED_RECONCILIATION_SEMANTICS_ACCEPTED`：全账户余额、未归属资产/订单、BTC dust、非现货仓位仅作上下文；托管聚合限已证明归属且同义、新鲜的 NQ LIVE 活跃 OKX 订单，结果为 `MATCH / DIVERGED / UNKNOWN / NOT_APPLICABLE`。隔离 PG16/V55 的 26 项集成测试与 27 项单元测试通过，完整 backend Maven 通过；独立 correctness 审查及受影响复审最终 P0/P1/P2/P3=`0/0/0/0`。本次无 migration、OKX 请求、凭证读取、交易 mutation 或生产部署。历史 `REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`、当时的 DIVERGED 与 `UNKNOWN / BALANCE_SEMANTIC_MISMATCH`、采集器失败均保持原结果；本次代码/CI 不构成新的真实账户观察。`LIVE=DISABLED`、kill=`ENGAGED`。

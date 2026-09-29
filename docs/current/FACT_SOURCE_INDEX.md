@@ -10,6 +10,8 @@
 4. [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md)：通用 lifecycle/checker 说明，不决定 current Gate。
 5. [GateZ strict archive](../gates/gate-z/README.md)：已冻结的历史能力索引；[历史计划](../gates/gate-z/GATEZ_PLAN.md) 不覆盖 STATUS。
 
+[NQ V1 产品收敛计划](NQ_V1_CLOSURE_PLAN.md) 是当前待接受的产品范围与事实归属规划输入，不是机器状态、运行资格或 CI 证据；V1 工作焦点转换以 STATUS 后续合法更新为准。
+
 冲突时输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`；历史材料不得覆盖 current authority。
 
 ## GateZ frozen release identity
