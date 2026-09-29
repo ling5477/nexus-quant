@@ -2,9 +2,9 @@
 
 本文件只定义下一允许动作与已验证的后续输入。current Gate、安全状态和work batch必须解析 [STATUS.md](STATUS.md) 的 `nq-current-authority` 区块。
 
-## GateZ pre-tag 转场
+## 当前产品方向：NQ V1 PRODUCT CLOSURE
 
-GateZ 单策略 OKX Spot 研究到 Continuous SIM canonical 经济闭环已完成 13-role archive 候选，当前仅为 `PRETAG / TAG_PENDING`。合并到 dev 后必须取得 freeze candidate exact-head CI、发布校验、annotated tag 和远端身份回读；此前机器 `active_gate_status=IN_PROGRESS|NOT_FROZEN` 保持真实。完成 post-tag authority sync 后，下一动作是 `NQ-V1-CLOSURE-PLAN`，本次不启动实现。
+GateZ=`FROZEN / ACCEPTED / TAGGED`。13-role [strict archive](../gates/gate-z/README.md) 保留 pre-tag 历史快照；冻结提交、tree、annotated tag、远端回读与 exact-head CI 由 [STATUS](STATUS.md) 和 [FACT_SOURCE_INDEX](FACT_SOURCE_INDEX.md) 记录。唯一下一动作是 `NQ-V1-CLOSURE-PLAN`，本次不启动实现。
 
 V1 产品方向待后续计划确认：canonical convergence → Golden Path → minimum research validity → server Continuous SIM soak → V1 RC → V1.0.0。第二策略、组合、Binance、衍生品、AI/DH 与 LIVE 自动交易不属于 GateZ freeze。
 
@@ -94,9 +94,9 @@ post-GateAUDIT Git cleanup = COMPLETE / accepted disposition
   ↓
 repository topology / shared capability consolidation = MERGED / PR #21 / dev CI GREEN
   ↓
-GateZ = IN_PROGRESS / NOT_FROZEN
+GateZ = FROZEN / ACCEPTED / TAGGED
   ↓
-GateZ-1 = ACCEPTED / CI_GREEN; public market replay smoke = ACCEPTED / CI_GREEN; account divergence root cause = historical BLOCKED; account snapshot provenance = ACCEPTED / CI_GREEN; account reconciliation model remediation = ACCEPTED / CI_GREEN; public market full-window SIM replay = ACCEPTED / CI_GREEN; next_action = NONE
+GateZ-1 through Paper Detail canonical projection = ACCEPTED; account divergence root cause = historical BLOCKED; freeze commit = d106775b6c8a9e17cddb6b99e96c9420fa46df63; next_action = NQ-V1-CLOSURE-PLAN
 ```
 
 ## Phase4 accepted foundation
@@ -188,9 +188,9 @@ C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既
 
 账户只读对账模型已由技术 PR #46 修复并通过合并后 `dev=dc0b01e5653d6718a00b0d667bc2440c47b49b55 / exact-head CI 36326961228 / 9 of 9 SUCCESS`：全账户余额、额外资产、BTC dust、未归属外部订单和非现货仓位归外部上下文；NQ managed reconciliation 只读比较已证明归属的同义 LIVE 活跃订单。历史真实只读账户事实资格保持有效，本任务未重新观察 OKX、未部署、未改变 LIVE 与 kill 边界。账户语义阻塞关闭后，当时唯一下一任务为 `NQ-GATEZ-PUBLIC-MARKET-FULL-WINDOW-SIM-REPLAY`；其全窗口 P2 已由后续技术验收关闭。
 
-公开市场全窗口 SIM 回放已通过技术 PR #48：`dev=1ace052903b6bf70af41f1cf77c72b5157e3c6c8 / exact-head CI 36370231759 / 9 of 9 SUCCESS`。隔离 PG16/V55 中同一冻结公开输入的 A/B 独立 72/72 重算，其决策、Order/Trade/Ledger 与现金/仓位/PnL 轨迹逐项一致；同一 run 幂等、bar 60 反事实因果及数据/身份负例通过，独立只读审查 P0/P1/P2/P3=`0/0/0/0`。历史 smoke 当时遗留的 `FULL_WINDOW_SIM_DECISION_STABILITY_P2` 现为 `CLOSED`；公开规则和费用仍仅是冻结回放假设，本轮无 OKX 调用、生产动作或 migration。机器 `next_action=NONE`。
+公开市场全窗口 SIM 回放已通过技术 PR #48：`dev=1ace052903b6bf70af41f1cf77c72b5157e3c6c8 / exact-head CI 36370231759 / 9 of 9 SUCCESS`。隔离 PG16/V55 中同一冻结公开输入的 A/B 独立 72/72 重算，其决策、Order/Trade/Ledger 与现金/仓位/PnL 轨迹逐项一致；同一 run 幂等、bar 60 反事实因果及数据/身份负例通过，独立只读审查 P0/P1/P2/P3=`0/0/0/0`。历史 smoke 当时遗留的 `FULL_WINDOW_SIM_DECISION_STABILITY_P2` 现为 `CLOSED`；公开规则和费用仍仅是冻结回放假设，本轮无 OKX 调用、生产动作或 migration。该历史验收时机器 `next_action=NONE`。
 
-GateZ 当前范围、验收边界和后续扩展见 [GATEZ_PLAN.md](../gates/gate-z/GATEZ_PLAN.md)。2026-09-27 的新只读资格验证已通过：`REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`。coverage unblock 技术 PR #40 的合并提交/精确 HEAD CI 为 `e9df23f079f0aaec1eff5b38269f4b18c7e9dae3 / 36295009039 / 9 of 9 SUCCESS`；canonical release=`nq-e9df23f079f0-5a401cd983263e6d` 已普通 install/activate，PG16/V54 validate 通过，migration 执行数为 0。复用现有 owner 登录来源，密码、角色和 owner 链未变；permission probe 为 `SUCCEEDED / TRADE / WITHDRAW=false / IP PASSED`。新 snapshot 的模式 2、BTC/USDT 与全部返回余额、positions、挂单、费率、交易所时间、当前公开规则和偏差均为 OBSERVED；positions=`NO_ACTIVE_POSITION / 0`，open orders=`0`，divergence=`DIVERGED`，完整分类不要求 MATCH。观察时间为 `2026-09-27T05:38:23.820031102Z`；私有事实 60s、公开规则 24h，验收时全部新鲜，历史快照不能作为后续实时输入。成功轮 10 次固定 GET、其他 endpoint 0、交易 mutation 0，五类 canonical 交易事实数量及内容不变。runtime 已停止，Java/MainPID=0，LIVE=DISABLED，kill=ENGAGED。首轮采集器阶段计数错误导致的失败原位保留，修正后以独立 run 身份重新验证；不追认旧失败为成功。详情见[模式 2 与公开规则只读资格证据](../archive/gate-z/evidence/gate-z/OKX_ACCOUNT_FACTS_READONLY_COVERAGE.md)。 该资格验证的当时机器 next_action=`NONE`；本轮根因检查已更新当前 next_action。此项资格没有授权 LIVE、解除 kill switch 或账户/交易数据修复。
+GateZ 历史范围、验收边界和后续扩展见 [GATEZ_PLAN.md](../gates/gate-z/GATEZ_PLAN.md)。2026-09-27 的新只读资格验证已通过：`REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`。coverage unblock 技术 PR #40 的合并提交/精确 HEAD CI 为 `e9df23f079f0aaec1eff5b38269f4b18c7e9dae3 / 36295009039 / 9 of 9 SUCCESS`；canonical release=`nq-e9df23f079f0-5a401cd983263e6d` 已普通 install/activate，PG16/V54 validate 通过，migration 执行数为 0。复用现有 owner 登录来源，密码、角色和 owner 链未变；permission probe 为 `SUCCEEDED / TRADE / WITHDRAW=false / IP PASSED`。新 snapshot 的模式 2、BTC/USDT 与全部返回余额、positions、挂单、费率、交易所时间、当前公开规则和偏差均为 OBSERVED；positions=`NO_ACTIVE_POSITION / 0`，open orders=`0`，divergence=`DIVERGED`，完整分类不要求 MATCH。观察时间为 `2026-09-27T05:38:23.820031102Z`；私有事实 60s、公开规则 24h，验收时全部新鲜，历史快照不能作为后续实时输入。成功轮 10 次固定 GET、其他 endpoint 0、交易 mutation 0，五类 canonical 交易事实数量及内容不变。runtime 已停止，Java/MainPID=0，LIVE=DISABLED，kill=ENGAGED。首轮采集器阶段计数错误导致的失败原位保留，修正后以独立 run 身份重新验证；不追认旧失败为成功。详情见[模式 2 与公开规则只读资格证据](../archive/gate-z/evidence/gate-z/OKX_ACCOUNT_FACTS_READONLY_COVERAGE.md)。 该资格验证的当时机器 next_action=`NONE`；后续机器 next_action 已变更，以 STATUS 为准。此项资格没有授权 LIVE、解除 kill switch 或账户/交易数据修复。
 
 - Phase5B immutable technical acceptance pair=`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`；不得由本次current-fact synchronization commit或其CI替代。
 - F008 immutable technical acceptance pair=`614359fc7f25227f736fbb1c11c7d584da1f0627 / 33978394774`；implementation=`716199a7cb836a5eaf43a88b0de6db0f47a75e91`，后续head属于`accepted CI test-harness compatibility remediation`，不是新的implementation finding。详见[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F008_POST_CI_AUTHORITY_ACCEPTANCE.md)。
@@ -219,7 +219,7 @@ GateZ 当前范围、验收边界和后续扩展见 [GATEZ_PLAN.md](../gates/gat
 
 - `LIVE=DISABLED`、kill switch=`ENGAGED`；历史只读观察资格不授权本轮或后续再次访问 OKX；新的真实观察须另获当前授权。禁止再次 pilot、PLACE、CANCEL、transfer、withdraw、credential/生产数据库写入或未经授权的生产部署。
 - GateY frozen archive与published tags不可改写。
-- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 ACCEPTED/COMPLETE，L4 ACCEPTED，L5/L6 ACCEPTED，Phase7-A 至 Phase7-F 已完成，GateAUDIT=`FROZEN / ACCEPTED / TAGGED`；GateZ-1、公开行情回放 smoke 与 72-bar 全窗口 SIM 回放均已接受，当前 next_action=`NONE`；此前公开行情 smoke 的接受身份保持不变。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
+- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 ACCEPTED/COMPLETE，L4 ACCEPTED，L5/L6 ACCEPTED，Phase7-A 至 Phase7-F 已完成，GateAUDIT=`FROZEN / ACCEPTED / TAGGED`；GateZ-1、公开行情回放 smoke 与 72-bar 全窗口 SIM 回放均已接受，该历史时点 next_action=`NONE`；此前公开行情 smoke 的接受身份保持不变。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
 
 ## F009 accepted delivery lineage
 

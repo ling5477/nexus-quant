@@ -8,9 +8,17 @@
 2. Git、代码、测试与 CI：能力与验证事实。
 3. [ROADMAP.md](ROADMAP.md)：下一允许动作，不覆盖 STATUS。
 4. [GOVERNANCE_WORKFLOW.md](GOVERNANCE_WORKFLOW.md)：通用 lifecycle/checker 说明，不决定 current Gate。
-5. [GateZ strict archive](../gates/gate-z/README.md)：pre-tag 候选与已接受能力索引；[历史计划](../gates/gate-z/GATEZ_PLAN.md) 不覆盖 STATUS。
+5. [GateZ strict archive](../gates/gate-z/README.md)：已冻结的历史能力索引；[历史计划](../gates/gate-z/GATEZ_PLAN.md) 不覆盖 STATUS。
 
 冲突时输出 `BLOCKED / CURRENT_AUTHORITY_CONFLICT`；历史材料不得覆盖 current authority。
+
+## GateZ frozen release identity
+
+- [GateZ strict archive](../gates/gate-z/README.md)：8 mandatory + 5 conditional substantive roles；文件中的 `PRETAG / TAG_PENDING` 是原始冻结前快照，保持不回写。
+- Freeze commit=`d106775b6c8a9e17cddb6b99e96c9420fa46df63`；tree=`1bf0f4734b02cbc7f2b4a48ce308c9f492f26e98`。这个提交是 PR #57 合并后的 `dev` 候选，不是后续 current authority PR 的提交。
+- Annotated tag=`nq-gatez-freeze`；tag object=`05f3f31975394aa787745adf5414ad8467b8c17b`；local peeled=`d106775b6c8a9e17cddb6b99e96c9420fa46df63`，remote object/peeled readback 与本地一致。
+- Freeze exact-head CI=`36540779142 / NQ CI Baseline / push / completed / success / 9 of 9`，headSha 精确为 freeze commit；release checker 与 release-mode archive checker errors=`0`。该身份不代表生产部署或 LIVE 授权。
+- 原始只读证据、BLOCKED/UNKNOWN 与 2026-09-24 V1 设计输入快照以内容原样归档在 `docs/archive/gate-z/evidence/`，不参与 current machine authority。
 
 ## 2. Active Current Document Set
 

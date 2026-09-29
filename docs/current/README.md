@@ -5,8 +5,8 @@
 ## 当前摘要
 
 <!-- nq-current-summary:start -->
-- 13-role archive 已建立为冻结候选；最终身份以合并后 CI 和 tag 回读确认，见 [归档入口](../gates/gate-z/README.md)。
-- 最近冻结的 GateAUDIT 已接受并打 tag；固定身份及 CI 以 [STATUS.md](STATUS.md) 为准，历史证据见 [strict archive](../gates/gate-audit/README.md)。
+- 最近冻结的业务阶段已接受并打 tag；固定身份及 CI 以 [STATUS.md](STATUS.md) 为准，13-role [strict archive](../gates/gate-z/README.md) 保留冻结前历史快照。
+- 下一动作是 V1 Closure 规划，详见 [ROADMAP.md](ROADMAP.md)；上一历史阶段证据见 [其 archive](../gates/gate-audit/README.md)。
 - accepted batch、work batch 与唯一 next action 从 [STATUS.md](STATUS.md) 的机器区块读取；[ROADMAP.md](ROADMAP.md) 解释后续工作。
 - 历史范围与设计输入见 [归档计划](../gates/gate-z/GATEZ_PLAN.md)；下一动作由本 STATUS 的 `next_action` 决定。
 - GateY pilot 的验收事实见 [STATUS.md](STATUS.md)；该历史验收不授予再次执行权。
@@ -26,6 +26,10 @@
 | Evidence ledger | [TESTING.md](TESTING.md) / [WORKLOG.md](WORKLOG.md) | 否；append-only |
 
 ## Historical Evidence
+
+以下一行是冻结前的摘要原文，仅作为历史记录；当前冻结身份以上方摘要和 STATUS 为准。
+
+- 最近冻结的 GateAUDIT 已接受并打 tag；固定身份及 CI 以 [STATUS.md](STATUS.md) 为准，历史证据见 [strict archive](../gates/gate-audit/README.md)。
 
 - Gate archive：[../gates/](../gates/)；GateY pilot 的历史证据见 [GateY strict archive](../gates/gate-y/README.md)。
 - General archive：[../archive/](../archive/)。

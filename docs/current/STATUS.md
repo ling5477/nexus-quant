@@ -2,22 +2,22 @@
 
 <!-- nq-current-authority:start
 authority_schema=3
-last_frozen_gate=GateAUDIT
+last_frozen_gate=GateZ
 last_frozen_gate_status=FROZEN|ACCEPTED|TAGGED
-last_frozen_gate_tag=nq-gateaudit-freeze
-last_frozen_gate_commit=a4cf8516382b47112852fc3f8dd9e5a65a80f993
+last_frozen_gate_tag=nq-gatez-freeze
+last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
-active_gate_status=IN_PROGRESS|NOT_FROZEN
-accepted_batch=NQ-GATEZ-OKX-ACCOUNT-FACTS-READONLY-QUALIFICATION
+active_gate_status=FROZEN|ACCEPTED|TAGGED
+accepted_batch=NQ-GATEZ-FINAL-FREEZE-CLOSEOUT
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=b15406019be0b9d5158a7acc83cf80a4bce8f2ed
-accepted_batch_acceptance_head=e9df23f079f0aaec1eff5b38269f4b18c7e9dae3
-accepted_batch_ci_run=36295009039
-work_batch=NQ-GATEZ-PUBLIC-MARKET-FULL-WINDOW-SIM-REPLAY
-work_batch_status=ACCEPTED|CI_GREEN
-work_batch_commit=1ace052903b6bf70af41f1cf77c72b5157e3c6c8
-work_batch_ci_run=36370231759
-next_action=NONE
+accepted_batch_implementation_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
+accepted_batch_acceptance_head=d106775b6c8a9e17cddb6b99e96c9420fa46df63
+accepted_batch_ci_run=36540779142
+work_batch=NQ-GATEZ-FINAL-FREEZE-CLOSEOUT
+work_batch_status=FROZEN|ACCEPTED|TAGGED
+work_batch_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
+work_batch_ci_run=36540779142
+next_action=NQ-V1-CLOSURE-PLAN
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -35,7 +35,7 @@ nq-current-authority:end -->
 
 - GateY：`FROZEN / ACCEPTED / TAGGED`（已冻结 / 已接受 / 已打 tag）；strict archive 为 [../gates/gate-y/README.md](../gates/gate-y/README.md)，freeze commit=`72fbf5e78f217a02b572a54fadb17dea204b594f`，annotated tag=`nq-gatey-freeze`，tag object=`c84f412e1da652e85158c5478997945d3065e575`，peeled commit 与 freeze commit 一致。
 - GateAUDIT：`FROZEN / ACCEPTED / TAGGED`；freeze commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`，tree=`557bb3fa6549732cc5bdf2d40251c31a963f83a0`，annotated tag=`nq-gateaudit-freeze`，tag object=`4ee65d68471c5e25874ab6a08c3e9fc420f667b7`，peeled commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`。`dev` exact-head CI=`35840126216 / push / completed / success / 9 of 9`；release checker 与 release-mode archive checker 均 `PASS / errors=0`。13-role archive 保持 pre-tag snapshot 语义；post-tag freeze 由 Git tag 与本 current authority 表达。Phase7-E 与 Phase7-F authority synchronization 已完成；post-GateAUDIT Git cleanup 按用户接受的 disposition 为 `COMPLETE`，保留的历史本地分支及 worktree 属于非阻断残余。
-- GateZ：`IN_PROGRESS / NOT_FROZEN`。GateZ-1 与公开市场数据可重放 smoke 保持已接受；一次性 bootstrap、runtime identity 修复及 owner 登录能力保留。2026-09-27 的新只读资格验证已通过：`REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`。coverage unblock 技术 PR #40 的合并提交/精确 HEAD CI 为 `e9df23f079f0aaec1eff5b38269f4b18c7e9dae3 / 36295009039 / 9 of 9 SUCCESS`；canonical release=`nq-e9df23f079f0-5a401cd983263e6d` 已普通 install/activate，PG16/V54 validate 通过，migration 执行数为 0。复用现有 owner 登录来源，密码、角色和 owner 链未变；permission probe 为 `SUCCEEDED / TRADE / WITHDRAW=false / IP PASSED`。新 snapshot 的模式 2、BTC/USDT 与全部返回余额、positions、挂单、费率、交易所时间、当前公开规则和偏差均为 OBSERVED；positions=`NO_ACTIVE_POSITION / 0`，open orders=`0`，divergence=`DIVERGED`，完整分类不要求 MATCH。观察时间为 `2026-09-27T05:38:23.820031102Z`；私有事实 60s、公开规则 24h，验收时全部新鲜，历史快照不能作为后续实时输入。成功轮 10 次固定 GET、其他 endpoint 0、交易 mutation 0，五类 canonical 交易事实数量及内容不变。runtime 已停止，Java/MainPID=0，LIVE=DISABLED，kill=ENGAGED。首轮采集器阶段计数错误导致的失败原位保留，修正后以独立 run 身份重新验证；不追认旧失败为成功。详情见[模式 2 与公开规则只读资格证据](../archive/gate-z/evidence/gate-z/OKX_ACCOUNT_FACTS_READONLY_COVERAGE.md)。
+- GateZ：`FROZEN / ACCEPTED / TAGGED`。13-role strict archive 见 [GateZ archive](../gates/gate-z/README.md)；freeze commit=`d106775b6c8a9e17cddb6b99e96c9420fa46df63`、tree=`1bf0f4734b02cbc7f2b4a48ce308c9f492f26e98`、annotated tag=`nq-gatez-freeze`、tag object=`05f3f31975394aa787745adf5414ad8467b8c17b`，本地与远端 peeled commit 均为 freeze commit。`dev` exact-head push CI=`36540779142 / completed / success / 9 of 9`；release 与 strict archive 检查 errors=0。归档中的 `PRETAG / TAG_PENDING` 保持历史快照原义；post-tag current authority 由本机器区块表达。下一动作仅为 `NQ-V1-CLOSURE-PLAN`。
 - GateZ 账户差异根因检查：技术 PR #42 合并于 `f7a5faa782e55a87f263f7fefba4b717599396d9`，其 `dev` exact-head CI `36302559099` 为 9/9 SUCCESS；release `nq-f7a5faa782e5-20670623964ad074` 已普通 install/activate，PG16/V54 只读 validate 通过，migration 执行数 0。本轮唯一新 OKX 观察的 typed 结果为 `UNKNOWN / BALANCE_SEMANTIC_MISMATCH`：本地账户快照无 SIM/LIVE 环境语义，不能与 OKX 余额同口径比较。确认 7 种外部正余额资产、其中 5 种无本地快照行；BTC 为正且低于当次公开最小数量；本地 BTC/USDT 快照为 2026-08-26，时间因果未证明。正式采集器因空 `expiresAt` 触发 `AttributeError`，原始验收为 `QUALIFICATION_BLOCKED_COLLECTOR_ATTRIBUTEERROR`，不追认 PASS，也不标记 `ACCOUNT_DIVERGENCE=EXPLAINED`。10 次固定 GET、交易 mutation 0、五类 canonical 交易事实内容未变；终态 Java/MainPID=0、LIVE=DISABLED、kill=ENGAGED。先解决快照余额的 LIVE/SIM 语义与新鲜度来源，再决定是否有精确金额差；详见[本轮只读根因检查证据](../archive/gate-z/evidence/gate-z/OKX_ACCOUNT_DIVERGENCE_READONLY_ROOT_CAUSE.md)。
 - GateZ 账户快照 provenance：技术 PR #44 的 `dev=5197b128131aa21be7705ee6cf3619db3cec00bb / exact-head CI 36314244328 / 9 of 9 SUCCESS` 已接受。PG16/V54 的 canonical backup 与隔离恢复通过后，生产仅执行 V55，Flyway validate 为 V55/pending=0/failed=0；两条历史快照的新 provenance 字段仍全为 NULL，旧字段指纹不变。`nq-5197b128131a-39f54b083d7e0571` 已普通 install/activate，`/current` 与 activation head/journal 一致，终态无 Java 进程、LIVE=DISABLED、kill=ENGAGED。没有新的 OKX private observation；collector 原正式源码未找回，状态为 `COLLECTOR_SOURCE_UNAVAILABLE / DEFERRED_NON_BLOCKING_FOR_SNAPSHOT_SEMANTICS`。既有 divergence 仍为 UNKNOWN，不追认 `ACCOUNT_DIVERGENCE=EXPLAINED`。详见[生产 V55 与 release 证据](../archive/gate-z/evidence/gate-z/ACCOUNT_SNAPSHOT_PROVENANCE_PRODUCTION_V55.md)。
 - GateZ 账户只读对账模型修复：技术 PR #46 已合并，`dev=dc0b01e5653d6718a00b0d667bc2440c47b49b55 / exact-head CI 36326961228 / 9 of 9 SUCCESS`。`WHOLE_VENUE_BALANCE_RETIRED_FROM_MANAGED_DIVERGENCE`、`EXTERNAL_ACCOUNT_CONTEXT_SEPARATED`、`NQ_MANAGED_RECONCILIATION_SEMANTICS_ACCEPTED`：全账户余额、未归属资产/订单、BTC dust、非现货仓位仅作上下文；托管聚合限已证明归属且同义、新鲜的 NQ LIVE 活跃 OKX 订单，结果为 `MATCH / DIVERGED / UNKNOWN / NOT_APPLICABLE`。隔离 PG16/V55 的 26 项集成测试与 27 项单元测试通过，完整 backend Maven 通过；独立 correctness 审查及受影响复审最终 P0/P1/P2/P3=`0/0/0/0`。本次无 migration、OKX 请求、凭证读取、交易 mutation 或生产部署。历史 `REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`、当时的 DIVERGED 与 `UNKNOWN / BALANCE_SEMANTIC_MISMATCH`、采集器失败均保持原结果；本次代码/CI 不构成新的真实账户观察。`LIVE=DISABLED`、kill=`ENGAGED`。
@@ -75,8 +75,8 @@ nq-current-authority:end -->
 
 ```text
 current_gate_status=FROZEN|ACCEPTED|TAGGED
-current_gate_tag=nq-gateaudit-freeze
-updated_commit=a4cf8516382b47112852fc3f8dd9e5a65a80f993
+current_gate_tag=nq-gatez-freeze
+updated_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 ```
 
 ## 4. 安全与运行边界
@@ -96,7 +96,7 @@ updated_commit=a4cf8516382b47112852fc3f8dd9e5a65a80f993
 - Logging sensitive-data protection pair=`48c1b1cd4c84e1429be82093e460984b6d1c805c / 35817828506`，修复前 13/13 synthetic 泄漏和修复后 0/13 证明原位保留；SQL ownership audit pair=`0e200e807a1347e5ec6acd24975fa3531a31c90d / 35828020513`，初审 FAIL、修订后 delta PASS 均见[独立复核](../audit/evidence/GATEAUDIT_SQL_OWNERSHIP_REPOSITORY_INDEPENDENT_REVIEW.md)。[Original Scope reconciliation](../audit/evidence/GATEAUDIT_ORIGINAL_SCOPE_TRACEABILITY_RECONCILIATION.md) 最新为 TOTAL=39 / UNCLASSIFIED=0 / REMAINING_GAPS=0；17-row canonical residual 未重分类。
 - Pre-tag delta rebind/archive refresh=`ACCEPTED / CI_GREEN`，进入点=`6bc3fa75def9ffe31710d006359e0991d1a60bc1`，最终 implementation pair=`c91f26487caf92f963fab36486efa2aebe666ccb / 35832860696 / 9 of 9 SUCCESS`。[13-role archive](../gates/gate-audit/README.md) 纳入 Phase7-D 后 7 个提交，唯一 runtime delta 是已接受的 logging 修复；21-row capability matrix 和 17-row residual 原位保留。首次 refresh 提交 `5bf244b8f4dbf4d857cc6d2f45eeb23ead21f3fc / 35831845804` 的 secret scan 失败（8/9）保留在 [closeout](../gates/gate-audit/GATEAUDIT_FREEZE_CLOSEOUT.md)，后续仅修正文档排版，未修改规则。`POST_PHASE7D_DELTA_RECONCILED=true / ARCHIVE_REFRESHED=true / PRETAG_CANDIDATE_REBOUND=true / P0=0 / P1=0`。Phase7-E 已完成；freeze commit 与 tag identity 见本 STATUS 当前 GateAUDIT 条目。
 - L4历史technical pair保持`3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297`；Phase6 aggregate pair=`dbf9662add09388cd77ca7552de276bb019f0f74 / 35043157675`及全部历史 owner identity 不变。GateZ-1 实现提交=`9ada1f76151e3f9f7ec6fe732004a4ce7af04b7d`，CI 修复提交=`a3f9f58de872a55ca0bda1a989ec1e69794c6dad`，PR #24 merge/exact-head pair=`09b7e1cd9c68033b54b75cf361cdda70b584f3a4 / 36111701008 / 9 of 9 SUCCESS` 保持历史接受身份。当前公开行情回放切片实现=`1dafcbdf36774c3febfc7ac0499149ec8566afd9`，测试修复=`91ba50d95a8bc68dd4d4e0b43974e89b13fd1391`，PR #27 merge/exact-head pair=`b253dc19124d26cd8b2aab5685d773adc03e3687 / 36141910575 / attempt 2 / 9 of 9 SUCCESS`；首轮 PostgreSQL restore 的一次性容器启动时序失败保留在同一 run 历史，不替换已接受的最终结果。独立只读审查 P0/P1=`0/0`；在该历史 smoke 验收时，全部 72 根的 SIM 决策稳定性仍是 P2。本轮 full-window 验收已关闭该 P2，见当前 GateZ 全窗口条目。GateAUDIT pre-tag refresh technical pair=`c91f26487caf92f963fab36486efa2aebe666ccb / 35832860696`仍保留为历史接受身份。
-- 当前 repository schema=`V55`，仅表示已合并代码及隔离 PostgreSQL/CI 的迁移事实，不推断生产 schema；历史 migration 与接受身份保持不变。
+- 当前 repository schema=`V58`，仅表示已合并代码及隔离 PostgreSQL/CI 的迁移事实，不推断生产 schema；历史 migration 与接受身份保持不变。
 - P2 ordinary concurrent INSERT loser、P3 wildcard-import residual均为`OPEN / NON_BLOCKING`；不以L4 P0/P1=0宣称全部问题清零。其他历史非阻断残余不在本次重评，原记录保留于[pre-B0 evidence](../audit/evidence/GATEAUDIT_PHASE6_PRE_B0_CI_SAFETY_CURRENT_AUTHORITY_REMEDIATION.md)。
 - P1-1/PB1=`RETIRED_COMPATIBILITY_ONLY`，PB2=`DORMANT_NO_CURRENT_ENTRYPOINT`；14个历史inactive scenario与其他future obligations不计PASS。仅在路径重新canonical时重新评估reachability，不为覆盖率复活入口，详见[B6 aggregate evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_B6_AGGREGATE_QUALIFICATION_ACCEPTANCE.md)。
 - Phase7-F post-tag authority sync 已将 GateAUDIT 冻结；其最后一个 immutable technical accepted pair 为 pre-tag refresh `c91f26487caf92f963fab36486efa2aebe666ccb / 35832860696`，freeze commit `a4cf8516382b47112852fc3f8dd9e5a65a80f993` 不伪装成新 technical pair。GateZ-1 与公开行情回放切片均已合并并通过各自合并后 `dev` exact-head CI；LIVE=`DISABLED`、kill switch=`ENGAGED`，未发生真实交易或生产部署。
