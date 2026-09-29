@@ -15,7 +15,7 @@
 
 ## Authority Map
 
-当前 V1 主链、事实归属及产品包见已接受的 [NQ V1 产品收敛计划](NQ_V1_CLOSURE_PLAN.md)；它不代表 C1 已实现或 V1 产品已发布。
+当前 V1 主链、事实归属及产品包见已接受的 [NQ V1 产品收敛计划](NQ_V1_CLOSURE_PLAN.md)；它不代表首个实现任务已完成或 V1 产品已发布。
 
 | 职责 | 文件 | 是否决定 current Gate |
 | --- | --- | --- |
