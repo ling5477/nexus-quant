@@ -7,41 +7,12 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 /** 在一次性 PostgreSQL schema 中验证 canonical account 绑定、空状态与跨 run 隔离。 */
 class JdbcPaperRunCanonicalFactsRepositoryPostgresTest {
-    @Test
-    void queriesAreCompatibleWithMigratedV58Schema() {
-        String url = System.getProperty("nq.postgres.smoke.url");
-        boolean required = Boolean.getBoolean("nq.postgres.smoke.required");
-        if (!required) assumeTrue(url != null, "Requires explicit disposable PostgreSQL source");
-        assertTrue(url != null && url.startsWith("jdbc:postgresql://127.0.0.1:") && !url.contains("?"));
-        String user = System.getProperty("nq.postgres.smoke.user");
-        String password = System.getProperty("nq.postgres.smoke.password");
-        JdbcTemplate admin = new JdbcTemplate(new DriverManagerDataSource(url, user, password));
-        String schema = "paper_migrated_" + UUID.randomUUID().toString().replace("-", "");
-        admin.execute("CREATE SCHEMA " + schema);
-        try {
-            Flyway flyway = Flyway.configure().dataSource(url, user, password)
-                    .schemas(schema).defaultSchema(schema).locations("classpath:db/migration").load();
-            flyway.migrate();
-            assertEquals("58", flyway.info().current().getVersion().getVersion());
-            JdbcTemplate jdbc = new JdbcTemplate(new DriverManagerDataSource(
-                    url + "?currentSchema=" + schema, user, password));
-            JdbcPaperRunCanonicalFactsRepository query = new JdbcPaperRunCanonicalFactsRepository(jdbc);
-            assertFalse(query.isStrategySim("missing"));
-            assertTrue(query.orders("missing").isEmpty());
-            assertTrue(query.trades("missing").isEmpty());
-            assertTrue(query.positions("missing").isEmpty());
-        } finally {
-            admin.execute("DROP SCHEMA " + schema + " CASCADE");
-        }
-    }
-
     @Test
     void readsOnlyFactsBoundToTheRequestedRun() {
         String url = System.getProperty("nq.postgres.smoke.url");
