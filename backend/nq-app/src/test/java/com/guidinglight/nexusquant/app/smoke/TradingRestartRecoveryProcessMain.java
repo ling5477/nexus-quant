@@ -7,6 +7,8 @@ import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;
 import com.guidinglight.nexusquant.adapter.okx.http.OkxHttpClient;
 import com.guidinglight.nexusquant.adapter.okx.marketdata.OkxInstrumentsCache;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
+import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.domain.port.SimAccountIdentityBridge;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
@@ -256,6 +258,8 @@ public final class TradingRestartRecoveryProcessMain {
 
     record RuntimeAccess(
             JdbcTemplate jdbc,
+            ExchangeAccountRepository accounts,
+            SimAccountIdentityBridge accountBridge,
             OrderCommandService orders,
             OkxRestReconcileService reconcile,
             TradeRepository tradeRepository,
@@ -264,6 +268,8 @@ public final class TradingRestartRecoveryProcessMain {
         static RuntimeAccess from(ConfigurableApplicationContext context) {
             return new RuntimeAccess(
                     context.getBean(JdbcTemplate.class),
+                    context.getBean(ExchangeAccountRepository.class),
+                    context.getBean(SimAccountIdentityBridge.class),
                     context.getBean(OrderCommandService.class),
                     context.getBean(OkxRestReconcileService.class),
                     context.getBean(TradeRepository.class),
@@ -273,11 +279,10 @@ public final class TradingRestartRecoveryProcessMain {
 
         Scenario placeOrder(String accountCode) {
             String traceId = "trc-" + accountCode;
-            Long accountId = jdbc.queryForObject(
-                    "INSERT INTO accounts(account_code,venue,status) VALUES(?,'OKX','ACTIVE') RETURNING account_id",
-                    Long.class,
-                    accountCode
-            );
+            // 原场景是隔离的 SIM 恢复；使用正式账户创建与桥接合同，不能依赖缺失绑定的旧账户。
+            Long ownerId = jdbc.queryForObject("SELECT id FROM users WHERE username='system-migrated'", Long.class);
+            var exchangeAccount = accounts.create(ownerId, "OKX", "SIM", accountCode, null, TEST_CLOCK.instant());
+            Long accountId = accountBridge.resolveOrCreateSim(exchangeAccount, traceId, TEST_CLOCK.instant());
             int killUpdated = jdbc.update(
                     "UPDATE kill_switch_states SET status='DISENGAGED',version=version+1,"
                             + "reason_code='F002_TEST',source='TEST_PROCESS',updated_at=CURRENT_TIMESTAMP-INTERVAL '1 second',"
@@ -303,13 +308,18 @@ public final class TradingRestartRecoveryProcessMain {
                     traceId
             ));
             require(result.status() == OrderStatus.ACCEPTED, "restart test order not accepted");
+            require(count("SELECT count(*) FROM orders o JOIN exchange_accounts e ON e.legacy_account_id=o.account_id "
+                    + "WHERE o.order_id=? AND e.exchange_account_id=? AND e.trade_env='SIM' AND o.trade_env='SIM'",
+                    result.orderId(), exchangeAccount.exchangeAccountId()) == 1, "restart account environment binding mismatch");
             return new Scenario(result.orderId(), accountId, traceId);
         }
 
         Scenario findScenario(String accountCode) {
             return jdbc.queryForObject(
-                    "SELECT o.order_id,o.account_id,o.trace_id FROM orders o JOIN accounts a ON a.account_id=o.account_id "
-                            + "WHERE a.account_code=? ORDER BY o.created_at DESC LIMIT 1",
+                    "SELECT o.order_id,o.account_id,o.trace_id FROM orders o "
+                            + "JOIN exchange_accounts a ON a.legacy_account_id=o.account_id "
+                            + "WHERE a.account_alias=? AND a.trade_env='SIM' AND o.trade_env='SIM' "
+                            + "ORDER BY o.created_at DESC LIMIT 1",
                     (rs, ignored) -> new Scenario(rs.getString(1), rs.getLong(2), rs.getString(3)),
                     accountCode
             );
