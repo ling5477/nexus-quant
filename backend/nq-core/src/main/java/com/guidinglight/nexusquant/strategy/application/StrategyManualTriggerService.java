@@ -14,6 +14,7 @@ import com.guidinglight.nexusquant.strategy.domain.port.StrategyDefinitionReposi
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionGateway;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyExecutionResult;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunRepository;
+import com.guidinglight.nexusquant.account.domain.port.AccountTradeEnvironmentAuthority;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -32,11 +33,13 @@ public class StrategyManualTriggerService {
     private final StrategyRunRepository strategyRunRepository;
     private final StrategyExecutionGateway strategyExecutionGateway;
     private final Clock clock;
+    private final AccountTradeEnvironmentAuthority accountEnvironment;
 
     public StrategyManualTriggerService(
             StrategyDefinitionRepository strategyDefinitionRepository,
             StrategyRunRepository strategyRunRepository,
-            StrategyExecutionGateway strategyExecutionGateway
+            StrategyExecutionGateway strategyExecutionGateway,
+            AccountTradeEnvironmentAuthority accountEnvironment
     ) {
         this.strategyDefinitionRepository = Objects.requireNonNull(
                 strategyDefinitionRepository,
@@ -48,6 +51,7 @@ public class StrategyManualTriggerService {
                 "strategyExecutionGateway must not be null"
         );
         this.clock = Clock.systemUTC();
+        this.accountEnvironment = Objects.requireNonNull(accountEnvironment);
     }
 
     public StrategyManualTriggerResult trigger(StrategyManualTriggerRequest request) {
@@ -57,6 +61,7 @@ public class StrategyManualTriggerService {
                     .orElseThrow(() -> new IllegalArgumentException("strategy definition not found: " + request.strategyId()))
                 : request.definitionSnapshot();
         if (!definition.strategyId().equals(request.strategyId())) throw new IllegalArgumentException("definition identity mismatch");
+        accountEnvironment.requireMatching(definition.accountId(), definition.exchangeCode(), definition.tradeEnv());
         if (!definition.enabled()) {
             throw new IllegalStateException("strategy definition is disabled: " + request.strategyId());
         }
@@ -135,5 +140,4 @@ public class StrategyManualTriggerService {
         return value.trim();
     }
 }
-
 

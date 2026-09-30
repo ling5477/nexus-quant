@@ -150,6 +150,22 @@ class TradingVerificationControllerLocalTest {
     }
 
     @Test
+    void shouldRejectUnbridgedAccountBeforePlaceOrderService() throws Exception {
+        mockExchangeAccount(1001L, null);
+        OrderSubmitRequest request = new OrderSubmitRequest(1001L, null, "OKX", "coid-unbridged",
+                "BTC-USDT", OrderSide.BUY, OrderType.MARKET, null, new BigDecimal("0.002"));
+        mockMvc.perform(post("/api/trading/orders")
+                        .header(TraceIdContext.TRACE_ID_HEADER, "trc-unbridged")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("ACCOUNT_TRADE_ENVIRONMENT_UNAVAILABLE"))
+                .andExpect(jsonPath("$.message").value("ACCOUNT_TRADE_ENVIRONMENT_UNAVAILABLE"));
+        verify(orderCommandService, never()).placeOrder(any());
+    }
+
+    @Test
     void shouldTriggerCancelOrderThroughService() throws Exception {
         mockExchangeAccount(1001L, 1001L);
         when(orderCommandService.cancelOrder(any())).thenReturn(new CancelOrderResult("ord-1", OrderStatus.CANCELLED, false));
@@ -495,4 +511,3 @@ class TradingVerificationControllerLocalTest {
         )));
     }
 }
-

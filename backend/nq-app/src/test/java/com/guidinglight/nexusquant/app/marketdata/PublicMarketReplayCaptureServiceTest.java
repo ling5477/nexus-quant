@@ -3,6 +3,8 @@ package com.guidinglight.nexusquant.app.marketdata;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,6 +19,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class PublicMarketReplayCaptureServiceTest {
     private static final Instant START = Instant.parse("2026-09-20T00:00:00Z");
@@ -36,6 +42,22 @@ class PublicMarketReplayCaptureServiceTest {
             Clock.fixed(OBSERVED, ZoneOffset.UTC));
 
     @Test
+    void captureUsesCanonicalUsernameAndFailsClosedWithoutAnActor() {
+        var auth = mock(GatewayAuthFacade.class);
+        var capture = mock(PublicMarketReplayCaptureService.class);
+        var controller = new PublicMarketReplayCaptureController(capture, auth);
+        var request = new PublicMarketReplayCaptureController.CaptureRequest(START, END);
+        when(auth.currentUser()).thenReturn(Optional.empty());
+        assertEquals("PUBLIC_CAPTURE_ACTOR_UNAVAILABLE", assertThrows(IllegalStateException.class,
+                () -> controller.capture(request)).getMessage());
+
+        when(auth.currentUser()).thenReturn(Optional.of(new TokenClaims("user-2", "c1-admin",
+                List.of("ADMIN"), START, END, "test", "redacted-id")));
+        controller.capture(request);
+        verify(capture).capture(START, END, "c1-admin");
+    }
+
+    @Test
     void manualProfileWiresCaptureApiWithExplicitOutboundFlag() {
         try (var context = new AnnotationConfigApplicationContext()) {
             context.setEnvironment(new MockEnvironment()
@@ -44,6 +66,7 @@ class PublicMarketReplayCaptureServiceTest {
             context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
             context.registerBean(JdbcTemplate.class, () -> mock(JdbcTemplate.class));
             context.registerBean(TransactionTemplate.class, () -> mock(TransactionTemplate.class));
+            context.registerBean(GatewayAuthFacade.class, () -> mock(GatewayAuthFacade.class));
             context.register(PublicMarketReplayCaptureService.class,
                     PublicMarketReplayCaptureController.class);
             context.refresh();

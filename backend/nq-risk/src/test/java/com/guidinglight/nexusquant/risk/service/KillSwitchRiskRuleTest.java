@@ -6,6 +6,10 @@ import com.guidinglight.nexusquant.risk.application.rule.KillSwitchRiskRule;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchState;
 import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.application.config.PreTradeRiskSettings;
+import com.guidinglight.nexusquant.risk.application.rule.MinNotionalRule;
+import com.guidinglight.nexusquant.risk.application.rule.RiskRuleRegistry;
+import com.guidinglight.nexusquant.risk.model.TradeEnvironment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,6 +23,10 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,21 +36,44 @@ class KillSwitchRiskRuleTest {
     private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
 
     @Test
-    void engagedUnknownMissingAndRepositoryFailureReject() {
-        assertRejected(rule(repository(state(KillSwitchStatus.ENGAGED))));
-        assertRejected(rule(repository(null)));
-        assertRejected(rule(new FailingRepository()));
+    void explicitSimContinuesOnlyWhenKillIsEngagedOrDisengaged() {
+        assertTrue(rule(repository(state(KillSwitchStatus.ENGAGED)))
+                .evaluate(context(TradeEnvironment.SIM)).isEmpty());
+        assertTrue(rule(repository(state(KillSwitchStatus.DISENGAGED)))
+                .evaluate(context(TradeEnvironment.SIM)).isEmpty());
     }
 
     @Test
-    void disengagedOnlyPassesThisRuleWithoutAuthorizingTrading() {
-        KillSwitchRiskRule rule = rule(repository(state(KillSwitchStatus.DISENGAGED)));
-
-        assertTrue(rule.evaluate(context()).isEmpty());
+    void simStillFailsAnotherCanonicalRiskRule() {
+        var settings = new PreTradeRiskSettings(true, Set.of(), Map.of(), 8, 8,
+                new BigDecimal("20"), new BigDecimal("1000000"), Duration.ofMinutes(5),
+                Duration.ofSeconds(1), 5);
+        var gate = new PreTradeRiskService(new RiskRuleRegistry(List.of(
+                rule(repository(state(KillSwitchStatus.ENGAGED))), new MinNotionalRule(settings))));
+        var result = gate.evaluate(context(TradeEnvironment.SIM));
+        assertEquals(RiskDecision.REJECT, result.decision());
+        assertEquals("MIN_NOTIONAL_NOT_MET", result.ruleCode());
     }
 
-    private static void assertRejected(KillSwitchRiskRule rule) {
-        var result = rule.evaluate(context()).orElseThrow();
+    @Test
+    void liveEngagedAndUnknownEnvironmentRejectWhileLiveDisengagedContinues() {
+        var engaged = rule(repository(state(KillSwitchStatus.ENGAGED)));
+        assertRejected(engaged, TradeEnvironment.LIVE);
+        assertRejected(engaged, TradeEnvironment.UNKNOWN);
+        assertRejected(engaged, null);
+        assertTrue(rule(repository(state(KillSwitchStatus.DISENGAGED)))
+                .evaluate(context(TradeEnvironment.LIVE)).isEmpty());
+        assertRejected(rule(repository(state(KillSwitchStatus.DISENGAGED))), TradeEnvironment.UNKNOWN);
+    }
+
+    @Test
+    void missingAndRepositoryFailureRejectEvenForSim() {
+        assertRejected(rule(repository(null)), TradeEnvironment.SIM);
+        assertRejected(rule(new FailingRepository()), TradeEnvironment.SIM);
+    }
+
+    private static void assertRejected(KillSwitchRiskRule rule, TradeEnvironment environment) {
+        var result = rule.evaluate(context(environment)).orElseThrow();
         assertEquals(RiskDecision.REJECT, result.decision());
         assertEquals("KILL_SWITCH_TRIGGERED", result.ruleCode());
         assertTrue(result.hardReject());
@@ -80,7 +111,7 @@ class KillSwitchRiskRuleTest {
         );
     }
 
-    private static RiskContext context() {
+    private static RiskContext context(TradeEnvironment environment) {
         return new RiskContext(
                 new PlaceOrderCommand(
                         "order-kill-switch",
@@ -100,7 +131,8 @@ class KillSwitchRiskRuleTest {
                         "trace-kill-switch"
                 ),
                 NOW,
-                "trace-kill-switch"
+                "trace-kill-switch",
+                environment
         );
     }
 

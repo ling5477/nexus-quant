@@ -469,8 +469,8 @@ class TradingRestartRecoveryPostgresIntegrationTest {
                         connection,
                         "SELECT COUNT(*) FROM trades trade "
                                 + "JOIN orders local_order ON local_order.order_id=trade.order_id "
-                                + "JOIN accounts account ON account.account_id=local_order.account_id "
-                                + "WHERE account.account_code=?",
+                                + "JOIN exchange_accounts account ON account.legacy_account_id=local_order.account_id "
+                                + "WHERE account.account_alias=? AND account.trade_env='SIM' AND local_order.trade_env='SIM'",
                         accountCode
                 );
             }

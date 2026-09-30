@@ -206,7 +206,7 @@ class ApiErrorIdentityContractTest {
     private static OrderCommandWriteService service(OrderRepository repository, EventPublisherPort events) {
         return new OrderCommandWriteService(repository, new InMemoryOrderStateMachine(), mock(RiskGate.class),
                 mock(AuditLogRepository.class), mock(RiskEventRepository.class), events,
-                mock(OrdinaryPlaceAuthorityRepository.class));
+                mock(OrdinaryPlaceAuthorityRepository.class), (accountId, venue) -> "SIM");
     }
 
     private static CancelOrderRequest request() {

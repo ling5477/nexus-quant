@@ -89,7 +89,27 @@ final class B0Fixture implements AutoCloseable {
                 seed.setString(2, success ? "DISENGAGED" : "ENGAGED");
                 seed.executeUpdate();
             }
-            statement.execute("INSERT INTO accounts(account_code,venue,status) VALUES('b0-account','OKX','ACTIVE')");
+            // 真实命令按账户桥接解析环境；测试账户也必须遵守 V58 的正式身份约束。
+            statement.execute("""
+                    DO $$
+                    DECLARE
+                        environment text;
+                        exchange_id bigint;
+                        account_id bigint;
+                    BEGIN
+                        FOREACH environment IN ARRAY ARRAY['SIM', 'LIVE'] LOOP
+                            INSERT INTO exchange_accounts(owner_user_id, exchange_code, trade_env, account_alias, status)
+                            VALUES ((SELECT id FROM users WHERE username='system-migrated'),
+                                    'OKX', environment, 'b0-' || lower(environment), 'ACTIVE')
+                            RETURNING exchange_account_id INTO exchange_id;
+                            INSERT INTO accounts(account_code, venue, status)
+                            VALUES ('nq-okx-' || lower(environment) || '-' || exchange_id, 'OKX', 'ACTIVE')
+                            RETURNING accounts.account_id INTO account_id;
+                            UPDATE exchange_accounts SET legacy_account_id=account_id
+                            WHERE exchange_account_id=exchange_id;
+                        END LOOP;
+                    END $$
+                    """);
             if (success) {
                 require(statement.executeUpdate("UPDATE kill_switch_states SET status='DISENGAGED',version=version+1,"
                         + "reason_code='B0_INITIAL_FIXTURE',source='TEST_BOOTSTRAP',updated_by='B0',"

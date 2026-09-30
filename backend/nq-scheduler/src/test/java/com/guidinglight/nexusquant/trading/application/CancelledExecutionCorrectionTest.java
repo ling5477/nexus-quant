@@ -25,7 +25,7 @@ class CancelledExecutionCorrectionTest {
     private final EventPublisherPort events = mock(EventPublisherPort.class);
     private final OrderCommandWriteService service = new OrderCommandWriteService(orders,
             new InMemoryOrderStateMachine(), mock(RiskGate.class), audit, mock(RiskEventRepository.class), events,
-            mock(OrdinaryPlaceAuthorityRepository.class));
+            mock(OrdinaryPlaceAuthorityRepository.class), (accountId, venue) -> "SIM");
     private final OrderRecord cancelled = new OrderRecord("o", 1L, null, "OKX", "BTC-USDT", "c", "BUY", "LIMIT",
             new BigDecimal("100"), new BigDecimal("10"), "ext", OrderStatus.CANCELLED, "cancel", "trace");
 

@@ -6,12 +6,14 @@ import com.guidinglight.nexusquant.risk.domain.model.KillSwitchSnapshot;
 import com.guidinglight.nexusquant.contracts.model.RiskSeverity;
 import com.guidinglight.nexusquant.risk.model.RiskContext;
 import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
+import com.guidinglight.nexusquant.risk.model.TradeEnvironment;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
 
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * KillSwitchRiskRule 在系统或账户处于紧急停止态时直接拒绝下单。
+ * KillSwitchRiskRule 阻断 LIVE 下单；明确的 SIM 环境可在 ENGAGED 时继续接受其他风控。
  */
 public class KillSwitchRiskRule implements RiskRule {
 
@@ -42,7 +44,11 @@ public class KillSwitchRiskRule implements RiskRule {
     public Optional<RiskDecisionResult> evaluate(RiskContext context) {
         Objects.requireNonNull(context, "context must not be null");
         KillSwitchSnapshot snapshot = killSwitchService.snapshot();
-        if (!snapshot.blocksOperations()) {
+        if (context.tradeEnvironment() != null
+                && context.tradeEnvironment() != TradeEnvironment.UNKNOWN
+                && (!snapshot.blocksOperations()
+                || (context.tradeEnvironment() == TradeEnvironment.SIM
+                && snapshot.status() == KillSwitchStatus.ENGAGED))) {
             return Optional.empty();
         }
         return Optional.of(RiskDecisionResult.reject(

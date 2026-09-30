@@ -9,6 +9,11 @@ import java.time.Instant;
 public record RiskContext(
         PlaceOrderCommand command,
         Instant now,
-        String traceId
+        String traceId,
+        TradeEnvironment tradeEnvironment
 ) {
+    /** 旧的无环境调用按未知环境处理，绝不推断为 SIM。 */
+    public RiskContext(PlaceOrderCommand command, Instant now, String traceId) {
+        this(command, now, traceId, TradeEnvironment.UNKNOWN);
+    }
 }

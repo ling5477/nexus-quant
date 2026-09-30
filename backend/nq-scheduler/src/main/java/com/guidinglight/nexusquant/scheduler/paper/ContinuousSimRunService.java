@@ -168,6 +168,16 @@ public class ContinuousSimRunService {
                 throw new IllegalStateException("BACKFILL_LIMIT_EXCEEDED");
             }
             for (int count = 0; count < 24; count++) {
+                if (!lastProcessed.isBefore(bars.getLast().openTime())) {
+                    // 无新窗口时仍收敛旧执行；未终态只等待正式撮合，不能立即重试创建下一 run。
+                    try {
+                        sim.advanceContinuous(runId, bars, lastProcessed,
+                                observation.rule(), observation.quote());
+                    } catch (IllegalStateException pending) {
+                        if (!"SIM_PREVIOUS_EXECUTION_PENDING".equals(pending.getMessage())) throw pending;
+                    }
+                    break;
+                }
                 var decision = sim.advanceContinuous(runId, bars, lastProcessed,
                         observation.rule(), observation.quote());
                 if (decision == null) break;

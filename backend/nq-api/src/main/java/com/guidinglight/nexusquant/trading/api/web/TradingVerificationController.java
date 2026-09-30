@@ -13,6 +13,7 @@ import com.guidinglight.nexusquant.trading.api.dto.RecoveryRunOnceRequest;
 import com.guidinglight.nexusquant.trading.api.dto.TradeView;
 
 import com.guidinglight.nexusquant.account.application.service.ExchangeAccountQueryService;
+import com.guidinglight.nexusquant.account.domain.AccountTradeEnvironmentException;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
@@ -263,6 +264,9 @@ public class TradingVerificationController {
     public OperationTriggerResponse placeOrder(@Valid @RequestBody OrderSubmitRequest request) {
         String traceId = TraceIdContext.getOrCreate();
         ExchangeAccountSummary account = requireLiveDisabledMutatingAccount(request.accountId(), "placeOrder");
+        if (account.legacyAccountId() == null) {
+            throw new AccountTradeEnvironmentException("ACCOUNT_TRADE_ENVIRONMENT_UNAVAILABLE");
+        }
         Long tradingAccountId = resolveTradingAccountId(account);
         PlaceOrderResult result = orderCommandService.placeOrder(new PlaceOrderRequest(
                 buildRequestId("place", request.clientOrderId()),
@@ -278,7 +282,9 @@ public class TradingVerificationController {
                 request.price(),
                 request.quantity(),
                 defaultTimeInForce(request.orderType()),
-                traceId
+                traceId,
+                account.tradeEnv(),
+                null
         ));
         return new OperationTriggerResponse(
                 "placeOrder",

@@ -15,6 +15,20 @@ export interface MarketdataBar {
     qualityStatus?: string | null;
 }
 
+export interface PublicMarketCapture {
+    datasetId: string;
+    venue: 'OKX';
+    marketType: 'SPOT';
+    instrument: 'BTC-USDT';
+    interval: '1h';
+    start: string;
+    end: string;
+    barCount: number;
+    observedAt: string;
+    consumedSha256: string;
+    ruleSha256: string;
+}
+
 export interface MarketdataBarsQuery {
     exchangeCode: string;
     marketType: string;

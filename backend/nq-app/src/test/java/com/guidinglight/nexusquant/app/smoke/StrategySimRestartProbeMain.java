@@ -1,15 +1,24 @@
 package com.guidinglight.nexusquant.app.smoke;
 
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
+import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
+import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperTradingRunService;
+import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRepository;
+import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRunService;
 import com.guidinglight.nexusquant.scheduler.paper.PaperMatchingService;
 import com.guidinglight.nexusquant.scheduler.paper.StrategySimRunService;
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.Map;
+import java.util.List;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/** 两个独立 JVM 使用同一隔离 schema，验证已提交订单的决策关联恢复。 */
+/** 独立 JVM 使用同一隔离 schema，验证决策关联与连续 SIM 游标后的执行收敛。 */
 public final class StrategySimRestartProbeMain {
     private StrategySimRestartProbeMain() { }
 
@@ -76,6 +85,31 @@ public final class StrategySimRestartProbeMain {
                     throw new AssertionError("second process duplicated or missed canonical facts");
                 }
                 System.out.println("STRATEGY_SIM_RESTART_B " + recovered.orderId());
+            } else if ("C".equals(mode)) {
+                ContinuousSimRepository progress = context.getBean(ContinuousSimRepository.class);
+                var previous = progress.recentBars(paperRunId);
+                HistoricalBar last = previous.getLast();
+                var nextOpen = last.openTime().plus(Duration.ofHours(1));
+                var nextClose = nextOpen.plus(Duration.ofHours(1)).minusMillis(1);
+                var serverTime = nextClose.plusSeconds(61);
+                BigDecimal price = new BigDecimal("90");
+                HistoricalBar next = new HistoricalBar(last.exchangeCode(), last.marketType(),
+                        last.symbol(), last.interval(), nextOpen, nextClose, price, price, price,
+                        price, BigDecimal.ONE, null, null, "OK", "{}", serverTime);
+                ClosedBarMarketFeed feed = (firstOpen, maximumBars) -> new ClosedBarMarketFeed.Observation(
+                        serverTime, serverTime, List.of(previous.get(previous.size() - 2), last, next)
+                        .stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList(),
+                        new ClosedBarMarketFeed.Rule(serverTime, "LIVE", new BigDecimal("0.01"),
+                                new BigDecimal("0.0001"), new BigDecimal("0.0001")),
+                        new ClosedBarMarketFeed.Quote(serverTime.plusSeconds(1), price));
+                ContinuousSimRunService driver = new ContinuousSimRunService(progress, sim,
+                        context.getBean(PaperTradingRunService.class), feed, jdbc,
+                        Clock.fixed(serverTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+                var status = driver.pollOnce(paperRunId);
+                if (!nextOpen.equals(status.lastProcessedBar()) || !"RUNNING".equals(status.status())) {
+                    throw new AssertionError("continuous restart failed: " + status);
+                }
+                System.out.println("STRATEGY_SIM_RESTART_C " + nextOpen);
             } else {
                 throw new IllegalArgumentException("unknown restart mode");
             }

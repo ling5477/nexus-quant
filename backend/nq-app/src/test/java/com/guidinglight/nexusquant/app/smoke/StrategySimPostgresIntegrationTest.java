@@ -203,12 +203,15 @@ class StrategySimPostgresIntegrationTest {
     @Test
     void continuousClosedBarPersistsCursorAndRecoversLostAcknowledgmentWithoutDuplicateFacts() throws Exception {
         Fixture fixture = seedPublicHourly();
+        // 隔离 schema 中保持真实默认 kill 语义，证明 Continuous SIM 无需解除全局开关。
         jdbc.update("""
-                UPDATE kill_switch_states SET status='DISENGAGED', version=version+1,
+                UPDATE kill_switch_states SET status='ENGAGED', version=version+1,
                     reason_code='SYNTHETIC_TEST_ONLY', source='STRATEGY_SIM_TEST',
                     updated_at=now(), updated_by='test', trace_id='continuous-sim-test'
                 WHERE scope='GLOBAL_TRADING'
                 """);
+        assertEquals("ENGAGED", jdbc.queryForObject(
+                "SELECT status FROM kill_switch_states WHERE scope='GLOBAL_TRADING'", String.class));
         Instant firstTime = Instant.parse("2026-09-25T06:01:00Z");
         HistoricalBar firstNew = availableAt(hourBar(5, "105"), firstTime.toString());
         AtomicReference<ClosedBarMarketFeed.Observation> current = new AtomicReference<>(
@@ -259,11 +262,30 @@ class StrategySimPostgresIntegrationTest {
                     "SELECT count(*) FROM strategy_sim_decisions WHERE paper_run_id=?",
                     Integer.class, runId));
             assertEquals(1, sim.facts(runId).orders().size());
+            String simOrderId = sim.facts(runId).orders().getFirst().get("order_id").toString();
+            assertEquals("SIM", jdbc.queryForObject("SELECT trade_env FROM orders WHERE order_id=?",
+                    String.class, simOrderId));
+            assertEquals("ALLOW", jdbc.queryForObject(
+                    "SELECT decision FROM risk_events WHERE scope='ORDER' AND scope_id=?",
+                    String.class, simOrderId));
+            assertEquals("RISK_RULES_PASSED", jdbc.queryForObject(
+                    "SELECT reason FROM risk_events WHERE scope='ORDER' AND scope_id=?",
+                    String.class, simOrderId));
             assertEquals(0, new BigDecimal("105").compareTo(sim.facts(runId).markPrice()));
             // 撮合器会同时处理同一隔离 schema 中其他测试留下的订单；只按本 run 断言经济事实。
             matching.matchOnce(100);
             assertEquals(1, sim.facts(runId).trades().size());
             int ledgerBefore = sim.facts(runId).ledgerEntries().size();
+            String priorStrategyRun = sim.decisions(runId).getFirst().strategyRunId();
+            assertEquals("RUNNING", strategyRunStatus(priorStrategyRun));
+            ContinuousSimRunService sameWindowRestarted = new ContinuousSimRunService(continuousProgress,
+                    sim, runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(3), java.time.ZoneOffset.UTC));
+            assertEquals("RUNNING", sameWindowRestarted.pollOnce(runId).status());
+            assertEquals(firstNew.openTime(), sameWindowRestarted.status(runId).lastProcessedBar());
+            assertEquals("SUCCEEDED", strategyRunStatus(priorStrategyRun));
+            assertEquals(1, sim.facts(runId).orders().size());
+            assertEquals(1, sim.facts(runId).trades().size());
+            assertEquals(ledgerBefore, sim.facts(runId).ledgerEntries().size());
             // 模拟经济事实已提交、游标确认丢失；重建 driver 后必须认领既有决策。
             jdbc.update("UPDATE continuous_sim_runs SET last_processed_open_time=?,last_processed_close_time=?,"
                     + "last_processed_sha256=? WHERE paper_run_id=?",
@@ -288,6 +310,233 @@ class StrategySimPostgresIntegrationTest {
         } finally {
             schedulerObservation.set(null);
         }
+    }
+
+    @Test
+    void continuousRestartSettlesFilledCursorWindowBeforeNextBarAndKeepsRunsIsolated() throws Exception {
+        Fixture fixture = seedPublicHourly();
+        Instant firstTime = Instant.parse("2026-09-25T06:01:00Z");
+        HistoricalBar firstNew = availableAt(hourBar(5, "105"), firstTime.toString());
+        ClosedBarMarketFeed feed = (firstOpen, maximumBars) -> observation(firstTime,
+                firstTime.plusSeconds(1), List.of(hourBar(3, "103"), hourBar(4, "104"), firstNew)
+                .stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList());
+        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        String runA = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
+        String runB = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
+        var firstA = driver.pollOnce(runA);
+        var firstB = driver.pollOnce(runB);
+        assertEquals("RUNNING", firstA.status());
+        assertEquals("RUNNING", firstB.status());
+        assertEquals(firstNew.openTime(), firstA.lastProcessedBar());
+        assertEquals(firstNew.openTime(), firstB.lastProcessedBar());
+        matching.matchOnce(100);
+        var oldA = sim.decisions(runA).getFirst();
+        var oldB = sim.decisions(runB).getFirst();
+        assertEquals("FILLED", jdbc.queryForObject("SELECT status FROM orders WHERE order_id=?",
+                String.class, oldA.orderId()));
+        assertEquals("FILLED", jdbc.queryForObject("SELECT status FROM orders WHERE order_id=?",
+                String.class, oldB.orderId()));
+        assertEquals("RUNNING", strategyRunStatus(oldA.strategyRunId()));
+        assertEquals("RUNNING", strategyRunStatus(oldB.strategyRunId()));
+        assertEquals(1, sim.facts(runA).orders().size());
+        assertEquals(1, sim.facts(runA).trades().size());
+        assertTradeAccounting(runA, 1, sim.facts(runA).ledgerEntries().size());
+        assertEquals(4L, tradeLedgerCount(oldA.orderId()));
+
+        assertEquals(hourBar(6, "90").openTime().toString(), restartProcess("C", runA));
+        assertEquals("SUCCEEDED", strategyRunStatus(oldA.strategyRunId()));
+        assertEquals("RUNNING", strategyRunStatus(oldB.strategyRunId()));
+        assertEquals(1L, orderCount(oldA.orderId()));
+        assertEquals(1L, tradeCount(oldA.orderId()));
+        assertEquals(4L, tradeLedgerCount(oldA.orderId()));
+        assertEquals(2, sim.decisions(runA).size());
+        assertEquals(2, sim.facts(runA).orders().size());
+        assertEquals(1, sim.facts(runA).trades().size());
+        assertEquals(hourBar(6, "90").openTime(), continuousProgress.get(runA).lastProcessedOpenTime());
+        assertEquals(firstNew.openTime(), continuousProgress.get(runB).lastProcessedOpenTime());
+        var nextA = sim.decisions(runA).getFirst();
+        assertEquals("ACCEPTED", nextA.status());
+        assertEquals("SELL", nextA.side());
+        assertEquals("RUNNING", strategyRunStatus(nextA.strategyRunId()));
+
+        Instant secondTime = Instant.parse("2026-09-25T07:01:01Z");
+        HistoricalBar secondNew = availableAt(hourBar(6, "90"), secondTime.toString());
+        ClosedBarMarketFeed repeatedFeed = (firstOpen, maximumBars) -> observation(secondTime,
+                secondTime.plusSeconds(1), List.of(firstNew, secondNew).stream()
+                        .filter(bar -> !bar.openTime().isBefore(firstOpen)).toList());
+        ContinuousSimRunService repeated = new ContinuousSimRunService(continuousProgress, sim,
+                runs, repeatedFeed, jdbc, Clock.fixed(secondTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        assertEquals(hourBar(6, "90").openTime(), repeated.pollOnce(runA).lastProcessedBar());
+        assertEquals(2, sim.facts(runA).orders().size());
+        assertEquals(1, sim.facts(runA).trades().size());
+        assertEquals(4L, tradeLedgerCount(oldA.orderId()));
+
+        assertEquals(hourBar(6, "90").openTime().toString(), restartProcess("C", runB));
+        assertEquals("SUCCEEDED", strategyRunStatus(oldB.strategyRunId()));
+        assertEquals(1L, orderCount(oldB.orderId()));
+        assertEquals(1L, tradeCount(oldB.orderId()));
+        assertEquals(4L, tradeLedgerCount(oldB.orderId()));
+        var nextB = sim.decisions(runB).getFirst();
+        assertEquals("ACCEPTED", nextB.status());
+        assertEquals("SELL", nextB.side());
+        matching.matchOnce(100);
+        assertEquals(1L, tradeCount(nextA.orderId()));
+        assertEquals(1L, tradeCount(nextB.orderId()));
+        assertEquals(4L, tradeLedgerCount(nextA.orderId()));
+        assertEquals(4L, tradeLedgerCount(nextB.orderId()));
+        repeated.stop(runA);
+        repeated.stop(runB);
+    }
+
+    @Test
+    void continuousCursorWindowWaitsForTerminalOrderAndRecoversDecidingIdentity() {
+        Fixture fixture = seedPublicHourly();
+        Instant firstTime = Instant.parse("2026-09-25T06:01:00Z");
+        HistoricalBar firstNew = availableAt(hourBar(5, "105"), firstTime.toString());
+        AtomicReference<ClosedBarMarketFeed.Observation> current = new AtomicReference<>(
+                observation(firstTime, firstTime.plusSeconds(1),
+                        List.of(hourBar(3, "103"), hourBar(4, "104"), firstNew)));
+        ClosedBarMarketFeed feed = (firstOpen, maximumBars) -> {
+            var observed = current.get();
+            return new ClosedBarMarketFeed.Observation(observed.serverTime(), observed.observedAt(),
+                    observed.bars().stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList(),
+                    observed.rule(), observed.quote());
+        };
+        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        String runId = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
+        assertEquals("RUNNING", driver.pollOnce(runId).status());
+        var decision = sim.decisions(runId).getFirst();
+        String originalRun = decision.strategyRunId();
+        String originalOrder = decision.orderId();
+        String originalRequest = jdbc.queryForObject(
+                "SELECT request_id FROM strategy_runs WHERE strategy_run_id=?",
+                String.class, originalRun);
+        String originalClientOrder = jdbc.queryForObject(
+                "SELECT client_order_id FROM orders WHERE order_id=?",
+                String.class, originalOrder);
+        assertEquals("RUNNING", strategyRunStatus(originalRun));
+        assertEquals("ACCEPTED", jdbc.queryForObject("SELECT status FROM orders WHERE order_id=?",
+                String.class, originalOrder));
+
+        // 仅在随机测试 schema 中模拟订单已提交而 Decision 关联尚未提交的退出点。
+        jdbc.execute("ALTER TABLE strategy_sim_decisions DISABLE TRIGGER trg_strategy_sim_preserve_decision");
+        try {
+            jdbc.update("""
+                    UPDATE strategy_sim_decisions SET status='NOT_TRADABLE',reason='DECIDING',
+                        strategy_run_id=NULL,order_id=NULL WHERE decision_id=?
+                    """, decision.decisionId());
+        } finally {
+            jdbc.execute("ALTER TABLE strategy_sim_decisions ENABLE TRIGGER trg_strategy_sim_preserve_decision");
+        }
+        Instant secondTime = Instant.parse("2026-09-25T07:01:00Z");
+        HistoricalBar secondNew = availableAt(hourBar(6, "90"), secondTime.toString());
+        current.set(observation(secondTime, secondTime.plusSeconds(1),
+                List.of(hourBar(4, "104"), firstNew, secondNew)));
+        ContinuousSimRunService restarted = new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(secondTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        var pending = restarted.pollOnce(runId);
+        assertEquals("STALLED", pending.status());
+        assertEquals("SIM_EXECUTION_BLOCKED", pending.blockReason());
+        assertEquals(firstNew.openTime(), pending.lastProcessedBar());
+        var recovered = sim.decisions(runId).getFirst();
+        assertEquals(decision.decisionId(), recovered.decisionId());
+        assertEquals(originalRun, recovered.strategyRunId());
+        assertEquals(originalOrder, recovered.orderId());
+        assertEquals(originalRequest, jdbc.queryForObject(
+                "SELECT request_id FROM strategy_runs WHERE strategy_run_id=?",
+                String.class, recovered.strategyRunId()));
+        assertEquals(originalClientOrder, jdbc.queryForObject(
+                "SELECT client_order_id FROM orders WHERE order_id=?",
+                String.class, recovered.orderId()));
+        assertEquals(1L, orderCount(originalOrder));
+        assertEquals(1, sim.decisions(runId).size());
+        assertEquals("RUNNING", strategyRunStatus(originalRun));
+
+        matching.matchOnce(100);
+        assertEquals("FILLED", jdbc.queryForObject("SELECT status FROM orders WHERE order_id=?",
+                String.class, originalOrder));
+        var progressed = restarted.pollOnce(runId);
+        assertEquals("RUNNING", progressed.status());
+        assertEquals(secondNew.openTime(), progressed.lastProcessedBar());
+        assertEquals("SUCCEEDED", strategyRunStatus(originalRun));
+        assertEquals(1L, orderCount(originalOrder));
+        assertEquals(1L, tradeCount(originalOrder));
+        assertEquals(4L, tradeLedgerCount(originalOrder));
+        matching.matchOnce(100);
+        restarted.stop(runId);
+    }
+
+    @Test
+    void continuousCursorWindowProjectsDurableRiskRejectionBeforeNextRun() {
+        Fixture fixture = seedPublicHourly();
+        Instant firstTime = Instant.parse("2026-09-25T06:01:00Z");
+        HistoricalBar firstNew = availableAt(hourBar(5, "105"), firstTime.toString());
+        AtomicReference<ClosedBarMarketFeed.Observation> current = new AtomicReference<>(
+                observation(firstTime, firstTime.plusSeconds(1),
+                        List.of(hourBar(3, "103"), hourBar(4, "104"), firstNew)));
+        ClosedBarMarketFeed feed = (firstOpen, maximumBars) -> {
+            var observed = current.get();
+            return new ClosedBarMarketFeed.Observation(observed.serverTime(), observed.observedAt(),
+                    observed.bars().stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList(),
+                    observed.rule(), observed.quote());
+        };
+        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        String runId = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
+        assertEquals("RUNNING", driver.pollOnce(runId).status());
+        var decision = sim.decisions(runId).getFirst();
+        assertEquals("RUNNING", strategyRunStatus(decision.strategyRunId()));
+        // 测试 schema 中构造已持久化的拒绝事实，验证恢复投影；生产风控入口另有专项测试。
+        jdbc.update("UPDATE orders SET status='RISK_REJECTED',reason='SYNTHETIC_TEST_REJECTION' WHERE order_id=?",
+                decision.orderId());
+        jdbc.update("""
+                INSERT INTO risk_events(risk_event_id,rule_id,scope,scope_id,decision,reason,severity,trace_id)
+                VALUES (?,?, 'ORDER',?,'REJECT','SYNTHETIC_TEST_REJECTION','HIGH',?)
+                """, "risk-" + UUID.randomUUID(), "synthetic-test", decision.orderId(),
+                "risk-" + UUID.randomUUID());
+        Instant secondTime = Instant.parse("2026-09-25T07:01:00Z");
+        HistoricalBar secondNew = availableAt(hourBar(6, "106"), secondTime.toString());
+        current.set(observation(secondTime, secondTime.plusSeconds(1),
+                List.of(hourBar(4, "104"), firstNew, secondNew)));
+        ContinuousSimRunService restarted = new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(secondTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        var progressed = restarted.pollOnce(runId);
+        assertEquals("RUNNING", progressed.status());
+        assertEquals(secondNew.openTime(), progressed.lastProcessedBar());
+        assertEquals("FAILED", strategyRunStatus(decision.strategyRunId()));
+        assertEquals(1L, orderCount(decision.orderId()));
+        assertEquals(0L, tradeCount(decision.orderId()));
+        assertEquals(0L, tradeLedgerCount(decision.orderId()));
+        assertEquals(2, sim.decisions(runId).size());
+        var next = sim.decisions(runId).getFirst();
+        assertEquals("ACCEPTED", next.status());
+        assertNotNull(next.strategyRunId());
+        assertTrue(!decision.strategyRunId().equals(next.strategyRunId()));
+        assertEquals("RUNNING", strategyRunStatus(next.strategyRunId()));
+        matching.matchOnce(100);
+        restarted.stop(runId);
+    }
+
+    private String strategyRunStatus(String strategyRunId) {
+        return jdbc.queryForObject("SELECT status FROM strategy_runs WHERE strategy_run_id=?",
+                String.class, strategyRunId);
+    }
+
+    private long orderCount(String orderId) {
+        return jdbc.queryForObject("SELECT count(*) FROM orders WHERE order_id=?", Long.class, orderId);
+    }
+
+    private long tradeCount(String orderId) {
+        return jdbc.queryForObject("SELECT count(*) FROM trades WHERE order_id=?", Long.class, orderId);
+    }
+
+    private long tradeLedgerCount(String orderId) {
+        return jdbc.queryForObject("""
+                SELECT count(*) FROM ledger_entries e JOIN trades t ON e.ref_type='TRADE'
+                  AND e.ref_id=t.trade_id WHERE t.order_id=?
+                """, Long.class, orderId);
     }
 
     @Test
@@ -1110,8 +1359,8 @@ class StrategySimPostgresIntegrationTest {
         var publish = publishing.publish(new BacktestPublishRequest(backtest.backtestRunId(),
                 "Public capture SMA publish", version.strategyVersionId()));
         assertEquals("SUCCEEDED", publish.publishStatus().name());
-        independentSchema = cloneFrozenPublicReplayInput();
-        counterfactualSchema = cloneFrozenPublicReplayInput();
+        independentSchema = cloneFrozenPublicReplayInput(publish.publishRecordId());
+        counterfactualSchema = cloneFrozenPublicReplayInput(publish.publishRecordId());
         // 隔离随机 schema 的 SIM 风控开关只为本测试短暂打开，外部运行状态不受影响。
         jdbc.update("""
                 UPDATE kill_switch_states SET status='DISENGAGED', version=version+1,
@@ -1543,7 +1792,7 @@ class StrategySimPostgresIntegrationTest {
         }
     }
 
-    private String cloneFrozenPublicReplayInput() {
+    private String cloneFrozenPublicReplayInput(String publishId) {
         String targetSchema = "strategy_sim_independent_" + UUID.randomUUID().toString().replace("-", "");
         new JdbcTemplate(admin).execute("CREATE SCHEMA " + targetSchema);
         Flyway independentFlyway = Flyway.configure().dataSource(admin).schemas(targetSchema)
@@ -1565,8 +1814,12 @@ class StrategySimPostgresIntegrationTest {
         }
         isolation.execute("SELECT setval('" + targetSchema + ".accounts_account_id_seq',"
                 + "(SELECT max(account_id) FROM " + targetSchema + ".accounts))");
+        assertEquals(jdbc.queryForObject("SELECT count(*) FROM backtest_publish_records", Integer.class),
+                isolation.queryForObject("SELECT count(*) FROM " + targetSchema
+                        + ".backtest_publish_records", Integer.class));
         assertEquals(1, isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                + ".backtest_publish_records", Integer.class));
+                        + ".backtest_publish_records WHERE publish_record_id=?",
+                Integer.class, publishId));
         assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + targetSchema
                 + ".strategy_sim_decisions", Integer.class));
         assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + targetSchema

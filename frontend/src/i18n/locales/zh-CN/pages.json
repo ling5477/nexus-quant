@@ -1,4 +1,10 @@
 {
+  "publicCaptureTitle": "OKX 公开历史行情捕获",
+  "publicCaptureDescription": "仅获取 OKX BTC-USDT 现货 1 小时已关闭 K 线和公开交易规则。按浏览器本地时间输入 1 至 100 小时的整点窗口，结束时间至少早于当前 1 小时；此操作不读取账户凭证或调用私有接口。服务端须启用 public-marketdata-manual 与公开出站开关。",
+  "publicCaptureAction": "捕获公开行情",
+  "publicCaptureSucceeded": "公开行情已捕获，Dataset 已创建",
+  "publicCaptureFailed": "公开行情捕获失败",
+  "publicCaptureWindowInvalid": "请选择 1 至 100 小时的完整已关闭整点窗口",
   "schedulerTitle": "调度任务",
   "schedulerDescription": "统一查看和控制固定后台任务。页面操作仅修改调度控制，不授予交易能力。",
   "schedulerSafetyTitle": "启用后台任务不等于 LIVE 或交易授权",

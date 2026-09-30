@@ -205,7 +205,8 @@ class PreTradeRiskServiceTest {
                         "trc-" + clientOrderId
                 ),
                 now,
-                "trc-" + clientOrderId
+                "trc-" + clientOrderId,
+                com.guidinglight.nexusquant.risk.model.TradeEnvironment.SIM
         );
     }
 }

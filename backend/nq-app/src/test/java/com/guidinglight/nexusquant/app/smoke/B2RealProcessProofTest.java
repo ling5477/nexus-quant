@@ -79,9 +79,9 @@ class B2RealProcessProofTest {
                 nq.ready(); proof.put("nqPid", nq.process.pid());
                 assertNotEquals(nq.process.pid(), venue.process.pid());
                 assertNotEquals(ProcessHandle.current().pid(), nq.process.pid());
-                assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+                assertEquals("58", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
                 assertEquals(B0Fixture.READER, value(reader, "SELECT current_user"));
-                proof.put("postgres", value(reader, "SHOW server_version")).put("schema", "V50");
+                proof.put("postgres", value(reader, "SHOW server_version")).put("schema", "V58");
                 assertTrue(proof.path("postgres").asText().startsWith("16."));
                 String place = "LIVE".equals(environment) ? "PLACE_B2_LIVE" : "PLACE_B2";
                 if (scenario == Scenario.STALE_PLACE) {

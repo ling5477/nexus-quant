@@ -107,7 +107,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/AccountModuleConfiguration.java",
-      "sha256": "def04e7009acb9d28b1174c55734d895e188aa855cd62a03fe63e9b7b052348e",
+      "sha256": "37bf0c20a2b3b4c9c09d6a052109ca1b0f89ab561560f15b17d3035c07dfecc6",
       "kind": "RETIRED_INPUT_REJECTION",
       "reason": "Retired input names occur only as deny-only keys or persisted permission expectation; old profiles/keys cannot select runtime composition.",
       "owner": "Runtime configuration owner",

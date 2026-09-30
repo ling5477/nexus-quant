@@ -299,7 +299,8 @@ class OrderCommandServiceTest {
                 auditLogRepository,
                 new NoopRiskEventRepository(),
                 new RecordingEventPublisherPort(),
-                unusedPlaceAuthority()
+                unusedPlaceAuthority(),
+                (accountId, venue) -> "SIM"
         );
         return createService(orderRepository, auditLogRepository, tradingVenueGateway, writeService);
     }
@@ -552,7 +553,8 @@ class OrderCommandServiceTest {
                     auditLogRepository,
                     riskEventRepository,
                     eventPublisherPort,
-                    unusedPlaceAuthority()
+                    unusedPlaceAuthority(),
+                    (accountId, venue) -> "SIM"
             );
         }
 

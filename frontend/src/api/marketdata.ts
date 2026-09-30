@@ -11,9 +11,14 @@ import type {
     MarketdataQualityOverviewQuery,
     MarketdataReadinessQuery,
     MarketdataReadinessSummary,
+    PublicMarketCapture,
 } from '@/types/marketdata';
 
 export const marketdataApi = {
+    async captureOkxPublicBars(start: string, end: string): Promise<PublicMarketCapture> {
+        const {data} = await apiClient.post<PublicMarketCapture>('/marketdata/public-captures', {start, end});
+        return data;
+    },
     async listBars(query: MarketdataBarsQuery): Promise<MarketdataBar[]> {
         const {data} = await apiClient.get<MarketdataBar[]>('/marketdata/bars', {
             params: query,

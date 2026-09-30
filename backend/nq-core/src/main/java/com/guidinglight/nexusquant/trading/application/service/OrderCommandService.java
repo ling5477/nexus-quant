@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.service;
 
 import com.guidinglight.nexusquant.trading.application.result.CancelOrderResult;
+import com.guidinglight.nexusquant.account.domain.AccountTradeEnvironmentException;
 
 import com.guidinglight.nexusquant.trading.application.result.PlaceOrderResult;
 
@@ -102,6 +103,7 @@ public class OrderCommandService {
      */
     public PlaceOrderResult placeOrder(PlaceOrderRequest request) {
         validateRequest(request);
+        String canonicalTradeEnv = orderCommandWriteService.requireCanonicalTradeEnvironment(request);
         if (request.strategyRunId() != null) {
             throw new IllegalArgumentException("strategy order requires durable run execution entrypoint");
         }
@@ -116,6 +118,9 @@ public class OrderCommandService {
 
         if (existingOrder.isPresent()) {
             OrderRecord order = existingOrder.get();
+            if (!canonicalTradeEnv.equals(order.tradeEnv())) {
+                throw new AccountTradeEnvironmentException("ACCOUNT_TRADE_ENVIRONMENT_MISMATCH");
+            }
             auditLogRepository.append(
                     "ORDER",
                     "PLACE_ORDER_IDEMPOTENT_HIT",
