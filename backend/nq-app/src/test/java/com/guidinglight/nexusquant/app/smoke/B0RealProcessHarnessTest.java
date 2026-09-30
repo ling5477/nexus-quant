@@ -57,7 +57,7 @@ class B0RealProcessHarnessTest {
                 try (var checker = fixture.checker()) {
                     assertIdentityAndPermissions(checker, fixture);
                     assertEquals("ENGAGED", value(checker, "SELECT status FROM kill_switch_states"));
-                    assertTrue(nq.send("PLACE").endsWith("RISK_REJECTED"));
+                    assertTrue(nq.send("PLACE_LIVE").endsWith("RISK_REJECTED"));
                     assertEquals("RISK_REJECTED", value(checker, "SELECT status FROM orders"));
                     assertEquals("REJECT", value(checker, "SELECT decision FROM risk_events WHERE trace_id='b0-trace'"));
                     assertEquals("KILL_SWITCH_TRIGGERED", value(checker, "SELECT reason FROM risk_events WHERE trace_id='b0-trace'"));
@@ -159,12 +159,16 @@ class B0RealProcessHarnessTest {
     private void assertIdentityAndPermissions(Connection connection, B0Fixture fixture) throws Exception {
         assertEquals(fixture.name(), value(connection, "SELECT current_database()"));
         assertEquals(B0Fixture.READER, value(connection, "SELECT current_user"));
-        assertEquals("50", value(connection, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+        assertEquals("58", value(connection, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+        assertEquals("2", value(connection, "SELECT count(*) FROM exchange_accounts e JOIN accounts a "
+                + "ON a.account_id=e.legacy_account_id WHERE e.exchange_code='OKX' AND e.status='ACTIVE' "
+                + "AND a.status='ACTIVE' AND a.venue='OKX' AND "
+                + "a.account_code='nq-okx-' || lower(e.trade_env) || '-' || e.exchange_account_id"));
         assertEquals("f", value(connection, "SELECT has_table_privilege('nq_b0_app','kill_switch_states','UPDATE')"));
         assertEquals("f", value(connection, "SELECT has_table_privilege('nq_b0_reader','orders','UPDATE')"));
         assertEquals("f", value(connection, "SELECT has_table_privilege('nq_b0_reader','trades','INSERT')"));
         assertEquals("f", value(connection, "SELECT has_table_privilege('nq_b0_reader','ledger_entries','INSERT')"));
-        System.out.println("B0_DB db=" + fixture.name() + " flyway=49 reader=nq_b0_reader appKillWrite=false pg="
+        System.out.println("B0_DB db=" + fixture.name() + " flyway=58 reader=nq_b0_reader appKillWrite=false pg="
                 + value(connection, "SHOW server_version"));
     }
 

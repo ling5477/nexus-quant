@@ -45,6 +45,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -251,19 +252,29 @@ public class StrategySimRunService {
                         PublicReplayAssumptionIdentity.sha256(runConfig.path("costAndRuleAssumptions"))))) {
             throw new IllegalStateException("SIM_PUBLIC_COST_IDENTITY_DRIFT");
         }
+        // 连续模式一次读取当前有界 bar 窗口的 durable 决策，避免恢复旧窗口时逐 bar 查库。
+        Map<Instant, StrategySimDecisionRepository.DecisionView> durableWindows = observedBars == null
+                ? Map.of() : decisions.listByRun(paperRunId).stream().collect(Collectors.toMap(
+                        StrategySimDecisionRepository.DecisionView::signalOpenTime, decision -> decision));
         for (int index = 0; index < bars.size(); index++) {
             HistoricalBar signalBar = bars.get(index);
-            if (afterOpenTime != null && !signalBar.openTime().isAfter(afterOpenTime)) continue;
-            var existing = decisions.findByWindow(paperRunId, signalBar.openTime());
-            if (existing.isPresent()) {
-                if ("DECIDING".equals(existing.get().reason())) {
-                    return finishAcceptedDecision(existing.get(), run, lock.accountId());
+            boolean cursorConsumed = afterOpenTime != null
+                    && !signalBar.openTime().isAfter(afterOpenTime);
+            StrategySimDecisionRepository.DecisionView decision = observedBars == null
+                    ? decisions.findByWindow(paperRunId, signalBar.openTime()).orElse(null)
+                    : durableWindows.get(signalBar.openTime());
+            if (decision != null) {
+                if ("DECIDING".equals(decision.reason())) {
+                    decision = finishAcceptedDecision(decision, run, lock.accountId());
+                    if (!cursorConsumed) return decision;
                 }
-                settleCanonicalRun(existing.get(), lock.accountId(),
+                // 游标只记录窗口已消费；旧窗口的 canonical 执行仍须先收敛。
+                settleCanonicalRun(decision, lock.accountId(),
                         "public-capture".equals(summary.path("datasetProvider").asText()));
-                if (observedBars != null) return existing.get();
+                if (observedBars != null && !cursorConsumed) return decision;
                 continue;
             }
+            if (cursorConsumed) continue;
             SpotSmaTargetStrategy.Decision signal = strategy.evaluate(bars.subList(0, index + 1));
             HistoricalBar executionBar = null;
             if (observedBars == null) {
@@ -385,7 +396,13 @@ public class StrategySimRunService {
 
     private void settleCanonicalRun(StrategySimDecisionRepository.DecisionView decision, long accountId,
             boolean requireTerminalExecution) {
-        if (decision.strategyRunId() == null || decision.orderId() == null) return;
+        if (decision.strategyRunId() == null || decision.orderId() == null) {
+            if (requireTerminalExecution && ("ACCEPTED".equals(decision.status())
+                    || "RISK_REJECTED".equals(decision.status()))) {
+                throw new IllegalStateException("SIM_CANONICAL_RUN_NOT_TERMINAL");
+            }
+            return;
+        }
         String status = jdbc.queryForObject("""
                 SELECT status FROM orders WHERE order_id=? AND account_id=? AND trade_env='SIM'
                 """, String.class, decision.orderId(), accountId);

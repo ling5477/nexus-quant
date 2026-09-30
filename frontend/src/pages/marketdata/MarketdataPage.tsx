@@ -34,6 +34,7 @@ import type {
     MarketdataSandboxCapability,
     MarketdataSandboxReadiness,
     MarketdataSandboxSourceType,
+    PublicMarketCapture,
 } from '@/types/marketdata';
 import {formatDateTime, formatNumber} from '@/utils/formatters';
 
@@ -129,6 +130,8 @@ type CreateMarketdataDatasetFormValues = Omit<CreateMarketdataDatasetRequest, 's
     startTime?: MarketdataDateValue;
     endTime?: MarketdataDateValue;
 };
+
+type PublicCaptureFormValues = {start?: MarketdataDateValue; end?: MarketdataDateValue};
 
 type MarketdataRuntimeDeepLinkValues = Partial<Pick<MarketdataBarsQuery, 'exchangeCode' | 'marketType' | 'symbol' | 'interval'>>;
 
@@ -1320,6 +1323,7 @@ export function MarketdataPage() {
     const [form] = useLocalizedForm<MarketdataBarsFormValues>();
     const [jobForm] = useLocalizedForm<CreateMarketdataIngestionJobFormValues>();
     const [datasetForm] = useLocalizedForm<CreateMarketdataDatasetFormValues>();
+    const [publicCaptureForm] = useLocalizedForm<PublicCaptureFormValues>();
     const [searchParams] = useSearchParams();
     const [messageApi, contextHolder] = message.useMessage();
     const queryClient = useQueryClient();
@@ -1328,6 +1332,7 @@ export function MarketdataPage() {
     const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
     const [pendingJobId, setPendingJobId] = useState<string | null>(null);
     const [pendingDatasetId, setPendingDatasetId] = useState<string | null>(null);
+    const [publicCapture, setPublicCapture] = useState<PublicMarketCapture | null>(null);
 
     // Chart foundation 使用 additive v2 CSS vars；页级注入不改全局 AppProviders。
     useEffect(() => {
@@ -1382,6 +1387,32 @@ export function MarketdataPage() {
         queryKey: marketdataQueryKeys.datasets(),
         queryFn: marketdataApi.listDatasets,
     });
+    const publicCaptureMutation = useMutation({
+        mutationFn: ({start, end}: {start: string; end: string}) => marketdataApi.captureOkxPublicBars(start, end),
+        onSuccess: async (capture) => {
+            setPublicCapture(capture);
+            messageApi.success(t('pages:publicCaptureSucceeded'));
+            await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.datasets()});
+        },
+        onError: (error) => showApiError(error as AppApiError, messageApi),
+    });
+
+    function submitPublicCapture(values: PublicCaptureFormValues) {
+        const start = toIsoString(values.start);
+        const end = toIsoString(values.end);
+        const startMs = Date.parse(start);
+        const endMs = Date.parse(end);
+        // 公开历史捕获只接受完整的已关闭小时窗口，避免发出必定被服务端拒绝的请求。
+        if (!Number.isFinite(startMs) || !Number.isFinite(endMs)
+            || startMs % 3_600_000 !== 0 || endMs % 3_600_000 !== 0
+            || endMs - startMs < 3_600_000 || endMs - startMs > 100 * 3_600_000
+            || endMs > Date.now() - 3_600_000) {
+            messageApi.error(t('pages:publicCaptureWindowInvalid'));
+            return;
+        }
+        setPublicCapture(null);
+        publicCaptureMutation.mutate({start, end});
+    }
     const createJobMutation = useMutation({
         mutationFn: marketdataApi.createIngestionJob,
         onSuccess: async (job) => {
@@ -2013,6 +2044,36 @@ export function MarketdataPage() {
                 ) : (
                     <Alert type="info" showIcon message={t('pages:selectOrCreateAnIngestionJobToViewRunResults')} />
                 )}
+            </Card>
+            <Card className="page-section" bordered={false} title={t('pages:publicCaptureTitle')}
+                  data-testid="public-market-capture">
+                <Typography.Paragraph>{t('pages:publicCaptureDescription')}</Typography.Paragraph>
+                <Form<PublicCaptureFormValues> form={publicCaptureForm} layout="vertical"
+                    onFinish={submitPublicCapture}>
+                    <Space align="start" size={16} wrap>
+                        <Form.Item label={t('pages:exchange')}><Select value="OKX" disabled style={{width: 130}} options={[{value: 'OKX', label: 'OKX'}]} /></Form.Item>
+                        <Form.Item label={t('pages:tradingPair')}><Select value="BTC-USDT" disabled style={{width: 150}} options={[{value: 'BTC-USDT', label: 'BTC-USDT'}]} /></Form.Item>
+                        <Form.Item label={t('pages:interval')}><Select value="1h" disabled style={{width: 100}} options={[{value: '1h', label: '1h'}]} /></Form.Item>
+                        <Form.Item label={t('pages:startTime')} name="start" rules={[{required: true, message: t('pages:selectAStartTime')}]}>
+                            <DatePicker showTime style={{width: 220}} />
+                        </Form.Item>
+                        <Form.Item label={t('pages:endTime')} name="end" rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
+                            <DatePicker showTime style={{width: 220}} />
+                        </Form.Item>
+                        <Button type="primary" loading={publicCaptureMutation.isPending}
+                            onClick={() => publicCaptureForm.submit()}>{t('pages:publicCaptureAction')}</Button>
+                    </Space>
+                </Form>
+                {publicCaptureMutation.error && <Alert type="error" showIcon
+                    message={t('pages:publicCaptureFailed')}
+                    description={formatApiError(publicCaptureMutation.error as AppApiError)} />}
+                {publicCapture && <Descriptions size="small" column={{xs: 1, sm: 2}} items={[
+                    {key: 'datasetId', label: 'datasetId', children: publicCapture.datasetId},
+                    {key: 'barCount', label: 'barCount', children: publicCapture.barCount},
+                    {key: 'observedAt', label: 'observedAt', children: publicCapture.observedAt},
+                    {key: 'consumedSha256', label: 'consumedSha256', children: publicCapture.consumedSha256},
+                    {key: 'ruleSha256', label: 'ruleSha256', children: publicCapture.ruleSha256},
+                ]} />}
             </Card>
             <Card
                 className="page-section"

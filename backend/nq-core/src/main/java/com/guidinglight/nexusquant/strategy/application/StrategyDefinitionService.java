@@ -4,6 +4,7 @@ import com.guidinglight.nexusquant.strategy.application.command.StrategyDefiniti
 
 import com.guidinglight.nexusquant.strategy.domain.StrategyDefinition;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyDefinitionRepository;
+import com.guidinglight.nexusquant.account.domain.port.AccountTradeEnvironmentAuthority;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -22,17 +23,22 @@ public class StrategyDefinitionService {
 
     private final StrategyDefinitionRepository strategyDefinitionRepository;
     private final Clock clock;
+    private final AccountTradeEnvironmentAuthority accountEnvironment;
 
-    public StrategyDefinitionService(StrategyDefinitionRepository strategyDefinitionRepository) {
+    public StrategyDefinitionService(StrategyDefinitionRepository strategyDefinitionRepository,
+            AccountTradeEnvironmentAuthority accountEnvironment) {
         this.strategyDefinitionRepository = Objects.requireNonNull(
                 strategyDefinitionRepository,
                 "strategyDefinitionRepository must not be null"
         );
         this.clock = Clock.systemUTC();
+        this.accountEnvironment = Objects.requireNonNull(accountEnvironment);
     }
 
     public StrategyDefinition create(StrategyDefinitionCreateRequest request) {
         validateCreateRequest(request);
+        String canonicalTradeEnv = accountEnvironment.requireMatching(request.accountId(),
+                request.exchangeCode().trim().toUpperCase(), request.tradeEnv());
         Instant now = Instant.now(clock);
         StrategyDefinition definition = new StrategyDefinition(
                 "str-" + UUID.randomUUID(),
@@ -41,7 +47,7 @@ public class StrategyDefinitionService {
                 request.strategyType().trim(),
                 request.exchangeCode().trim().toUpperCase(),
                 request.accountId(),
-                normalizeTradeEnv(request.tradeEnv()),
+                canonicalTradeEnv,
                 false,
                 normalizeConfigSnapshot(request.configSnapshot()),
                 1,
@@ -83,6 +89,7 @@ public class StrategyDefinitionService {
 
     public StrategyDefinition enable(String strategyId) {
         StrategyDefinition current = getByStrategyId(strategyId);
+        requireCanonicalEnvironment(current);
         if (!strategyDefinitionRepository.updateEnabled(current.strategyId(), true, Instant.now(clock))) {
             throw new IllegalStateException("failed to enable strategy definition: " + strategyId);
         }
@@ -109,6 +116,7 @@ public class StrategyDefinitionService {
      */
     public StrategyDefinition enableByStrategyCode(String strategyCode) {
         StrategyDefinition current = getByStrategyCode(strategyCode);
+        requireCanonicalEnvironment(current);
         if (!strategyDefinitionRepository.updateEnabled(current.strategyId(), true, Instant.now(clock))) {
             throw new IllegalStateException("failed to enable strategy definition: " + strategyCode);
         }
@@ -141,6 +149,10 @@ public class StrategyDefinitionService {
         normalizeTradeEnv(request.tradeEnv());
     }
 
+    private void requireCanonicalEnvironment(StrategyDefinition definition) {
+        accountEnvironment.requireMatching(definition.accountId(), definition.exchangeCode(), definition.tradeEnv());
+    }
+
     private String normalizeTradeEnv(String tradeEnv) {
         String normalized = requireText(tradeEnv, "tradeEnv").toUpperCase();
         if (!"SIM".equals(normalized) && !"LIVE".equals(normalized)) {
@@ -160,5 +172,4 @@ public class StrategyDefinitionService {
         return value.trim();
     }
 }
-
 

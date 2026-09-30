@@ -47,7 +47,8 @@ class StrategyManualTriggerServiceTest {
         StrategyManualTriggerService service = new StrategyManualTriggerService(
                 definitionRepository,
                 runRepository,
-                executionGateway
+                executionGateway,
+                (accountId, venue) -> "SIM"
         );
 
         StrategyDefinition definition = enabledDefinition("str-1", "demo-grid");
@@ -83,7 +84,8 @@ class StrategyManualTriggerServiceTest {
         StrategyManualTriggerService service = new StrategyManualTriggerService(
                 definitionRepository,
                 runRepository,
-                intent -> new StrategyExecutionResult("ord-trigger-2", OrderStatus.ACCEPTED, false)
+                intent -> new StrategyExecutionResult("ord-trigger-2", OrderStatus.ACCEPTED, false),
+                (accountId, venue) -> "SIM"
         );
         definitionRepository.insert(disabledDefinition("str-2", "disabled-grid"));
 
@@ -104,7 +106,8 @@ class StrategyManualTriggerServiceTest {
         StrategyManualTriggerService service = new StrategyManualTriggerService(
                 new InMemoryStrategyDefinitionRepository(),
                 new InMemoryStrategyRunRepository(),
-                intent -> new StrategyExecutionResult("ord-trigger-3", OrderStatus.ACCEPTED, false)
+                intent -> new StrategyExecutionResult("ord-trigger-3", OrderStatus.ACCEPTED, false),
+                (accountId, venue) -> "SIM"
         );
 
         assertThrows(IllegalArgumentException.class, () -> service.trigger(new StrategyManualTriggerRequest(
@@ -126,7 +129,8 @@ class StrategyManualTriggerServiceTest {
         StrategyManualTriggerService service = new StrategyManualTriggerService(
                 definitionRepository,
                 runRepository,
-                intent -> new StrategyExecutionResult("ord-trigger-4", OrderStatus.REJECTED, false)
+                intent -> new StrategyExecutionResult("ord-trigger-4", OrderStatus.REJECTED, false),
+                (accountId, venue) -> "SIM"
         );
         StrategyDefinition definition = enabledDefinition("str-4", "failing-grid");
         definitionRepository.insert(definition);
@@ -292,4 +296,3 @@ class StrategyManualTriggerServiceTest {
         }
     }
 }
-

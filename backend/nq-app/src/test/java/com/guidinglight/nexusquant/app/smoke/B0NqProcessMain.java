@@ -195,16 +195,25 @@ public final class B0NqProcessMain {
 
     /** 异步屏障仍调用真实命令服务；主线程可运行普通对账或 canonical ENGAGE，没有直接写表接口。 */
     private static String tradingCommand(OrderCommandService commands, JdbcTemplate jdbc, String name, String command) {
-        if ("PLACE".equals(command) || "PLACE_B2".equals(command) || "PLACE_B2_LIVE".equals(command)
-                || "PLACE_B3_NEW".equals(command)) {
-            Long account = jdbc.queryForObject("SELECT account_id FROM accounts WHERE account_code='b0-account'", Long.class);
+        if ("PLACE".equals(command) || "PLACE_LIVE".equals(command)
+                || "PLACE_B2".equals(command) || "PLACE_B2_LIVE".equals(command)
+                || "PLACE_B3_NEW".equals(command) || "PLACE_B3_LIVE_NEW".equals(command)) {
+            String environment = ("PLACE_LIVE".equals(command) || "PLACE_B2_LIVE".equals(command)
+                    || "PLACE_B3_LIVE_NEW".equals(command)) ? "LIVE" : "SIM";
+            Long account = jdbc.queryForObject("""
+                    SELECT a.account_id FROM accounts a
+                    JOIN exchange_accounts e ON e.legacy_account_id=a.account_id
+                    WHERE e.exchange_code='OKX' AND e.trade_env=? AND e.account_alias=?
+                    """, Long.class, environment, "b0-" + environment.toLowerCase(java.util.Locale.ROOT));
             String client = "b0" + name.substring(name.length() - 30);
-            if ("PLACE_B3_NEW".equals(command)) client = "b3" + name.substring(name.length() - 30);
+            if ("PLACE_B3_NEW".equals(command) || "PLACE_B3_LIVE_NEW".equals(command))
+                client = "b3" + name.substring(name.length() - 30);
             var result = commands.placeOrder(new PlaceOrderRequest(
                     "b0-request", account, null, placeVenue, "BTC-USDT", client, account + ":" + client,
                     "b0_test", OrderSide.BUY, OrderType.LIMIT, new BigDecimal("100.00000000"),
-                    new BigDecimal("PLACE".equals(command) ? "0.10000000" : "10.00000000"), "GTC", "b0-trace",
-                    "PLACE_B2_LIVE".equals(command) ? "LIVE" : "SIM", null));
+                    new BigDecimal(("PLACE".equals(command) || "PLACE_LIVE".equals(command))
+                            ? "0.10000000" : "10.00000000"), "GTC", "b0-trace",
+                    environment, null));
             return "PLACE " + result.orderId() + " " + result.status();
         }
         if ("CANCEL".equals(command)) {

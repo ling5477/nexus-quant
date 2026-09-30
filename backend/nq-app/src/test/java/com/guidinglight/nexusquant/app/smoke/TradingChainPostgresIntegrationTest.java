@@ -46,6 +46,8 @@ import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 import com.guidinglight.nexusquant.trading.domain.state.InMemoryOrderStateMachine;
 import com.guidinglight.nexusquant.trading.domain.state.OrderStateMachine;
 import com.guidinglight.nexusquant.trading.application.command.CancelOrderRequest;
+import com.guidinglight.nexusquant.strategy.application.StrategyDefinitionService;
+import com.guidinglight.nexusquant.strategy.application.command.StrategyDefinitionCreateRequest;
 
 import java.math.BigDecimal;
 import java.net.ProxySelector;
@@ -163,6 +165,9 @@ class TradingChainPostgresIntegrationTest {
     private OrderCommandService orderCommandService;
 
     @Autowired
+    private StrategyDefinitionService strategyDefinitionService;
+
+    @Autowired
     private OkxRestReconcileService okxRestReconcileService;
 
     @Autowired
@@ -215,6 +220,105 @@ class TradingChainPostgresIntegrationTest {
     @AfterAll
     static void restoreProxySelector() {
         ExchangeNoOutboundGuard.restoreDefault();
+    }
+
+    @Test
+    void liveOrderWithEngagedKillPersistsRejectionWithoutProviderMutation() {
+        assertProductionComposition();
+        assertEquals(KillSwitchStatus.ENGAGED, killSwitchService.snapshot().status());
+        Long accountId = insertAccount("kill-live-" + UUID.randomUUID());
+        String clientOrderId = "kill-live-" + UUID.randomUUID();
+        String traceId = "kill-live-" + UUID.randomUUID();
+        var request = new PlaceOrderRequest(traceId, accountId, null, "OKX", "BTC-USDT",
+                clientOrderId, accountId + ":" + clientOrderId, "test", OrderSide.BUY,
+                OrderType.LIMIT, ORDER_PRICE, ORDER_QUANTITY, "GTC", traceId, "LIVE", null);
+
+        var result = orderCommandService.placeOrder(request);
+
+        assertEquals(OrderStatus.RISK_REJECTED, result.status());
+        assertEquals("LIVE", jdbc.queryForObject("SELECT trade_env FROM orders WHERE order_id=?",
+                String.class, result.orderId()));
+        assertEquals("KILL_SWITCH_TRIGGERED", jdbc.queryForObject(
+                "SELECT reason FROM risk_events WHERE scope='ORDER' AND scope_id=?",
+                String.class, result.orderId()));
+        assertEquals("REJECT", jdbc.queryForObject(
+                "SELECT decision FROM risk_events WHERE scope='ORDER' AND scope_id=?",
+                String.class, result.orderId()));
+        assertEquals(0, fakeVenue.placeCount());
+        assertEquals(0L, count("SELECT COUNT(*) FROM trades WHERE order_id=?", result.orderId()));
+    }
+
+    @Test
+    void liveAccountCannotDeclareSimBeforeStrategyOrOrderRiskFacts() {
+        Long accountId = insertAccount("kill-live-" + UUID.randomUUID());
+        long ordersBefore = count("SELECT count(*) FROM orders");
+        long riskBefore = count("SELECT count(*) FROM risk_events");
+        assertEquals("ACCOUNT_TRADE_ENVIRONMENT_MISMATCH", assertThrows(IllegalArgumentException.class,
+                () -> strategyDefinitionService.create(new StrategyDefinitionCreateRequest(
+                        "unsafe-" + UUID.randomUUID(), "Unsafe", "GRID", "OKX", accountId, "SIM", "{}")))
+                .getMessage());
+        assertEquals(ordersBefore, count("SELECT count(*) FROM orders"));
+        assertEquals(riskBefore, count("SELECT count(*) FROM risk_events"));
+        assertEquals(0, fakeVenue.placeCount());
+    }
+
+    @Test
+    void nullEnvironmentForLiveAccountUsesLiveRiskAndNeverBecomesSim() {
+        Long accountId = insertAccount("kill-live-" + UUID.randomUUID());
+        String traceId = "null-live-" + UUID.randomUUID();
+        var request = new PlaceOrderRequest(traceId, accountId, null, "OKX", "BTC-USDT",
+                "coid-" + traceId, accountId + ":" + traceId, "test", OrderSide.BUY,
+                OrderType.LIMIT, ORDER_PRICE, ORDER_QUANTITY, "GTC", traceId, null, null);
+        assertEquals(null, request.tradeEnv());
+        var result = orderCommandService.placeOrder(request);
+        assertEquals(OrderStatus.RISK_REJECTED, result.status());
+        assertEquals("LIVE", jdbc.queryForObject("SELECT trade_env FROM orders WHERE order_id=?",
+                String.class, result.orderId()));
+        assertEquals("KILL_SWITCH_TRIGGERED", jdbc.queryForObject(
+                "SELECT reason FROM risk_events WHERE scope='ORDER' AND scope_id=?", String.class, result.orderId()));
+        assertEquals(0, fakeVenue.placeCount());
+    }
+
+    @Test
+    void oppositeManualEnvironmentDeclarationsLeaveNoOrderRiskOrProviderFacts() {
+        Long liveAccount = insertAccount("kill-live-" + UUID.randomUUID());
+        Long simAccount = insertAccount("kill-sim-" + UUID.randomUUID());
+        long ordersBefore = count("SELECT count(*) FROM orders");
+        long riskBefore = count("SELECT count(*) FROM risk_events");
+        for (var mismatch : List.of(Map.entry(liveAccount, "SIM"), Map.entry(simAccount, "LIVE"))) {
+            String traceId = "mismatch-" + UUID.randomUUID();
+            var request = new PlaceOrderRequest(traceId, mismatch.getKey(), null, "OKX", "BTC-USDT",
+                    "coid-" + traceId, mismatch.getKey() + ":" + traceId, "test", OrderSide.BUY,
+                    OrderType.LIMIT, ORDER_PRICE, ORDER_QUANTITY, "GTC", traceId, mismatch.getValue(), null);
+            assertEquals("ACCOUNT_TRADE_ENVIRONMENT_MISMATCH", assertThrows(IllegalArgumentException.class,
+                    () -> orderCommandService.placeOrder(request)).getMessage());
+        }
+        assertEquals(ordersBefore, count("SELECT count(*) FROM orders"));
+        assertEquals(riskBefore, count("SELECT count(*) FROM risk_events"));
+        assertEquals(0, fakeVenue.placeCount());
+    }
+
+    @Test
+    void simOrderWithEngagedKillPersistsActualOtherRiskRejection() {
+        assertProductionComposition();
+        assertEquals(KillSwitchStatus.ENGAGED, killSwitchService.snapshot().status());
+        Long accountId = insertAccount("kill-sim-" + UUID.randomUUID());
+        String clientOrderId = "kill-sim-" + UUID.randomUUID();
+        String traceId = "kill-sim-" + UUID.randomUUID();
+        var request = new PlaceOrderRequest(traceId, accountId, null, "OKX", "BTC-USDT",
+                clientOrderId, accountId + ":" + clientOrderId, "test", OrderSide.BUY,
+                OrderType.LIMIT, new BigDecimal("100.000000001"), ORDER_QUANTITY,
+                "GTC", traceId, "SIM", null);
+
+        var result = orderCommandService.placeOrder(request);
+
+        assertEquals(OrderStatus.RISK_REJECTED, result.status());
+        assertEquals("SIM", jdbc.queryForObject("SELECT trade_env FROM orders WHERE order_id=?",
+                String.class, result.orderId()));
+        assertEquals("INVALID_PRECISION", jdbc.queryForObject(
+                "SELECT reason FROM risk_events WHERE scope='ORDER' AND scope_id=?",
+                String.class, result.orderId()));
+        assertEquals(0, fakeVenue.placeCount());
     }
 
     @Test
@@ -729,11 +833,20 @@ class TradingChainPostgresIntegrationTest {
     }
 
     private Long insertAccount(String accountCode) {
-        return jdbc.queryForObject(
+        String environment = accountCode.startsWith("kill-live-") ? "LIVE" : "SIM";
+        Long exchangeAccountId = jdbc.queryForObject("""
+                INSERT INTO exchange_accounts(owner_user_id,exchange_code,trade_env,account_alias,
+                                              status)
+                SELECT id,'OKX',?,?,'ACTIVE' FROM users WHERE username='system-migrated'
+                RETURNING exchange_account_id
+                """, Long.class, environment, accountCode);
+        Long accountId = jdbc.queryForObject(
                 "INSERT INTO accounts (account_code, venue, status) VALUES (?, 'OKX', 'ACTIVE') RETURNING account_id",
                 Long.class,
-                accountCode
-        );
+                "nq-okx-" + environment.toLowerCase() + "-" + exchangeAccountId);
+        jdbc.update("UPDATE exchange_accounts SET legacy_account_id=? WHERE exchange_account_id=?",
+                accountId, exchangeAccountId);
+        return accountId;
     }
 
     private void allowTestTransactionThroughRealKillSwitch(String traceId) {

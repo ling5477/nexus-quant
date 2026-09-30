@@ -9,11 +9,13 @@ import com.guidinglight.nexusquant.account.application.service.ExchangeAccountQu
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialVerifier;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.domain.port.AccountTradeEnvironmentAuthority;
 import com.guidinglight.nexusquant.account.domain.port.SimAccountIdentityBridge;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectation;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountRepository;
+import com.guidinglight.nexusquant.account.infra.jdbc.JdbcAccountTradeEnvironmentAuthority;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePort;
@@ -48,6 +50,11 @@ public class AccountModuleConfiguration {
     @Bean
     public ExchangeAccountRepository exchangeAccountRepository(JdbcTemplate jdbcTemplate) {
         return new JdbcExchangeAccountRepository(jdbcTemplate);
+    }
+
+    @Bean
+    public AccountTradeEnvironmentAuthority accountTradeEnvironmentAuthority(JdbcTemplate jdbcTemplate) {
+        return new JdbcAccountTradeEnvironmentAuthority(jdbcTemplate);
     }
 
     @Bean

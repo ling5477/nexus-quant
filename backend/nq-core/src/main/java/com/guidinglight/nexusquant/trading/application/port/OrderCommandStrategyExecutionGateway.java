@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.port;
 
 import com.guidinglight.nexusquant.risk.application.port.RiskGate;
+import com.guidinglight.nexusquant.account.domain.port.AccountTradeEnvironmentAuthority;
 
 import com.guidinglight.nexusquant.strategy.domain.StrategyDispatchWork;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRun;
@@ -28,13 +29,16 @@ public class OrderCommandStrategyExecutionGateway implements StrategyExecutionGa
     private final StrategyRunExecutionRepository executions;
     private final StrategyRunRepository runs;
     private final TradingVenueGateway venue;
+    private final AccountTradeEnvironmentAuthority accountEnvironment;
 
     public OrderCommandStrategyExecutionGateway(StrategyOrderExecutionService executionService,
-            StrategyRunExecutionRepository executions, StrategyRunRepository runs, TradingVenueGateway venue) {
+            StrategyRunExecutionRepository executions, StrategyRunRepository runs, TradingVenueGateway venue,
+            AccountTradeEnvironmentAuthority accountEnvironment) {
         this.executionService = Objects.requireNonNull(executionService);
         this.executions = Objects.requireNonNull(executions);
         this.runs = Objects.requireNonNull(runs);
         this.venue = Objects.requireNonNull(venue);
+        this.accountEnvironment = Objects.requireNonNull(accountEnvironment);
     }
 
     @Override
@@ -51,6 +55,8 @@ public class OrderCommandStrategyExecutionGateway implements StrategyExecutionGa
     }
 
     private StrategyExecutionResult executeAndProject(String runId, boolean recovery) {
+        var run = runs.findByStrategyRunId(runId).orElseThrow();
+        accountEnvironment.requireMatching(run.accountId(), run.exchangeCode(), run.tradeEnv());
         // instruments 网络读取在 B 事务之前；已有决定不读取新规则重算经济意图。
         var effective = executions.findEffective(runId).orElseGet(() -> {
             var request = toPlaceOrderRequest(executions.findWork(runId).orElseThrow(), runs.findByStrategyRunId(runId).orElseThrow());
@@ -100,6 +106,5 @@ public class OrderCommandStrategyExecutionGateway implements StrategyExecutionGa
         return new StrategyExecutionResult(result.orderId(), result.status(), result.idempotentHit());
     }
 }
-
 
 

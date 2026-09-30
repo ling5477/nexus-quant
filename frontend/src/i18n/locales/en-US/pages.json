@@ -1,4 +1,10 @@
 {
+  "publicCaptureTitle": "Capture OKX public historical bars",
+  "publicCaptureDescription": "Fetches only closed OKX BTC-USDT spot 1h bars and public instrument rules. Enter a whole-hour window of 1 to 100 hours in your browser's local time, ending at least one hour ago. No account credentials or private endpoints are used. The server requires the public-marketdata-manual profile and public outbound flag.",
+  "publicCaptureAction": "Capture public bars",
+  "publicCaptureSucceeded": "Public bars captured and Dataset created",
+  "publicCaptureFailed": "Public capture failed",
+  "publicCaptureWindowInvalid": "Choose a complete closed hourly window of 1 to 100 hours",
   "schedulerTitle": "Scheduler jobs",
   "schedulerDescription": "Inspect and control fixed background jobs. These actions do not grant trading authority.",
   "schedulerSafetyTitle": "Enabling a job does not authorize LIVE trading",

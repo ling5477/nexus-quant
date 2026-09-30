@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.api.web.model.ApiErrorIdentity;
 
 import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountCredentialNotFoundException;
 import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountNotFoundException;
+import com.guidinglight.nexusquant.account.domain.AccountTradeEnvironmentException;
 import com.guidinglight.nexusquant.auth.application.exception.AdminNotInitializedException;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
@@ -96,6 +97,13 @@ public class ApiExceptionHandler {
                 request,
                 List.of(new ApiFieldError(ex.getParameterName(), null, "parameter is required"))
         );
+    }
+
+    @ExceptionHandler(AccountTradeEnvironmentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrorResponse handleAccountTradeEnvironment(AccountTradeEnvironmentException ex,
+            HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ex.code(), ex.getMessage(), request, List.of());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

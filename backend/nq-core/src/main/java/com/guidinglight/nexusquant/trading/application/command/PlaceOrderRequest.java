@@ -31,7 +31,7 @@ import java.util.Set;
  * @param quantity       数量，必须大于 0
  * @param timeInForce    时效策略；未显式指定时按订单类型兜底
  * @param traceId        链路追踪 ID
- * @param tradeEnv       canonical交易环境，固定SIM/LIVE；既有调用默认SIM
+ * @param tradeEnv       可选环境声明；订单环境由已登记账户事实决定
  * @param executionScopeId 内部执行网关的一次性scope identity，可空；不得作为strategy run持久化
  */
 public record PlaceOrderRequest(
@@ -54,7 +54,7 @@ public record PlaceOrderRequest(
 ) {
 
     /**
-     * 兼容dedicated execution scope引入时的构造器；未显式声明环境时继续默认SIM。
+     * 兼容dedicated execution scope引入时的构造器；未声明环境时留空待账户事实解析。
      */
     public PlaceOrderRequest(
             String requestId,
@@ -75,7 +75,7 @@ public record PlaceOrderRequest(
     ) {
         this(requestId, accountId, strategyRunId, venue, symbol, clientOrderId,
                 idempotencyKey, source, side, type, price, quantity, timeInForce, traceId,
-                "SIM", executionScopeId);
+                null, executionScopeId);
     }
 
     /**
@@ -99,7 +99,7 @@ public record PlaceOrderRequest(
     ) {
         this(requestId, accountId, strategyRunId, venue, symbol, clientOrderId,
                 idempotencyKey, source, side, type, price, quantity, timeInForce, traceId,
-                "SIM", null);
+                null, null);
     }
 
     /**
@@ -132,7 +132,7 @@ public record PlaceOrderRequest(
                 quantity,
                 defaultTimeInForce(type),
                 traceId,
-                "SIM",
+                null,
                 null
         );
     }
@@ -146,8 +146,9 @@ public record PlaceOrderRequest(
         idempotencyKey = firstNonBlank(idempotencyKey, buildDefaultIdempotencyKey(accountId, clientOrderId));
         source = firstNonBlank(source, defaultSource(strategyRunId));
         timeInForce = firstNonBlank(timeInForce, defaultTimeInForce(type));
-        tradeEnv = firstNonBlank(tradeEnv, "SIM").toUpperCase(Locale.ROOT);
-        if (!Set.of("SIM", "LIVE").contains(tradeEnv)) {
+        tradeEnv = firstNonBlank(tradeEnv, null);
+        if (tradeEnv != null) tradeEnv = tradeEnv.toUpperCase(Locale.ROOT);
+        if (tradeEnv != null && !Set.of("SIM", "LIVE").contains(tradeEnv)) {
             throw new IllegalArgumentException("tradeEnv must be SIM or LIVE");
         }
         executionScopeId = firstNonBlank(executionScopeId, null);
@@ -174,4 +175,3 @@ public record PlaceOrderRequest(
     }
 
 }
-

@@ -73,8 +73,8 @@ class B3RealProcessProofTest {
             try (var reader = fixture.checker(); var nq = new B0Processes.Child(B0NqProcessMain.class, directory, "nq-a", env)) {
                 nq.ready(); recordPid(proof, "nqPid", nq);
                 assertEquals(B0Fixture.READER, value(reader, "SELECT current_user"));
-                assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
-                proof.put("postgres", value(reader, "SHOW server_version")).put("schema", "V50");
+                assertEquals("58", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+                proof.put("postgres", value(reader, "SHOW server_version")).put("schema", "V58");
                 assertTrue(proof.path("postgres").asText().startsWith("16."));
                 assertEquals("DISENGAGED", value(reader, "SELECT status FROM kill_switch_states"));
                 assertEquals("false", value(reader, "SELECT has_table_privilege(current_user,'kill_switch_states','UPDATE')::text"));
@@ -102,7 +102,7 @@ class B3RealProcessProofTest {
                 // 此 marker 仅记录已读到 durable 状态，实际 transition 始终由 canonical service 完成。
                 control(endpoint, "KILL_DURABLE_OBSERVED");
                 JsonNode venueBeforeNew = facts(endpoint);
-                assertTrue(nq.send("PLACE_B3_NEW").endsWith(" RISK_REJECTED"));
+                assertTrue(nq.send("PLACE_B3_LIVE_NEW").endsWith(" RISK_REJECTED"));
                 assertEquals(venueBeforeNew, facts(endpoint), "new command must make zero venue calls");
                 assertEquals("1", value(reader, "SELECT count(*) FROM orders WHERE status='RISK_REJECTED' AND reason='KILL_SWITCH_TRIGGERED'"));
                 assertEquals("1", value(reader, "SELECT count(*) FROM risk_events WHERE decision='REJECT' AND reason='KILL_SWITCH_TRIGGERED'"));
@@ -123,7 +123,7 @@ class B3RealProcessProofTest {
                         proof.set("killAfterRestart", killFacts(reader));
                         recover(restarted, reader, proof, endpoint);
                         JsonNode before = facts(endpoint);
-                        assertTrue(restarted.send("PLACE_B3_NEW").endsWith(" RISK_REJECTED"));
+                        assertTrue(restarted.send("PLACE_B3_LIVE_NEW").endsWith(" RISK_REJECTED"));
                         assertEquals(before, facts(endpoint));
                     }
                 } else {

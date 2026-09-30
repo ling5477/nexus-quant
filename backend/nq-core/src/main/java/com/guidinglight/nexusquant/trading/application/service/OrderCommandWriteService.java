@@ -37,7 +37,10 @@ import com.guidinglight.nexusquant.core.service.port.RiskEventRepository;
 import com.guidinglight.nexusquant.trading.domain.state.OrderStateMachine;
 import com.guidinglight.nexusquant.risk.model.RiskContext;
 import com.guidinglight.nexusquant.risk.model.RiskDecisionResult;
+import com.guidinglight.nexusquant.risk.model.TradeEnvironment;
 import com.guidinglight.nexusquant.risk.application.port.RiskGate;
+import com.guidinglight.nexusquant.account.domain.port.AccountTradeEnvironmentAuthority;
+import com.guidinglight.nexusquant.account.domain.AccountTradeEnvironmentException;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -75,6 +78,7 @@ public class OrderCommandWriteService {
     private final RiskEventRepository riskEventRepository;
     private final EventPublisherPort eventPublisherPort;
     private final Clock clock;
+    private final AccountTradeEnvironmentAuthority accountEnvironment;
 
     public OrderCommandWriteService(
             OrderRepository orderRepository,
@@ -83,7 +87,8 @@ public class OrderCommandWriteService {
             AuditLogRepository auditLogRepository,
             RiskEventRepository riskEventRepository,
             EventPublisherPort eventPublisherPort,
-            OrdinaryPlaceAuthorityRepository placeAuthorities
+            OrdinaryPlaceAuthorityRepository placeAuthorities,
+            AccountTradeEnvironmentAuthority accountEnvironment
     ) {
         this.orderRepository = Objects.requireNonNull(orderRepository, "orderRepository must not be null");
         this.orderStateMachine = Objects.requireNonNull(orderStateMachine, "orderStateMachine must not be null");
@@ -93,6 +98,11 @@ public class OrderCommandWriteService {
         this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.clock = Clock.systemUTC();
         this.placeAuthorities = Objects.requireNonNull(placeAuthorities, "placeAuthorities must not be null");
+        this.accountEnvironment = Objects.requireNonNull(accountEnvironment, "accountEnvironment must not be null");
+    }
+
+    public String requireCanonicalTradeEnvironment(PlaceOrderRequest request) {
+        return accountEnvironment.requireMatching(request.accountId(), request.venue(), request.tradeEnv());
     }
 
     /**
@@ -115,6 +125,7 @@ public class OrderCommandWriteService {
             String candidateOrderId,
             Instant now
     ) {
+        String canonicalTradeEnv = requireCanonicalTradeEnvironment(request);
         OrderRecord createdOrder = new OrderRecord(
                 candidateOrderId,
                 request.accountId(),
@@ -130,7 +141,7 @@ public class OrderCommandWriteService {
                 OrderStatus.NEW,
                 "ORDER_CREATED",
                 request.traceId(),
-                request.tradeEnv()
+                canonicalTradeEnv
         );
 
         try {
@@ -143,6 +154,9 @@ public class OrderCommandWriteService {
             );
             if (duplicated.isPresent()) {
                 OrderRecord order = duplicated.get();
+                if (!canonicalTradeEnv.equals(order.tradeEnv())) {
+                    throw new AccountTradeEnvironmentException("ACCOUNT_TRADE_ENVIRONMENT_MISMATCH");
+                }
                 auditLogRepository.append(
                         "ORDER",
                         "PLACE_ORDER_IDEMPOTENT_RACE",
@@ -189,7 +203,8 @@ public class OrderCommandWriteService {
                 )
         );
 
-        RiskDecisionResult riskDecision = riskGate.evaluate(new RiskContext(command, now, request.traceId()));
+        RiskDecisionResult riskDecision = riskGate.evaluate(new RiskContext(command, now, request.traceId(),
+                TradeEnvironment.fromOrder(createdOrder.tradeEnv())));
         riskEventRepository.append(
                 "ORDER",
                 createdOrder.orderId(),
@@ -842,5 +857,3 @@ public class OrderCommandWriteService {
         }
     }
 }
-
-

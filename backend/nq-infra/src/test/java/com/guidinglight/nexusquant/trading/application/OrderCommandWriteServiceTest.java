@@ -37,7 +37,7 @@ class OrderCommandWriteServiceTest {
     final EventPublisherPort events = mock(EventPublisherPort.class);
     final OrderCommandWriteService writes = new OrderCommandWriteService(orders,
             new InMemoryOrderStateMachine(), mock(RiskGate.class), audit, mock(RiskEventRepository.class), events,
-            mock(OrdinaryPlaceAuthorityRepository.class));
+            mock(OrdinaryPlaceAuthorityRepository.class), (accountId, venue) -> "SIM");
     OrderRecord durable;
 
     @BeforeEach void repository() {
