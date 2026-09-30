@@ -130,6 +130,34 @@ class StageAssetGuardTest(unittest.TestCase):
         self.write(entry["path"], source.replace("2_000_000", "3_000_000", 1))
         self.assert_rejected()
 
+    def test_account_configuration_exact_exception_preserves_rejection_boundaries(self):
+        repository = Path(__file__).resolve().parents[3]
+        path = "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/AccountModuleConfiguration.java"
+        entries = json.loads((repository / guard.POLICY_PATH).read_text(encoding="utf-8"))["exceptions"]
+        entry = next(e for e in entries if e["path"] == path)
+        source = (repository / path).read_text(encoding="utf-8")
+        self.write(path, source)
+        self.policy([entry])
+        self.assertEqual("RETIRED_INPUT_REJECTION", entry["kind"])
+        self.assertEqual([], guard.check(self.root)[0])
+
+        # 未知的非阶段内容变化也必须失配，不能借精确例外接受未经登记的文件版本。
+        self.write(path, source.replace("private static final String STABLE_READ_ONLY_PREFIX",
+                                        "private static final String UNKNOWN_READ_ONLY_PREFIX", 1))
+        errors = guard.check(self.root)[0]
+        self.assertIn("STAGE_SEMANTICS: " + path, errors)
+        self.assertIn("STALE_EXCEPTION: " + path, errors)
+
+        # 原路径新增阶段语义与其他路径复制同一内容均不能继承已登记的例外。
+        for semantic in ("GateQ", "Phase99"):
+            with self.subTest(semantic=semantic):
+                self.write(path, source + '\nclass AdditionalRuntime { String mode = "' + semantic + '"; }\n')
+                self.assertIn("STAGE_SEMANTICS: " + path, guard.check(self.root)[0])
+        self.write(path, source)
+        other = "backend/app/src/main/java/UnregisteredConfiguration.java"
+        self.write(other, source)
+        self.assertIn("STAGE_SEMANTICS: " + other, guard.check(self.root)[0])
+
     def evolution_fixture(self):
         path = "backend/app/src/test/java/CompatibilityTest.java"
         self.write(path, 'class CompatibilityTest { String fixture = "GATEY_WIRE_V1"; }')
