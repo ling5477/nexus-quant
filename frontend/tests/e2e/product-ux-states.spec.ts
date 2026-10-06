@@ -52,10 +52,10 @@ test('精度、缺失值、调度异常与切换 run 的状态隔离', async ({p
     await expect(panel.getByText('trade-run-a', {exact: true})).toHaveCount(0);
     await expect(panel.getByText('trade-run-b', {exact: true})).toBeVisible();
     await page.setViewportSize({width: 390, height: 844});
-    const closeDrawer = page.getByRole('button', {name: /close|关闭/i}).first();
-    await expect(closeDrawer).not.toBeVisible();
+    await expect(page.getByRole('button', {name: '展开菜单'})).toBeVisible();
+    await expect(page.locator('.ant-drawer-open')).toHaveCount(0);
     await expect(panel.getByText(/ALREADY_AT_TARGET/)).toBeVisible();
-    await page.screenshot({path: test.info().outputPath('canonical-mobile.png'), fullPage: true});
+    await page.screenshot({path: test.info().outputPath('canonical-mobile.png'), fullPage: true, animations: 'disabled'});
     await page.goto('/paper-trading/runs?paperRunId=run-a');
     panel = page.getByTestId('canonical-sim-facts');
     await expect(panel.getByText('STOPPED', {exact: true})).toBeVisible();

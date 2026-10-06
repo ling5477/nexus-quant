@@ -1,6 +1,6 @@
 # NQ V1 C3 product UX evidence
 
-Baseline: `354c03415e2eb1fc40c289361d352301d2b555a5`, dev CI `37414767478`, 9/9 SUCCESS. Candidate: the code files in this delivery; final Git/CI identities are recorded in PR and current STATUS after CI succeeds.
+Baseline: `354c03415e2eb1fc40c289361d352301d2b555a5`, dev CI `37414767478`, 9/9 SUCCESS. Accepted technical candidate: `07958d143bf05d7e37fd9aacf270244bc0ae5451`, PR #63 CI `37418672434`, completed/success, 9/9 jobs. Subsequent test-only mobile screenshot correction waits for the responsive drawer to close and finishes screenshot animations; its state smoke passed. Final PR and merged dev heads require their own CI and are reported separately.
 
 ## Canonical sample
 
