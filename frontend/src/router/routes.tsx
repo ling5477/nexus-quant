@@ -12,6 +12,7 @@ import {ForbiddenPage} from '@/pages/exceptions/ForbiddenPage';
 import {SystemErrorPage} from '@/pages/exceptions/SystemErrorPage';
 import {WelcomePage} from '@/pages/exceptions/WelcomePage';
 import {InstrumentsPage} from '@/pages/instruments/InstrumentsPage';
+import {ForcePasswordChange} from '@/pages/login/ForcePasswordChange';
 import {LoginPage} from '@/pages/login/LoginPage';
 import {MarketdataPage} from '@/pages/marketdata/MarketdataPage';
 import {NotFoundPage} from '@/pages/not-found/NotFoundPage';
@@ -65,6 +66,7 @@ export const appRouter = createBrowserRouter([
     {
         element: <RequireAuth/>,
         children: [
+            {path: '/change-password', element: <ForcePasswordChange/>},
             {
                 path: '/',
                 element: <ConsoleLayout/>,

@@ -83,7 +83,7 @@ def check(repo: Path, commit: str, output: Path) -> dict:
             "filesScanned": len(names), "retainedBusinessOrCompatibility": len(retained),
             "unclassified": audit["unclassified"], "errors": errors,
             "javaAndFrontendImportClosure": "REQUIRES_EXPORTED_TREE_CLEAN_BUILD",
-            "deployClosure": "NO_DEPLOY_ASSETS_INCLUDED;B6_PENDING"}
+            "deployClosure": "DOCKER_LOCAL_IMAGE_PACKAGE;CLEAN_INSTALL_QUALIFICATION_REQUIRED"}
 
 
 def main() -> int:

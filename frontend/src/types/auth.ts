@@ -10,12 +10,14 @@ export interface LoginResponse {
     expiresAt: string;
     username: string;
     roles: string[];
+    mustChangePassword: boolean;
 }
 
 export interface CurrentUser {
     userId: number;
     username: string;
     roles: string[];
+    mustChangePassword: boolean;
     authenticated: boolean;
     defaultExchangeAccountId: number | null;
     defaultExchangeCode: string | null;

@@ -54,7 +54,7 @@ class ProductionSecretProfileRegressionTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"local", "test", "ci", "paper", "freeze", "gated-verify",
-            "gatew-okx-readonly-soak", "gatey-readonly-qualification", "public-marketdata-manual", "unknown"})
+            "gatew-okx-readonly-soak", "gatey-readonly-qualification", "unknown"})
     void rejectsEveryNonProductionAdjunct(String profile, CapturedOutput output) {
         Map<String, Object> properties = valid();
         properties.put("spring.profiles.active", "prod," + profile);

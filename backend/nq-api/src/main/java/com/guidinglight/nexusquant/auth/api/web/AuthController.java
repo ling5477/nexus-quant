@@ -3,6 +3,9 @@ package com.guidinglight.nexusquant.auth.api.web;
 import com.guidinglight.nexusquant.account.application.service.ExchangeAccountQueryService;
 import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.auth.api.dto.AuthLoginRequestBody;
+import com.guidinglight.nexusquant.auth.api.dto.PasswordChangeRequest;
+import com.guidinglight.nexusquant.auth.application.service.PasswordChangeService;
+import org.springframework.http.HttpStatus;
 import com.guidinglight.nexusquant.auth.api.dto.AuthLoginResponse;
 import com.guidinglight.nexusquant.auth.api.dto.CurrentUserResponse;
 import com.guidinglight.nexusquant.auth.application.port.AuthService;
@@ -33,6 +36,7 @@ import java.util.Objects;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordChangeService passwordChangeService;
     private final GatewayAuthFacade gatewayAuthFacade;
     private final CurrentUserProfileService currentUserProfileService;
     private final ExchangeAccountQueryService exchangeAccountQueryService;
@@ -41,8 +45,10 @@ public class AuthController {
             AuthService authService,
             GatewayAuthFacade gatewayAuthFacade,
             CurrentUserProfileService currentUserProfileService,
-            ExchangeAccountQueryService exchangeAccountQueryService
+            ExchangeAccountQueryService exchangeAccountQueryService,
+            PasswordChangeService passwordChangeService
     ) {
+        this.passwordChangeService = Objects.requireNonNull(passwordChangeService, "passwordChangeService");
         this.authService = Objects.requireNonNull(authService, "authService must not be null");
         this.gatewayAuthFacade = Objects.requireNonNull(gatewayAuthFacade, "gatewayAuthFacade must not be null");
         this.currentUserProfileService = Objects.requireNonNull(
@@ -71,10 +77,23 @@ public class AuthController {
                 loginResponse.expiresIn(),
                 loginResponse.expiresAt(),
                 loginResponse.username(),
-                loginResponse.roles()
+                loginResponse.roles(),
+                loginResponse.mustChangePassword()
         );
     }
 
+    @PostMapping("/change-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changePassword(@Valid @RequestBody PasswordChangeRequest request) {
+        var user = gatewayAuthFacade.currentUser()
+                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("authentication required"));
+        passwordChangeService.changePassword(user.username(), user.authVersion(), request.currentPassword(), request.newPassword());
+    }
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout() {
+        // 无服务器会话；客户端清除令牌，改密失效由持久化代际负责。
+    }
     @GetMapping("/me")
     @Operation(
             summary = "当前用户",
@@ -99,7 +118,8 @@ public class AuthController {
                 defaultAccount == null ? null : defaultAccount.exchangeAccountId(),
                 defaultAccount == null ? null : defaultAccount.exchangeCode(),
                 defaultAccount == null ? null : defaultAccount.tradeEnv(),
-                defaultAccount == null ? null : defaultAccount.accountAlias()
+                defaultAccount == null ? null : defaultAccount.accountAlias(),
+                userProfile.mustChangePassword()
         );
     }
 }

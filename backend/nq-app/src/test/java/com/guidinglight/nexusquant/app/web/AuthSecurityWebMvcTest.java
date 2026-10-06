@@ -164,6 +164,37 @@ class AuthSecurityWebMvcTest {
     }
 
     @Test
+    void forcedPasswordStateRestrictsAllBusinessPathsAndMethods() throws Exception {
+        var hash = profile(1L, "admin", true, "ADMIN").passwordHash();
+        when(authUserRepository.findByUsername("admin")).thenReturn(Optional.of(
+                new AuthUserProfile(1L, "admin", hash, List.of("ADMIN"), true, true, null, 1)));
+        String token = loginAndExtractToken("admin", "ChangeMe123!");
+        mockMvc.perform(get("/api/auth/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.mustChangePassword").value(true));
+        mockMvc.perform(post("/api/auth/logout").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isNoContent());
+        for (String path : List.of("/api/trading", "/api/strategy", "/api/scheduler/jobs", "/api/auth/me/extra", "/api/auth/login")) {
+            mockMvc.perform(get(path).header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                    .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("PASSWORD_CHANGE_REQUIRED"));
+        }
+        mockMvc.perform(post("/api/auth/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("PASSWORD_CHANGE_REQUIRED"));
+        when(authUserRepository.findByUsername("admin")).thenReturn(Optional.of(
+                new AuthUserProfile(1L, "admin", hash, List.of("ADMIN"), true, false, Instant.now(), 2)));
+        mockMvc.perform(get("/api/auth/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + token))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deletedOrDisabledUserInvalidatesPreviouslyIssuedToken() throws Exception {
+        String token = loginAndExtractToken("admin", "ChangeMe123!");
+        when(authUserRepository.findByUsername("admin")).thenReturn(Optional.empty());
+        mockMvc.perform(get("/api/auth/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + token)).andExpect(status().isUnauthorized());
+        when(authUserRepository.findByUsername("admin")).thenReturn(Optional.of(profile(1L, "admin", false, "ADMIN")));
+        mockMvc.perform(get("/api/auth/me").header(HttpHeaders.AUTHORIZATION, "Bearer " + token)).andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void shouldLoginSuccessfully() throws Exception {
         mockMvc.perform(post("/api/auth/login")
                         .header(TraceIdContext.TRACE_ID_HEADER, "trc-login-1")

@@ -59,7 +59,15 @@
     "submit": "登录",
     "security": "安全边界",
     "securityDescription": "本控制台默认不启用 LIVE 交易;所有交易相关操作都需经过风控、审计与环境隔离。",
-    "footer": "受控环境 · 默认 PAPER · LIVE 已禁用"
+    "footer": "受控环境 · 默认 PAPER · LIVE 已禁用",
+    "changePasswordTitle": "修改初始密码",
+    "changePasswordRequired": "首次登录必须修改密码，完成后请重新登录。新密码至少 8 个字符，且不能与当前密码相同。",
+    "currentPassword": "当前密码",
+    "newPassword": "新密码",
+    "confirmPassword": "确认新密码",
+    "passwordMismatch": "两次输入的密码不一致",
+    "changePasswordSubmit": "修改密码并重新登录",
+    "returnToLogin": "返回登录"
   },
   "freshness": {
     "fresh": "最新",

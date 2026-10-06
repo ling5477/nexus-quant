@@ -85,3 +85,21 @@ release/
 !/scripts/release/tests/
 /scripts/release/tests/*
 !/scripts/release/tests/test_release_source.py
+
+# 正式安装源码逐文件纳入；镜像和导出产物继续忽略。
+!/release/runtime/
+!/release/runtime/compose.yml
+!/release/runtime/runtime.yml
+!/release/docker/
+!/release/docker/backend.Dockerfile
+!/release/docker/frontend.Dockerfile
+!/release/docker/nginx.conf
+!/release/installers/
+!/release/installers/install.ps1
+!/release/installers/install-macos.sh
+!/release/installers/install-linux.sh
+!/release/installers/nexusquant.ps1
+!/release/installers/nexusquant.sh
+!/release/build-package.ps1
+
+!scripts/release/tests/test_installer.py

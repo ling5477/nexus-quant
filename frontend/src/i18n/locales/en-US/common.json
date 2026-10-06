@@ -59,7 +59,15 @@
     "submit": "Sign in",
     "security": "Safety controls",
     "securityDescription": "LIVE trading is disabled by default. All trading operations are subject to risk checks, audit and environment isolation.",
-    "footer": "Controlled environment · PAPER by default · LIVE disabled"
+    "footer": "Controlled environment · PAPER by default · LIVE disabled",
+    "changePasswordTitle": "Change initial password",
+    "changePasswordRequired": "Change your password before continuing, then sign in again. Use at least 8 characters and a different password.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "passwordMismatch": "Passwords do not match",
+    "changePasswordSubmit": "Change password and sign in again",
+    "returnToLogin": "Return to login"
   },
   "freshness": {
     "fresh": "Fresh",

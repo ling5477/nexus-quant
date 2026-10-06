@@ -21,7 +21,9 @@ public record AuthLoginResponse(
         @Schema(description = "用户名")
         String username,
         @Schema(description = "角色列表")
-        List<String> roles
+        List<String> roles,
+        @Schema(description = "是否必须先修改密码")
+        boolean mustChangePassword
 ) {
 }
 

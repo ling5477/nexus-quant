@@ -2,41 +2,6 @@
   "schemaVersion": 1,
   "exceptions": [
     {
-      "path": "README.md",
-      "token": "GateAUDIT",
-      "category": "HISTORICAL_REFERENCE",
-      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
-      "lineSha256": "820d1399bae3e9d797ec7f35da5b541296b9f49cb898067682e5fba37bb3c908"
-    },
-    {
-      "path": "README.md",
-      "token": "GateAUDIT",
-      "category": "HISTORICAL_REFERENCE",
-      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
-      "lineSha256": "f0f4c0079e21c7a027baac3ea31c117c85b1ec9323c14e439f1a27eff2599df8"
-    },
-    {
-      "path": "README.md",
-      "token": "GateY",
-      "category": "HISTORICAL_REFERENCE",
-      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
-      "lineSha256": "32a64222c38c3afc274261856beacd1626c6732762b2b83c7c40bb7aebd3b689"
-    },
-    {
-      "path": "README.md",
-      "token": "GateY",
-      "category": "HISTORICAL_REFERENCE",
-      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
-      "lineSha256": "820d1399bae3e9d797ec7f35da5b541296b9f49cb898067682e5fba37bb3c908"
-    },
-    {
-      "path": "README.md",
-      "token": "GateY",
-      "category": "HISTORICAL_REFERENCE",
-      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
-      "lineSha256": "bb665e213caa7749bf6a19d748b8a5c8802f8ada14e88517aec303659bcbf038"
-    },
-    {
       "path": "backend/nq-contracts/src/main/java/com/guidinglight/nexusquant/contracts/model/LedgerRefType.java",
       "token": "FREEZE",
       "category": "BUSINESS_DOMAIN_TERM",

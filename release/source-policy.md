@@ -59,3 +59,7 @@ CURRENT_RELEASE_REQUIRED=0，OBSOLETE=0；安装与操作尚未作为 V1 交付�
 正式路由移除公开开发自检 `/dev/design-system`，对应页面和 CSS 保留在开发树并显式排除；业务账户页面移除 RC 批次 badge。RC 历史说明统一为业务语义，未改订单、撮合、账务或恢复 Java 语句。
 
 默认 gitleaks 对 `BinanceEd25519RequestSigner` 的两条 PEM 头尾字符串产生一项误报。发布扫描仅在规则、完整文件 SHA256、路径、22–23 行位置及两个常量字节全部匹配时识别为 `PROTOCOL_DELIMITER_NOT_KEY_MATERIAL`；文件任何变化或其他 finding 均不能豁免。扫描使用默认规则、无历史 allowlist，输出仅包含规则及位置。工具必须为校验过来源的 gitleaks 8.18.4；本轮使用官方 archive checksum 校验的二进制。
+
+## 当前安装源码边界
+
+上述部署审计保留为前次源码导出证据。当前 VERSION、产品文档、production Docker/Compose、三平台安装和运维入口已逐文件纳入 source-manifest.json；既有 canonical 部署脚本仍为开发资产，不进入安装包。正式运行采用 prod 与 public-marketdata-manual 的精确组合，并由安装配置显式提供数据库及随机密钥，允许公开行情，关闭私有诊断和真实交易。跨平台真机验收及最终许可证决定仍待后续完成。

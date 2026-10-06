@@ -1730,6 +1730,9 @@ CREATE TABLE users (
     id bigint NOT NULL DEFAULT nextval('users_id_seq'::regclass),
     username character varying(64) NOT NULL,
     password_hash character varying(255) NOT NULL,
+    must_change_password boolean DEFAULT false NOT NULL,
+    password_changed_at timestamp with time zone,
+    auth_version bigint DEFAULT 1 NOT NULL CHECK (auth_version > 0),
     enabled boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
@@ -7735,3 +7738,7 @@ INSERT INTO scheduled_job_controls(job_key,enabled,fixed_delay_ms) VALUES
     ('PAPER_MATCHING',FALSE,2000),
     ('STRATEGY_RECOVERY',FALSE,5000),
     ('VALIDATION_EVIDENCE_REFRESH',FALSE,300000);
+
+COMMENT ON COLUMN users.must_change_password IS '首次登录必须修改密码；由统一安全边界限制业务访问。';
+COMMENT ON COLUMN users.password_changed_at IS '最近一次成功修改密码的持久化时间。';
+COMMENT ON COLUMN users.auth_version IS '认证代际；改密后递增，使所有旧令牌在重启后仍失效。';

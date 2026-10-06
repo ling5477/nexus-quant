@@ -44,6 +44,13 @@ class CurrentUserProfileServiceTest {
         }
 
         @Override
+        public boolean createInitialAdminIfAbsent(SeedUserCommand command) { throw new UnsupportedOperationException(); }
+        @Override
+        public Optional<AuthUserProfile> findByUsernameForUpdate(String username) { throw new UnsupportedOperationException(); }
+        @Override
+        public boolean changePassword(Long id, long version, String hash) { throw new UnsupportedOperationException(); }
+
+        @Override
         public void upsertSeedUser(SeedUserCommand command) {
             throw new UnsupportedOperationException("not required for CurrentUserProfileServiceTest");
         }

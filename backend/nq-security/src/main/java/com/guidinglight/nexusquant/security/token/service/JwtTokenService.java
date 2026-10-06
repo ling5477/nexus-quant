@@ -48,6 +48,7 @@ public class JwtTokenService implements TokenService {
                 .expiration(Date.from(claims.expiresAt()))
                 .claim(USERNAME_CLAIM, claims.username())
                 .claim(ROLES_CLAIM, claims.roles())
+                .claim("authVersion", claims.authVersion())
                 .signWith(signingKey)
                 .compact();
     }
@@ -64,6 +65,12 @@ public class JwtTokenService implements TokenService {
                 return Optional.empty();
             }
             Object rolesValue = claims.get(ROLES_CLAIM);
+            Object versionValue = claims.get("authVersion");
+            if (!(versionValue instanceof Number version) || version.longValue() < 1
+                    || claims.getSubject() == null || claims.getIssuedAt() == null
+                    || claims.getExpiration() == null) {
+                return Optional.empty();
+            }
             List<String> roles = rolesValue instanceof List<?> roleList
                     ? roleList.stream().map(String::valueOf).toList()
                     : List.of();
@@ -74,7 +81,8 @@ public class JwtTokenService implements TokenService {
                     claims.getIssuedAt().toInstant(),
                     claims.getExpiration().toInstant(),
                     claims.getIssuer(),
-                    claims.getId()
+                    claims.getId(),
+                    version.longValue()
             ));
         } catch (JwtException | IllegalArgumentException ex) {
             return Optional.empty();
@@ -95,6 +103,5 @@ public class JwtTokenService implements TokenService {
         return settings.issuer();
     }
 }
-
 
 

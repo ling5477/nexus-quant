@@ -8,6 +8,7 @@ interface StoredAuthSession {
     expiresAt: string;
     username: string;
     roles: string[];
+    mustChangePassword: boolean;
 }
 
 function isBrowser(): boolean {
@@ -21,6 +22,7 @@ function toStoredSession(payload: LoginResponse | StoredAuthSession): StoredAuth
         expiresAt: payload.expiresAt,
         username: payload.username,
         roles: payload.roles,
+        mustChangePassword: payload.mustChangePassword,
     };
 }
 
@@ -49,6 +51,7 @@ export function readStoredSession(): StoredAuthSession | null {
             expiresAt: parsed.expiresAt,
             username: parsed.username,
             roles: parsed.roles,
+            mustChangePassword: parsed.mustChangePassword === true,
         };
     } catch {
         window.localStorage.removeItem(STORAGE_KEY);
@@ -77,6 +80,7 @@ export function toCurrentUser(session: StoredAuthSession): CurrentUser {
         userId: 0,
         username: session.username,
         roles: session.roles,
+        mustChangePassword: session.mustChangePassword,
         authenticated: true,
         defaultExchangeAccountId: null,
         defaultExchangeCode: null,

@@ -178,6 +178,7 @@
         "backend/nq-api/src/main/java/com/guidinglight/nexusquant/auth/api/dto/AuthLoginRequestBody.java",
         "backend/nq-api/src/main/java/com/guidinglight/nexusquant/auth/api/dto/AuthLoginResponse.java",
         "backend/nq-api/src/main/java/com/guidinglight/nexusquant/auth/api/dto/CurrentUserResponse.java",
+        "backend/nq-api/src/main/java/com/guidinglight/nexusquant/auth/api/dto/PasswordChangeRequest.java",
         "backend/nq-api/src/main/java/com/guidinglight/nexusquant/auth/api/web/AuthController.java",
         "backend/nq-api/src/main/java/com/guidinglight/nexusquant/livecontrol/api/PilotScopeControlPlaneController.java",
         "backend/nq-api/src/main/java/com/guidinglight/nexusquant/livecontrol/api/dto/PilotScopeApprovalRequest.java",
@@ -388,6 +389,7 @@
         "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/marketdata/PublicMarketReplayCaptureController.java",
         "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/marketdata/PublicMarketReplayCaptureService.java",
         "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/security/web/ApiSecurityErrorWriter.java",
+        "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/security/web/PasswordChangeRequiredFilter.java",
         "backend/nq-app/src/main/java/com/guidinglight/nexusquant/integration/dh/command/DhDryRunRequestCommand.java",
         "backend/nq-app/src/main/java/com/guidinglight/nexusquant/integration/dh/config/DhDryRunRuntimeProperties.java",
         "backend/nq-app/src/main/java/com/guidinglight/nexusquant/integration/dh/error/DhDryRunTransportTimeoutException.java",
@@ -425,6 +427,7 @@
         "backend/nq-auth/src/main/java/com/guidinglight/nexusquant/auth/application/service/CurrentUserProfileService.java",
         "backend/nq-auth/src/main/java/com/guidinglight/nexusquant/auth/application/service/DbAuthService.java",
         "backend/nq-auth/src/main/java/com/guidinglight/nexusquant/auth/application/service/ExistingUserPasswordRotationService.java",
+        "backend/nq-auth/src/main/java/com/guidinglight/nexusquant/auth/application/service/PasswordChangeService.java",
         "backend/nq-auth/src/main/java/com/guidinglight/nexusquant/auth/domain/AuthUserProfile.java",
         "backend/nq-auth/src/main/java/com/guidinglight/nexusquant/auth/domain/PasswordRotationException.java",
         "backend/nq-auth/src/main/java/com/guidinglight/nexusquant/auth/domain/PasswordRotationTarget.java",
@@ -1345,6 +1348,7 @@
         "backend/nq-security/src/main/java/com/guidinglight/nexusquant/security/token/config/JwtTokenSettings.java",
         "backend/nq-security/src/main/java/com/guidinglight/nexusquant/security/token/model/TokenClaims.java",
         "backend/nq-security/src/main/java/com/guidinglight/nexusquant/security/token/port/TokenService.java",
+        "backend/nq-security/src/main/java/com/guidinglight/nexusquant/security/token/port/TokenUserValidator.java",
         "backend/nq-security/src/main/java/com/guidinglight/nexusquant/security/token/service/JwtTokenService.java",
         "backend/nq-security/src/main/java/com/guidinglight/nexusquant/security/web/JwtAuthenticationFilter.java",
         "frontend/src/api/adapter-readiness.ts",
@@ -1523,6 +1527,7 @@
         "frontend/src/pages/exceptions/SystemErrorPage.tsx",
         "frontend/src/pages/exceptions/WelcomePage.tsx",
         "frontend/src/pages/instruments/InstrumentsPage.tsx",
+        "frontend/src/pages/login/ForcePasswordChange.tsx",
         "frontend/src/pages/login/LoginPage.css",
         "frontend/src/pages/login/LoginPage.tsx",
         "frontend/src/pages/marketdata/MarketdataPage.tsx",
@@ -1607,6 +1612,28 @@
         "frontend/tsconfig.node.json",
         "frontend/vite.config.ts"
       ]
+    },
+    {
+      "category": "INCLUDE_RELEASE_OPERATIONS",
+      "purpose": "Docker 安装与三平台运维；预构建镜像发行合同。",
+      "paths": [
+        ".dockerignore",
+        "CHANGELOG.md",
+        "INSTALL.md",
+        "README.md",
+        "VERSION",
+        "release/build-package.ps1",
+        "release/docker/backend.Dockerfile",
+        "release/docker/frontend.Dockerfile",
+        "release/docker/nginx.conf",
+        "release/installers/install-linux.sh",
+        "release/installers/install-macos.sh",
+        "release/installers/install.ps1",
+        "release/installers/nexusquant.ps1",
+        "release/installers/nexusquant.sh",
+        "release/runtime/compose.yml",
+        "release/runtime/runtime.yml"
+      ]
     }
   ],
   "excludedPaths": {
@@ -1636,7 +1663,6 @@
       ".env.example",
       ".gitattributes",
       ".gitignore",
-      "README.md",
       "backend/nq-app/src/main/resources/application-ci.yml",
       "backend/nq-app/src/main/resources/application-local.yml",
       "backend/nq-app/src/main/resources/application-test.yml",
@@ -2068,6 +2094,7 @@
       "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5V51RecoveryTickProcessTest.java",
       "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5V51SchemaPostgresTest.java",
       "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B5VenueIdentityProcessTest.java",
+      "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/B6AuthPostgresTest.java",
       "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/ContinuousSimMigrationPostgresTest.java",
       "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/ExchangeNoOutboundGuard.java",
       "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L4PlanBlockerPostgresIntegrationTest.java",
@@ -2510,6 +2537,7 @@
       "frontend/tests/e2e/design-system-live-query-smoke.spec.ts",
       "frontend/tests/e2e/design-system-table-smoke.spec.ts",
       "frontend/tests/e2e/evaluation-report-enhanced-smoke.spec.ts",
+      "frontend/tests/e2e/first-login-real.spec.ts",
       "frontend/tests/e2e/gatei2-fixtures.ts",
       "frontend/tests/e2e/localization-error-ux.spec.ts",
       "frontend/tests/e2e/login-page-smoke.spec.ts",
@@ -2597,6 +2625,7 @@
       "scripts/java-standard/tests/Test-MavenProfileValidation.ps1",
       "scripts/java-standard/tests/Test-ShadowReportProofHash.ps1",
       "scripts/java-standard/tests/Test-SongshanHistoryBoundary.ps1",
+      "scripts/release/tests/test_installer.py",
       "scripts/release/tests/test_release_source.py"
     ],
     "EXCLUDE_GOVERNANCE": [
@@ -4468,68 +4497,68 @@
   "requiredFinalAssets": [
     {
       "path": "README.md",
-      "status": "FINAL_RELEASE_REQUIRED",
-      "owner": "B6/B7_PENDING"
+      "status": "IMPLEMENTED_B6;QUALIFICATION_PENDING",
+      "owner": "B6"
     },
     {
       "path": "INSTALL.md",
-      "status": "FINAL_RELEASE_REQUIRED",
-      "owner": "B6/B7_PENDING"
+      "status": "IMPLEMENTED_B6;QUALIFICATION_PENDING",
+      "owner": "B6"
     },
     {
       "path": "CHANGELOG.md",
-      "status": "FINAL_RELEASE_REQUIRED",
-      "owner": "B6/B7_PENDING"
+      "status": "IMPLEMENTED_B6;QUALIFICATION_PENDING",
+      "owner": "B6"
     },
     {
       "path": "LICENSE",
-      "status": "LICENSE_REQUIRED_BUT_UNSELECTED",
-      "owner": "B6/B7_PENDING"
+      "status": "LICENSE_PENDING_USER_DECISION",
+      "owner": "USER"
     },
     {
       "path": "VERSION",
-      "status": "FINAL_RELEASE_REQUIRED",
-      "owner": "B6/B7_PENDING"
+      "status": "IMPLEMENTED_B6;QUALIFICATION_PENDING",
+      "owner": "B6"
     },
     {
       "path": "production Docker/Compose",
-      "status": "B6_REQUIRED;EXPLICIT_MANIFEST_ADDITION_REQUIRED",
-      "owner": "B6_PENDING"
+      "status": "IMPLEMENTED_B6;QUALIFICATION_PENDING",
+      "owner": "B6"
     },
     {
       "path": "Windows installer",
-      "status": "B6_REQUIRED;EXPLICIT_MANIFEST_ADDITION_REQUIRED",
-      "owner": "B6_PENDING"
+      "status": "IMPLEMENTED_B6;QUALIFICATION_PENDING",
+      "owner": "B6"
     },
     {
       "path": "macOS installer",
-      "status": "B6_REQUIRED;EXPLICIT_MANIFEST_ADDITION_REQUIRED",
-      "owner": "B6_PENDING"
+      "status": "IMPLEMENTED_B6;QUALIFICATION_PENDING",
+      "owner": "B6"
     },
     {
       "path": "Linux installer",
-      "status": "B6_REQUIRED;EXPLICIT_MANIFEST_ADDITION_REQUIRED",
-      "owner": "B6_PENDING"
+      "status": "IMPLEMENTED_B6;QUALIFICATION_PENDING",
+      "owner": "B6"
     },
     {
       "path": "start/stop/restart",
-      "status": "B6_REQUIRED;EXPLICIT_MANIFEST_ADDITION_REQUIRED",
-      "owner": "B6_PENDING"
+      "status": "IMPLEMENTED_B6;QUALIFICATION_PENDING",
+      "owner": "B6"
     },
     {
       "path": "backup/restore",
-      "status": "B6_REQUIRED;EXPLICIT_MANIFEST_ADDITION_REQUIRED",
-      "owner": "B6_PENDING"
+      "status": "IMPLEMENTED_B6;QUALIFICATION_PENDING",
+      "owner": "B6"
     },
     {
       "path": "uninstall",
-      "status": "B6_REQUIRED;EXPLICIT_MANIFEST_ADDITION_REQUIRED",
-      "owner": "B6_PENDING"
+      "status": "IMPLEMENTED_B6;QUALIFICATION_PENDING",
+      "owner": "B6"
     },
     {
       "path": "admin bootstrap / forced password change",
-      "status": "B6_REQUIRED;EXPLICIT_MANIFEST_ADDITION_REQUIRED",
-      "owner": "B6_PENDING"
+      "status": "IMPLEMENTED_B6;QUALIFICATION_PENDING",
+      "owner": "B6"
     }
   ]
 }

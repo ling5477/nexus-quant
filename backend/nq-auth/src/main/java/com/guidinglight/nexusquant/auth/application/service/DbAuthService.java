@@ -67,7 +67,8 @@ public class DbAuthService implements AuthService {
                 issuedAt,
                 expiresAt,
                 issuer,
-                "jti-" + UUID.randomUUID()
+                "jti-" + UUID.randomUUID(),
+                userProfile.authVersion()
         );
         return new LoginResponse(
                 tokenService.issue(claims),
@@ -75,8 +76,8 @@ public class DbAuthService implements AuthService {
                 accessTokenTtlSeconds,
                 expiresAt,
                 userProfile.username(),
-                userProfile.roles()
+                userProfile.roles(),
+                userProfile.mustChangePassword()
         );
     }
 }
-

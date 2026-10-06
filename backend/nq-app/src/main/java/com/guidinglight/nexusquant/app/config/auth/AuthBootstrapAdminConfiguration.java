@@ -5,7 +5,7 @@ import com.guidinglight.nexusquant.auth.application.command.SeedUserCommand;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -21,12 +21,11 @@ public class AuthBootstrapAdminConfiguration {
     @Bean
     public ApplicationRunner bootstrapAdminRunner(
             AuthSeedService authSeedService,
-            @Value("${nq.auth.bootstrap-admin.username}") String username,
-            @Value("${nq.auth.bootstrap-admin.password-hash}") String passwordHash
+            PasswordEncoder passwordEncoder
     ) {
         return args -> authSeedService.bootstrapAdmin(new SeedUserCommand(
-                username,
-                passwordHash,
+                "admin",
+                passwordEncoder.encode("123456"),
                 List.of("ADMIN", "OPERATOR", "VIEWER"),
                 true
         ));

@@ -1,0 +1,27 @@
+spring:
+  flyway:
+    enabled: true
+    clean-disabled: true
+    baseline-on-migrate: false
+    validate-on-migrate: true
+nq:
+  production-configuration: true
+  auth:
+    bootstrap-admin:
+      enabled: true
+  strategy-sim:
+    enabled: true
+  runtime:
+    provider-observation:
+      enabled: false
+  okx:
+    private-readonly-diagnostics:
+      enabled: false
+    recovery:
+      enabled: false
+    ws:
+      enabled: false
+management:
+  endpoint:
+    health:
+      show-details: never

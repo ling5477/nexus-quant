@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * JdbcAuthUserRepository 提供 users/roles/user_roles 的最小 JDBC 实现。
@@ -36,6 +37,7 @@ public class JdbcAuthUserRepository implements AuthUserRepository {
                                u.username,
                                u.password_hash,
                                u.enabled,
+                               u.must_change_password, u.password_changed_at, u.auth_version,
                                ARRAY_REMOVE(ARRAY_AGG(r.role_code ORDER BY r.role_code), NULL) AS role_codes
                         FROM users u
                         LEFT JOIN user_roles ur ON ur.user_id = u.id
@@ -48,7 +50,11 @@ public class JdbcAuthUserRepository implements AuthUserRepository {
                         resultSet.getString("username"),
                         resultSet.getString("password_hash"),
                         readRoles(resultSet.getArray("role_codes")),
-                        resultSet.getBoolean("enabled")
+                        resultSet.getBoolean("enabled"),
+                        resultSet.getBoolean("must_change_password"),
+                        resultSet.getTimestamp("password_changed_at") == null ? null
+                                : resultSet.getTimestamp("password_changed_at").toInstant(),
+                        resultSet.getLong("auth_version")
                 ),
                 username.trim()
         );
@@ -126,6 +132,35 @@ public class JdbcAuthUserRepository implements AuthUserRepository {
                     Timestamp.from(now)
             );
         }
+    }
+
+    @Override
+    @Transactional
+    public boolean createInitialAdminIfAbsent(SeedUserCommand command) {
+        // 启动时串行化空库检查与创建；已有任意正式用户都不能被默认凭据覆盖。
+        jdbcTemplate.execute("LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE");
+        if (Boolean.TRUE.equals(jdbcTemplate.queryForObject("SELECT EXISTS(SELECT 1 FROM users)", Boolean.class))) {
+            return false;
+        }
+        upsertSeedUser(command);
+        jdbcTemplate.update("UPDATE users SET must_change_password = TRUE WHERE username = ?", command.username());
+        return true;
+    }
+
+    @Override
+    public Optional<AuthUserProfile> findByUsernameForUpdate(String username) {
+        jdbcTemplate.queryForList("SELECT id FROM users WHERE username = ? FOR UPDATE", Long.class, username);
+        return findByUsername(username);
+    }
+
+    @Override
+    public boolean changePassword(Long userId, long authVersion, String passwordHash) {
+        return jdbcTemplate.update("""
+                UPDATE users SET password_hash = ?, must_change_password = FALSE,
+                    password_changed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP,
+                    auth_version = auth_version + 1
+                WHERE id = ? AND auth_version = ? AND enabled = TRUE
+                """, passwordHash, userId, authVersion) == 1;
     }
 
     private List<String> readRoles(Array sqlArray) throws SQLException {

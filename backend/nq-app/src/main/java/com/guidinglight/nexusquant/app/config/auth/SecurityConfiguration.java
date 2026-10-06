@@ -2,6 +2,8 @@ package com.guidinglight.nexusquant.app.config.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
+import com.guidinglight.nexusquant.auth.application.service.PasswordChangeService;
+import com.guidinglight.nexusquant.app.security.web.PasswordChangeRequiredFilter;
 import com.guidinglight.nexusquant.auth.application.service.DbAuthService;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.auth.application.port.AuthService;
@@ -72,6 +74,10 @@ public class SecurityConfiguration {
     }
 
     @Bean
+    public PasswordChangeService passwordChangeService(AuthUserRepository repository, PasswordEncoder encoder) {
+        return new PasswordChangeService(repository, encoder);
+    }
+    @Bean
     public GatewayAuthFacade gatewayAuthFacade() {
         return new SecurityContextGatewayAuthFacade();
     }
@@ -104,8 +110,13 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(TokenService tokenService, AuthenticationEntryPoint entryPoint) {
-        return new JwtAuthenticationFilter(tokenService, entryPoint);
+    public JwtAuthenticationFilter jwtAuthenticationFilter(TokenService tokenService, AuthenticationEntryPoint entryPoint,
+                                                            AuthUserRepository repository) {
+        return new JwtAuthenticationFilter(tokenService, entryPoint, claims -> repository.findByUsername(claims.subject())
+                .filter(user -> user.enabled() && user.authVersion() == claims.authVersion()
+                        && user.username().equals(claims.username()))
+                .map(user -> new com.guidinglight.nexusquant.security.token.port.TokenUserValidator.UserState(
+                        user.roles(), user.mustChangePassword())));
     }
 
     @Bean
@@ -114,7 +125,8 @@ public class SecurityConfiguration {
             HttpSecurity http,
             JwtAuthenticationFilter jwtAuthenticationFilter,
             AuthenticationEntryPoint authenticationEntryPoint,
-            AccessDeniedHandler accessDeniedHandler
+            AccessDeniedHandler accessDeniedHandler,
+            ApiSecurityErrorWriter errorWriter
     ) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
@@ -125,6 +137,7 @@ public class SecurityConfiguration {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/change-password", "/api/auth/logout").authenticated()
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/actuator/health",
@@ -136,7 +149,8 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/**").hasAnyRole("ADMIN", "OPERATOR")
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new PasswordChangeRequiredFilter(errorWriter), JwtAuthenticationFilter.class);
         return http.build();
     }
 }

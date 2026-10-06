@@ -48,6 +48,7 @@ export function LoginPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const isAuthenticated = useAuthStore(selectIsAuthenticated);
+    const mustChangePassword = useAuthStore((state) => state.currentUser?.mustChangePassword);
     const bootstrapStatus = useAuthStore((state) => state.bootstrapStatus);
     const setSession = useAuthStore((state) => state.setSession);
 
@@ -61,7 +62,7 @@ export function LoginPage() {
             startTransition(() => {
                 // 登录成功后写入既有 session;currentUser 真源仍由 /auth/me 查询补全,这里不塞临时对象。
                 setSession(payload);
-                navigate(redirectTo, {replace: true});
+                navigate(payload.mustChangePassword ? '/change-password' : redirectTo, {replace: true});
             });
         },
     });
@@ -76,7 +77,7 @@ export function LoginPage() {
     }
 
     if (isAuthenticated) {
-        return <Navigate to={redirectTo} replace/>;
+        return <Navigate to={mustChangePassword ? '/change-password' : redirectTo} replace/>;
     }
 
     return (
@@ -98,7 +99,7 @@ export function LoginPage() {
                         loginMutation.mutate({
                         // 自动填充/复制可能带入尾随空格,提交前 trim 减少误判;密码只用于本次提交。
                         username: values.username.trim(),
-                        password: values.password.trim(),
+                        password: values.password,
                         });
                     }}
                 />

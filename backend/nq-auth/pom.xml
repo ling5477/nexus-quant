@@ -17,6 +17,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.guidinglight.nexusquant</groupId>
             <artifactId>nq-common</artifactId>
             <version>${project.version}</version>

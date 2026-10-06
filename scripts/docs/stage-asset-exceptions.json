@@ -67,7 +67,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/env/ProductionConfigurationApplicationContextInitializer.java",
-      "sha256": "eddde69699c6458de73ea4c6b22caf0b4e6400f5c2ae376f89ed5081e3065e45",
+      "sha256": "d95bedda2fa51041364b1ba4f148a6453e8deede9059b2b2f6b52264ee76ae1b",
       "kind": "RETIRED_INPUT_REJECTION",
       "reason": "Retired input names occur only as deny-only keys or persisted permission expectation; old profiles/keys cannot select runtime composition.",
       "owner": "Runtime configuration owner",
@@ -139,7 +139,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/env/ProductionSecretProfileRegressionTest.java",
-      "sha256": "f39a3a2bfa1df48e1b573fc5a8e884571afc9545b12a7d6f2d58b37248e5d01d",
+      "sha256": "65d4385f8f09097532a98c6fada0a405b67422fce8a5d28b666176e0c7e9eed8",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",

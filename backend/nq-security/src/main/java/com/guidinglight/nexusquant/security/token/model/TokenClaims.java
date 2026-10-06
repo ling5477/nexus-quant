@@ -17,7 +17,11 @@ public record TokenClaims(
         Instant issuedAt,
         Instant expiresAt,
         String issuer,
-        String tokenId
+        String tokenId,
+        long authVersion
 ) {
+    public TokenClaims(String subject, String username, List<String> roles, Instant issuedAt,
+                       Instant expiresAt, String issuer, String tokenId) {
+        this(subject, username, roles, issuedAt, expiresAt, issuer, tokenId, 1);
+    }
 }
-

@@ -15,6 +15,12 @@ public interface AuthUserRepository {
     boolean hasAdminUser();
 
     void upsertSeedUser(SeedUserCommand command);
+
+    boolean createInitialAdminIfAbsent(SeedUserCommand command);
+
+    Optional<AuthUserProfile> findByUsernameForUpdate(String username);
+
+    boolean changePassword(Long userId, long authVersion, String passwordHash);
 }
 
 

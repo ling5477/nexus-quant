@@ -12,7 +12,8 @@ public record LoginResponse(
         long expiresIn,
         Instant expiresAt,
         String username,
-        List<String> roles
+        List<String> roles,
+        boolean mustChangePassword
 ) {
 }
 

@@ -44,6 +44,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                 userId: 0,
                 username: payload.username,
                 roles: payload.roles,
+                mustChangePassword: payload.mustChangePassword,
                 authenticated: true,
                 defaultExchangeAccountId: null,
                 defaultExchangeCode: null,
@@ -63,6 +64,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                     expiresAt: state.expiresAt,
                     username: currentUser.username,
                     roles: currentUser.roles,
+                    mustChangePassword: currentUser.mustChangePassword,
                 });
             }
 

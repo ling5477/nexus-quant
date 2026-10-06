@@ -1,36 +1,42 @@
 # NexusQuant
 
-NexusQuant 是通用量化交易平台。当前状态唯一 authority 是 [docs/current/STATUS.md](docs/current/STATUS.md) 的 `nq-current-authority` 机器可读区块；本 README 只提供入口和短摘要。
+NexusQuant 是面向 OKX Spot 的研究与模拟交易工作台。Java Control Plane 统一管理风险、订单、成交与账务事实，正式 UI 贯通策略验证、发布、Continuous SIM 与运行监控。
 
-## 当前摘要
+## V1.0 范围
 
-<!-- nq-current-summary:start -->
-- 最近冻结的业务阶段已接受并打 tag；固定身份及 CI 以 [STATUS.md](docs/current/STATUS.md) 为准，13-role [strict archive](docs/gates/gate-z/README.md) 保留冻结前历史快照。
-- V1 Closure 计划已接受；当前唯一下一动作见 [STATUS.md](docs/current/STATUS.md)，产品顺序见 [ROADMAP.md](docs/current/ROADMAP.md)。
-- accepted batch、work batch 与唯一下一允许动作以 [STATUS.md](docs/current/STATUS.md) 为准；[ROADMAP.md](docs/current/ROADMAP.md) 解释后续工作。
-- 已完成的 GateY pilot 事实见 [STATUS.md](docs/current/STATUS.md)；该历史验收不授予再次执行权。
-- Shadow trading：`NOT ENABLED`（未启用）；AI：`NOT STARTED`（未开始）；DH runtime：`NOT INTEGRATED`（未集成）。
-<!-- nq-current-summary:end -->
+- OKX Spot 公开行情、数据集与策略研究/回测。
+- Continuous SIM、Paper matching、风险校验及 Order / Trade / Ledger / Position。
+- 策略发布、调度、运行观察与监控。
+- Docker 安装、首次登录强制改密、持久化令牌失效和本地备份恢复。
 
-## Current Authority
+不包含自动 LIVE 执行、期货/杠杆、Binance 生产支持、AI 交易或 HFT。Python research 是隔离的开发研究工具，不加入产品 runtime Compose。
 
-- [NQ V1 产品收敛计划](docs/current/NQ_V1_CLOSURE_PLAN.md)：基于当前代码的主链、事实归属、阻塞项与交付顺序；接受状态仍以 STATUS 为准。
-- [STATUS.md](docs/current/STATUS.md)：唯一阶段状态 authority。
-- [ROADMAP.md](docs/current/ROADMAP.md)：下一允许动作和路线。
-- [FACT_SOURCE_INDEX.md](docs/current/FACT_SOURCE_INDEX.md)：authority 分层与 archive 边界。
-- [API.md](docs/current/API.md) / [DB_SCHEMA.md](docs/current/DB_SCHEMA.md)：当前能力事实。
-- [ARCHITECTURE.md](docs/current/ARCHITECTURE.md) / [MODULES.md](docs/current/MODULES.md)：架构与模块职责。
-- [TESTING.md](docs/current/TESTING.md) / [WORKLOG.md](docs/current/WORKLOG.md)：append-only evidence ledger。
+## 架构与技术栈
 
-## Historical Evidence
+浏览器 → React / Vite / Ant Design → Java 21 / Spring Boot / Maven 多模块单体 → PostgreSQL 16 / Flyway。Python 研究域不拥有交易写入权限。
 
-以下一行是冻结前的摘要原文，仅作为历史记录；当前冻结身份以上方摘要和 STATUS 为准。
+## Quick Start
 
-- 最近冻结的 GateAUDIT 已接受并打 tag；固定身份及 CI 以 [STATUS.md](docs/current/STATUS.md) 为准，历史证据见 [strict archive](docs/gates/gate-audit/README.md)。
+版本统一读取根目录 [VERSION](VERSION)。取得对应架构的官方预构建 release package，解压后运行：
 
-- GateAUDIT strict archive：[docs/gates/gate-audit/](docs/gates/gate-audit/)；GateY pilot 历史证据见 [GateY strict archive](docs/gates/gate-y/)。这些历史证据不覆盖 current authority。
-- 其他 Gate archive：[docs/gates/](docs/gates/)；通用历史归档：[docs/archive/](docs/archive/)。
+```powershell
+# Windows / Docker Desktop（Linux containers）
+.\installers\install.ps1
+```
 
-## Boundary
+```sh
+# macOS / Docker Desktop
+sh installers/install-macos.sh
+# Linux / Docker Engine + Compose v2
+sh installers/install-linux.sh
+```
 
-GateY 只证明单账户、单 credential、OKX Spot BTC-USDT BUY LIMIT、`<= 10 USDT`、人工受控 exactly-one PLACE 与完整 reconciliation。它不授权第二 pilot、通用 LIVE、自动策略实盘、多订单/多账户/多交易所、合约/杠杆、transfer/withdraw 或 AI/DH 交易。
+打开 <http://127.0.0.1:18080>，使用 **admin / 123456** 登录。首次登录只能查看自己的认证资料、修改密码或退出；新密码至少 8 个字符，不能使用当前密码或 `123456`。改密成功后重新登录，所有旧令牌立即失效，重启后仍失效。
+
+安装器加载随包提供的镜像，用户无需 Java、Maven、Node、PostgreSQL 或 Python，也不执行源码编译。当前为预发布准备，最终公开发行仍等待许可证选择和跨平台正式验收。
+
+## 安全默认值
+
+SIM 可用；public OKX marketdata 允许访问。LIVE、真实交易所写入、真实 provider/client、私有 OKX diagnostics、transfer/withdraw 均关闭；kill switch 初始为 ENGAGED。内部数据库密码、JWT 密钥和凭据加密密钥随机生成，服务只绑定本机地址。
+
+安装、运维、数据目录、版本兼容和排障详见 [INSTALL.md](INSTALL.md)。产品变化见 [CHANGELOG.md](CHANGELOG.md)。LICENSE 当前为 `PENDING_USER_DECISION`，最终 v1.0.0 release 尚未获准。
