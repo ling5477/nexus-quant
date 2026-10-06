@@ -9,7 +9,7 @@ import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateReadonly
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxAccountFactsObservationService;
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxAccountFactsReadTransport;
 import com.guidinglight.nexusquant.adapter.okx.privateread.transport.OkxPrivateReadTransport;
-import com.guidinglight.nexusquant.app.config.CapabilityPropertyResolver;
+import com.guidinglight.nexusquant.app.config.StableCapabilityPropertyResolver;
 import com.guidinglight.nexusquant.risk.service.KillSwitchService;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxCurrentPublicRuleReader;
 import com.guidinglight.nexusquant.livecontrol.deployment.policy.ScopedCredentialCapabilityPolicy;
@@ -57,7 +57,6 @@ import org.springframework.beans.factory.annotation.Value;
 public class OkxPrivateReadOnlyDiagnosticsConfiguration {
 
     static final String STABLE_PREFIX = "nq.okx.private-readonly-diagnostics";
-    static final String LEGACY_PREFIX = "nq.gatew.okx-private-readonly";
 
     @Bean
     public OkxAccountFactsReadTransport okxPrivateReadOnlyTransport(ObjectMapper objectMapper) {
@@ -143,10 +142,9 @@ public class OkxPrivateReadOnlyDiagnosticsConfiguration {
         }
 
         private static boolean matches(ConditionContext context, String name, boolean required) {
-            return CapabilityPropertyResolver.matchesExactBoolean(
+            return StableCapabilityPropertyResolver.matchesExactBoolean(
                     context.getEnvironment(),
                     STABLE_PREFIX + "." + name,
-                    LEGACY_PREFIX + "." + name,
                     required
             );
         }

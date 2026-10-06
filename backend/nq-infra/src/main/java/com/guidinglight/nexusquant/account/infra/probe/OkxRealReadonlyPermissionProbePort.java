@@ -129,7 +129,7 @@ public final class OkxRealReadonlyPermissionProbePort implements ExchangeCredent
             return failed(request, "TRADE_PERMISSION_ENABLED", ipStatus, read, true, false,
                     requestId, startedAt, scope);
         }
-        if (permissionExpectation == CredentialPermissionExpectation.GATEY_PILOT_READINESS && !trade) {
+        if (permissionExpectation == CredentialPermissionExpectation.SCOPED_TRADE_READINESS && !trade) {
             return failed(request, "TRADE_PERMISSION_MISSING", ipStatus, read, false, false,
                     requestId, startedAt, scope);
         }

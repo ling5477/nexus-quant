@@ -77,8 +77,7 @@ class OkxVenueRuleSyncConfigurationTest {
                         "nq.gatew.okx-venue-rules.allowlist=BTC-USDT"
                 )
                 .run(context -> {
-                    assertFalse(context.containsBean("okxVenueRuleFactsReader"));
-                    assertFalse(context.containsBean("okxVenueRuleFactsSyncService"));
+                    org.assertj.core.api.Assertions.assertThat(context).hasFailed();
                 });
     }
 
@@ -91,8 +90,9 @@ class OkxVenueRuleSyncConfigurationTest {
                         "nq.gatew.okx-venue-rules.enabled=false"
                 )
                 .run(context -> {
-                    assertFalse(context.containsBean("okxVenueRuleFactsReader"));
-                    assertFalse(context.containsBean("okxVenueRuleFactsSyncService"));
+                    org.assertj.core.api.Assertions.assertThat(context).hasFailed();
+                    org.assertj.core.api.Assertions.assertThat(context.getStartupFailure())
+                            .hasStackTraceContaining("RETIRED_RUNTIME_CONFIGURATION_KEY");
                 });
     }
 

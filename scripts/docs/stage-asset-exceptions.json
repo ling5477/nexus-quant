@@ -42,14 +42,6 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/dto/CredentialPermissionProbeRequestBody.java",
-      "sha256": "81cc4755f2c4147d48a49735a79731d942e49858ae01cee3db1b8bf4b94956e0",
-      "kind": "WIRE_COMPATIBILITY",
-      "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
-      "owner": "nq-api / CredentialPermissionProbeRequestBody contract owner",
-      "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
-    },
-    {
       "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/research/api/web/BacktestRunControllerTest.java",
       "sha256": "cf023e4e81eb30772fe5c6e7dae5a13c0e8b58d842708c28ee098bbac97bc0b1",
       "kind": "FIXTURE_IDENTITY",
@@ -90,36 +82,12 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/OkxVenueRuleSyncConfiguration.java",
-      "sha256": "f99f68a4a711da3e156ef120c041383ee77d12e51ced7e6635f8b90b66f7ab29",
+      "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/RetiredRuntimeConfigurationGuard.java",
+      "sha256": "101241cc6dcebbed92be3b8ba9dafe42de31fe0c9eee379ce834debaf71e0712",
       "kind": "RETIRED_INPUT_REJECTION",
-      "reason": "Retired input names occur only as deny-only keys or persisted permission expectation; old profiles/keys cannot select runtime composition.",
+      "reason": "Centralized deny-only retirement guard enumerates keys without values and rejects retired profiles before runtime beans.",
       "owner": "Runtime configuration owner",
-      "removalTrigger": "All retired-input rejection cases can be replaced by an equivalent schema-level rejection contract."
-    },
-    {
-      "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/RetiredRuntimeProfileGuardConfiguration.java",
-      "sha256": "f1ad4015d8f24c36ec8a2f73daac24de076d9db4264bbb330572107c62a2ea3e",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/AccountModuleConfiguration.java",
-      "sha256": "37bf0c20a2b3b4c9c09d6a052109ca1b0f89ab561560f15b17d3035c07dfecc6",
-      "kind": "RETIRED_INPUT_REJECTION",
-      "reason": "Retired input names occur only as deny-only keys or persisted permission expectation; old profiles/keys cannot select runtime composition.",
-      "owner": "Runtime configuration owner",
-      "removalTrigger": "All retired-input rejection cases can be replaced by an equivalent schema-level rejection contract."
-    },
-    {
-      "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyDiagnosticsConfiguration.java",
-      "sha256": "79d73ffe10f686601c40084544a63190c8a088d14fd7fa1344b5aa4316776001",
-      "kind": "RETIRED_INPUT_REJECTION",
-      "reason": "Retired input names occur only as deny-only keys or persisted permission expectation; old profiles/keys cannot select runtime composition.",
-      "owner": "Runtime configuration owner",
-      "removalTrigger": "All retired-input rejection cases can be replaced by an equivalent schema-level rejection contract."
+      "removalTrigger": "Replace only with equivalent retired-input startup rejection."
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/env/ProductionConfigurationApplicationContextInitializer.java",
@@ -162,14 +130,6 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/CapabilityPropertyResolverTest.java",
-      "sha256": "df52864221d066e385440041623cb90d37a5f55f390ee56c6b49d19503e16ab9",
-      "kind": "NEGATIVE_REGRESSION",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/ExchangeAdapterConfigurationReadinessTest.java",
       "sha256": "8cf309db9ca7238ebe9360f4d7cf637ae80c9762d58707438588ef2a00645e99",
       "kind": "NEGATIVE_REGRESSION",
@@ -179,15 +139,15 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/OkxVenueRuleSyncConfigurationTest.java",
-      "sha256": "a424940b2df345177cd22abe8d31c29fe7db75f3efed5413dfb08847cee6b00d",
+      "sha256": "c084d726a7b60a06bc88eee87718568bd4375c7e52b9be3597b2e5ee7b643a8e",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/RetiredRuntimeProfileGuardConfigurationTest.java",
-      "sha256": "5fff1dddf373643355abb06c8954f499102caea9cee7e5a37249132d298eb037",
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/RetiredRuntimeConfigurationGuardTest.java",
+      "sha256": "5e7b4f91e85f0e3db041bd126cb8d13542a77c477a24e83d5f0b0af526654e49",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -195,7 +155,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyDiagnosticsConfigurationTest.java",
-      "sha256": "78335f5b519d427b719fd01a2e3c22dbea6cfbeb65d5291f3c1aa475a0ceb409",
+      "sha256": "74bd59e41f367e41a63f8aedf6bb7a5d639da1fa27bbd4bbf770efcf57a1420a",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -203,7 +163,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyPermissionProbeSpringContextTest.java",
-      "sha256": "36b01e0a75618068adafcae6ac9f1728dc7d76b2fe903b47a67b125c68e140c8",
+      "sha256": "039e85bd85013716d8b7af55b3f11c7ba9a5666101e3e81a791af43a951d96be",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -370,22 +330,6 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
-      "sha256": "5a7aca2f7e2c5d0ba963250fe6426f5e23edc8a7171db9804fad40619d9f72d1",
-      "kind": "WIRE_COMPATIBILITY",
-      "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
-      "owner": "nq-core / CredentialPermissionProbeService contract owner",
-      "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
-    },
-    {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/CredentialPermissionExpectation.java",
-      "sha256": "2110bff8240d929df82727b26342cd1ff9b6250aefc5c8a53bfc16acc62418b3",
-      "kind": "WIRE_COMPATIBILITY",
-      "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
-      "owner": "nq-core / CredentialPermissionExpectation contract owner",
-      "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
-    },
-    {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/domain/ExactPilotBinding.java",
       "sha256": "5b3a8c642898126bdbac908a6dc72755b0df57425c309f7390349c90d0de77a7",
       "kind": "WIRE_COMPATIBILITY",
@@ -459,7 +403,7 @@
     },
     {
       "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
-      "sha256": "87bb8a26a6a4958fb62da3fffa135e9b5451f84f1d9e0501c4764cf83003f61b",
+      "sha256": "e3c5e662e0de9cbecd15aed49bda97815ecae3ef42209a407ca5c132231631b4",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -538,14 +482,6 @@
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
-      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePort.java",
-      "sha256": "e11ebf7bda71eb955020d2b26b6309ecf883e3a67eedc29c85192b5aaadd4c16",
-      "kind": "WIRE_COMPATIBILITY",
-      "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
-      "owner": "nq-infra / OkxRealReadonlyPermissionProbePort contract owner",
-      "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
-    },
-    {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java",
       "sha256": "e55fc5d1e7b8a5156e3d50c87289052593ad1cb88b0c6e9302f576d69d0bd56d",
       "kind": "WIRE_COMPATIBILITY",
@@ -563,7 +499,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlService.java",
-      "sha256": "14d2634a9b2905c6bb8a18440017aefdadc1e0bd09358634a2dbcaab8e082a8b",
+      "sha256": "eed784c3a6c7d512c715df7e2510ed75ef16113612687bf6667d2995fc0e96ae",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / MinimalLivePilotControlService contract owner",
@@ -579,7 +515,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePortTest.java",
-      "sha256": "017ac2dffb767d122aaf67647c3ce38605abfda8de7ff16b2eabc3203a23b39f",
+      "sha256": "7baf057bf77ff1ce4c44a81cd510d0217ccb289a9da5a67d98b3eae8f9afd671",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -700,14 +636,6 @@
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/JdbcPilotScopeAuthorityResolverTest.java",
       "sha256": "2a30f65de5d04eedb6dfd186f6fe83e86278dea403df294968d353148b9df503",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlServiceTest.java",
-      "sha256": "279f306d574a3ab22b85a51a5add0be4e298ff3f82bfa7e2379c884d5bd63faf",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -1855,6 +1783,11 @@
           "path": "backend/nq-api/src/main/java/com/guidinglight/nexusquant/account/api/web/ExchangeAccountCredentialController.java",
           "callerMember": "ExchangeAccountCredentialController#upsert(Long,ExchangeAccountCredentialUpsertRequestBody)",
           "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/account/api/dto/CredentialPermissionProbeRequestBodyTest.java",
+          "callerMember": "CredentialPermissionProbeRequestBodyTest#openApiExposesOnlyStablePermissionModes()",
+          "contractMember": "CredentialPermissionProbeRequestBody"
         }
       ]
     },
@@ -2114,6 +2047,11 @@
         },
         {
           "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
+          "callerMember": "CredentialPermissionProbeServiceTest#retiredPermissionExpectationFailsClosedBeforeCredentialOrTransactionAccess()",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest#shouldKeepPermissionScopeNullWhenProbeDoesNotConfirmScope()",
           "contractMember": "<typed-use>"
         },
@@ -2252,8 +2190,8 @@
       "removalCondition": "Remove only after a separately authorized versioned migration replaces all approved source callers and proves stored/signed/public fact compatibility; then remove the member, edges and exception together.",
       "members": [
         "CredentialPermissionExpectation",
-        "GATEY_PILOT_READINESS",
-        "READ_ONLY_DIAGNOSTIC"
+        "READ_ONLY_DIAGNOSTIC",
+        "SCOPED_TRADE_READINESS"
       ],
       "approvedCallers": [
         {
@@ -2279,12 +2217,12 @@
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/AccountModuleConfiguration.java",
           "callerMember": "AccountModuleConfiguration#permissionExpectation(Environment)",
-          "contractMember": "GATEY_PILOT_READINESS"
+          "contractMember": "READ_ONLY_DIAGNOSTIC"
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/AccountModuleConfiguration.java",
           "callerMember": "AccountModuleConfiguration#permissionExpectation(Environment)",
-          "contractMember": "READ_ONLY_DIAGNOSTIC"
+          "contractMember": "SCOPED_TRADE_READINESS"
         },
         {
           "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyPermissionProbeSpringContextTest.java",
@@ -2299,7 +2237,7 @@
         {
           "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyPermissionProbeSpringContextTest.java",
           "callerMember": "OkxPrivateReadOnlyPermissionProbeSpringContextTest#explicitScopedGateYProfileSelectsPilotReadinessPolicyWithoutStartupNetwork()",
-          "contractMember": "GATEY_PILOT_READINESS"
+          "contractMember": "SCOPED_TRADE_READINESS"
         },
         {
           "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/OkxPrivateReadOnlyPermissionProbeSpringContextTest.java",
@@ -2374,12 +2312,12 @@
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#paperSafetyGatePassed(CredentialPermissionProbeCommand,CredentialPermissionExpectation)",
-          "contractMember": "GATEY_PILOT_READINESS"
+          "contractMember": "READ_ONLY_DIAGNOSTIC"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
           "callerMember": "CredentialPermissionProbeService#paperSafetyGatePassed(CredentialPermissionProbeCommand,CredentialPermissionExpectation)",
-          "contractMember": "READ_ONLY_DIAGNOSTIC"
+          "contractMember": "SCOPED_TRADE_READINESS"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeService.java",
@@ -2418,28 +2356,28 @@
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/CredentialPermissionExpectation.java",
-          "callerMember": "CredentialPermissionExpectation#GATEY_PILOT_READINESS",
-          "contractMember": "CredentialPermissionExpectation"
-        },
-        {
-          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/CredentialPermissionExpectation.java",
           "callerMember": "CredentialPermissionExpectation#READ_ONLY_DIAGNOSTIC",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/CredentialPermissionExpectation.java",
+          "callerMember": "CredentialPermissionExpectation#SCOPED_TRADE_READINESS",
+          "contractMember": "CredentialPermissionExpectation"
+        },
+        {
+          "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/CredentialPermissionExpectation.java",
           "callerMember": "CredentialPermissionExpectation#fromRequestedMode(String)",
           "contractMember": "CredentialPermissionExpectation"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/CredentialPermissionExpectation.java",
           "callerMember": "CredentialPermissionExpectation#fromRequestedMode(String)",
-          "contractMember": "GATEY_PILOT_READINESS"
+          "contractMember": "READ_ONLY_DIAGNOSTIC"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/CredentialPermissionExpectation.java",
           "callerMember": "CredentialPermissionExpectation#fromRequestedMode(String)",
-          "contractMember": "READ_ONLY_DIAGNOSTIC"
+          "contractMember": "SCOPED_TRADE_READINESS"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/ExchangeCredentialPermissionProbeRequest.java",
@@ -2484,7 +2422,27 @@
         {
           "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/CredentialPermissionProbeServiceTest.java",
           "callerMember": "CredentialPermissionProbeServiceTest.#probe(ExchangeCredentialPermissionProbeRequest)",
-          "contractMember": "GATEY_PILOT_READINESS"
+          "contractMember": "SCOPED_TRADE_READINESS"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/domain/CredentialPermissionExpectationTest.java",
+          "callerMember": "CredentialPermissionExpectationTest#retiredAndUnknownModesAreRejected()",
+          "contractMember": "CredentialPermissionExpectation"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/domain/CredentialPermissionExpectationTest.java",
+          "callerMember": "CredentialPermissionExpectationTest#stableModesPreservePermissionPolicy()",
+          "contractMember": "CredentialPermissionExpectation"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/domain/CredentialPermissionExpectationTest.java",
+          "callerMember": "CredentialPermissionExpectationTest#stableModesPreservePermissionPolicy()",
+          "contractMember": "READ_ONLY_DIAGNOSTIC"
+        },
+        {
+          "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/domain/CredentialPermissionExpectationTest.java",
+          "callerMember": "CredentialPermissionExpectationTest#stableModesPreservePermissionPolicy()",
+          "contractMember": "SCOPED_TRADE_READINESS"
         },
         {
           "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePort.java",
@@ -2524,12 +2482,12 @@
         {
           "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePort.java",
           "callerMember": "OkxRealReadonlyPermissionProbePort#classify(ExchangeCredentialPermissionProbeRequest,OkxPrivateReadResult,String,Instant)",
-          "contractMember": "GATEY_PILOT_READINESS"
+          "contractMember": "READ_ONLY_DIAGNOSTIC"
         },
         {
           "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePort.java",
           "callerMember": "OkxRealReadonlyPermissionProbePort#classify(ExchangeCredentialPermissionProbeRequest,OkxPrivateReadResult,String,Instant)",
-          "contractMember": "READ_ONLY_DIAGNOSTIC"
+          "contractMember": "SCOPED_TRADE_READINESS"
         },
         {
           "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePort.java",
@@ -2599,7 +2557,7 @@
         {
           "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePortTest.java",
           "callerMember": "OkxRealReadonlyPermissionProbePortTest#gateYPilotReadinessRequiresReadAndTradeRejectsWithdrawAndAcknowledgesResidual()",
-          "contractMember": "GATEY_PILOT_READINESS"
+          "contractMember": "SCOPED_TRADE_READINESS"
         },
         {
           "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePortTest.java",
@@ -2609,7 +2567,7 @@
         {
           "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePortTest.java",
           "callerMember": "OkxRealReadonlyPermissionProbePortTest#gateYPort(FakeExecutor)",
-          "contractMember": "GATEY_PILOT_READINESS"
+          "contractMember": "SCOPED_TRADE_READINESS"
         },
         {
           "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePortTest.java",
@@ -2619,7 +2577,7 @@
         {
           "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePortTest.java",
           "callerMember": "OkxRealReadonlyPermissionProbePortTest#gateYRequest()",
-          "contractMember": "GATEY_PILOT_READINESS"
+          "contractMember": "SCOPED_TRADE_READINESS"
         },
         {
           "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePortTest.java",

@@ -130,9 +130,9 @@ class StageAssetGuardTest(unittest.TestCase):
         self.write(entry["path"], source.replace("2_000_000", "3_000_000", 1))
         self.assert_rejected()
 
-    def test_account_configuration_exact_exception_preserves_rejection_boundaries(self):
+    def test_retired_configuration_guard_exact_exception_preserves_rejection_boundaries(self):
         repository = Path(__file__).resolve().parents[3]
-        path = "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/AccountModuleConfiguration.java"
+        path = "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/RetiredRuntimeConfigurationGuard.java"
         entries = json.loads((repository / guard.POLICY_PATH).read_text(encoding="utf-8"))["exceptions"]
         entry = next(e for e in entries if e["path"] == path)
         source = (repository / path).read_text(encoding="utf-8")
@@ -142,8 +142,8 @@ class StageAssetGuardTest(unittest.TestCase):
         self.assertEqual([], guard.check(self.root)[0])
 
         # 未知的非阶段内容变化也必须失配，不能借精确例外接受未经登记的文件版本。
-        self.write(path, source.replace("private static final String STABLE_READ_ONLY_PREFIX",
-                                        "private static final String UNKNOWN_READ_ONLY_PREFIX", 1))
+        self.write(path, source.replace("private static final Pattern RETIRED_KEY",
+                                        "private static final Pattern UNKNOWN_KEY", 1))
         errors = guard.check(self.root)[0]
         self.assertIn("STAGE_SEMANTICS: " + path, errors)
         self.assertIn("STALE_EXCEPTION: " + path, errors)
@@ -157,6 +157,13 @@ class StageAssetGuardTest(unittest.TestCase):
         other = "backend/app/src/main/java/UnregisteredConfiguration.java"
         self.write(other, source)
         self.assertIn("STAGE_SEMANTICS: " + other, guard.check(self.root)[0])
+
+    def test_stable_capability_owner_cannot_reintroduce_retired_key(self):
+        path = "backend/app/src/main/java/StableConfiguration.java"
+        self.write(path, 'class StableConfiguration { String key = "nq.okx.venue-rule-sync.enabled"; }')
+        self.assertEqual([], guard.check(self.root)[0])
+        self.write(path, 'class StableConfiguration { String key = "nq.gatew.okx-venue-rules.enabled"; }')
+        self.assertIn("STAGE_SEMANTICS: " + path, guard.check(self.root)[0])
 
     def evolution_fixture(self):
         path = "backend/app/src/test/java/CompatibilityTest.java"

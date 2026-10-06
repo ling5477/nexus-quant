@@ -178,7 +178,7 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
                 "gatey-minimal-live-pilot",
                 new CredentialPermissionProbeCommand(
                         "GateY minimal pilot prerequisite refresh", true,
-                        "GATEY_PILOT_READINESS", true),
+                        "SCOPED_TRADE_READINESS", true),
                 traceId);
         Instant now = clock.instant();
         boolean fresh = summary.lastPermissionProbeAt() != null

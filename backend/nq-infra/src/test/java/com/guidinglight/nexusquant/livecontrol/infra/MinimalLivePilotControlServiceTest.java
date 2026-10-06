@@ -64,7 +64,7 @@ class MinimalLivePilotControlServiceTest {
                 ArgumentCaptor.forClass(CredentialPermissionProbeCommand.class);
         verify(fixture.permissionProbeService).probe(
                 anyLong(), anyLong(), anyLong(), anyString(), probe.capture(), anyString());
-        assertEquals("GATEY_PILOT_READINESS", probe.getValue().mode());
+        assertEquals("SCOPED_TRADE_READINESS", probe.getValue().mode());
         assertEquals(Boolean.TRUE, probe.getValue().dryRun());
         assertEquals(Boolean.TRUE, probe.getValue().paperSafetyConfirmed());
 

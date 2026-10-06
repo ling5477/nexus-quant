@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.core.type.AnnotatedTypeMetadata;
@@ -34,20 +35,19 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * Controller、scheduler、runner、private transport 或 trading adapter。</p>
  */
 @Configuration
+@Import(RetiredRuntimeConfigurationGuard.class)
 public class OkxVenueRuleSyncConfiguration {
 
     static final String STABLE_PREFIX = "nq.okx.venue-rule-sync";
-    static final String LEGACY_PREFIX = "nq.gatew.okx-venue-rules";
 
     /**
      * 新鲜度 evaluator 始终可用，但配置缺失/非数字/越界时由 evaluator 返回 UNKNOWN/BLOCKED。
      */
     @Bean
     public VenueRuleFreshnessEvaluator venueRuleFreshnessEvaluator(Environment environment) {
-        String staleAfterSeconds = CapabilityPropertyResolver.stableFirst(
+        String staleAfterSeconds = StableCapabilityPropertyResolver.value(
                 environment,
                 STABLE_PREFIX + ".stale-after-seconds",
-                LEGACY_PREFIX + ".stale-after-seconds",
                 ""
         );
         return new VenueRuleFreshnessEvaluator(Clock.systemUTC(), parseLongOrNull(staleAfterSeconds));
@@ -63,16 +63,14 @@ public class OkxVenueRuleSyncConfiguration {
             ObjectMapper objectMapper,
             Environment environment
     ) {
-        String baseUrl = CapabilityPropertyResolver.stableFirst(
+        String baseUrl = StableCapabilityPropertyResolver.value(
                 environment,
                 STABLE_PREFIX + ".base-url",
-                LEGACY_PREFIX + ".base-url",
                 "http://127.0.0.1:0"
         );
-        String timeout = CapabilityPropertyResolver.stableFirst(
+        String timeout = StableCapabilityPropertyResolver.value(
                 environment,
                 STABLE_PREFIX + ".timeout",
-                LEGACY_PREFIX + ".timeout",
                 "PT5S"
         );
         URI validatedBaseUrl = validateBaseUrl(baseUrl);
@@ -97,10 +95,9 @@ public class OkxVenueRuleSyncConfiguration {
             OkxVenueRuleFactsReader venueRuleFactsReader,
             Environment environment
     ) {
-        String allowlist = CapabilityPropertyResolver.stableFirst(
+        String allowlist = StableCapabilityPropertyResolver.value(
                 environment,
                 STABLE_PREFIX + ".allowlist",
-                LEGACY_PREFIX + ".allowlist",
                 ""
         );
         return new OkxVenueRuleFactsSyncService(
@@ -150,10 +147,9 @@ public class OkxVenueRuleSyncConfiguration {
 
         @Override
         public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
-            return CapabilityPropertyResolver.matchesExactBoolean(
+            return StableCapabilityPropertyResolver.matchesExactBoolean(
                     context.getEnvironment(),
                     STABLE_PREFIX + ".enabled",
-                    LEGACY_PREFIX + ".enabled",
                     true
             );
         }

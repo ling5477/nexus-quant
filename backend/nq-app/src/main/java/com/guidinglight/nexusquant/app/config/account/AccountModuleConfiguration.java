@@ -21,7 +21,8 @@ import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredenti
 import com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.probe.OkxRealReadonlyPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.verification.StructuralExchangeAccountCredentialVerifier;
-import com.guidinglight.nexusquant.app.config.CapabilityPropertyResolver;
+import com.guidinglight.nexusquant.app.config.StableCapabilityPropertyResolver;
+import com.guidinglight.nexusquant.app.config.RetiredRuntimeConfigurationGuard;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.beans.factory.ObjectProvider;
@@ -41,11 +42,11 @@ import java.time.Clock;
  */
 @Configuration
 @EnableConfigurationProperties(AccountCredentialRuntimeProperties.class)
-@Import(AccountIdentityBridgeConfiguration.class)
+@Import({AccountIdentityBridgeConfiguration.class,
+        RetiredRuntimeConfigurationGuard.class})
 public class AccountModuleConfiguration {
 
     private static final String STABLE_READ_ONLY_PREFIX = "nq.okx.private-readonly-diagnostics";
-    private static final String LEGACY_READ_ONLY_PREFIX = "nq.gatew.okx-private-readonly";
 
     @Bean
     public ExchangeAccountRepository exchangeAccountRepository(JdbcTemplate jdbcTemplate) {
@@ -152,17 +153,15 @@ public class AccountModuleConfiguration {
             Environment environment
     ) {
         String stablePrefix = STABLE_READ_ONLY_PREFIX + ".permission-probe";
-        String legacyPrefix = LEGACY_READ_ONLY_PREFIX + ".permission-probe";
-        boolean enabled = CapabilityPropertyResolver.matchesExactBoolean(
+
+        boolean enabled = StableCapabilityPropertyResolver.matchesExactBoolean(
                 environment,
                 stablePrefix + ".enabled",
-                legacyPrefix + ".enabled",
                 true
         );
-        String expectedIp = CapabilityPropertyResolver.failClosed(
+        String expectedIp = StableCapabilityPropertyResolver.value(
                 environment,
                 stablePrefix + ".expected-ip",
-                legacyPrefix + ".expected-ip",
                 null
         );
         return new OkxPrivateReadOnlyPermissionProbeProperties(enabled, expectedIp);
@@ -191,10 +190,9 @@ public class AccountModuleConfiguration {
     }
 
     private static boolean exactReadOnlyBoolean(Environment environment, String name, boolean required) {
-        return CapabilityPropertyResolver.matchesExactBoolean(
+        return StableCapabilityPropertyResolver.matchesExactBoolean(
                 environment,
                 STABLE_READ_ONLY_PREFIX + "." + name,
-                LEGACY_READ_ONLY_PREFIX + "." + name,
                 required
         );
     }
@@ -212,7 +210,7 @@ public class AccountModuleConfiguration {
             return null;
         }
         return scoped
-                ? CredentialPermissionExpectation.GATEY_PILOT_READINESS
+                ? CredentialPermissionExpectation.SCOPED_TRADE_READINESS
                 : CredentialPermissionExpectation.READ_ONLY_DIAGNOSTIC;
     }
 }
