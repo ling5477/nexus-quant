@@ -89,7 +89,9 @@ final class B0Fixture implements AutoCloseable {
                 seed.setString(2, success ? "DISENGAGED" : "ENGAGED");
                 seed.executeUpdate();
             }
-            // 真实命令按账户桥接解析环境；测试账户也必须遵守 V58 的正式身份约束。
+            // 正式基线不创建用户；隔离夹具自己提供不能用于登录的合成 owner。
+            statement.execute("INSERT INTO users(username,password_hash) VALUES ('b0-synthetic-owner','NON_LOGIN_TEST_FIXTURE')");
+            // 真实命令按账户桥接解析环境；测试账户遵守正式身份约束。
             statement.execute("""
                     DO $$
                     DECLARE
@@ -99,7 +101,7 @@ final class B0Fixture implements AutoCloseable {
                     BEGIN
                         FOREACH environment IN ARRAY ARRAY['SIM', 'LIVE'] LOOP
                             INSERT INTO exchange_accounts(owner_user_id, exchange_code, trade_env, account_alias, status)
-                            VALUES ((SELECT id FROM users WHERE username='system-migrated'),
+                            VALUES ((SELECT id FROM users WHERE username='b0-synthetic-owner'),
                                     'OKX', environment, 'b0-' || lower(environment), 'ACTIVE')
                             RETURNING exchange_account_id INTO exchange_id;
                             INSERT INTO accounts(account_code, venue, status)

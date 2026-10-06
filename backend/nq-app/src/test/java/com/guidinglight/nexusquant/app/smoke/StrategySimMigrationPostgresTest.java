@@ -15,26 +15,26 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-/** 在显式提供的一次性 loopback PostgreSQL 中证明 V51 到 V52 的升级与约束。 */
+/** 在显式提供的一次性 loopback PostgreSQL 中证明决策约束和数据可用时间边界。 */
 @EnabledIfSystemProperty(named = "nq.strategy-sim.pg.required", matches = "true")
 class StrategySimMigrationPostgresTest {
     @Test
-    void migratesAndValidatesFreshAndUpgradePaths() {
+    void installsAndValidatesStrategySimFacts() {
         String url = System.getProperty("nq.strategy-sim.pg.url");
         if (url == null || !url.startsWith("jdbc:postgresql://127.0.0.1:")) {
             throw new IllegalArgumentException("disposable loopback PostgreSQL URL required");
         }
         String schema = "strategy_sim_migration_" + UUID.randomUUID().toString().replace("-", "");
-        DriverManagerDataSource source = new DriverManagerDataSource(url, "postgres", "disposable");
+        DriverManagerDataSource source = new DriverManagerDataSource(url, System.getProperty("nq.strategy-sim.pg.user", "postgres"), System.getProperty("nq.strategy-sim.pg.password", "disposable"));
         JdbcTemplate jdbc = new JdbcTemplate(source);
         jdbc.execute("CREATE SCHEMA " + schema);
         try {
             Flyway before = Flyway.configure().dataSource(source).schemas(schema)
-                    .locations("classpath:db/migration").target("51").load();
+                    .locations("classpath:db/migration").target("1").load();
             before.migrate();
             before.validate();
             JdbcTemplate legacy = new JdbcTemplate(new DriverManagerDataSource(
-                    url + "?currentSchema=" + schema, "postgres", "disposable"));
+                    url + "?currentSchema=" + schema + ",public", System.getProperty("nq.strategy-sim.pg.user", "postgres"), System.getProperty("nq.strategy-sim.pg.password", "disposable")));
             legacy.update("""
                     INSERT INTO marketdata_bars(exchange_code,symbol,interval,open_time,close_time,
                         open_price,high_price,low_price,close_price,volume,source,ingested_at)
@@ -42,14 +42,14 @@ class StrategySimMigrationPostgresTest {
                         100,100,100,100,1,'IMPORT','2026-01-01T00:10:00Z')
                     """);
             Flyway after = Flyway.configure().dataSource(source).schemas(schema)
-                    .locations("classpath:db/migration").target("52").load();
-            assertEquals(1, after.migrate().migrationsExecuted);
+                    .locations("classpath:db/migration").target("1").load();
+            assertEquals(0, after.migrate().migrationsExecuted);
             after.validate();
-            assertEquals("52", after.info().current().getVersion().getVersion());
+            assertEquals("1", after.info().current().getVersion().getVersion());
             assertEquals(0, after.info().pending().length);
             JdbcTemplate scoped = new JdbcTemplate(new DriverManagerDataSource(
                     url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema,
-                    "postgres", "disposable"));
+                    System.getProperty("nq.strategy-sim.pg.user", "postgres"), System.getProperty("nq.strategy-sim.pg.password", "disposable")));
             assertNotNull(scoped.queryForObject("""
                     SELECT column_name FROM information_schema.columns
                     WHERE table_schema=? AND table_name='paper_trading_runs'

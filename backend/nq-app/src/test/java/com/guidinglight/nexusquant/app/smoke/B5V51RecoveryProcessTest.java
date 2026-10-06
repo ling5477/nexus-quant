@@ -95,7 +95,7 @@ class B5V51RecoveryProcessTest {
                  var c = new B0Processes.Child(B0NqProcessMain.class, dir, "c", env).awaitReady()) {
                 proof.put("database", fixture.name()).put("nqPid", a.process.pid()).put("restartPid", b.process.pid())
                         .put("successorPid", c.process.pid()).put("venuePid", venue.process.pid());
-                assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
+                assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                 boolean terminal = row.startsWith("CANCEL_") || row.equals("TERMINAL_TWO");
                 boolean rollback = row.equals("B_ROLLBACK");
                 boolean may = row.startsWith("MAY_");

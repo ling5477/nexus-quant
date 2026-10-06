@@ -49,16 +49,23 @@ class SimAccountIdentityBridgePostgresIntegrationTest {
     @Autowired ExchangeAccountCommandService commands;
     @Autowired ExchangeAccountRepository accounts;
     @Autowired CanonicalLegacyAccountBridgeService bridge;
+    @Autowired com.guidinglight.nexusquant.auth.application.service.AuthSeedService authSeeds;
+    @Autowired org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Test
     void freshAccountCreatesStrategyAndExistingAccountResolvesOnceUnderConcurrency() throws Exception {
         assertEquals(0, count("SELECT count(*) FROM accounts"));
-        assertEquals(59, count("SELECT max(version::integer) FROM flyway_schema_history WHERE success"));
+        assertEquals(1, count("SELECT max(version::integer) FROM flyway_schema_history WHERE success"));
+        assertEquals(1, count("SELECT count(*) FROM flyway_schema_history WHERE success"));
+        // 正式安装不生成用户；账户 API 的身份夹具只在独立测试库中显式创建。
+        authSeeds.bootstrapAdmin(new com.guidinglight.nexusquant.auth.application.command.SeedUserCommand(
+                "sim-identity-owner", passwordEncoder.encode("sim-identity-fixture-password"),
+                List.of("ADMIN", "OPERATOR", "VIEWER"), true));
         String token = mapper.readTree(mvc.perform(post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"username\":\"admin\",\"password\":\"ChangeMe123!\"}"))
+                .content("{\"username\":\"sim-identity-owner\",\"password\":\"sim-identity-fixture-password\"}"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).path("accessToken").asText();
-        long owner = jdbc.queryForObject("SELECT id FROM users WHERE username='admin'", Long.class);
+        long owner = jdbc.queryForObject("SELECT id FROM users WHERE username='sim-identity-owner'", Long.class);
 
         JsonNode created = mapper.readTree(mvc.perform(post("/api/exchange-accounts")
                 .header("Authorization", "Bearer " + token)

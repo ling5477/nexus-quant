@@ -36,12 +36,12 @@ class PublicMarketReplayPostgresIntegrationTest {
         if (url == null || !url.matches("jdbc:postgresql://127\\.0\\.0\\.1:[0-9]+/[a-zA-Z0-9_]+")) {
             org.junit.jupiter.api.Assumptions.assumeTrue(false, "disposable localhost PostgreSQL URL required");
         }
-        Flyway flyway = Flyway.configure().dataSource(url, "postgres", "")
+        Flyway flyway = Flyway.configure().dataSource(url, System.getProperty("nq.public-replay.postgres.user", "postgres"), System.getProperty("nq.public-replay.postgres.password", ""))
                 .locations("classpath:db/migration").cleanDisabled(true).load();
         flyway.migrate();
         flyway.validate();
-        assertEquals("59", flyway.info().current().getVersion().getVersion());
-        DriverManagerDataSource dataSource = new DriverManagerDataSource(url, "postgres", "");
+        assertEquals("1", flyway.info().current().getVersion().getVersion());
+        DriverManagerDataSource dataSource = new DriverManagerDataSource(url, System.getProperty("nq.public-replay.postgres.user", "postgres"), System.getProperty("nq.public-replay.postgres.password", ""));
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
         ObjectMapper mapper = new ObjectMapper();
         HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build();

@@ -172,7 +172,7 @@ class B5EffectiveQuantityProcessTest {
             }
             try (var reader = fixture.checker(); var a = new B0Processes.Child(B0NqProcessMain.class, dir, "a", env).awaitReady()) {
                 assertTrue(value(reader, "SHOW server_version").startsWith("16."));
-                assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
+                assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                 assertTrue(a.send("RUN_B5_STRATEGY").contains("outcome=TRIGGERED"));
                 String run = value(reader, "SELECT strategy_run_id FROM strategy_runs");
                 control(endpoint, "FILL 10 0.01");

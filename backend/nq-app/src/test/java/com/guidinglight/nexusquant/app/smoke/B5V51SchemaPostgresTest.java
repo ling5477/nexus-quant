@@ -18,7 +18,7 @@ class B5V51SchemaPostgresTest {
             fixture.initialize(true, "http://127.0.0.1:1", B0Processes.cleanEnvironment());
             B5StrategyRunRecoveryProcessTest.seed(fixture);
             try (var app = DriverManager.getConnection(fixture.url(), B0Fixture.APP, ""); var reader = fixture.checker()) {
-                assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
+                assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                 assertEquals("v51-run", value(app, "SELECT nq_admit_strategy_work('v51-run',strategy_id,account_id,'OKX','SIM',"
                         + "'MANUAL',config_snapshot,'v51-request',CURRENT_TIMESTAMP,'v51-proof',NULL,NULL,version,"
                         + "'coid-v51-request','BTC-USDT','BUY','LIMIT',10,100,'GTC',NULL) FROM strategy_definitions WHERE strategy_id='b5-strategy'"));

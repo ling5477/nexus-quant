@@ -1,0 +1,302 @@
+{
+  "manifestVersion": 1,
+  "schemaVersion": "1.0",
+  "flywayVersion": "1",
+  "postgresqlMajor": 16,
+  "baselineFile": "V1__nexus_quant_v1_baseline.sql",
+  "baselineSqlSha256": "2bd3c05718dc8548bbe3b6f20052c9426a9f2f457b96ab3bf740733aa06edf3f",
+  "normalizedSchemaSha256": "1a30d6a34d73ecbc4f7bd1bbc9381ed0f2f796a5491c85ee92a225f3675028b7",
+  "schemaCounts": {
+    "tables": 84,
+    "columns": 1148,
+    "constraints": 550,
+    "indexes": 297,
+    "functions": 117,
+    "triggers": 73,
+    "sequences": 12,
+    "comments": 1209,
+    "views": 0,
+    "enums": 0
+  },
+  "flywayHistory": [
+    {
+      "version": "1",
+      "description": "nexus quant v1 baseline",
+      "type": "SQL",
+      "script": "V1__nexus_quant_v1_baseline.sql",
+      "success": true
+    }
+  ],
+  "freshInstallFacts": {
+    "rowCounts": {
+      "account_snapshots": 0,
+      "accounts": 0,
+      "audit_logs": 0,
+      "backtest_configs": 0,
+      "backtest_eval_reports": 0,
+      "backtest_publish_records": 0,
+      "backtest_runs": 0,
+      "continuous_sim_bars": 0,
+      "continuous_sim_runs": 0,
+      "controlled_execution_lease_events": 0,
+      "controlled_execution_lease_intents": 0,
+      "controlled_execution_leases": 0,
+      "credential_audit_logs": 0,
+      "emergency_stop_events": 0,
+      "equity_curve_snapshots": 0,
+      "event_store": 0,
+      "exchange_account_credentials": 0,
+      "exchange_accounts": 0,
+      "execution_instrument_observation_items": 0,
+      "execution_intents": 0,
+      "execution_pre_place_recovery_decisions": 0,
+      "execution_prerequisite_observations": 0,
+      "execution_receipts": 0,
+      "execution_scope_bindings": 0,
+      "instrument_catalog": 0,
+      "kill_switch_events": 1,
+      "kill_switch_states": 1,
+      "ledger_entries": 0,
+      "ledger_events": 0,
+      "live_session_events": 0,
+      "live_sessions": 0,
+      "marketdata_bars": 0,
+      "marketdata_dataset_coverage": 0,
+      "marketdata_datasets": 0,
+      "marketdata_ingestion_jobs": 0,
+      "marketdata_ingestion_runs": 0,
+      "operator_approvals": 0,
+      "operator_execution_authorities": 0,
+      "orders": 0,
+      "ordinary_order_cancel_finality": 0,
+      "ordinary_place_authorities": 0,
+      "paper_risk_check_results": 0,
+      "paper_run_alerts": 0,
+      "paper_run_daily_reports": 0,
+      "paper_run_heartbeats": 0,
+      "paper_run_recovery_events": 0,
+      "paper_run_schedule_fires": 0,
+      "paper_run_schedules": 0,
+      "paper_run_stability_checks": 0,
+      "paper_trading_orders": 0,
+      "paper_trading_positions": 0,
+      "paper_trading_runs": 0,
+      "paper_trading_trades": 0,
+      "position_curve_snapshots": 0,
+      "positions": 0,
+      "public_market_captures": 0,
+      "reconciliation_scan_cursors": 0,
+      "research_configs": 0,
+      "risk_events": 0,
+      "risk_limit_sets": 0,
+      "roles": 3,
+      "scheduled_job_controls": 8,
+      "shadow_consistency_reports": 0,
+      "shadow_run_events": 0,
+      "shadow_run_snapshots": 0,
+      "shadow_runs": 0,
+      "sim_orders": 0,
+      "sim_pnl_snapshots": 0,
+      "sim_positions": 0,
+      "sim_trades": 0,
+      "strategy_definitions": 0,
+      "strategy_release_admission_state": 0,
+      "strategy_run_dispatch_work": 0,
+      "strategy_run_recovery_scan_cursor": 1,
+      "strategy_runs": 0,
+      "strategy_schedules": 0,
+      "strategy_sim_decisions": 0,
+      "strategy_versions": 0,
+      "trade_replay_records": 0,
+      "trades": 0,
+      "user_roles": 0,
+      "users": 0,
+      "validation_review_cases": 0,
+      "validation_review_events": 0
+    },
+    "facts": {
+      "roles": [
+        {
+          "id": 2,
+          "role_code": "OPERATOR",
+          "description": "Operations user"
+        },
+        {
+          "id": 3,
+          "role_code": "VIEWER",
+          "description": "Read-only user"
+        },
+        {
+          "id": 1,
+          "role_code": "ADMIN",
+          "description": "System administrator"
+        }
+      ],
+      "kill_switch_states": [
+        {
+          "scope": "GLOBAL_TRADING",
+          "source": "FLYWAY_MIGRATION",
+          "status": "ENGAGED",
+          "version": 1,
+          "trace_id": "baseline-bootstrap",
+          "updated_by": "SYSTEM",
+          "reason_code": "DEFAULT_SAFE_BOOTSTRAP"
+        }
+      ],
+      "kill_switch_events": [
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "scope": "GLOBAL_TRADING",
+          "source": "FLYWAY_MIGRATION",
+          "actor_id": "SYSTEM",
+          "trace_id": "baseline-bootstrap",
+          "to_status": "ENGAGED",
+          "from_status": null,
+          "reason_code": "DEFAULT_SAFE_BOOTSTRAP",
+          "state_version": 1
+        }
+      ],
+      "scheduled_job_controls": [
+        {
+          "enabled": false,
+          "job_key": "OKX_RECOVERY",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 15000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "PAPER_MATCHING",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 2000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "LEDGER_RECONCILIATION",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 30000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "CONTINUOUS_SIM_POLL",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 300000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "VALIDATION_EVIDENCE_REFRESH",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 300000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "BINANCE_RECONCILIATION",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 5000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "OKX_RECONCILIATION",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 5000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "STRATEGY_RECOVERY",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 5000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        }
+      ],
+      "strategy_run_recovery_scan_cursor": [
+        {
+          "cursor_id": 1,
+          "last_run_id": null,
+          "last_started_at": null
+        }
+      ]
+    },
+    "roleSequence": [
+      {
+        "last_value": 3,
+        "is_called": true
+      }
+    ]
+  },
+  "normalization": {
+    "liveColumnOrdinal": true,
+    "lineEndings": "LF",
+    "varcharTextArrayDeparse": "two exact cast forms preserving operands/literals/operators",
+    "pureAndChecks": [
+      "chk_execution_scope_bindings_age_skew",
+      "chk_risk_limit_sets_counts",
+      "chk_risk_limit_sets_market_data"
+    ],
+    "effectiveAcl": "aclexplode of explicit ACL or acldefault; OWNER is object owner; PUBLIC and named roles retained; schema/relation/sequence/function/explicit column/default privileges included"
+  },
+  "historicalMigrationRange": "V1-V59",
+  "historicalHead": "8291725995455b59d7936bf42e68a8061ef8252b",
+  "oldDatabasePolicy": "FRESH_DATABASE_ONLY; development databases are not upgrade targets"
+}

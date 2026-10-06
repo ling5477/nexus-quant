@@ -55,16 +55,16 @@ class AccountSnapshotSemanticsPostgresIntegrationTest {
         JdbcTemplate admin = new JdbcTemplate(adminSource);
         try {
             Flyway old = Flyway.configure().dataSource(adminSource).locations("classpath:db/migration")
-                    .schemas(schema).defaultSchema(schema).createSchemas(true).target("54").load();
+                    .schemas(schema).defaultSchema(schema).createSchemas(true).target("1").load();
             old.migrate();
             old.validate();
-            assertEquals("54", old.info().current().getVersion().getVersion());
+            assertEquals("1", old.info().current().getVersion().getVersion());
             long accountId = jdbc.queryForObject("""
                     INSERT INTO accounts(account_code,venue,status) VALUES (?, 'OKX', 'ACTIVE') RETURNING account_id
                     """, Long.class, "synthetic-" + UUID.randomUUID());
             jdbc.update("""
-                    INSERT INTO account_snapshots(account_id,currency,balance,available,frozen,ts,trace_id)
-                    VALUES (?,'BTC',1,1,0,?,'legacy')
+                    INSERT INTO account_snapshots(account_id,currency,balance,available,frozen,ts,trace_id,recorded_at)
+                    VALUES (?,'BTC',1,1,0,?,'legacy',NULL)
                     """, accountId, Timestamp.from(Instant.parse("2026-08-26T00:00:00Z")));
             long legacyId = jdbc.queryForObject("SELECT max(snapshot_id) FROM account_snapshots", Long.class);
 
@@ -72,7 +72,7 @@ class AccountSnapshotSemanticsPostgresIntegrationTest {
                     .schemas(schema).defaultSchema(schema).createSchemas(true).load();
             latest.migrate();
             latest.validate();
-            assertEquals("59", latest.info().current().getVersion().getVersion());
+            assertEquals("1", latest.info().current().getVersion().getVersion());
             assertNull(jdbc.queryForObject("SELECT trade_env FROM account_snapshots WHERE snapshot_id=?",
                     String.class, legacyId));
             assertNull(jdbc.queryForObject("SELECT recorded_at FROM account_snapshots WHERE snapshot_id=?",

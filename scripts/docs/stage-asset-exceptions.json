@@ -3,7 +3,7 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "96cf0938c66d7ede84d902957ee3a9f4809521076c46a8fe4f9666d3ddfd714f",
+      "sha256": "51b2bc0ad7c9accee0d03959216d2f05d8e908be21c06d3e89fc036b14d7950b",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
@@ -99,7 +99,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/admission/AdmissionGuardedMaterializationPostgresIntegrationTest.java",
-      "sha256": "e3512a8c2d25fe17b9a76460f86d46f0a60e69a13bb8a4bfcdad8c1b8b9c8515",
+      "sha256": "b8790d5887c301262b23a93760a4dc6358eb4b4673538c1b6a7c55333be146c5",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -107,7 +107,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/admission/AdmissionMaterializationGuardPostgresIntegrationTest.java",
-      "sha256": "9c955f8b5ec84b08825d0b2f3dab5f2b00fd54e679bac3f6f30b8a32cf989952",
+      "sha256": "c8cc01cab2217b5fe8aba37b3ffb4ddb81eaed36b398832853979152f8e1e9a7",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -179,7 +179,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
-      "sha256": "c935021a596259eeaff7beb53ebaa06fb94086ede69c57e944e739c71e0f99b3",
+      "sha256": "1510dab66ade7f46fdaf04d85288b06e0121575685035f16e8122a623b20beec",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -187,7 +187,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
-      "sha256": "65d76d4b3f750eb46746478352c9d0ebce148b34c9a920de722a199fcb16c37c",
+      "sha256": "d34f3c8be4ec3c70390d1db9d91b89bfdfdeb35b5ecde3eec5563c93025ae13c",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -203,7 +203,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/marketdata/VenueRuleFactsPostgresIntegrationTest.java",
-      "sha256": "7746117933d1314baf87aea63f790aa1ed1ed2418494acc2856a6f110bdb62cb",
+      "sha256": "825f38bd982fb6f32aeb0e140e51194e38b26e884b1a6e0580c08dac4bba2868",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -211,7 +211,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/research/BacktestPublishArtifactLocatorPostgresIntegrationTest.java",
-      "sha256": "5d5b9188f8fd5aaa23ef16daf59148df17b82f344447d60509034c2663e9fbd2",
+      "sha256": "8f6df779efc20229d4bb84a8728e295f30d89b4202fa3811e2bd620b17b1ddde",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -219,7 +219,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/risk/KillSwitchRestartDurabilityPostgresIntegrationTest.java",
-      "sha256": "910fdbd161913e662451179d49ea53ae5dddcea81c7bf61f4761350790ab9b12",
+      "sha256": "fa8bdfc2c1ee2f1d1a61e542ee28c7f5110c19b5b792df6defe65d359d6cd64d",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -227,7 +227,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/shadowrun/ShadowRunProvenancePostgresIntegrationTest.java",
-      "sha256": "d969a3af4b7beb92cd7996f89a99ccbfc14dd07bee5cbf6f3fd7090cbf14f072",
+      "sha256": "9943ec0ac0484f2e480e31dd1b8c900082255e6ef070f24aa67815524cfe9672",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -251,7 +251,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/ValidationReviewFlywayPostgresIntegrationTest.java",
-      "sha256": "1fbe69ea215e0237929a86b214ae62f4dea487f0f50b96b9d58c338164616429",
+      "sha256": "9d7d2dba06046292ab6735b4e30cb5dadb14140af2fcabbf50dd4d2b5ba8fa97",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -476,118 +476,6 @@
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/account/infra/probe/OkxRealReadonlyPermissionProbePortTest.java",
       "sha256": "7baf057bf77ff1ce4c44a81cd510d0217ccb289a9da5a67d98b3eae8f9afd671",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/BacktestPublishArtifactLocatorMigrationContractTest.java",
-      "sha256": "245d08c98970dbbd31d5d75f16ec478092e0f3d87e17169df7ad3c72bf93670b",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/CurrentMarketSnapshotMigrationContractTest.java",
-      "sha256": "02cc374b783fd09c2497c145996ec9a69900f5126dcbfa87dbfd7d8ae835568f",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/KillSwitchStateMigrationContractTest.java",
-      "sha256": "fae0fb2f89ed9369491c525ff90e4c66255c882a9af83ee8954fca084538b632",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/LiveSessionFactModelMigrationContractTest.java",
-      "sha256": "fc62f0d925c93fe1c600a2c7d58304c730b34d68943d00a594619d2dfdf762f3",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/MinimalLivePilotExecutionLeaseMigrationContractTest.java",
-      "sha256": "fbcb7947e092b0ec884eca12552efe98c956c3b29422a5e77f70641854e64162",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/MinimumOrderValueSemanticRemediationMigrationContractTest.java",
-      "sha256": "d84ed4583c5de54dd00a0b8388e15ac074b11dcfd37659b505e2e193194928d8",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/OperatorPilotAuthorityMigrationContractTest.java",
-      "sha256": "7ed9d9917abb13813f7679c0bc449bc02a96d0b3ddad8645377995f69195e1ed",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/PilotScopePrerequisiteFactModelMigrationContractTest.java",
-      "sha256": "393fccf6fa850fd95383fcd0487443c0fbb6df39dfb79651fbc274ac4fe128dd",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/PrePlaceRecoveryMigrationContractTest.java",
-      "sha256": "d2208d7764058d20ccd12c78f8139a250fa7a440b9a7eb27b3f515aa70a8c745",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/ShadowRunFactModelMigrationContractTest.java",
-      "sha256": "232ece3949c4772eccfd5fe268c43bb925dbd24d11e98271776c275e4d06bd17",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/ShadowRunProvenanceMigrationContractTest.java",
-      "sha256": "ee50edd37ce5c0c5375e3afbfff610d98fe8f0d7e260fad7b7bac9fdf5a050d4",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/TerminalLeaseRegenerationMigrationContractTest.java",
-      "sha256": "03edf5d749edbe97efda94bc6082c3e05bfcae3ba03214edabcdcb68a26de75e",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/ValidationReviewFactModelMigrationContractTest.java",
-      "sha256": "10968c3586340122c92052b43821ff29781b9675a5c9054fede7063775fce2e6",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/infra/postgres/VenueRuleFactsMigrationContractTest.java",
-      "sha256": "b7c760eff6f47e7aa3cfa1a8ca10bd10569c94d7c484214ed853fb306d601b88",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -836,22 +724,6 @@
     {
       "path": "scripts/docs/test-governance-workflow-lifecycle.ps1",
       "sha256": "7e2beecfa12a22a1018aac59f93a6edbb4e33341a9dabd09c15e5407513c6fc5",
-      "kind": "GOVERNANCE_CONTRACT",
-      "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
-      "owner": "Governance and delivery contract owner",
-      "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
-    },
-    {
-      "path": "scripts/java-standard/tests/Test-V40MigrationGitBlobContract.ps1",
-      "sha256": "34dde1d9d3a60b42cc3694d664cd93749cd275b614909459ed28aee991da834f",
-      "kind": "GOVERNANCE_CONTRACT",
-      "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
-      "owner": "Governance and delivery contract owner",
-      "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
-    },
-    {
-      "path": "scripts/java-standard/verify-v40-migration-git-blob.ps1",
-      "sha256": "dd0a3ca8018bd372d8514a2090203b9fdf76ac35cff3366867eefed3eeb2c63d",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",

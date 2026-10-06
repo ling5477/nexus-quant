@@ -83,7 +83,7 @@ class L6ActiveStabilityTest {
                     proof.set("paper",JSON.readTree(children.get(0).send("L6_PAPER")));
                     http(endpoint,"L5_OPEN");
                     try(var reader=fixture.checker()) {
-                        assertEquals("51",value(reader,"SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
+                        assertEquals("1",value(reader,"SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                         assertEquals("f",value(reader,"SELECT has_table_privilege(current_user,'orders','UPDATE')"));
                         reader.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);reader.setAutoCommit(false);
                         try (var resourceReader = fixture.checker();
@@ -199,8 +199,8 @@ class L6ActiveStabilityTest {
             // 仅owned fixture授权统计可见性，防止其他角色的state被PG隐藏后误记idle-in-transaction=0。
             s.execute("GRANT pg_read_all_stats TO nq_b0_reader");
             for(int index=1;index<=2;index++) {
-                s.execute("INSERT INTO strategy_definitions(strategy_id,strategy_code,strategy_name,strategy_type,exchange_code,account_id,trade_env,enabled,config_snapshot) SELECT 'l6-strategy-"+index+"','l6-strategy-"+index+"','L6 fixture','TEST','OKX',account_id,'SIM',true,'{\"symbol\":\"BTC-USDT\",\"side\":\"BUY\",\"orderType\":\"LIMIT\",\"price\":\"100\",\"quantity\":\"0.1005\"}'::jsonb FROM accounts WHERE account_code='b0-account'");
-                s.execute("INSERT INTO strategy_schedules(schedule_job_id,strategy_id,cron_expr,timezone,enabled,dedup_scope,exchange_code,account_id,trade_env,created_at) SELECT 'l6-schedule-"+index+"','l6-strategy-"+index+"','"+(calibration ? "*/5 * * * * *" : "0 * * * * *")+"','UTC',true,'SCHEDULE_WINDOW','OKX',account_id,'SIM',CURRENT_TIMESTAMP-INTERVAL '60 seconds' FROM accounts WHERE account_code='b0-account'");
+                s.execute("INSERT INTO strategy_definitions(strategy_id,strategy_code,strategy_name,strategy_type,exchange_code,account_id,trade_env,enabled,config_snapshot) SELECT 'l6-strategy-"+index+"','l6-strategy-"+index+"','L6 fixture','TEST','OKX',account_id,'SIM',true,'{\"symbol\":\"BTC-USDT\",\"side\":\"BUY\",\"orderType\":\"LIMIT\",\"price\":\"100\",\"quantity\":\"0.1005\"}'::jsonb FROM accounts WHERE account_id=(SELECT legacy_account_id FROM exchange_accounts WHERE account_alias='b0-sim')");
+                s.execute("INSERT INTO strategy_schedules(schedule_job_id,strategy_id,cron_expr,timezone,enabled,dedup_scope,exchange_code,account_id,trade_env,created_at) SELECT 'l6-schedule-"+index+"','l6-strategy-"+index+"','"+(calibration ? "*/5 * * * * *" : "0 * * * * *")+"','UTC',true,'SCHEDULE_WINDOW','OKX',account_id,'SIM',CURRENT_TIMESTAMP-INTERVAL '60 seconds' FROM accounts WHERE account_id=(SELECT legacy_account_id FROM exchange_accounts WHERE account_alias='b0-sim')");
             }
             L6ValidationFixture.seed(owner);
             s.execute("INSERT INTO research_configs(research_config_id,source_strategy_id,name,strategy_snapshot) VALUES('l6-research','l6-strategy-1','L6 Paper fixture','{}')");

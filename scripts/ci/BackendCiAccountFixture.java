@@ -44,6 +44,9 @@ public final class BackendCiAccountFixture {
         }
 
         String currentVersion = current.getVersion().getVersion();
+        if (!"1".equals(currentVersion)) {
+            throw new IllegalStateException("Backend CI fixture requires the release V1 baseline");
+        }
 
         try (Connection connection = DriverManager.getConnection(url, user, password)) {
             insertLegacyAccount(connection);

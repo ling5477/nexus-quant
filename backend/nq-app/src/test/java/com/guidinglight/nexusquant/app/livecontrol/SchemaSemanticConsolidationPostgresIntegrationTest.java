@@ -24,13 +24,13 @@ class SchemaSemanticConsolidationPostgresIntegrationTest {
     @Test
     void materializesFreshSchemaWithoutChangingObjectCountsOrLeavingRetiredNames() {
         try (Fixture fixture = new Fixture()) {
-            fixture.before.migrate();
-            assertEquals("58", fixture.before.info().current().getVersion().getVersion());
-            fixture.assertAuthorityLabelCheck("OPERATOR_PILOT", "OPERATOR_CONTROLLED_EXECUTION");
+            assertEquals(1, fixture.before.migrate().migrationsExecuted);
+            assertEquals("1", fixture.before.info().current().getVersion().getVersion());
+            fixture.assertAuthorityLabelCheck("OPERATOR_CONTROLLED_EXECUTION", "OPERATOR_PILOT");
             List<Integer> beforeCounts = fixture.counts();
-            fixture.latest.migrate();
+            assertEquals(0, fixture.latest.migrate().migrationsExecuted);
             fixture.latest.validate();
-            assertEquals("59", fixture.latest.info().current().getVersion().getVersion());
+            assertEquals("1", fixture.latest.info().current().getVersion().getVersion());
             fixture.assertAuthorityLabelCheck("OPERATOR_CONTROLLED_EXECUTION", "OPERATOR_PILOT");
             assertEquals(0, fixture.latest.info().pending().length);
             assertEquals(beforeCounts, fixture.counts());
@@ -120,7 +120,7 @@ class SchemaSemanticConsolidationPostgresIntegrationTest {
             jdbc.setQueryTimeout(15);
             assertTrue(jdbc.queryForObject("SHOW server_version", String.class).startsWith("16."));
             before = Flyway.configure().dataSource(schemaUrl, user, password).schemas(schema).defaultSchema(schema)
-                    .createSchemas(true).cleanDisabled(false).target("58")
+                    .createSchemas(true).cleanDisabled(false).target("1")
                     .locations("filesystem:../nq-infra/src/main/resources/db/migration").load();
             latest = Flyway.configure().dataSource(schemaUrl, user, password).schemas(schema).defaultSchema(schema)
                     .createSchemas(true).cleanDisabled(false)

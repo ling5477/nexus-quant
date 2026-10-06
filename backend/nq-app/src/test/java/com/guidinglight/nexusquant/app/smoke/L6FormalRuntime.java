@@ -109,7 +109,7 @@ final class L6FormalRuntime {
                              var resources = new L6RuntimeResources(resourceReader, dir, actors, venue, endpoint, container, true, storage(), resourceFileLifecycle);
                              var boundaryResources = storage() ? new L6RuntimeResources(boundaryReader, dir, actors, venue, endpoint, container, true, true, resourceFileLifecycle) : null) {
                             proof.put("postgresVersion", value(reader, "SHOW server_version")).put("schema", value(reader,"SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
-                            assertEquals("51", proof.path("schema").asText());
+                            assertEquals("1", proof.path("schema").asText());
                             reader.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ); reader.setAutoCommit(false);
                             if (!storage()) try (var statement = reader.createStatement()) { statement.execute("SET statement_timeout='2000ms'"); reader.commit(); }
                             if (!storage()) {

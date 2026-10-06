@@ -131,15 +131,16 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class StrategySimPostgresIntegrationTest {
     private static final AtomicReference<ClosedBarMarketFeed.Observation> schedulerObservation = new AtomicReference<>();
     private static String schema;
-    private static String independentSchema;
-    private static String counterfactualSchema;
+    private static String independentDatabaseUrl;
+    private static String counterfactualDatabaseUrl;
     private static String baseUrl;
     private static String databaseUser;
     private static String databasePassword;
     private static DriverManagerDataSource admin;
+    private static final List<ReleaseBaselineTestDatabase> ownedDatabases = new ArrayList<>();
 
     @DynamicPropertySource
-    static void database(DynamicPropertyRegistry registry) {
+    static void database(DynamicPropertyRegistry registry) throws Exception {
         baseUrl = System.getProperty("nq.strategy-sim.pg.url", "");
         if (!baseUrl.startsWith("jdbc:postgresql://127.0.0.1:"))
             throw new IllegalArgumentException("disposable loopback PostgreSQL URL required");
@@ -147,31 +148,22 @@ class StrategySimPostgresIntegrationTest {
         databasePassword = System.getProperty("nq.strategy-sim.pg.password", "disposable");
         if (databaseUser.isBlank() || databasePassword.isBlank())
             throw new IllegalArgumentException("disposable PostgreSQL credentials required");
-        schema = "strategy_sim_sim_" + UUID.randomUUID().toString().replace("-", "");
-        admin = new DriverManagerDataSource(baseUrl, databaseUser, databasePassword);
-        JdbcTemplate jdbc = new JdbcTemplate(admin);
-        jdbc.execute("CREATE SCHEMA " + schema);
-        Flyway flyway = Flyway.configure().dataSource(admin).schemas(schema)
-                .locations("classpath:db/migration").load();
-        flyway.migrate();
-        flyway.validate();
-        registry.add("spring.datasource.url", () -> baseUrl + "?currentSchema=" + schema);
+        var database = ReleaseBaselineTestDatabase.create("nq.strategy-sim.pg");
+        ownedDatabases.add(database);
+        baseUrl = database.url();
+        schema = "public";
+        admin = database.source();
+        database.flyway().migrate();
+        database.flyway().validate();
+        registry.add("spring.datasource.url", () -> baseUrl);
         registry.add("spring.datasource.username", () -> databaseUser);
         registry.add("spring.datasource.password", () -> databasePassword);
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
     }
 
     @AfterAll
-    static void cleanup() {
-        if (admin != null && schema != null) {
-            new JdbcTemplate(admin).execute("DROP SCHEMA " + schema + " CASCADE");
-        }
-        if (admin != null && independentSchema != null) {
-            new JdbcTemplate(admin).execute("DROP SCHEMA " + independentSchema + " CASCADE");
-        }
-        if (admin != null && counterfactualSchema != null) {
-            new JdbcTemplate(admin).execute("DROP SCHEMA " + counterfactualSchema + " CASCADE");
-        }
+    static void cleanup() throws Exception {
+        for (var database : ownedDatabases) database.close();
         ExchangeNoOutboundGuard.restoreDefault();
     }
 
@@ -648,7 +640,7 @@ class StrategySimPostgresIntegrationTest {
                     .profiles("ci-app-smoke").web(WebApplicationType.NONE)
                     .initializers(new NqAppContextPostgresSmokeTest.NoOutboundInitializer())
                     .properties(Map.ofEntries(
-                            Map.entry("spring.datasource.url", baseUrl + "?currentSchema=" + schema),
+                            Map.entry("spring.datasource.url", baseUrl + "?currentSchema=" + schema + ",public"),
                             Map.entry("spring.datasource.username", databaseUser),
                             Map.entry("spring.datasource.password", databasePassword),
                             Map.entry("spring.flyway.enabled", "false"),
@@ -665,7 +657,7 @@ class StrategySimPostgresIntegrationTest {
                             Map.entry("nq.security.issuer", "nexus-quant-strategy-sim-synthetic"),
                             Map.entry("nq.security.secret", "strategy-sim-synthetic-secret-123456789"),
                             Map.entry("nq.security.access-token-ttl", "PT30M")))
-                    .run("--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema,
+                    .run("--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema + ",public",
                             "--spring.datasource.username=" + databaseUser,
                             "--spring.datasource.password=" + databasePassword,
                             "--spring.flyway.enabled=false")) {
@@ -1260,7 +1252,7 @@ class StrategySimPostgresIntegrationTest {
         try {
             ProcessBuilder builder = new ProcessBuilder(executable, "-cp", classpath,
                     StrategySimRestartProbeMain.class.getName(), mode, baseUrl, schema, paperRunId);
-            builder.environment().put("SPRING_DATASOURCE_URL", baseUrl + "?currentSchema=" + schema);
+            builder.environment().put("SPRING_DATASOURCE_URL", baseUrl + "?currentSchema=" + schema + ",public");
             builder.environment().put("SPRING_DATASOURCE_USERNAME", databaseUser);
             builder.environment().put("SPRING_DATASOURCE_PASSWORD", databasePassword);
             builder.redirectErrorStream(true).redirectOutput(log.toFile());
@@ -1359,8 +1351,8 @@ class StrategySimPostgresIntegrationTest {
         var publish = publishing.publish(new BacktestPublishRequest(backtest.backtestRunId(),
                 "Public capture SMA publish", version.strategyVersionId()));
         assertEquals("SUCCEEDED", publish.publishStatus().name());
-        independentSchema = cloneFrozenPublicReplayInput(publish.publishRecordId());
-        counterfactualSchema = cloneFrozenPublicReplayInput(publish.publishRecordId());
+        independentDatabaseUrl = cloneFrozenPublicReplayInput(publish.publishRecordId());
+        counterfactualDatabaseUrl = cloneFrozenPublicReplayInput(publish.publishRecordId());
         // 隔离随机 schema 的 SIM 风控开关只为本测试短暂打开，外部运行状态不受影响。
         jdbc.update("""
                 UPDATE kill_switch_states SET status='DISENGAGED', version=version+1,
@@ -1474,7 +1466,7 @@ class StrategySimPostgresIntegrationTest {
         var replayPublish = publishing.publish(new BacktestPublishRequest(replayBacktest.backtestRunId(),
                 "Public capture SMA replay", version.strategyVersionId()));
         assertEquals("SUCCEEDED", replayPublish.publishStatus().name());
-        var replay = runIndependentReplay(publish.publishRecordId(), capture.barCount(), independentSchema);
+        var replay = runIndependentReplay(publish.publishRecordId(), capture.barCount(), independentDatabaseUrl);
         var replayCreated = replay.created();
         var replayFacts = replay.facts();
         assertEquals(created.strategyVersionId(), replayCreated.strategyVersionId());
@@ -1604,7 +1596,7 @@ class StrategySimPostgresIntegrationTest {
     private ReplayResult runCounterfactualReplay(String publishId, String originalSummary,
             List<HistoricalBar> changedBars, int barCount) {
         JdbcTemplate isolated = new JdbcTemplate(new DriverManagerDataSource(
-                baseUrl + "?currentSchema=" + counterfactualSchema, databaseUser, databasePassword));
+                counterfactualDatabaseUrl, databaseUser, databasePassword));
         String backtestId = isolated.queryForObject(
                 "SELECT backtest_run_id FROM backtest_publish_records WHERE publish_record_id=?",
                 String.class, publishId);
@@ -1625,7 +1617,7 @@ class StrategySimPostgresIntegrationTest {
                 UPDATE backtest_runs SET summary_json=?::jsonb,dataset_snapshot_json=?::jsonb
                 WHERE backtest_run_id=?
                 """, summary.toString(), dataset.toString(), backtestId);
-        var replay = runIndependentReplay(publishId, barCount, counterfactualSchema);
+        var replay = runIndependentReplay(publishId, barCount, counterfactualDatabaseUrl);
         assertTrue(!replay.created().barContentSha256().equals(
                 read(originalSummary).path("barContentSha256").asText()));
         return replay;
@@ -1792,51 +1784,37 @@ class StrategySimPostgresIntegrationTest {
         }
     }
 
-    private String cloneFrozenPublicReplayInput(String publishId) {
-        String targetSchema = "strategy_sim_independent_" + UUID.randomUUID().toString().replace("-", "");
-        new JdbcTemplate(admin).execute("CREATE SCHEMA " + targetSchema);
-        Flyway independentFlyway = Flyway.configure().dataSource(admin).schemas(targetSchema)
-                .initSql("SET search_path TO " + targetSchema + "," + schema + ",public")
-                .locations("classpath:db/migration").load();
-        independentFlyway.migrate();
-        independentFlyway.validate();
-        JdbcTemplate isolation = new JdbcTemplate(new DriverManagerDataSource(
-                baseUrl + "?currentSchema=" + targetSchema + "," + schema + ",public",
-                databaseUser, databasePassword));
-        // B 仅取得 A 尚未创建 SIM run 时的冻结输入；不能复制任何已执行的订单或账本。
+    private String cloneFrozenPublicReplayInput(String publishId) throws Exception {
+        var database = ReleaseBaselineTestDatabase.create("nq.strategy-sim.pg");
+        ownedDatabases.add(database);
+        database.flyway().migrate();
+        database.flyway().validate();
+        JdbcTemplate isolation = new JdbcTemplate(database.source());
+        // B 只取得冻结研究输入；两个 public schema 属于不同数据库，不能共享 canonical 写入。
         for (String table : List.of("accounts", "marketdata_datasets", "marketdata_bars",
                 "marketdata_dataset_coverage", "public_market_captures", "strategy_definitions",
                 "strategy_versions", "research_configs", "backtest_configs", "backtest_runs",
                 "sim_orders", "sim_trades", "sim_positions", "sim_pnl_snapshots",
                 "backtest_eval_reports", "backtest_publish_records")) {
-            isolation.update("INSERT INTO " + targetSchema + "." + table
-                    + " SELECT * FROM " + schema + "." + table);
+            String rows = jdbc.queryForObject("SELECT coalesce(jsonb_agg(to_jsonb(t)), '[]'::jsonb)::text FROM " + table + " t", String.class);
+            isolation.update("INSERT INTO " + table + " SELECT * FROM jsonb_populate_recordset(NULL::" + table + ", CAST(? AS jsonb))", rows);
         }
-        isolation.execute("SELECT setval('" + targetSchema + ".accounts_account_id_seq',"
-                + "(SELECT max(account_id) FROM " + targetSchema + ".accounts))");
+        isolation.execute("SELECT setval('accounts_account_id_seq',(SELECT max(account_id) FROM accounts))");
         assertEquals(jdbc.queryForObject("SELECT count(*) FROM backtest_publish_records", Integer.class),
-                isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                        + ".backtest_publish_records", Integer.class));
-        assertEquals(1, isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                        + ".backtest_publish_records WHERE publish_record_id=?",
-                Integer.class, publishId));
-        assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                + ".strategy_sim_decisions", Integer.class));
-        assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                + ".orders", Integer.class));
-        assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                + ".trades", Integer.class));
-        assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                + ".ledger_entries", Integer.class));
-        return targetSchema;
+                isolation.queryForObject("SELECT count(*) FROM backtest_publish_records", Integer.class));
+        assertEquals(1, isolation.queryForObject("SELECT count(*) FROM backtest_publish_records WHERE publish_record_id=?", Integer.class, publishId));
+        for (String table : List.of("strategy_sim_decisions", "orders", "trades", "ledger_entries")) {
+            assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + table, Integer.class));
+        }
+        return database.url();
     }
 
-    private ReplayResult runIndependentReplay(String publishId, int barCount, String targetSchema) {
+    private ReplayResult runIndependentReplay(String publishId, int barCount, String targetDatabaseUrl) {
         try (ConfigurableApplicationContext context = new SpringApplicationBuilder(NexusQuantApplication.class)
                 .profiles("ci-app-smoke").web(WebApplicationType.NONE)
                 .initializers(new NqAppContextPostgresSmokeTest.NoOutboundInitializer())
                 .properties(Map.ofEntries(
-                        Map.entry("spring.datasource.url", baseUrl + "?currentSchema=" + targetSchema),
+                        Map.entry("spring.datasource.url", targetDatabaseUrl),
                         Map.entry("spring.datasource.username", databaseUser),
                         Map.entry("spring.datasource.password", databasePassword),
                         Map.entry("spring.flyway.enabled", "false"),
@@ -1854,14 +1832,16 @@ class StrategySimPostgresIntegrationTest {
                         Map.entry("nq.security.issuer", "nexus-quant-strategy-sim-synthetic"),
                         Map.entry("nq.security.secret", "strategy-sim-synthetic-secret-123456789"),
                         Map.entry("nq.security.access-token-ttl", "PT30M")))
-                .run("--spring.datasource.url=" + baseUrl + "?currentSchema=" + targetSchema,
+                .run("--spring.datasource.url=" + targetDatabaseUrl,
                         "--spring.datasource.username=" + databaseUser,
                         "--spring.datasource.password=" + databasePassword)) {
             JdbcTemplate isolated = context.getBean(JdbcTemplate.class);
             StrategySimRunService isolatedSim = context.getBean(StrategySimRunService.class);
             PaperTradingRunService isolatedRuns = context.getBean(PaperTradingRunService.class);
             PaperMatchingService isolatedMatching = context.getBean(PaperMatchingService.class);
-            assertEquals(targetSchema, isolated.queryForObject("SELECT current_schema()", String.class));
+            assertEquals("public", isolated.queryForObject("SELECT current_schema()", String.class));
+            assertEquals(URI.create(targetDatabaseUrl.substring("jdbc:".length())).getPath().substring(1),
+                    isolated.queryForObject("SELECT current_database()", String.class));
             assertEquals(1, isolated.queryForObject("""
                     SELECT count(*) FROM backtest_publish_records WHERE publish_record_id=?
                     """, Integer.class, publishId));
@@ -2137,7 +2117,7 @@ class StrategySimPostgresIntegrationTest {
         try (ConfigurableApplicationContext web = new SpringApplicationBuilder(NexusQuantApplication.class, SchedulerFeedConfiguration.class, ProductUxRiskConfiguration.class)
                 .profiles("ci-app-smoke", "public-marketdata-manual").web(WebApplicationType.SERVLET)
                 .initializers(new NqAppContextPostgresSmokeTest.NoOutboundInitializer())
-                .run("--server.port=18889", "--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema,
+                .run("--server.port=18889", "--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema + ",public",
                         "--spring.datasource.username=" + databaseUser, "--spring.datasource.password=" + databasePassword,
                         "--spring.flyway.enabled=false", "--spring.sql.init.mode=never",
                         "--nq.runtime.trading-components.enabled=true", "--nq.strategy-sim.enabled=true",

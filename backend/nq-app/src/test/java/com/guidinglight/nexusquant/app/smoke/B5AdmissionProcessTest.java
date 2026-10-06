@@ -55,7 +55,7 @@ class B5AdmissionProcessTest {
                     proof.put("database", fixture.name()).put("venuePid", venue.process.pid())
                             .put("nqPid", a.process.pid()).put("restartPid", b.process.pid());
                     proof.put("postgres", value(reader, "SHOW server_version"));
-                    assertEquals("50", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
+                    assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                     String arm = switch (row) {
                         case "STALE", "BEFORE_ADMISSION_DEATH" -> "ARM_B5_STRATEGY";
                         case "AFTER_ADMISSION_DEATH" -> "ARM_B5_ADMISSION";

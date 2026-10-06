@@ -597,7 +597,7 @@ class AdmissionGuardedMaterializationPostgresIntegrationTest {
     }
 
     private static String withCurrentSchema(String url, String schema) {
-        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema;
+        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
     }
 
     private static String randomSchema(String suffix) {

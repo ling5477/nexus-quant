@@ -65,7 +65,7 @@ class B5DurableLifecycleCrashRecoveryTest {
                 proof.put("database", fixture.name()).put("postgres", value(reader, "SHOW server_version"))
                         .put("nqPid", a.process.pid()).put("venuePid", venue.process.pid());
                 assertTrue(proof.path("postgres").asText().startsWith("16."));
-                assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
+                assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                 if (cut.equals("CREATED")) {
                     a.send("ARM_B5_ADMISSION");
                     a.send("BEGIN_B5_STRATEGY");

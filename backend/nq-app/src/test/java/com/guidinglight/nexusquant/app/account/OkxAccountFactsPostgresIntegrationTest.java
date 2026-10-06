@@ -107,10 +107,10 @@ class OkxAccountFactsPostgresIntegrationTest {
         admin = new JdbcTemplate(dataSource);
         admin.setQueryTimeout(30);
         Flyway flyway = Flyway.configure().dataSource(dataSource).locations("classpath:db/migration")
-                .schemas(schema).defaultSchema(schema).createSchemas(true).target("55").load();
+                .schemas(schema).defaultSchema(schema).createSchemas(true).target("1").load();
         flyway.migrate();
         flyway.validate();
-        assertEquals("55", flyway.info().current().getVersion().getVersion());
+        assertEquals("1", flyway.info().current().getVersion().getVersion());
         jdbc = new JdbcTemplate(new DriverManagerDataSource(
                 url + "?connectTimeout=5&socketTimeout=30&currentSchema=" + schema, user, password));
         jdbc.setQueryTimeout(15);

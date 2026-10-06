@@ -11,11 +11,11 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-/** 随机隔离 schema 中证明既有 V55 可前向升级并校验连续 SIM 游标约束。 */
+/** 随机隔离 schema 中证明全新安装、重复迁移和连续 SIM 游标约束。 */
 @EnabledIfSystemProperty(named = "nq.strategy-sim.pg.required", matches = "true")
 class ContinuousSimMigrationPostgresTest {
     @Test
-    void upgradesFromV55AndValidatesV56() {
+    void installsAndValidatesContinuousSimCursorContract() {
         String url = System.getProperty("nq.strategy-sim.pg.url", "");
         if (!url.startsWith("jdbc:postgresql://127.0.0.1:")) {
             throw new IllegalArgumentException("disposable loopback PostgreSQL URL required");
@@ -28,17 +28,17 @@ class ContinuousSimMigrationPostgresTest {
         jdbc.execute("CREATE SCHEMA " + schema);
         try {
             Flyway before = Flyway.configure().dataSource(source).schemas(schema)
-                    .locations("classpath:db/migration").target("55").load();
+                    .locations("classpath:db/migration").target("1").load();
             before.migrate();
             before.validate();
             Flyway after = Flyway.configure().dataSource(source).schemas(schema)
-                    .locations("classpath:db/migration").target("56").load();
-            assertEquals(1, after.migrate().migrationsExecuted);
+                    .locations("classpath:db/migration").target("1").load();
+            assertEquals(0, after.migrate().migrationsExecuted);
             after.validate();
-            assertEquals("56", after.info().current().getVersion().getVersion());
+            assertEquals("1", after.info().current().getVersion().getVersion());
             assertEquals(0, after.info().pending().length);
             JdbcTemplate scoped = new JdbcTemplate(new DriverManagerDataSource(
-                    url + "?currentSchema=" + schema,
+                    url + "?currentSchema=" + schema + ",public",
                     System.getProperty("nq.strategy-sim.pg.user", "postgres"),
                     System.getProperty("nq.strategy-sim.pg.password", "disposable")));
             assertEquals(2, scoped.queryForObject("""

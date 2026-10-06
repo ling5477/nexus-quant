@@ -125,27 +125,29 @@ import org.springframework.test.context.transaction.TestTransaction;
 class TradingChainPostgresIntegrationTest {
 
     /**
-     * 对账预留需要已提交 fixture；每个测试 context 使用独立 schema，替代原外层回滚的隔离。
-     * ContextClosed 在测试事务结束后清理且只允许删除本次生成的 schema，避免跨测试扫描事实。
+     * 对账预留需要已提交 fixture；每个测试 context 使用独立数据库，替代原外层回滚的隔离。
+     * ContextClosed 在测试事务结束后清理且只允许删除本次创建的数据库，避免跨测试扫描事实。
      */
     static class CommittedFixtureSchemaInitializer implements
             ApplicationContextInitializer<ConfigurableApplicationContext> {
         @Override
         public void initialize(ConfigurableApplicationContext context) {
             String url = context.getEnvironment().getRequiredProperty("spring.datasource.url");
-            String schema = "chain_fixture_" + UUID.randomUUID().toString().replace("-", "");
-            assertTrue(url.startsWith("jdbc:postgresql://"));
             assertFalse(url.contains("currentSchema="));
-            TestPropertyValues.of(
-                    "spring.datasource.url=" + url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public",
-                    "spring.flyway.schemas=" + schema,
-                    "spring.flyway.default-schema=" + schema,
-                    "spring.flyway.create-schemas=true").applyTo(context);
+            final ReleaseBaselineTestDatabase database;
+            try {
+                database = ReleaseBaselineTestDatabase.create(url,
+                        context.getEnvironment().getRequiredProperty("spring.datasource.username"),
+                        context.getEnvironment().getRequiredProperty("spring.datasource.password"));
+            } catch (Exception error) {
+                throw new IllegalStateException("Isolated canonical database creation failed", error);
+            }
+            TestPropertyValues.of("spring.datasource.url=" + database.url(),
+                    "spring.flyway.schemas=public", "spring.flyway.default-schema=public").applyTo(context);
             context.addApplicationListener((ApplicationListener<ContextClosedEvent>) event -> {
-                if (event.getApplicationContext() == context && context.containsBean("jdbcTemplate")) {
-                    assertTrue(schema.matches("chain_fixture_[0-9a-f]{32}"));
-                    context.getBean(JdbcTemplate.class)
-                            .execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
+                if (event.getApplicationContext() == context) {
+                    try { database.close(); }
+                    catch (Exception error) { throw new IllegalStateException("Owned database cleanup failed", error); }
                 }
             });
         }
@@ -834,10 +836,12 @@ class TradingChainPostgresIntegrationTest {
 
     private Long insertAccount(String accountCode) {
         String environment = accountCode.startsWith("kill-live-") ? "LIVE" : "SIM";
+        // 业务回归 owner 是显式测试数据，正式基线不包含默认用户。
+        jdbc.update("INSERT INTO users(username,password_hash) VALUES ('chain-synthetic-owner','NON_LOGIN_TEST_FIXTURE') ON CONFLICT(username) DO NOTHING");
         Long exchangeAccountId = jdbc.queryForObject("""
                 INSERT INTO exchange_accounts(owner_user_id,exchange_code,trade_env,account_alias,
                                               status)
-                SELECT id,'OKX',?,?,'ACTIVE' FROM users WHERE username='system-migrated'
+                SELECT id,'OKX',?,?,'ACTIVE' FROM users WHERE username='chain-synthetic-owner'
                 RETURNING exchange_account_id
                 """, Long.class, environment, accountCode);
         Long accountId = jdbc.queryForObject(

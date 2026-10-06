@@ -53,7 +53,7 @@ class L6ConvergenceProcessTest {
                 try {
                     proof.put("postgres", value(reader, "SHOW server_version"));
                     assertTrue(proof.path("postgres").asText().startsWith("16."));
-                    assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+                    assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
                     for (int i = 0; i < actors; i++) {
                         var child = new B0Processes.Child(L6ConvergenceNqMain.class, dir, "actor-" + i, env, legacy);
                         children.add(child); child.ready();

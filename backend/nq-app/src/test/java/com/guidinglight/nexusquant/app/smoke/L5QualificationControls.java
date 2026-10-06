@@ -97,7 +97,7 @@ final class L5QualificationControls implements AutoCloseable {
                 int identity = Integer.parseInt(command.substring(9));
                 if (identity < 1 || identity > 240) throw new IllegalArgumentException("L5 identity out of bounds");
                 var jdbc = context.getBean(JdbcTemplate.class);
-                long account = jdbc.queryForObject("SELECT account_id FROM accounts WHERE account_code='b0-account'", Long.class);
+                long account = jdbc.queryForObject("SELECT account_id FROM accounts WHERE account_id=(SELECT legacy_account_id FROM exchange_accounts WHERE account_alias='b0-sim')", Long.class);
                 String db = jdbc.queryForObject("SELECT current_database()", String.class);
                 String client = "l5" + db.substring(db.length() - 20) + String.format("%04d", identity);
                 var result = context.getBean(OrderCommandService.class).placeOrder(new PlaceOrderRequest(

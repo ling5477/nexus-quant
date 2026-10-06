@@ -34,9 +34,9 @@ class B5StrategyOwnerDeathTest {
                 try (var owner = DriverManager.getConnection(fixture.url(), "postgres", ""); var s = owner.createStatement()) {
                     s.execute("INSERT INTO strategy_definitions(strategy_id,strategy_code,strategy_name,strategy_type,exchange_code,account_id,trade_env,enabled,config_snapshot) "
                             + "SELECT 'b5-strategy','b5-strategy','B5 scheduler fixture','TEST','oKx',account_id,'SIM',true,"
-                            + "'{\"symbol\":\"BTC-USDT\",\"side\":\"BUY\",\"orderType\":\"LIMIT\",\"price\":\"100\",\"quantity\":\"10\"}'::jsonb FROM accounts WHERE account_code='b0-account'");
+                            + "'{\"symbol\":\"BTC-USDT\",\"side\":\"BUY\",\"orderType\":\"LIMIT\",\"price\":\"100\",\"quantity\":\"10\"}'::jsonb FROM accounts WHERE account_id=(SELECT legacy_account_id FROM exchange_accounts WHERE account_alias='b0-sim')");
                     s.execute("INSERT INTO strategy_schedules(schedule_job_id,strategy_id,cron_expr,timezone,enabled,dedup_scope,exchange_code,account_id,trade_env,created_at) "
-                            + "SELECT 'b5','b5-strategy','0 * * * * *','UTC',true,'SCHEDULE_WINDOW','oKx',account_id,'SIM',CURRENT_TIMESTAMP-INTERVAL '2 minutes' FROM accounts WHERE account_code='b0-account'");
+                            + "SELECT 'b5','b5-strategy','0 * * * * *','UTC',true,'SCHEDULE_WINDOW','oKx',account_id,'SIM',CURRENT_TIMESTAMP-INTERVAL '2 minutes' FROM accounts WHERE account_id=(SELECT legacy_account_id FROM exchange_accounts WHERE account_alias='b0-sim')");
                 }
                 proof.put("database", fixture.name()).put("venuePid", venue.process.pid());
                 try (var reader = fixture.checker(); var a = new B0Processes.Child(B0NqProcessMain.class, dir, "nq-a", env).awaitReady();
@@ -45,7 +45,7 @@ class B5StrategyOwnerDeathTest {
                     assertNotEquals(a.process.pid(), b.process.pid());
                     proof.put("postgres", value(reader, "SHOW server_version"));
                     assertTrue(proof.path("postgres").asText().startsWith("16."));
-                    assertEquals("50", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
+                    assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                     a.send("ARM_B5_PRE_SEND"); a.send("BEGIN_B5_STRATEGY");
                     long until = System.nanoTime() + Duration.ofSeconds(30).toNanos();
                     while (!Files.readString(a.log).contains("B5_CUT PRE_SEND")) {

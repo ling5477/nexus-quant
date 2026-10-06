@@ -87,7 +87,7 @@ class B1RealProcessProofTest {
                     assertNotEquals(ProcessHandle.current().pid(), first.process.pid());
                     proof.put("pgVersion", value(checker, "SHOW server_version"));
                     assertTrue(proof.path("pgVersion").asText().startsWith("16."));
-                    assertEquals("59", value(checker, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+                    assertEquals("1", value(checker, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
                     assertEquals(fixture.name(), value(checker, "SELECT current_database()"));
                     assertEquals("nq_b0_reader", value(checker, "SELECT current_user"));
                     proof.set("preFault", snapshot(checker));

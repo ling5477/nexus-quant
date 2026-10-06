@@ -422,7 +422,13 @@ jobs:
                           .outOfOrder(false)
                           .load();
 
-                  flyway.migrate();
+                  if (flyway.migrate().migrationsExecuted != 1) {
+                      throw new IllegalStateException("Fresh database must install exactly the release V1 baseline");
+                  }
+                  flyway.validate();
+                  if (flyway.migrate().migrationsExecuted != 0) {
+                      throw new IllegalStateException("Repeated migration must preserve the installed baseline");
+                  }
                   flyway.validate();
 
                   MigrationInfo current = flyway.info().current();
@@ -438,6 +444,9 @@ jobs:
                   }
 
                   String currentVersion = current.getVersion().getVersion();
+                  if (!"1".equals(currentVersion)) {
+                      throw new IllegalStateException("Release schema current version must be V1");
+                  }
 
                   try (Connection connection = DriverManager.getConnection(url, user, password);
                           Statement statement = connection.createStatement();
@@ -477,6 +486,16 @@ jobs:
 
           javac -cp "${classpath}" "${smoke_dir}/FlywaySmoke.java"
           java -cp "${smoke_dir}:${classpath}" FlywaySmoke
+
+      - name: Verify release baseline schema and static facts
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PGPASSWORD="${NQ_FLYWAY_DB_PASSWORD}"
+          python3 ./scripts/ci/verify-release-schema.py \
+            --psql-url "host=127.0.0.1 port=5432 dbname=nq_ci user=${NQ_FLYWAY_DB_USER} sslmode=disable" \
+            --output artifacts/postgres-flyway/release-schema-contract.json
+          python3 -m unittest discover -s scripts/ci/tests -p test_release_schema.py
 
       - name: Prove continuous SIM on isolated PostgreSQL schemas
         shell: bash
@@ -719,7 +738,7 @@ jobs:
         run: |
           set -euo pipefail
           mvn -f backend/pom.xml -pl nq-app -am test \
-            -Dtest=AccountSnapshotSemanticsPostgresIntegrationTest,OkxAccountFactsPostgresIntegrationTest,StrategySimPostgresIntegrationTest,SchemaSemanticConsolidationPostgresIntegrationTest \
+            -Dtest=AccountSnapshotSemanticsPostgresIntegrationTest,OkxAccountFactsPostgresIntegrationTest,StrategySimPostgresIntegrationTest,SchemaSemanticConsolidationPostgresIntegrationTest,RecoveryScanCursorPostgresIntegrationTest \
             -Dsurefire.failIfNoSpecifiedTests=false \
             -Dnq.postgres.smoke.required=true \
             -Dnq.postgres.smoke.url="${NQ_FLYWAY_DB_URL}" \

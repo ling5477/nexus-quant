@@ -59,7 +59,7 @@ class B5FinalQualificationInteractionTest {
                             .put("successorPid", c.process.pid()).put("venuePid", venue.process.pid());
                     proof.put("postgresVersion", value(reader, "SHOW server_version"));
                     assertTrue(proof.path("postgresVersion").asText().startsWith("16."));
-                    assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
+                    assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                     proof.put("schemaVersion", "51");
                     boolean ordinary = row.equals("ORDINARY_RESTART");
                     if (ordinary) {

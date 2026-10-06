@@ -50,7 +50,7 @@ class B5RealProcessProofTest {
                     proof.put("postgres", value(reader, "SHOW server_version"));
                     assertTrue(proof.path("postgres").asText().startsWith("16."));
                     assertEquals(B0Fixture.READER, value(reader, "SELECT current_user"));
-                    assertEquals("59", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+                    assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
                     a.send("SET_B5_VENUE b2t4");
                     proof.put("externalVenueInput", "okx");
                     assertEquals("ARMED B5_PRE_SEND", a.send("ARM_B5_PRE_SEND"));

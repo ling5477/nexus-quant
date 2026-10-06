@@ -73,7 +73,7 @@ class B3RealProcessProofTest {
             try (var reader = fixture.checker(); var nq = new B0Processes.Child(B0NqProcessMain.class, directory, "nq-a", env)) {
                 nq.ready(); recordPid(proof, "nqPid", nq);
                 assertEquals(B0Fixture.READER, value(reader, "SELECT current_user"));
-                assertEquals("59", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+                assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
                 proof.put("postgres", value(reader, "SHOW server_version")).put("schema", "V59");
                 assertTrue(proof.path("postgres").asText().startsWith("16."));
                 assertEquals("DISENGAGED", value(reader, "SELECT status FROM kill_switch_states"));

@@ -159,7 +159,7 @@ class B0RealProcessHarnessTest {
     private void assertIdentityAndPermissions(Connection connection, B0Fixture fixture) throws Exception {
         assertEquals(fixture.name(), value(connection, "SELECT current_database()"));
         assertEquals(B0Fixture.READER, value(connection, "SELECT current_user"));
-        assertEquals("59", value(connection, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
+        assertEquals("1", value(connection, "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
         assertEquals("2", value(connection, "SELECT count(*) FROM exchange_accounts e JOIN accounts a "
                 + "ON a.account_id=e.legacy_account_id WHERE e.exchange_code='OKX' AND e.status='ACTIVE' "
                 + "AND a.status='ACTIVE' AND a.venue='OKX' AND "

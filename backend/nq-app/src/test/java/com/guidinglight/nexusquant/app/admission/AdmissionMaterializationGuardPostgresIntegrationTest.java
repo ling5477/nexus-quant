@@ -39,7 +39,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * GateX-5A V38 consistency infrastructure 的真实 localhost disposable PostgreSQL 回归。
+ * 发布准入一致性基础设施在隔离 PostgreSQL 中的行为回归。
  *
  * <p>测试只创建/删除随机 {@code gatex5a_*} schema；focused run 必须显式 required=true，
  * 防止将未执行的 PostgreSQL regression 写成通过。
@@ -56,38 +56,36 @@ class AdmissionMaterializationGuardPostgresIntegrationTest {
     private static final Instant NOW = Instant.parse("2026-08-11T10:00:00Z");
 
     @Test
-    void freshAndV37UpgradeShouldInitializeOnlyUnboundStateAndValidateFlyway() {
+    void freshAndRepeatedBaselineShouldInitializeOnlyUnboundStateAndValidateFlyway() {
         PostgresConfig config = requireLocalDisposableConfig();
         String freshSchema = randomSchema("fresh");
         String upgradeSchema = randomSchema("upgrade");
         try {
             Flyway freshFlyway = migrate(config, freshSchema, null);
             JdbcTemplate fresh = jdbc(config, freshSchema);
-            assertEquals("38", currentFlywayVersion(fresh));
+            assertEquals("1", currentFlywayVersion(fresh));
             freshFlyway.validate();
-            assertEquals(39, fresh.queryForObject(
-                    "SELECT COUNT(*) FROM flyway_schema_history",
+            assertEquals(1, fresh.queryForObject(
+                    "SELECT COUNT(*) FROM flyway_schema_history WHERE version IS NOT NULL",
                     Integer.class
             ));
             assertEquals(1, fresh.queryForObject(
-                    "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '38' AND success = TRUE",
+                    "SELECT COUNT(*) FROM flyway_schema_history WHERE version = '1' AND success = TRUE",
                     Integer.class
             ));
             assertDatasetReverseIndexUsable(fresh);
 
-            // V12 将 pgcrypto 安装到 currentSchema；同一 disposable database 的第二次全量重放前
-            // 必须移除首个临时 schema/extension，避免 IF NOT EXISTS 造成跨 schema search_path 污染。
-            dropSchema(config, freshSchema);
-            jdbc(config, "public").execute("DROP EXTENSION IF EXISTS pgcrypto CASCADE");
+            assertEquals(0, freshFlyway.migrate().migrationsExecuted);
 
-            migrate(config, upgradeSchema, MigrationVersion.fromVersion("37"));
+            migrate(config, upgradeSchema, MigrationVersion.fromVersion("1"));
             JdbcTemplate before = jdbc(config, upgradeSchema);
             Fixture legacy = seedFixture(before, "legacy", false);
-            assertFalse(tableExists(before, "strategy_release_admission_state"));
+            assertTrue(tableExists(before, "strategy_release_admission_state"));
+            assertUnboundState(before, legacy.publishId(), 0L);
 
             Flyway upgradedFlyway = migrate(config, upgradeSchema, null);
             JdbcTemplate upgraded = jdbc(config, upgradeSchema);
-            assertEquals("38", currentFlywayVersion(upgraded));
+            assertEquals("1", currentFlywayVersion(upgraded));
             upgradedFlyway.validate();
             assertUnboundState(upgraded, legacy.publishId(), 0L);
 
@@ -946,7 +944,7 @@ class AdmissionMaterializationGuardPostgresIntegrationTest {
     }
 
     private static String withCurrentSchema(String url, String schema) {
-        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema;
+        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
     }
 
     private static String currentFlywayVersion(JdbcTemplate jdbc) {

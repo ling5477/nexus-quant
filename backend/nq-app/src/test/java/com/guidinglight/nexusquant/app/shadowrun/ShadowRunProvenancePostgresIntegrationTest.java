@@ -55,7 +55,7 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 /**
- * GateX-2 provenance migration 在显式本地 disposable PostgreSQL 上的 fresh/upgrade 回归。
+ * 影子运行来源绑定在隔离 PostgreSQL 上的正式基线行为回归。
  *
  * <p>测试只接受 localhost/127.0.0.1/::1，并只创建、删除随机 {@code gatex2_*} schema；未提供
  * properties 时普通 Maven 回归跳过。显式 focused run 必须将 required 设为 true，防止把未执行误报为通过。
@@ -70,13 +70,13 @@ class ShadowRunProvenancePostgresIntegrationTest {
     private static final Instant START = Instant.parse("2026-08-10T00:00:00Z");
 
     @Test
-    void freshDatabaseShouldMigrateFromV1ToV38AndPreserveProvenanceAcrossLifecycleUpdates() {
+    void freshBaselineShouldPreserveProvenanceAcrossLifecycleUpdates() {
         PostgresConfig config = requireLocalDisposableConfig();
         String schema = randomSchema("fresh");
         try {
             migrate(config, schema, null);
             JdbcTemplate jdbc = jdbc(config, schema);
-            assertEquals("38", currentFlywayVersion(jdbc));
+            assertEquals("1", currentFlywayVersion(jdbc));
             assertSchemaContract(jdbc);
 
             Fixture fixture = seedFixture(jdbc, "fresh");
@@ -113,11 +113,11 @@ class ShadowRunProvenancePostgresIntegrationTest {
     }
 
     @Test
-    void existingV35DatabaseShouldUpgradeWithoutBackfillAndReadLegacyBindingModes() {
+    void baselineRerunShouldPreserveUnknownLegacyBindingModes() {
         PostgresConfig config = requireLocalDisposableConfig();
         String schema = randomSchema("upgrade");
         try {
-            migrate(config, schema, MigrationVersion.fromVersion("35"));
+            migrate(config, schema, MigrationVersion.fromVersion("1"));
             JdbcTemplate before = jdbc(config, schema);
             Fixture fixture = seedFixture(before, "upgrade");
             UUID unboundId = insertLegacyRun(before, fixture, null, "legacy-unbound");
@@ -125,7 +125,7 @@ class ShadowRunProvenancePostgresIntegrationTest {
 
             migrate(config, schema, null);
             JdbcTemplate upgraded = jdbc(config, schema);
-            assertEquals("38", currentFlywayVersion(upgraded));
+            assertEquals("1", currentFlywayVersion(upgraded));
             assertSchemaContract(upgraded);
             assertEquals(2, upgraded.queryForObject(
                     "SELECT COUNT(*) FROM shadow_runs WHERE artifact_digest IS NULL",
@@ -975,7 +975,7 @@ class ShadowRunProvenancePostgresIntegrationTest {
     }
 
     private static String withCurrentSchema(String url, String schema) {
-        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema;
+        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
     }
 
     private static String currentFlywayVersion(JdbcTemplate jdbc) {

@@ -2,40 +2,25 @@
 
 数据库结构以 Flyway migrations 为准。本文只记录当前数据库事实入口，不复制完整 DDL。
 
-## 公开行情冻结结构（V53–V54，仓库迁移）
+## 正式安装合同
 
-[V53](../../backend/nq-infra/src/main/resources/db/migration/V53__public_market_capture.sql) 增加 `public_market_captures`，以 dataset ID 保存 OKX 公开响应、请求窗口、实际 `observed_at`、原始/规范化/消费内容摘要、版本化回放可见时间假设、公开规则观察身份及冻结 bar；触发器拒绝捕获和对应 dataset 的更新、删除。[V54](../../backend/nq-infra/src/main/resources/db/migration/V54__public_market_rule_response_identity.sql) 另存公开规则的请求路径、原始响应和摘要，新捕获必须完整写入。旧 `marketdata_bars.available_at`、`ingested_at` 及既存 dataset 不回填、不重解释。隔离 PostgreSQL 已执行 V1→V54 与 Flyway validate；本切片的接受由合并后 `dev` exact-head CI `b253dc19124d26cd8b2aab5685d773adc03e3687 / 36141910575 / 9 of 9 SUCCESS` 支撑，不表示生产库已迁移。
+V1.0.0 要求全新 PostgreSQL 16。正式 active Flyway 仅包含
+[V1 baseline](../../backend/nq-infra/src/main/resources/db/migration/V1__nexus_quant_v1_baseline.sql)，
+首次 migrate 安装 1 个 SQL migration，重复 migrate 为 0，validate 必须通过。
+开发期数据库不是正式 V1 的升级目标，旧数据库应由 Flyway validation 拒绝。
 
-## 策略 SIM 结构（V52，仓库迁移）
+[Schema manifest](../../scripts/ci/release-schema-manifest.json) 绑定 SQL SHA256、规范化 catalog
+指纹、完整对象数量和全新安装控制事实；[只读校验入口](../../scripts/ci/verify-release-schema.py)
+在 CI 验证单一成功 V1 身份、schema 与 seed 合同。
 
-[V52](../../backend/nq-infra/src/main/resources/db/migration/V52__strategy_sim_binding.sql) 在仓库中定义：`marketdata_bars.available_at` 记录来源可证明的可见时点，旧行读取侧按实际入库时间保守解释；`paper_trading_runs.canonical_account_id` 只关联新隔离 SIM 账户，历史 Paper run 保持空值。`strategy_sim_decisions` 保存冻结输入摘要、决策及 canonical strategy run / order 引用，不成为第二套订单或成交事实。约束与触发器保护决策身份、停止后的订单准入和已完成决策不可改写。隔离 PostgreSQL 的 V51→V52 升级与 validate 已通过；该迁移测试本身不表示生产库已迁移，业务里程碑验收以 [STATUS.md](STATUS.md) 为准。
+baseline 保留 3 个静态角色、默认 ENGAGED 的交易 kill switch、未消费的恢复游标及 8 个默认关闭的 scheduler job。
+它不创建用户、账户、凭证、订单、成交或账本；默认管理员初始化由后续安装/Auth 工作拥有。
+账户桥接、研究/回测/发布、SIM、订单/成交/账务和保留执行控制结构均直接描述当前最终态。
 
-## V50 strategy window admission 仓库结构
-
-[V50](../../backend/nq-infra/src/main/resources/db/migration/V50__strategy_window_admission.sql)在现有`strategy_runs`增加可空的`admission_schedule_id`（计划外键）和`admission_due_at`（CRON逻辑到期时刻）。部分唯一索引覆盖`strategy_id + account_id + admission_schedule_id + admission_due_at`，只覆盖新结构化admission；列对必须同时为空或同时非空，非空行必须为SCHEDULER。触发器禁止更换已消费的身份。不同到期时刻可独立认领，FAILED或恢复不会释放旧窗口。
-
-V1–V49不修改。历史行不设默认窗口、不推测回填，保留既存重复和NULL列；新writer对同策略/账户下精确匹配三种历史schedule请求格式的旧行保守返回duplicate。新唯一性保证要求所有扫描writer升级，迁移时须停止旧扫描进程，禁止旧/新scan二进制混跑；旧writer不会填写新列，不能作为安全回退版本。新旧迁移文件不授予生产执行权限。
-
-V50使用5秒DDL锁等待、30秒语句上限，超时失败不静默跳过；唯一索引需扫描表，生产规模和窗口须在获授权部署前评估。无down migration；回退应停止扫描并前向修复，不能通过删除admission身份或重写历史恢复执行。仓库中的 V50 不证明生产已迁移；原候选说明保留为历史范围记录。旧表和其他领域的既有版本说明保留如下。
-
-## 当前 repository migration inventory：V54
-
-当前仓库 Flyway inventory 已到 `V54`；本切片的接受状态以 [STATUS.md](STATUS.md) 为准，且不声明生产已迁移。下方 V43–V48 表格及按历史版本编排的段落保留当时的结构增量和验收事实；V49–V54 的仓库身份由 migration 文件本身确定。
-
-| Migration | 当前结构增量 |
-| --- | --- |
-| [V43](../../backend/nq-infra/src/main/resources/db/migration/V43__gate_y_current_market_snapshot.sql) | `pilot_prerequisite_observations` 增加 market snapshot digest、instrument、best ask 等 typed 行情前置事实字段及约束。 |
-| [V44](../../backend/nq-infra/src/main/resources/db/migration/V44__gate_y_operator_pilot_authority.sql) | `operator_pilot_authorities` 及 live session authority 绑定与约束。 |
-| [V45](../../backend/nq-infra/src/main/resources/db/migration/V45__gate_y_pre_place_zero_intent_recovery.sql) | `pilot_pre_place_recovery_decisions`、lease predecessor/recovery linkage 与 canonical legacy account bridge 约束；不授权 PLACE 重试。 |
-| [V46](../../backend/nq-infra/src/main/resources/db/migration/V46__gate_y_attempt_level_terminal_lease_regeneration.sql) | attempt 层级 terminal lease regeneration 的唯一性、外键和触发器约束调整。 |
-| [V47](../../backend/nq-infra/src/main/resources/db/migration/V47__order_state_optimistic_concurrency.sql) | `orders.version` 持久化状态并发版本及非负约束，用于乐观并发控制。 |
-| [V48](../../backend/nq-infra/src/main/resources/db/migration/V48__reconciliation_scan_cursor.sql) | `reconciliation_scan_cursors` 按 venue 保存扫描进度，不保存订单、成交、账本或授权事实。 |
-| [V49](../../backend/nq-infra/src/main/resources/db/migration/V49__ordinary_place_authorities.sql) | ordinary PLACE authority 的持久化约束；不授予 LIVE 执行权限。 |
-| [V50](../../backend/nq-infra/src/main/resources/db/migration/V50__strategy_window_admission.sql) | strategy run 的结构化调度窗口身份与唯一性约束。 |
-| [V51](../../backend/nq-infra/src/main/resources/db/migration/V51__strategy_run_durable_execution.sql) | strategy run durable execution 结构；具体决策和约束以 migration 文件为准。 |
-| [V52](../../backend/nq-infra/src/main/resources/db/migration/V52__strategy_sim_binding.sql) | 隔离策略 SIM 的冻结输入、决策和 canonical 关联。 |
-| [V53](../../backend/nq-infra/src/main/resources/db/migration/V53__public_market_capture.sql) | 不可变公开行情捕获、实际观察时间与独立回放可见时间假设。 |
-| [V54](../../backend/nq-infra/src/main/resources/db/migration/V54__public_market_rule_response_identity.sql) | 公开 instrument rule 原始响应身份及新捕获完整性要求。 |
+开发期 V1–V59 已退出 active Flyway；其最终历史 HEAD 为
+`8291725995455b59d7936bf42e68a8061ef8252b`，源码由 Git history 保留。
+[历史迁移 manifest](../archive/db-migrations/retired-development-migrations.json) 绑定每个退休文件的 Git blob，
+使冻结证据中的历史源码引用仍可精确解析；不在运行 classpath 中复制旧 SQL。
 
 ## 本地数据库规则
 

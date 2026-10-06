@@ -52,38 +52,6 @@ import org.flywaydb.core.api.MigrationInfo;
 class OperatorPilotAuthorityPostgresIntegrationTest {
 
     @Test
-    void migratesExactV45ToV46AndValidates() {
-        String url = System.getProperty("nq.postgres.smoke.url", "").trim();
-        String user = System.getProperty("nq.postgres.smoke.user", "").trim();
-        String password = System.getProperty("nq.postgres.smoke.password", "").trim();
-        boolean required = Boolean.parseBoolean(System.getProperty("nq.postgres.smoke.required", "false"));
-        if (!required) {
-            assumeTrue(!url.isBlank() && !user.isBlank() && !password.isBlank(),
-                    "PostgreSQL V45 to V46 integration is disabled");
-        }
-        String schema = "gatey46upgrade_" + UUID.randomUUID().toString().replace("-", "");
-        String schemaUrl = url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
-        Flyway throughV45 = Flyway.configure().dataSource(schemaUrl, user, password).schemas(schema)
-                .defaultSchema(schema).createSchemas(true).cleanDisabled(false).target("45")
-                .locations("filesystem:../nq-infra/src/main/resources/db/migration").load();
-        throughV45.migrate();
-        assertEquals("45", throughV45.info().current().getVersion().getVersion());
-        Flyway latest = Flyway.configure().dataSource(schemaUrl, user, password).schemas(schema)
-                .defaultSchema(schema).createSchemas(true).cleanDisabled(false)
-                .locations("filesystem:../nq-infra/src/main/resources/db/migration").load();
-        try {
-            latest.migrate();
-            latest.validate();
-            assertEquals(Arrays.stream(latest.info().all())
-                    .filter(migration -> migration.getScript().startsWith("V"))
-                    .map(MigrationInfo::getVersion)
-                    .max(Comparator.naturalOrder()).orElseThrow().getVersion(), latest.info().current().getVersion().getVersion());
-        } finally {
-            latest.clean();
-        }
-    }
-
-    @Test
     void regeneratesTerminalZeroExecutionLineageAndKeepsAttemptPlaceExactlyOnce() throws Exception {
         String url = System.getProperty("nq.postgres.smoke.url", "").trim();
         String user = System.getProperty("nq.postgres.smoke.user", "").trim();
@@ -96,7 +64,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
         String schema = "gatey46lineage_" + UUID.randomUUID().toString().replace("-", "");
         String schemaUrl = url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
         Flyway throughV45 = Flyway.configure().dataSource(schemaUrl, user, password).schemas(schema)
-                .defaultSchema(schema).createSchemas(true).cleanDisabled(false).target("45")
+                .defaultSchema(schema).createSchemas(true).cleanDisabled(false).target("1")
                 .locations("filesystem:../nq-infra/src/main/resources/db/migration").load();
         throughV45.migrate();
         Flyway latest = Flyway.configure().dataSource(schemaUrl, user, password).schemas(schema)

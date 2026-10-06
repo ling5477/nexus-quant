@@ -64,13 +64,13 @@ class KillSwitchRestartDurabilityPostgresIntegrationTest {
                 .defaultSchema(schema)
                 .createSchemas(true)
                 .cleanDisabled(false)
-                .target("35")
+                .target("1")
                 .load();
         try {
             flyway.migrate();
             MigrationInfo current = flyway.info().current();
             assertNotNull(current);
-            assertEquals("35", current.getVersion().getVersion());
+            assertEquals("1", current.getVersion().getVersion());
 
             long durableVersion;
             Instant durableUpdatedAt;
@@ -188,7 +188,7 @@ class KillSwitchRestartDurabilityPostgresIntegrationTest {
     }
 
     private static String withCurrentSchema(String url, String schema) {
-        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema;
+        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
     }
 
     @Configuration

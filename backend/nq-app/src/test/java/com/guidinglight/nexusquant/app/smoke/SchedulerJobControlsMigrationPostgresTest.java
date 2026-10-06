@@ -12,11 +12,11 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-/** 隔离 PG16 上证明 V56 到 V57 前向升级、默认关闭和固定身份约束。 */
+/** 隔离 PG16 上证明调度入口默认关闭、固定身份和重复安装约束。 */
 @EnabledIfSystemProperty(named = "nq.strategy-sim.pg.required", matches = "true")
 class SchedulerJobControlsMigrationPostgresTest {
     @Test
-    void upgradesFromV56WithEightDisabledFixedJobs() {
+    void installsEightDisabledFixedJobs() {
         String url = System.getProperty("nq.strategy-sim.pg.url", "");
         if (!url.startsWith("jdbc:postgresql://127.0.0.1:")) {
             throw new IllegalArgumentException("disposable loopback PostgreSQL URL required");
@@ -27,16 +27,16 @@ class SchedulerJobControlsMigrationPostgresTest {
         JdbcTemplate admin = new JdbcTemplate(new DriverManagerDataSource(url, user, password));
         admin.execute("CREATE SCHEMA " + schema);
         try {
-            // 历史迁移依赖 public 中已安装的 pgcrypto；Flyway 指定目标 schema 即可隔离表。
+            // 加密扩展是数据库共享能力，业务表仍由当前测试 schema 隔离。
             Flyway.configure().dataSource(admin.getDataSource()).schemas(schema)
-                    .locations("classpath:db/migration").target("56").load().migrate();
+                    .locations("classpath:db/migration").target("1").load().migrate();
             Flyway latest = Flyway.configure().dataSource(admin.getDataSource()).schemas(schema)
-                    .locations("classpath:db/migration").target("57").load();
-            assertEquals(1, latest.migrate().migrationsExecuted);
+                    .locations("classpath:db/migration").target("1").load();
+            assertEquals(0, latest.migrate().migrationsExecuted);
             latest.validate();
-            assertEquals("57", latest.info().current().getVersion().getVersion());
+            assertEquals("1", latest.info().current().getVersion().getVersion());
             JdbcTemplate jdbc = new JdbcTemplate(new DriverManagerDataSource(
-                    url + "?currentSchema=" + schema, user, password));
+                    url + "?currentSchema=" + schema + ",public", user, password));
             assertEquals(8, jdbc.queryForObject("SELECT count(*) FROM scheduled_job_controls", Integer.class));
             assertEquals(0, jdbc.queryForObject("""
                     SELECT count(*) FROM scheduled_job_controls
