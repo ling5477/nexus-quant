@@ -19,7 +19,7 @@ import {
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useEffect, useState, type ReactNode} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useSearchParams} from 'react-router-dom';
 
 import {showApiError} from '@/api/errors';
 import {NqAmountText, NqDangerConfirmButton, NqDataTable, NqEmptyState, TradingEnvironmentTag, NqErrorState, NqFilterBar, NqLoadingState, NqMetricCard, NqPageHeader, NqPercentText, NqPriceText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
@@ -155,17 +155,25 @@ export function PaperTradingRunsPage() {
         searchVersion,
     );
 
-    const focusRunId = selectedRow?.paperRunId ?? null;
+    const [searchParams, setSearchParams] = useSearchParams();
+    const focusRunId = searchParams.get('paperRunId') ?? selectedRow?.paperRunId ?? null;
     const detailQuery = usePaperTradingDetailQuery(focusRunId);
-    const summaryQuery = usePaperRunSummaryQuery(focusRunId);
+    const identityRun = detailQuery.data?.paperRunId === focusRunId ? detailQuery.data
+        : selectedRow?.paperRunId === focusRunId ? selectedRow : null;
+    const legacyRunId = identityRun && !identityRun.canonicalAccountId ? focusRunId : null;
+    const summaryQuery = usePaperRunSummaryQuery(legacyRunId);
     const ordersQuery = usePaperTradingOrdersQuery(focusRunId, factTab === 'orders');
     const tradesQuery = usePaperTradingTradesQuery(focusRunId, factTab === 'trades');
     const positionsQuery = usePaperTradingPositionsQuery(focusRunId, factTab === 'positions');
-    const riskResultsQuery = usePaperTradingRiskResultsQuery(focusRunId, factTab === 'risk-results');
-    const equityCurveQuery = usePaperTradingEquityCurveQuery(focusRunId);
-    const positionCurveQuery = usePaperTradingPositionCurveQuery(focusRunId, factTab === 'position-curve');
-    const replayQuery = usePaperTradingReplayQuery(focusRunId, factTab === 'replay');
-    const emergencyStopsQuery = usePaperTradingEmergencyStopsQuery(focusRunId);
+    const riskResultsQuery = usePaperTradingRiskResultsQuery(legacyRunId, factTab === 'risk-results');
+    const equityCurveQuery = usePaperTradingEquityCurveQuery(legacyRunId);
+    const positionCurveQuery = usePaperTradingPositionCurveQuery(legacyRunId, factTab === 'position-curve');
+    const replayQuery = usePaperTradingReplayQuery(legacyRunId, factTab === 'replay');
+    const emergencyStopsQuery = usePaperTradingEmergencyStopsQuery(legacyRunId);
+
+    useEffect(() => {
+        if (!selectedRow && detailQuery.data?.paperRunId === focusRunId) setSelectedRow(detailQuery.data);
+    }, [detailQuery.data, focusRunId, selectedRow]);
 
     useEffect(() => {
         setFactTab('snapshots');
@@ -179,7 +187,7 @@ export function PaperTradingRunsPage() {
 
     const hasSearched = searchVersion > 0;
     const visibleItems = listQuery.data ?? [];
-    const focusRun = detailQuery.data ?? selectedRow;
+    const focusRun = detailQuery.data?.paperRunId === focusRunId ? detailQuery.data : selectedRow?.paperRunId === focusRunId ? selectedRow : null;
     const focusStatus = focusRun?.status ?? selectedRow?.status ?? '';
     const summary = asRunSummary(summaryQuery.data);
     const orderCount = summary?.counts.orderCount ?? null;
@@ -208,6 +216,7 @@ export function PaperTradingRunsPage() {
             onSuccess: (run) => {
                 message.success(t('pages:paperRunStarted'));
                 setSelectedRow(run);
+                setSearchParams({paperRunId: run.paperRunId});
                 setSearchVersion((v) => v + 1);
             },
             onError: (error) => showApiError(error as AppApiError, message),
@@ -219,6 +228,7 @@ export function PaperTradingRunsPage() {
             onSuccess: (run) => {
                 message.success(t('pages:paperRunStopped'));
                 setSelectedRow(run);
+                setSearchParams({paperRunId: run.paperRunId});
                 setSearchVersion((v) => v + 1);
             },
             onError: (error) => showApiError(error as AppApiError, message),
@@ -239,6 +249,7 @@ export function PaperTradingRunsPage() {
             onSuccess: (run) => {
                 message.success(t('pages:paperRunCreated'));
                 setSelectedRow(run);
+                setSearchParams({paperRunId: run.paperRunId});
                 setCreateOpen(false);
                 createForm.resetFields();
                 setSearchVersion((v) => v + 1);
@@ -274,7 +285,7 @@ export function PaperTradingRunsPage() {
             width: 96,
             render: (_, record) => (
                 <Space direction="vertical" size={2}>
-                    <Button type="link" size="small" style={{paddingInline: 0}} onClick={() => setSelectedRow(record)}>
+                    <Button type="link" size="small" style={{paddingInline: 0}} onClick={() => { setSelectedRow(record); setSearchParams({paperRunId: record.paperRunId}); }}>
                         {t('pages:viewDetails')}</Button>
                     <Button
                         type="link"
@@ -317,11 +328,12 @@ export function PaperTradingRunsPage() {
                 </Card>
 
                 <ExecutionNavigationCard/>
-                {import.meta.env.VITE_STRATEGY_SIM_ENABLED === 'true' && <StrategySimPanel
+                {(import.meta.env.VITE_STRATEGY_SIM_ENABLED === 'true' || Boolean(focusRun?.canonicalAccountId)) && <StrategySimPanel
                     selectedRun={focusRun ?? null}
                     onCreated={(paperRunId) => {
                         void paperTradingApi.detail(paperRunId).then((run) => {
                             setSelectedRow(run);
+                            setSearchParams({paperRunId: run.paperRunId});
                             setSearchVersion((version) => version + 1);
                         }).catch((error) => showApiError(error as AppApiError, message));
                     }}
@@ -335,7 +347,7 @@ export function PaperTradingRunsPage() {
                             <Button onClick={handleReset}>
                                 {t('pages:reset')}</Button>
                             <Button type="primary" ghost onClick={() => setCreateOpen(true)}>
-                                {t('pages:createPaperRun')}</Button>
+                                {t('pages:simLegacyCreate')}</Button>
                         </Space>
                     )}
                 >
@@ -400,20 +412,22 @@ export function PaperTradingRunsPage() {
                     </Col>
 
                     <Col xs={24} xl={17} xxl={18}>
-                        {!selectedRow ? (
+                        {!focusRun ? (
                             <Card className="page-section" variant="borderless">
-                                <NqEmptyState description={t('pages:selectAPaperRunToInspectItsStatusActionsRecoveryEventsAndExecutionFacts')}/>
+                                {detailQuery.error ? <NqErrorState title={t('pages:failedToLoadPaperRunDetails')} error={detailQuery.error as AppApiError}/>
+                                    : <NqEmptyState description={t('pages:selectAPaperRunToInspectItsStatusActionsRecoveryEventsAndExecutionFacts')}/>}
                             </Card>
-                        ) : (
+                        ) : focusRun.canonicalAccountId ? null : (
                             <section aria-label={t('pages:paperTradingDetails')}>
                                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                                     <Card className="page-section" variant="borderless">
                                         <Space size={8} wrap style={{marginBottom: 12}}>
                                             <Typography.Text strong>{t('pages:runConsole')}</Typography.Text>
                                             <StatusTag title="" variant="pill" status={focusStatus}/>
-                                            <TradingEnvironmentTag env={selectedRow.tradeEnv}/>
+                                            <TradingEnvironmentTag env={focusRun.tradeEnv}/>
+                                            <Typography.Text>{focusRun.canonicalAccountId ? t('pages:simCanonical') : t('pages:simLegacy')}</Typography.Text>
                                             <Typography.Text type="secondary" className="nq-mono" style={{fontSize: 12}}>
-                                                {selectedRow.paperRunId}
+                                                {focusRun.paperRunId}
                                             </Typography.Text>
                                         </Space>
 
@@ -424,7 +438,7 @@ export function PaperTradingRunsPage() {
                                             <NqMetricCard label={t('pages:positionFacts')} value={positionCount === null ? '-' : String(positionCount)} loading={summaryQuery.isPending}/>
                                             <NqMetricCard
                                                 label={t('pages:netPnl2')}
-                                                value={<NqAmountText value={netPnl} signed colorBySign/>}
+                                                value={<NqAmountText exact value={netPnl} signed colorBySign/>}
                                                 tone={amountTone(netPnl)}
                                                 loading={summaryQuery.isPending}
                                             />
@@ -440,7 +454,7 @@ export function PaperTradingRunsPage() {
                                                 tone={openAlertCount && openAlertCount > 0 ? 'warning' : 'muted'}
                                                 loading={summaryQuery.isPending}
                                             />
-                                            <NqMetricCard label={t('pages:tradingEnvironment')} value={<TradingEnvironmentTag env={selectedRow.tradeEnv}/>} footer={t('pages:liveDisabled2')}/>
+                                            <NqMetricCard label={t('pages:tradingEnvironment')} value={<TradingEnvironmentTag env={focusRun.tradeEnv}/>} footer={t('pages:liveDisabled2')}/>
                                         </div>
 
                                         <Space size={8} wrap style={{marginTop: 12}}>
@@ -449,7 +463,7 @@ export function PaperTradingRunsPage() {
                                                 size="small"
                                                 disabled={focusStatus !== 'CREATED'}
                                                 loading={startMutation.isPending}
-                                                onClick={() => handleStart(selectedRow.paperRunId)}
+                                                onClick={() => handleStart(focusRun.paperRunId)}
                                             >
                                                 {t('pages:startPaperRun')}</Button>
                                             <Button
@@ -457,7 +471,7 @@ export function PaperTradingRunsPage() {
                                                 size="small"
                                                 disabled={focusStatus !== 'RUNNING'}
                                                 loading={stopMutation.isPending}
-                                                onClick={() => handleStop(selectedRow.paperRunId)}
+                                                onClick={() => handleStop(focusRun.paperRunId)}
                                             >
                                                 {t('pages:stopPaperRun')}</Button>
                                             <Typography.Text type="secondary" style={{fontSize: 12}}>
@@ -477,7 +491,7 @@ export function PaperTradingRunsPage() {
                                     <Row gutter={[12, 12]} align="top">
                                         <Col xs={24} xl={15}>
                                             <RunFactsCard
-                                                selectedRow={selectedRow}
+                                                selectedRow={focusRun}
                                                 factTab={factTab}
                                                 setFactTab={setFactTab}
                                                 ordersQuery={ordersQuery}
@@ -488,7 +502,7 @@ export function PaperTradingRunsPage() {
                                                 positionCurveQuery={positionCurveQuery}
                                                 replayQuery={replayQuery}
                                                 riskOncePending={riskOnceMutation.isPending}
-                                                onRunRiskOnce={() => riskOnceMutation.mutate(selectedRow.paperRunId, {
+                                                onRunRiskOnce={() => riskOnceMutation.mutate(focusRun.paperRunId, {
                                                     onSuccess: () => message.success(t('pages:riskCheckCompleted')),
                                                     onError: (err) => showApiError(err as AppApiError, message),
                                                 })}
@@ -510,7 +524,7 @@ export function PaperTradingRunsPage() {
                                                             okText={t('pages:confirmStop')}
                                                             onConfirm={() => emergencyStopMutation.mutate(
                                                                 {
-                                                                    paperRunId: selectedRow.paperRunId,
+                                                                    paperRunId: focusRun.paperRunId,
                                                                     request: {triggerType: 'MANUAL', reason: '手动紧急停机', triggeredBy: 'console-user'},
                                                                 },
                                                                 {
@@ -538,12 +552,12 @@ export function PaperTradingRunsPage() {
                                                         ) : null}
                                                     </Space>
                                                 </Card>
-                                                <NqScheduleFirePanel paperRunId={selectedRow.paperRunId}/>
-                                                <NqHeartbeatPanel paperRunId={selectedRow.paperRunId}/>
-                                                <RunDailyReportPanel paperRunId={selectedRow.paperRunId}/>
-                                                <NqStabilityCheckPanel paperRunId={selectedRow.paperRunId}/>
-                                                <NqRecoveryPanel paperRunId={selectedRow.paperRunId}/>
-                                                <NqAlertPanel paperRunId={selectedRow.paperRunId}/>
+                                                <NqScheduleFirePanel paperRunId={focusRun.paperRunId}/>
+                                                <NqHeartbeatPanel paperRunId={focusRun.paperRunId}/>
+                                                <RunDailyReportPanel paperRunId={focusRun.paperRunId}/>
+                                                <NqStabilityCheckPanel paperRunId={focusRun.paperRunId}/>
+                                                <NqRecoveryPanel paperRunId={focusRun.paperRunId}/>
+                                                <NqAlertPanel paperRunId={focusRun.paperRunId}/>
                                             </Space>
                                         </Col>
                                     </Row>
@@ -556,7 +570,7 @@ export function PaperTradingRunsPage() {
 
             <Modal
                 open={createOpen}
-                title={t('pages:createPaperTradingRun')}
+                title={t('pages:simLegacyCreate')}
                 onCancel={() => setCreateOpen(false)}
                 onOk={() => createForm.submit()}
                 confirmLoading={createMutation.isPending}
@@ -704,8 +718,8 @@ function RunFactsCard({
                                         {title: t('pages:orderId'), dataIndex: 'paperOrderId', key: 'paperOrderId', className: 'nq-mono'},
                                         {title: t('pages:side'), dataIndex: 'side', key: 'side', width: 80},
                                         {title: t('pages:type'), dataIndex: 'orderType', key: 'orderType', width: 80},
-                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:price'), dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText exact value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:price'), dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText exact value={v as string}/>}),
                                         {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v}/>},
                                         {title: t('pages:createdAt'), dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
                                     ]}
@@ -727,9 +741,9 @@ function RunFactsCard({
                                         {title: t('pages:tradeId'), dataIndex: 'paperTradeId', key: 'paperTradeId', className: 'nq-mono'},
                                         {title: t('pages:orderId'), dataIndex: 'paperOrderId', key: 'paperOrderId', className: 'nq-mono'},
                                         {title: t('pages:side'), dataIndex: 'side', key: 'side', width: 80},
-                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:price'), dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:fee'), dataIndex: 'fee', key: 'fee', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText exact value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:price'), dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText exact value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:fee'), dataIndex: 'fee', key: 'fee', width: 100, render: (v) => <NqAmountText exact value={v as string}/>}),
                                         {title: t('pages:tradeTime'), dataIndex: 'tradedAt', key: 'tradedAt', width: 170, render: (v: string) => formatDateTime(v)},
                                     ]}
                                 />
@@ -748,10 +762,10 @@ function RunFactsCard({
                                     scroll={{x: 900}}
                                     columns={[
                                         {title: t('pages:symbol'), dataIndex: 'symbol', key: 'symbol', width: 120},
-                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:averagePrice'), dataIndex: 'avgPrice', key: 'avgPrice', width: 120, render: (v) => <NqPriceText value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:realizedPnl'), dataIndex: 'realizedPnl', key: 'realizedPnl', width: 140, render: (v) => <NqAmountText value={v as string} signed colorBySign/>}),
-                                        nqNumericColumn({title: t('pages:unrealizedPnl'), dataIndex: 'unrealizedPnl', key: 'unrealizedPnl', width: 140, render: (v) => <NqAmountText value={v as string} signed colorBySign/>}),
+                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 120, render: (v) => <NqAmountText exact value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:averagePrice'), dataIndex: 'avgPrice', key: 'avgPrice', width: 120, render: (v) => <NqPriceText exact value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:realizedPnl'), dataIndex: 'realizedPnl', key: 'realizedPnl', width: 140, render: (v) => <NqAmountText exact value={v as string} signed colorBySign/>}),
+                                        nqNumericColumn({title: t('pages:unrealizedPnl'), dataIndex: 'unrealizedPnl', key: 'unrealizedPnl', width: 140, render: (v) => <NqAmountText exact value={v as string} signed colorBySign/>}),
                                         {title: t('pages:updatedAt'), dataIndex: 'updatedAt', key: 'updatedAt', width: 170, render: (v: string) => formatDateTime(v)},
                                     ]}
                                 />
@@ -808,9 +822,9 @@ function RunFactsCard({
                                     scroll={{x: 900}}
                                     columns={[
                                         {title: t('pages:time'), dataIndex: 'snapshotTime', key: 'snapshotTime', width: 170, render: (v: string) => formatDateTime(v)},
-                                        nqNumericColumn({title: t('pages:totalEquity'), dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:cash'), dataIndex: 'cashBalance', key: 'cashBalance', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:positionValue'), dataIndex: 'positionValue', key: 'positionValue', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:totalEquity'), dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText exact value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:cash'), dataIndex: 'cashBalance', key: 'cashBalance', width: 120, render: (v) => <NqAmountText exact value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:positionValue'), dataIndex: 'positionValue', key: 'positionValue', width: 120, render: (v) => <NqAmountText exact value={v as string}/>}),
                                         {title: t('pages:source'), dataIndex: 'source', key: 'source', width: 100},
                                     ]}
                                 />
@@ -830,9 +844,9 @@ function RunFactsCard({
                                     columns={[
                                         {title: t('pages:symbol'), dataIndex: 'symbol', key: 'symbol', width: 120},
                                         {title: t('pages:time'), dataIndex: 'snapshotTime', key: 'snapshotTime', width: 170, render: (v: string) => formatDateTime(v)},
-                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:averagePrice'), dataIndex: 'avgPrice', key: 'avgPrice', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:markPrice'), dataIndex: 'markPrice', key: 'markPrice', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText exact value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:averagePrice'), dataIndex: 'avgPrice', key: 'avgPrice', width: 100, render: (v) => <NqPriceText exact value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:markPrice'), dataIndex: 'markPrice', key: 'markPrice', width: 100, render: (v) => <NqPriceText exact value={v as string}/>}),
                                         {title: t('pages:source'), dataIndex: 'source', key: 'source', width: 100},
                                     ]}
                                 />
@@ -854,8 +868,8 @@ function RunFactsCard({
                                         {title: t('pages:eventType'), dataIndex: 'eventType', key: 'eventType', width: 140},
                                         {title: t('pages:symbol'), dataIndex: 'symbol', key: 'symbol', width: 120},
                                         {title: t('pages:side'), dataIndex: 'side', key: 'side', width: 80},
-                                        nqNumericColumn({title: t('pages:price'), dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:price'), dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText exact value={v as string}/>}),
+                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText exact value={v as string}/>}),
                                         {title: t('pages:reason'), dataIndex: 'reason', key: 'reason'},
                                     ]}
                                 />
@@ -932,8 +946,8 @@ function RunDailyReportPanel({paperRunId}: {paperRunId: string}) {
                         columns={[
                             {title: t('pages:date'), dataIndex: 'reportDate', key: 'reportDate', width: 120},
                             {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <StatusTag title="" variant="pill" status={v} tone={v === 'GENERATED' ? 'success' : 'warning'}/>},
-                            nqNumericColumn({title: t('pages:totalEquity'), dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText value={v as string}/>}),
-                            nqNumericColumn({title: t('pages:dailyPnl'), dataIndex: 'dailyPnl', key: 'dailyPnl', width: 120, render: (v) => <NqAmountText value={v as string} signed colorBySign/>}),
+                            nqNumericColumn({title: t('pages:totalEquity'), dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText exact value={v as string}/>}),
+                            nqNumericColumn({title: t('pages:dailyPnl'), dataIndex: 'dailyPnl', key: 'dailyPnl', width: 120, render: (v) => <NqAmountText exact value={v as string} signed colorBySign/>}),
                             nqNumericColumn({title: t('pages:dailyReturn2'), dataIndex: 'dailyReturn', key: 'dailyReturn', width: 110, render: (v) => <NqPercentText value={v as string} ratio colorBySign/>}),
                             nqNumericColumn({title: t('pages:maximumDrawdown'), dataIndex: 'maxDrawdown', key: 'maxDrawdown', width: 110, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
                             nqNumericColumn({title: t('pages:order'), dataIndex: 'orderCount', key: 'orderCount', width: 80}),

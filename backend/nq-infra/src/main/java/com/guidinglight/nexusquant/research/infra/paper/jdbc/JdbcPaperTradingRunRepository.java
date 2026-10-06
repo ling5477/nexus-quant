@@ -28,7 +28,7 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
                    dataset_snapshot_json::text AS dataset_snapshot_json,
                    param_snapshot_json::text AS param_snapshot_json,
                    config_snapshot_json::text AS config_snapshot_json,
-                   created_by, created_at, updated_at
+                   created_by, created_at, updated_at, canonical_account_id
             FROM paper_trading_runs
             """;
 
@@ -157,7 +157,8 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
                 resultSet.getString("config_snapshot_json"),
                 resultSet.getString("created_by"),
                 resultSet.getTimestamp("created_at").toInstant(),
-                resultSet.getTimestamp("updated_at").toInstant()
+                resultSet.getTimestamp("updated_at").toInstant(),
+                resultSet.getObject("canonical_account_id", Long.class)
         );
     }
 

@@ -243,6 +243,9 @@ export const tradingWorkbenchQueryKeys = {
 };
 
 export const paperTradingQueryKeys = {
+    canonicalFacts: (id: string) => ['paper-trading-runs', 'canonical-facts', id] as const,
+    decisions: (id: string) => ['paper-trading-runs', 'decisions', id] as const,
+    continuous: (id: string) => ['paper-trading-runs', 'continuous', id] as const,
     all: ['paper-trading-runs'] as const,
     list: (request: { publishId?: string; status?: string }, searchVersion: number) => [
         ...paperTradingQueryKeys.all,

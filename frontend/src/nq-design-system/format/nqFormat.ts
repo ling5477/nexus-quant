@@ -4,6 +4,8 @@
 export interface NqNumberFormatOptions {
   /** 小数位数(价格常用 4,金额/百分比常用 2)。 */
   precision?: number;
+  /** 保留服务端十进制有效位，不对经济事实固定小数位舍入。 */
+  exact?: boolean;
   /** 正数是否加 "+"(盈亏 / 涨跌幅等带符号字段)。 */
   signed?: boolean;
   /** 是否使用千分位分组(默认 true)。 */
@@ -20,10 +22,22 @@ function isNqEmpty(value: string | number | null | undefined): boolean {
  */
 export function formatNqNumber(
   value: string | number | null | undefined,
-  {precision = 2, signed = false, thousands = true}: NqNumberFormatOptions = {},
+  {precision = 2, signed = false, thousands = true, exact = false}: NqNumberFormatOptions = {},
 ): string {
   if (isNqEmpty(value)) {
     return '-';
+  }
+
+  if (exact) {
+    const raw = String(value).trim();
+    const match = /^([+-]?)(\d+)(?:\.(\d+))?$/.exec(raw);
+    if (!match) return raw;
+    const integer = match[2].replace(/^0+(?=\d)/, "");
+    const fraction = (match[3] ?? "").replace(/0+$/, "");
+    const nonzero = /[1-9]/.test(integer + fraction);
+    const sign = nonzero ? (match[1] === "-" ? "-" : signed ? "+" : "") : "";
+    const grouped = thousands ? integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : integer;
+    return sign + grouped + (fraction ? "." + fraction : "");
   }
 
   const numeric = Number(value);
