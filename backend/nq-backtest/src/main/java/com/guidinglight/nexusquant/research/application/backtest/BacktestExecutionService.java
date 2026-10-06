@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.research.application.backtest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionContext;
 import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionRequest;
@@ -24,6 +25,8 @@ import com.guidinglight.nexusquant.research.domain.backtest.BacktestSignalPolicy
 import com.guidinglight.nexusquant.research.domain.backtest.ExecutionPricingPolicy;
 import com.guidinglight.nexusquant.research.domain.backtest.FeeModel;
 import com.guidinglight.nexusquant.research.domain.backtest.SlippageModel;
+import com.guidinglight.nexusquant.research.domain.backtest.ResearchRunFacts;
+import com.guidinglight.nexusquant.research.domain.backtest.BuyAndHoldCalculator;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;
 import com.guidinglight.nexusquant.research.domain.BacktestRun;
@@ -782,6 +785,20 @@ public class BacktestExecutionService {
         summary.put("executionStartedAt", executionStartedAt.toString());
         summary.put("executionFinishedAt", executionFinishedAt.toString());
         if (inputIdentity != null) {
+            SpotTargetSizer.Rules rules = frozenRules(executionRequest.executionSpecJson());
+            var researchFacts = new ResearchRunFacts(run.backtestRunId(),
+                    executionRequest.datasetSpec().datasetId(), inputIdentity.sha256(),
+                    run.strategyVersionId(), readJson(run.strategyVersionSnapshotJson()).path("checksum").asText(),
+                    executionRequest.datasetSpec().symbol(), executionRequest.datasetSpec().interval().wireValue(),
+                    run.datasetSnapshotJson(), new ResearchRunFacts.Assumptions(executionContext.initialCapital(),
+                    rules.feeRate(), rules.slippageBps(), "NEXT_OPEN_STRICTLY_AFTER_AVAILABLE_AT",
+                    "MARK_TO_MARKET", executionRequest.executionSpecJson(), executionRequest.initialCapital()),
+                    bars.stream().map(bar -> new ResearchRunFacts.BarWindow(bar.openTime().toString(),
+                            bar.closeTime().toString(), bar.availableAt().toString())).toList(),
+                    BuyAndHoldCalculator.calculate(bars, executionContext.initialCapital(), rules));
+            // 成本、数量和权益不能在保存 JSON 树时先转换为 double。
+            summary.set("researchFacts", objectMapper.copy()
+                    .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS).valueToTree(researchFacts));
             summary.put("strategyVersionId", run.strategyVersionId());
             summary.put("strategyChecksum", readJson(run.strategyVersionSnapshotJson()).path("checksum").asText());
             summary.set("strategyParameters", readJson(run.paramSnapshotJson()));
