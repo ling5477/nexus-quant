@@ -291,7 +291,7 @@ jobs:
         shell: bash
         run: mvn -f backend/pom.xml -pl nq-app -am test -Dtest=ProductionConfigurationApplicationContextInitializerTest,ProductionSecretProfileRegressionTest -Dsurefire.failIfNoSpecifiedTests=false
 
-      - name: Prepare backend CI legacy account fixture
+      - name: Prepare backend CI account fixture
         shell: bash
         run: |
           set -euo pipefail
@@ -307,8 +307,8 @@ jobs:
           app_cp="$(cat backend/nq-app/target/backend-ci-fixture-classpath.txt)"
           classpath="backend/nq-app/target/classes:backend/nq-infra/target/classes:${app_cp}"
 
-          javac -cp "${classpath}" -d "${fixture_dir}" scripts/ci/BackendCiLegacyAccountFixture.java
-          java -cp "${fixture_dir}:${classpath}" BackendCiLegacyAccountFixture
+          javac -cp "${classpath}" -d "${fixture_dir}" scripts/ci/BackendCiAccountFixture.java
+          java -cp "${fixture_dir}:${classpath}" BackendCiAccountFixture
 
       - name: Run backend tests
         shell: bash

@@ -1,7 +1,6 @@
 /**
- * CI-only disposable PostgreSQL fixture. It migrates the supplied database and inserts one
- * PAPER account required by the complete backend regression; it never creates exchange account
- * or credential rows and reads only CI-scoped environment variables.
+ * 仅用于 CI 的一次性 PostgreSQL fixture：迁移所提供的隔离库，并创建全量后端回归所需的
+ * 一个 PAPER account。只读取 CI 范围的环境变量，不创建 exchange account 或 credential。
  */
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -11,10 +10,10 @@ import java.sql.ResultSet;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationInfo;
 
-public final class BackendCiLegacyAccountFixture {
+public final class BackendCiAccountFixture {
     private static final String FIXTURE_ACCOUNT_CODE = "ci-backend-test-account";
 
-    private BackendCiLegacyAccountFixture() {
+    private BackendCiAccountFixture() {
     }
 
     public static void main(String[] args) throws Exception {
