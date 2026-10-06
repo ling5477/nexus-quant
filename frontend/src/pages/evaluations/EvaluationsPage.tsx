@@ -31,6 +31,7 @@ import {
     useEvaluationsListQuery,
 } from '@/pages/evaluations/useEvaluationsListQuery';
 import type {AppApiError} from '@/types/api';
+import type {ResearchValidity} from '@/types/evaluations';
 import {
     type BacktestEvaluationListItem,
     defaultEvaluationsListFilters,
@@ -39,6 +40,65 @@ import {
 import {containsIgnoreCase, formatDateTime, formatNumber, normalizeOptionalText} from '@/utils/formatters';
 
 type EvaluationRow = BacktestEvaluationListItem;
+
+export function researchPercent(value: number | null | undefined): string {
+    return value == null || !Number.isFinite(value) ? '—' : `${formatNumber(value * 100, 4)}%`;
+}
+
+// 两个正式页面消费同一只读契约；这里只格式化数值，不计算基准或划分区间。
+export function ResearchValidityDetails({value}: {value?: ResearchValidity | null}) {
+    useTranslation('pages');
+    const missing = (status?: string) => status === 'INSUFFICIENT_DATA'
+        ? t('pages:researchInsufficientData') : t('pages:researchNotAvailable');
+    const amount = (number?: number | null) => number == null ? '—' : formatNumber(number, 8);
+    const benchmark = value?.benchmark;
+    return <Card title={t('pages:researchValidity')} size="small" data-testid="research-validity">
+        <Space direction="vertical" style={{display: 'flex'}}>
+            <Alert type="info" showIcon message={t('pages:researchChronologicalNotice')}
+                description={t('pages:researchContinuityNotice')}/>
+            {value?.validationStatus !== 'AVAILABLE' && <Alert type="warning" showIcon
+                message={missing(value?.validationStatus)} description={value?.reason || undefined}/>}
+            <Descriptions bordered column={2} size="small">
+                <Descriptions.Item label={t('pages:strategyVersionId')}>{value?.identity?.strategyVersionId ?? '—'}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:datasetId')}>{value?.identity?.datasetId ?? '—'}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchInitialCapital')}>{amount(value?.assumptions?.initialCapital)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchFeeRate')}>{researchPercent(value?.assumptions?.feeRate)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchSlippageBps')}>{amount(value?.assumptions?.slippageBps)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchTiming')}>{value?.assumptions ? t('pages:researchNextOpen') : '—'}</Descriptions.Item>
+            </Descriptions>
+            <Table size="small" pagination={false} rowKey="key" scroll={{x: 1060}}
+                dataSource={[
+                    {key: 'full', label: t('pages:researchFull'), segment: value?.full},
+                    {key: 'is', label: t('pages:researchInSample'), segment: value?.inSample},
+                    {key: 'oos', label: t('pages:researchOutOfSample'), segment: value?.outOfSample},
+                ]} columns={[
+                    {title: t('pages:researchPeriod'), dataIndex: 'label'},
+                    {title: t('pages:researchInterval'), render: (_, row) => row.segment
+                        ? `${row.segment.startTime} → ${row.segment.endTime}` : missing(value?.validationStatus)},
+                    {title: t('pages:researchBars'), render: (_, row) => row.segment?.barCount ?? '—'},
+                    {title: t('pages:researchStrategyReturn'), render: (_, row) => researchPercent(row.segment?.strategyReturn)},
+                    {title: t('pages:netReturn'), render: (_, row) => amount(row.segment?.netPnl)},
+                    {title: t('pages:maximumDrawdown'), render: (_, row) => researchPercent(row.segment?.maxDrawdownRate)},
+                    {title: t('pages:tradeCount2'), render: (_, row) => row.segment?.tradeCount ?? '—'},
+                    {title: t('pages:researchFee'), render: (_, row) => amount(row.segment?.fee)},
+                    {title: t('pages:researchSlippage'), render: (_, row) => amount(row.segment?.slippage)},
+                ]}/>
+            <Descriptions bordered column={2} size="small">
+                <Descriptions.Item label={t('pages:researchBenchmarkReturn')}>{researchPercent(benchmark?.benchmarkReturn)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchBenchmarkEquity')}>{amount(benchmark?.finalEquity)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchDifference')}>{researchPercent(value?.strategyVsBenchmarkDifference)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchValuation')}>{benchmark ? t('pages:researchMarkToMarket') : '—'}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchEntryTime')}>{benchmark?.entryTime ?? '—'}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchEndTime')}>{benchmark?.endTime ?? '—'}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchEntryPrice')}>{amount(benchmark?.entryPrice)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchEndPrice')}>{amount(benchmark?.endPrice)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchFee')}>{amount(benchmark?.fee)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:researchSlippage')}>{amount(benchmark?.slippage)}</Descriptions.Item>
+            </Descriptions>
+            {benchmark?.status !== 'AVAILABLE' && <Typography.Text>{missing(benchmark?.status)}{benchmark?.reason ? ` · ${benchmark.reason}` : ''}</Typography.Text>}
+        </Space>
+    </Card>;
+}
 
 export function EvaluationsPage() {
     useTranslation('pages');
@@ -348,6 +408,7 @@ export function EvaluationsPage() {
                                 </Descriptions.Item>
                             </Descriptions>
                         ) : null}
+                        <ResearchValidityDetails value={evaluationDetailQuery.data?.researchValidity ?? selectedRow.researchValidity}/>
                         <Card title={t('pages:actions2')} size="small">
                             <Space wrap>
                                 <Button type="primary" loading={evaluateMutation.isPending} onClick={handleEvaluate}>

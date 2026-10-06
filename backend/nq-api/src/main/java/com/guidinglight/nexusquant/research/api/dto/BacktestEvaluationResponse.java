@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.research.api.dto;
 
 import com.guidinglight.nexusquant.research.domain.eval.BacktestEvaluationReport;
 import com.guidinglight.nexusquant.research.domain.eval.EvaluationSummary;
+import com.guidinglight.nexusquant.research.domain.eval.ResearchValidity;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -71,7 +72,9 @@ public record BacktestEvaluationResponse(
         @Schema(description = "failureCode")
         String failureCode,
         @Schema(description = "failureMessage")
-        String failureMessage
+        String failureMessage,
+        @Schema(description = "冻结研究身份、时间分段、基准和缺失状态")
+        ResearchValidity researchValidity
 ) {
     public static BacktestEvaluationResponse from(BacktestEvaluationReport report) {
         return new BacktestEvaluationResponse(
@@ -104,7 +107,8 @@ public record BacktestEvaluationResponse(
                 report.reportJson(),
                 report.metricsJson(),
                 report.failureCode(),
-                report.failureMessage()
+                report.failureMessage(),
+                report.researchValidity()
         );
     }
 
@@ -112,5 +116,4 @@ public record BacktestEvaluationResponse(
         return report == null ? null : report.toSummary();
     }
 }
-
 

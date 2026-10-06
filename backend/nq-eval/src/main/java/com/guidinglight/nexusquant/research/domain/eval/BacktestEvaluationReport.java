@@ -40,6 +40,19 @@ public record BacktestEvaluationReport(
         Instant createdAt,
         Instant updatedAt
 ) {
+    public ResearchValidity researchValidity() {
+        return ResearchValidityCalculator.read(reportJson);
+    }
+
+    public BacktestEvaluationReport withReportJson(String json) {
+        return new BacktestEvaluationReport(evalReportId, backtestRunId, evaluationStatus, initialCapital,
+                finalCashBalance, finalPositionMarketValue, finalEquity, realizedPnl, unrealizedPnl,
+                netPnl, totalReturnRate, totalReturn, annualizedReturn, totalFee, totalSlippage,
+                orderCount, tradeCount, winningTradeCount, losingTradeCount, flatTradeCount, winRate,
+                maxDrawdown, maxDrawdownRate, profitLossRatio, sharpeRatio, json, metricsJson,
+                failureCode, failureMessage, evaluatedAt, createdAt, updatedAt);
+    }
+
     public BacktestEvaluationReport(
             String evalReportId,
             String backtestRunId,
@@ -124,4 +137,3 @@ public record BacktestEvaluationReport(
         );
     }
 }
-

@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.research.application.eval;
 import com.guidinglight.nexusquant.research.domain.eval.BacktestEvaluationReport;
 import com.guidinglight.nexusquant.research.domain.eval.EvaluationStatus;
 import com.guidinglight.nexusquant.research.domain.eval.EvaluationMetricCalculator;
+import com.guidinglight.nexusquant.research.domain.eval.ResearchValidityCalculator;
 import com.guidinglight.nexusquant.research.domain.eval.port.BacktestEvaluationReportRepository;
 import com.guidinglight.nexusquant.research.domain.eval.port.SimOrderQueryRepository;
 import com.guidinglight.nexusquant.research.domain.eval.port.SimPnlSnapshotQueryRepository;
@@ -119,8 +120,11 @@ public class BacktestEvaluationService {
             if (backtestRun.status() != BacktestRunStatus.SUCCEEDED) {
                 throw new IllegalStateException("only SUCCEEDED runs can be evaluated");
             }
-            var backtestConfig = backtestConfigService.getByBacktestConfigId(backtestRun.backtestConfigId());
-            if (backtestConfig.initialCapital().compareTo(BigDecimal.ZERO) <= 0) {
+            var researchFacts = ResearchValidityCalculator.facts(backtestRun);
+            // 新报告使用运行时冻结的资本；后续编辑配置不能改变既有运行的收益分母。
+            BigDecimal initialCapital = researchFacts != null ? researchFacts.assumptions().initialCapital()
+                    : backtestConfigService.getByBacktestConfigId(backtestRun.backtestConfigId()).initialCapital();
+            if (initialCapital.compareTo(BigDecimal.ZERO) <= 0) {
                 throw new IllegalStateException("initialCapital must be positive for evaluation");
             }
             var simOrders = simOrderQueryRepository.listByBacktestRunId(backtestRunId);
@@ -132,13 +136,15 @@ public class BacktestEvaluationService {
             }
             BacktestEvaluationReport report = evaluationMetricCalculator.calculate(
                     backtestRunId,
-                    backtestConfig.initialCapital(),
+                    initialCapital,
                     simOrders,
                     simTrades,
                     simPositions,
                     simPnlSnapshots,
                     evaluatedAt
             );
+            report = report.withReportJson(ResearchValidityCalculator.append(report.reportJson(),
+                    ResearchValidityCalculator.calculate(researchFacts, simPnlSnapshots, simTrades, evaluatedAt)));
             backtestEvaluationReportRepository.upsert(report);
             return report;
         } catch (RuntimeException ex) {
@@ -218,7 +224,6 @@ public class BacktestEvaluationService {
                 : exception.getMessage();
     }
 }
-
 
 
 

@@ -180,6 +180,7 @@ export const backtestsQueryKeys = {
 
 export const evaluationsQueryKeys = {
     all: ['evaluation-runs'] as const,
+    forRun: (runId: string) => [...evaluationsQueryKeys.all, 'run', runId] as const,
     list: (request: { researchConfigId?: string; backtestConfigId?: string }, searchVersion: number) => [
         ...evaluationsQueryKeys.all,
         'list',

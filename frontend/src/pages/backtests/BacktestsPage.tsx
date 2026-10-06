@@ -27,6 +27,9 @@ import {useNavigate} from 'react-router-dom';
 
 import {formatApiError, showApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
+import {evaluationsApi} from '@/api/evaluations';
+import {evaluationsQueryKeys} from '@/api/query-keys';
+import {ResearchValidityDetails} from '@/pages/evaluations/EvaluationsPage';
 import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {
@@ -92,6 +95,12 @@ export function BacktestsPage() {
     const createBacktestMutation = useCreateBacktestMutation();
     const createBacktestRunMutation = useCreateBacktestRunMutation();
     const backtestRunDetailQuery = useBacktestRunDetailQuery(selectedRunId);
+    const runEvaluationQuery = useQuery({
+        queryKey: evaluationsQueryKeys.forRun(selectedRunId ?? ''),
+        queryFn: () => evaluationsApi.forRun(selectedRunId!),
+        enabled: Boolean(selectedRunId) && backtestRunDetailQuery.data?.status === 'SUCCEEDED',
+        retry: false,
+    });
     const bindDatasetMutation = useBindBacktestDatasetMutation(selectedConfigId);
     const bindStrategyVersionMutation = useBindBacktestStrategyVersionMutation(selectedConfigId);
     const datasetsQuery = useQuery({
@@ -579,6 +588,12 @@ export function BacktestsPage() {
                                 </Descriptions>
                             ) : null}
                         </Card>
+                        {selectedRunId && (runEvaluationQuery.isFetching
+                            ? <Alert type="info" message={t('pages:loadingEvaluationDetails')}/>
+                            : runEvaluationQuery.error
+                                ? <Alert type="warning" message={t('pages:researchNotAvailable')}
+                                    description={formatApiError(runEvaluationQuery.error as AppApiError)}/>
+                                : <ResearchValidityDetails value={runEvaluationQuery.data?.researchValidity}/>)}
                     </Space>
                 ) : null}
             </Drawer>
