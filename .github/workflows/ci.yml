@@ -346,7 +346,7 @@ jobs:
 
     env:
       CI: "true"
-      NQ_FLYWAY_DB_URL: jdbc:postgresql://localhost:5432/nq_ci
+      NQ_FLYWAY_DB_URL: jdbc:postgresql://127.0.0.1:5432/nq_ci
       NQ_FLYWAY_DB_USER: nq_ci_user
       NQ_FLYWAY_DB_PASSWORD: nq_ci_password
 
