@@ -191,7 +191,7 @@ public class PythonEvaluationArtifactPreviewOverviewQueryService {
                 ),
                 new EvidenceAnchor(
                         "GATET_4_WORK_ORDER",
-                        "docs/current/API.md",
+                        "python-evaluation-artifact.v1",
                         "PLAN_READY_NOT_IMPLEMENTED",
                         generatedAt,
                         traceId,
@@ -199,7 +199,7 @@ public class PythonEvaluationArtifactPreviewOverviewQueryService {
                 ),
                 new EvidenceAnchor(
                         "GATES_PYTHON_RESEARCH_EVIDENCE",
-                        "research/py/src/nq_research/evaluation/artifacts.py",
+                        "python-evaluation-artifact.v1",
                         "OFFLINE_RESEARCH_ONLY",
                         generatedAt,
                         traceId,

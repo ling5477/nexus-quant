@@ -12,6 +12,6 @@
 
     <artifactId>nq-scheduler-contracts</artifactId>
     <name>nq-scheduler-contracts</name>
-    <description>Minimal scheduler ports and models extracted for RC1 module decoupling.</description>
+    <description>Scheduler ports and models.</description>
     <packaging>jar</packaging>
 </project>

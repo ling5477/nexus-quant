@@ -5810,7 +5810,7 @@ COMMENT ON COLUMN exchange_account_credentials.failed_auth_count IS '凭证认�
 
 COMMENT ON COLUMN exchange_account_credentials.permission_scope IS '凭证权限范围，可为空；允许值为 READ_ONLY / TRADE / FUNDING，NULL 表示尚未确认真实交易所权限，不代表允许交易、提现、LIVE 或 AI/DH 使用 credential。';
 
-COMMENT ON COLUMN exchange_account_credentials.withdraw_enabled IS '凭证是否允许提现，默认 false；本字段只保存治理元数据，不代表系统实现提现能力、开启 LIVE trading 或允许资金转移；本轮未在未确认现有数据前新增强制 false CHECK。';
+COMMENT ON COLUMN exchange_account_credentials.withdraw_enabled IS '凭证是否允许提现，默认 false；本字段只保存治理元数据，不代表系统实现提现能力、开启 LIVE trading 或允许资金转移；未确认现有数据前不强制新增 false CHECK。';
 
 COMMENT ON COLUMN exchange_account_credentials.ip_allowlist_required IS '凭证是否要求交易所侧 IP allowlist，默认 true；只记录治理要求，不保存 IP 凭证、token、cookie 或网络访问密钥。';
 
@@ -7202,7 +7202,7 @@ COMMENT ON COLUMN shadow_runs.paper_run_id IS '可空引用 paper_trading_runs.p
 
 COMMENT ON COLUMN shadow_runs.status IS 'Shadow Run 状态：CREATED、PRECHECKING、READY、RUNNING、STOP_REQUESTED、STOPPED、COMPLETED、BLOCKED、FAILED、CANCELLED；终态不可回写运行态';
 
-COMMENT ON COLUMN shadow_runs.window_start IS 'Shadow Run 输入窗口开始时间；为空表示本轮尚未绑定窗口';
+COMMENT ON COLUMN shadow_runs.window_start IS 'Shadow Run 输入窗口开始时间；为空表示当前运行尚未绑定窗口';
 
 COMMENT ON COLUMN shadow_runs.window_end IS 'Shadow Run 输入窗口结束时间；存在时不得早于 window_start';
 

@@ -32,7 +32,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
  * JdbcOrderRepository 是订单端口的 JDBC 实现。
  * <p>
  * Why:
- * Gate B 需要直接落库 `orders` 表以支撑幂等与重启恢复；
+ * 需要直接落库 `orders` 表以支撑幂等与重启恢复；
  * 此实现集中管理 SQL，避免编排服务散落 SQL 造成状态更新绕过风险。
  */
 @Repository

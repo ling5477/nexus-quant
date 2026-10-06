@@ -12,7 +12,7 @@
 
     <artifactId>nq-observability</artifactId>
     <name>nq-observability</name>
-    <description>Gate A skeleton module: nq-observability</description>
+    <description>NexusQuant module: nq-observability</description>
     <packaging>jar</packaging>
 
     <dependencies>

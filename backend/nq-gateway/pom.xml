@@ -12,7 +12,7 @@
 
     <artifactId>nq-gateway</artifactId>
     <name>nq-gateway</name>
-    <description>Gate A skeleton module: nq-gateway</description>
+    <description>NexusQuant module: nq-gateway</description>
     <packaging>jar</packaging>
 
     <dependencies>

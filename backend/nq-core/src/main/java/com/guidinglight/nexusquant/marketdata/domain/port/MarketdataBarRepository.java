@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * MarketdataBarRepository 定义 RC1-5 marketdata_bars 写侧端口。
+ * MarketdataBarRepository 定义 marketdata_bars 写侧端口。
  * <p>
  * Why:
  * `HistoricalMarketDataPort` 只负责读，fixture ingest 需要一个显式写口来承接幂等 upsert，

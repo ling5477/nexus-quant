@@ -10,7 +10,7 @@ import org.springframework.validation.annotation.Validated;
  * AccountCredentialRuntimeProperties 承接账户凭证写侧最小运行时配置。
  * <p>
  * Why:
- * RC1-4 正式路径必须以 DB 密文存储作为唯一主数据源，
+ * 正式路径必须以 DB 密文存储作为唯一主数据源，
  * 因此主密钥、key version 和 verification mode 需要显式配置，而不是散落到 service 或 env 读取逻辑中。
  */
 @Validated

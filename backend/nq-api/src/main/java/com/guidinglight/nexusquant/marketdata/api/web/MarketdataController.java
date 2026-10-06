@@ -51,16 +51,16 @@ import java.security.Principal;
 import java.util.UUID;
 
 /**
- * MarketdataController 提供 RC1 最小 historical bars 查询与 fixture ingest 接口。
+ * MarketdataController 提供 最小 historical bars 查询与 fixture ingest 接口。
  * <p>
  * Why:
- * RC1-5-A 要把 marketdata 从“只有包结构和读骨架”推进到“真实能写库、能查库”的最小闭环，
+ * 要把 marketdata 从“只有包结构和读骨架”推进到“真实能写库、能查库”的最小闭环，
  * 因此 controller 需要同时暴露显式 ingest 动作和带 `exchangeCode` 的真实查询入口。
  */
 @Validated
 @RestController
 @RequestMapping("/api/marketdata")
-@Tag(name = "Marketdata API", description = "RC1 historical bars ingest/query API.")
+@Tag(name = "Marketdata API", description = "historical bars ingest/query API.")
 public class MarketdataController {
 
     private final MarketdataBarIngestService marketdataBarIngestService;

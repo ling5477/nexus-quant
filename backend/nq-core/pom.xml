@@ -12,7 +12,7 @@
 
     <artifactId>nq-core</artifactId>
     <name>nq-core</name>
-    <description>Gate A skeleton module: nq-core</description>
+    <description>NexusQuant module: nq-core</description>
     <packaging>jar</packaging>
 
     <dependencies>

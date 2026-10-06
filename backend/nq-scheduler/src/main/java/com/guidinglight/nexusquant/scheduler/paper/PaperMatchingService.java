@@ -316,7 +316,7 @@ public class PaperMatchingService {
     }
 
     private BigDecimal resolveMarketPrice() {
-        // Gate B/交易所适配契约不接真实行情网络，使用固定价格提供器保证本地验证可重复。
+        // 交易所适配契约不接真实行情网络，使用固定价格提供器保证本地验证可重复。
         return new BigDecimal("100.00000000");
     }
 

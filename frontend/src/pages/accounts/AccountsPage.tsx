@@ -266,7 +266,6 @@ export function AccountsPage() {
                 <NqPageHeader
                     title={t('pages:accountsAndCredentials')}
                     description={t('pages:createAccountsSelectADefaultAccountRotateCredentialsAndValidateTheirStructure')}
-                    badge="RC1-4"
                     extra={<Button type="primary" onClick={() => {
                         setEditingAccountId(null);
                         setAccountDrawerMode('create');

@@ -38,7 +38,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * TradeLedgerPostingService 负责 Gate B 成交记账与仓位投影。
+ * TradeLedgerPostingService 负责 成交记账与仓位投影。
  * <p>
  * Why:
  * 记账、风险、审计、事件发布必须在同一业务编排里统一执行，
@@ -308,7 +308,7 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
      * 写入本地最小账户快照。
      * <p>
      * Why:
-     * RC1 要打通 `/api/trading/accounts/{accountId}`，而当前 PAPER 成交后只有 ledger_entries 与 positions，
+     * 账户读侧通过 `/api/trading/accounts/{accountId}` 查询，而 PAPER 成交后的 ledger_entries 与 positions，
      * 没有任何 `account_snapshots` 写入。这里按“base 资产来自持仓投影、quote/fee 资产来自账本余额”的
      * 最小口径补快照，先让本地读链可验证，再留待后续真实交易所同步路径继续细化。
      *

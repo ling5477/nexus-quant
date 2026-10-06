@@ -12,7 +12,7 @@
 
     <artifactId>nq-ledger</artifactId>
     <name>nq-ledger</name>
-    <description>Gate A skeleton module: nq-ledger</description>
+    <description>NexusQuant module: nq-ledger</description>
     <packaging>jar</packaging>
 
     <dependencies>

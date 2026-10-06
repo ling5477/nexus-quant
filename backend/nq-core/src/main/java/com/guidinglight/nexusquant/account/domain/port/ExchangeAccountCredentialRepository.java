@@ -11,7 +11,7 @@ import java.util.Optional;
  * ExchangeAccountCredentialRepository 定义账户凭证版本链端口。
  * <p>
  * Why:
- * RC1-4 要求凭证必须以“新增版本 + active 切换”方式轮换，
+ * 要求凭证必须以“新增版本 + active 切换”方式轮换，
  * 因此读 active 摘要、读解密材料、停用旧版本和回写校验状态都要统一从领域端口进入。
  */
 public interface ExchangeAccountCredentialRepository {

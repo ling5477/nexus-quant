@@ -12,7 +12,7 @@
 
     <artifactId>nq-auth</artifactId>
     <name>nq-auth</name>
-    <description>Gate A skeleton module: nq-auth</description>
+    <description>NexusQuant module: nq-auth</description>
     <packaging>jar</packaging>
 
     <dependencies>

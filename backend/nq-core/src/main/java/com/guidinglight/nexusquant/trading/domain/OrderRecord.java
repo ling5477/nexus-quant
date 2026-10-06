@@ -8,7 +8,7 @@ import java.util.Set;
  * OrderRecord 表示订单在持久化层的完整快照。
  *
  * Why:
- * Gate B 需要在下单、撮合、记账阶段共享同一份订单事实，
+ * 需要在下单、撮合、记账阶段共享同一份订单事实，
  * 通过统一模型避免各服务重复组装字段导致状态与 trace_id 丢失。
  *
  * @param orderId 系统订单 ID

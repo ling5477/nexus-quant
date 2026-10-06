@@ -7,7 +7,7 @@ import java.time.Instant;
  * EventEnvelope 是所有领域事件的统一外壳。
  *
  * Why:
- * Gate A 先冻结事件边界，确保 trace_id、version、type 等审计与演进关键字段强制存在。
+ * 先冻结事件边界，确保 trace_id、version、type 等审计与演进关键字段强制存在。
  *
  * @param eventId 全局事件 ID（推荐 UUID）
  * @param type 事件类型，例如 Order.StatusChanged

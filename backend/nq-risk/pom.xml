@@ -12,7 +12,7 @@
 
     <artifactId>nq-risk</artifactId>
     <name>nq-risk</name>
-    <description>Gate A skeleton module: nq-risk</description>
+    <description>NexusQuant module: nq-risk</description>
     <packaging>jar</packaging>
 
     <dependencies>

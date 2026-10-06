@@ -12,7 +12,7 @@
 
     <artifactId>nq-ledger-contracts</artifactId>
     <name>nq-ledger-contracts</name>
-    <description>Minimal ledger ports and projections extracted for RC1 module decoupling.</description>
+    <description>Ledger ports and projections.</description>
     <packaging>jar</packaging>
 
     <dependencies>

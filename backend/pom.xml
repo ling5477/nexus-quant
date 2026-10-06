@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
 
     <name>nexus-quant-backend</name>
-    <description>NexusQuant backend multi-module parent project for Gate A skeleton.</description>
+    <description>NexusQuant backend multi-module parent project.</description>
 
     <properties>
         <java.version>21</java.version>

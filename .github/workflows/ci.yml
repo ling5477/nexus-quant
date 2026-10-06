@@ -70,6 +70,10 @@ jobs:
           python3 -m unittest discover -s scripts/docs/tests -p test_stage_semantics.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Validate deterministic release source exporter
+        shell: bash
+        run: python3 -m unittest discover -s scripts/release/tests -v
+
       - name: Validate canonical delivery workflow contract
         shell: pwsh
         run: |
@@ -839,6 +843,10 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
+
+      - name: Run frontend unit regression
+        working-directory: frontend
+        run: npm run test:unit
 
       - name: Build frontend production artifact
         working-directory: frontend

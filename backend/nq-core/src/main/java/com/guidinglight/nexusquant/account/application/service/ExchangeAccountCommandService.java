@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
  * ExchangeAccountCommandService 提供账户写侧最小闭环。
  * <p>
  * Why:
- * RC1-4 需要把创建、编辑、启停和默认账户切换统一收口到应用服务，
+ * 需要把创建、编辑、启停和默认账户切换统一收口到应用服务，
  * 防止 controller 或前端直接假设默认账户状态，破坏数据库里的唯一默认约束。
  */
 public class ExchangeAccountCommandService {

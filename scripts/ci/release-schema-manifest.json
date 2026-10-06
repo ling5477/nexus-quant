@@ -4,8 +4,8 @@
   "flywayVersion": "1",
   "postgresqlMajor": 16,
   "baselineFile": "V1__nexus_quant_v1_baseline.sql",
-  "baselineSqlSha256": "2bd3c05718dc8548bbe3b6f20052c9426a9f2f457b96ab3bf740733aa06edf3f",
-  "normalizedSchemaSha256": "1a30d6a34d73ecbc4f7bd1bbc9381ed0f2f796a5491c85ee92a225f3675028b7",
+  "baselineSqlSha256": "a2a0b598da7615ff0e9b9739e2babad5c6e00c7d9a1e777a5821bc963e4225a6",
+  "normalizedSchemaSha256": "458d3a221291df6246bcd1711681dbeac5d18a960346adf84d6c4401c6a407cd",
   "schemaCounts": {
     "tables": 84,
     "columns": 1148,

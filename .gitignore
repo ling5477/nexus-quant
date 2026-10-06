@@ -71,3 +71,17 @@ artifacts/
 backups/
 freeze-evidence/
 release/
+
+# 发布清单与工具是源码；导出树仍只允许放在仓库外。
+!/release/
+/release/*
+!/release/source-manifest.json
+!/release/source-policy.md
+!/scripts/release/
+/scripts/release/*
+!/scripts/release/release_source.py
+!/scripts/release/verify_release_boundary.py
+!/scripts/release/scan_release_secrets.py
+!/scripts/release/tests/
+/scripts/release/tests/*
+!/scripts/release/tests/test_release_source.py

@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
  * ExchangeAccountCredentialVerificationService 提供 active 凭证结构性校验闭环。
  * <p>
  * Why:
- * RC1-4 首版虽然不要求真实外网探活，但 verification 状态流必须真实成立，
+ * 首版虽然不要求真实外网探活，但 verification 状态流必须真实成立，
  * 因此成功/失败都必须回写到 active 凭证版本上，而不是只在 controller 返回文案。
  */
 public class ExchangeAccountCredentialVerificationService {

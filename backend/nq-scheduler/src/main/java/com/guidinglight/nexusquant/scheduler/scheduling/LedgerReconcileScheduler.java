@@ -23,10 +23,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * LedgerReconcileScheduler 提供 Gate B 最小对账任务。
+ * LedgerReconcileScheduler 提供 最小对账任务。
  * <p>
  * Why:
- * 对账是闭环可靠性的兜底机制。即使 Gate B 仅是模拟盘，也需要周期性扫描差异并输出可审计证据，
+ * 对账是闭环可靠性的兜底机制。即使 仅是模拟盘，也需要周期性扫描差异并输出可审计证据，
  * 否则账本偏差只能在人工排查时被动发现。
  */
 @Component
