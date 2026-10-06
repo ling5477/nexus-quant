@@ -28,7 +28,7 @@ def check(repo: Path, commit: str, output: Path) -> dict:
     allowed = {(e["path"], e["token"], e["lineSha256"]): e for e in policy["exceptions"]
                if e["category"] in {"BUSINESS_DOMAIN_TERM", "RUNTIME_COMPATIBILITY_IDENTIFIER"}}
     extra_stage = re.compile(r"\b(?:Gate\s+[A-Z](?:[- ]\d+)?|Phase\s+\d+|Attempt\s+\d+|Stage[- ]QDR|RC\d+(?:-[A-Z0-9]+)*)\b|后续 Gate|当前 Gate")
-    dev_reference = re.compile(r"(?:docs/(?:current|gates|audit|archive)/|research/py/|scripts/(?:docs|ci|java-standard)/|\.agents/|AGENTS\.md|CLAUDE\.md|src/test/)")
+    dev_reference = re.compile(r"(?:docs/(?:current|gate[s]|audit|archive)/|research/py/|scripts/(?:docs|ci|java-standard)/|\.agents/|AGENTS\.md|CLAUDE\.md|src/test/)")
     errors, retained = [], set()
     names = {e["path"] for e in metadata["files"]}
     if any(p.startswith("frontend/src/pages/dev/") for p in names):

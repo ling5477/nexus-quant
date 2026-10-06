@@ -3,19 +3,11 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "51b2bc0ad7c9accee0d03959216d2f05d8e908be21c06d3e89fc036b14d7950b",
+      "sha256": "df412016352d4e4e0e268cb7fdd15cc9fdac15a601cbe3580ef287d701bdcbe8",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
       "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
-    },
-    {
-      "path": "backend/nq-adapter-api/pom.xml",
-      "sha256": "fb68ad0670c072d9eddd0fa94a1a7f9ae811044943937a796dd8c9c46073e595",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
       "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/model/AdapterReadinessReason.java",
@@ -24,22 +16,6 @@
       "reason": "CAPABILITY_FORBIDDEN_IN_GATEL is an existing serialized readiness reason. Renaming it would change persisted and API-facing reason identity; comments no longer use stage names as runtime guidance.",
       "owner": "nq-adapter-api / AdapterReadinessReason contract owner",
       "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
-    },
-    {
-      "path": "backend/nq-adapter-binance/pom.xml",
-      "sha256": "2b52be068dcb28fb462bf79215fb813f404842c93ad49e936951e91c2580fb91",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-adapter-okx/pom.xml",
-      "sha256": "cf020137437a0bd7feef941ced7dcc6963c2478f95d42d720071c89bf54434ec",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
       "path": "backend/nq-api/src/test/java/com/guidinglight/nexusquant/research/api/web/BacktestRunControllerTest.java",
@@ -266,52 +242,12 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-auth/pom.xml",
-      "sha256": "22bb4ad567f6de741a1e9c72de9a55a8e1797c4f1582331c336cadf341a59f4c",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-common/pom.xml",
-      "sha256": "16a46c7f8e99344a640cbb9ce146682c29b089d53e2444b6f58ce5ae9c24c2f0",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-config/pom.xml",
-      "sha256": "cc91f5d843ffff118bc72e47622f47f4aee33772f39510210464ad8939d44cc3",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-contracts/pom.xml",
-      "sha256": "9b31c771f85c595ddbe9c307aaf54ffa3d67c292858c6450a6105f8d29231ee5",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
       "path": "backend/nq-contracts/src/main/java/com/guidinglight/nexusquant/contracts/model/LedgerRefType.java",
       "sha256": "f65d6b066550c164d5e5728e076efed13289b598ff417d329f418715ae866b0e",
       "kind": "DOMAIN_VOCABULARY",
       "reason": "Freeze denotes a financial/safety operation, not a historical development stage.",
       "owner": "Domain owner",
       "removalTrigger": "Only when the financial/safety contract itself is superseded."
-    },
-    {
-      "path": "backend/nq-core/pom.xml",
-      "sha256": "89edb1327f0ca3d7b4ecfd40f49329da074f9c42e5512ae0de45c4edd7a9df9e",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/provider/SpotProviderError.java",
@@ -331,7 +267,7 @@
     },
     {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/strategy/application/pyartifactpreview/service/PythonEvaluationArtifactPreviewOverviewQueryService.java",
-      "sha256": "d6cd06e070f5d33ebd051927eef1b4f6715117cb8e50debf8ebdfd4e6dbbf319",
+      "sha256": "e3f09d5253712ce608147c077d7dba7ecfebfdf27f0c72254b200cc49a1962b7",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-core / PythonEvaluationArtifactPreviewOverviewQueryService contract owner",
@@ -442,22 +378,6 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-gateway/pom.xml",
-      "sha256": "d870f0c55d8e41d1e79777cf4ead59c8947ccc4ce242ee1f2aa69f5ffde54141",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-infra/pom.xml",
-      "sha256": "e069d73b5d9696ecba51245bf0896553dac0888913fd2a22b9564fb501bdbfc2",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java",
       "sha256": "ff877e87f62d3df7a83a055ae3ad9c077da6eddebbbd0af1437953118cb92d4a",
       "kind": "WIRE_COMPATIBILITY",
@@ -538,22 +458,6 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-ledger/pom.xml",
-      "sha256": "cbac21cdd6a68512f1201e2a52b6f2ef0844d9300af47c2d721c0776a0acef5b",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-observability/pom.xml",
-      "sha256": "f7252265042a3921f8e963a945f3dc170ead68c35e82902c390e05c81bd83a67",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
       "path": "backend/nq-research/src/test/java/com/guidinglight/nexusquant/research/application/ResearchBacktestServiceTest.java",
       "sha256": "e5dcac17621a43c1ec3a3cfff1105d73ab0bbdd5eccef3375a39f5d5af07b107",
       "kind": "FIXTURE_IDENTITY",
@@ -562,36 +466,12 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-risk/pom.xml",
-      "sha256": "ac0377799cd23b98078ac66a690ded9c03014379bdda33a35e9e256ca56e44e8",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
       "path": "backend/nq-scheduler/src/test/java/com/guidinglight/nexusquant/scheduler/integration/AdapterInstrumentCatalogSyncServiceTest.java",
       "sha256": "02d2ffba4c331c90f5bf8fa3f2d5ce7289776aba989f11ccdcb835aae73e9d08",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-security/pom.xml",
-      "sha256": "d3b5cf4204bfb8f6f20c853dad3129a7b3cc5383f865b7fbc3cb3b731a26c714",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/pom.xml",
-      "sha256": "52e80ea167ef66e2deb7917c37cc8e61fb8c2b02d67898f664666ec198bee1ac",
-      "kind": "HISTORICAL_METADATA",
-      "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
-      "owner": "Module owner",
-      "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
     },
     {
       "path": "docs/current/ROADMAP.md",

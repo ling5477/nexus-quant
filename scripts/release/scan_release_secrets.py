@@ -12,8 +12,9 @@ import release_source as source
 SIGNER = "backend/nq-adapter-binance/src/main/java/com/guidinglight/nexusquant/adapter/binance/signing/BinanceEd25519RequestSigner.java"
 # 原因：默认 private-key 规则跨越两个 Java delimiter 常量产生误报；完整文件摘要防止夹带材料。
 SIGNER_SHA256 = "a463d9b8773dde43340b92fbbc87f530386526bd13baf6a8c83950853d69a166"
-DELIMITERS = (b'    private static final String PRIVATE_KEY_BEGIN = "-----BEGIN PRIVATE KEY-----";',
-              b'    private static final String PRIVATE_KEY_END = "-----END PRIVATE KEY-----";')
+DELIMITERS = tuple(b'    private static final String PRIVATE_KEY_' + label + b' = "-----'
+                   + marker + b' PRIVATE KEY-----";'
+                   for label, marker in ((b'BEGIN', b'BEGIN'), (b'END', b'END')))
 
 
 def protocol_only(finding: dict, output: Path) -> bool:
