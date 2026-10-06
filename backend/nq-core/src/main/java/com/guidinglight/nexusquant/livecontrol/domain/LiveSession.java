@@ -17,8 +17,8 @@ public record LiveSession(
         long exchangeAccountId,
         String venue,
         LiveSessionAuthorityType authorityType,
-        UUID operatorPilotAuthorityId,
-        String operatorPilotAuthorityDigest,
+        UUID operatorExecutionAuthorityId,
+        String operatorExecutionAuthorityDigest,
         String strategyReleaseId,
         String releaseDigest,
         long releaseAdmissionRevision,
@@ -39,7 +39,7 @@ public record LiveSession(
 ) {
     public static final String VENUE = "OKX_SPOT";
     public static final String APPROVAL_SCOPE_SCHEMA = "approval-scope.v1";
-    public static final String OPERATOR_PILOT_APPROVAL_SCOPE_SCHEMA = "approval-scope.operator-pilot.v1";
+    public static final String OPERATOR_CONTROLLED_EXECUTION_APPROVAL_SCOPE_SCHEMA = "approval-scope.operator.v1";
 
     /**
      * V39 source-compatible constructor；既有调用继续表达 STRATEGY authority。
@@ -78,7 +78,7 @@ public record LiveSession(
         Objects.requireNonNull(id, "id must not be null");
         Objects.requireNonNull(authorityType, "authorityType must not be null");
         if (authorityType == LiveSessionAuthorityType.STRATEGY) {
-            require(operatorPilotAuthorityId == null && operatorPilotAuthorityDigest == null,
+            require(operatorExecutionAuthorityId == null && operatorExecutionAuthorityDigest == null,
                     "strategy session cannot bind operator pilot authority");
             Objects.requireNonNull(strategyReleaseId, "strategyReleaseId must not be null");
             requireDigest(releaseDigest, "releaseDigest");
@@ -86,8 +86,8 @@ public record LiveSession(
             requireDigest(riskLimitSetDigest, "riskLimitSetDigest");
             require(releaseAdmissionRevision > 0, "releaseAdmissionRevision must be positive");
         } else {
-            Objects.requireNonNull(operatorPilotAuthorityId, "operatorPilotAuthorityId must not be null");
-            requireDigest(operatorPilotAuthorityDigest, "operatorPilotAuthorityDigest");
+            Objects.requireNonNull(operatorExecutionAuthorityId, "operatorExecutionAuthorityId must not be null");
+            requireDigest(operatorExecutionAuthorityDigest, "operatorExecutionAuthorityDigest");
             require(strategyReleaseId == null && releaseDigest == null && releaseAdmissionRevision == 0,
                     "operator pilot session cannot bind strategy release authority");
             require(riskLimitSetId == null && riskLimitSetDigest == null,
@@ -139,8 +139,8 @@ public record LiveSession(
             UUID id,
             long ownerId,
             long exchangeAccountId,
-            UUID operatorPilotAuthorityId,
-            String operatorPilotAuthorityDigest,
+            UUID operatorExecutionAuthorityId,
+            String operatorExecutionAuthorityDigest,
             long credentialReference,
             String instrument,
             BigDecimal capitalCap,
@@ -150,8 +150,8 @@ public record LiveSession(
             Instant now
     ) {
         LiveSession draft = new LiveSession(
-                id, ownerId, exchangeAccountId, VENUE, LiveSessionAuthorityType.OPERATOR_PILOT,
-                operatorPilotAuthorityId, operatorPilotAuthorityDigest, null, null, 0, null, null,
+                id, ownerId, exchangeAccountId, VENUE, LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION,
+                operatorExecutionAuthorityId, operatorExecutionAuthorityDigest, null, null, 0, null, null,
                 credentialReference, List.of(instrument), capitalCap, executionWindowStart,
                 executionWindowEnd, LiveSessionState.APPROVAL_PENDING, 1, "0".repeat(64), 1,
                 createdBy, now, now);
@@ -170,8 +170,8 @@ public record LiveSession(
             );
         }
         return new LiveSession(
-                id, ownerId, exchangeAccountId, venue, authorityType, operatorPilotAuthorityId,
-                operatorPilotAuthorityDigest, strategyReleaseId, releaseDigest,
+                id, ownerId, exchangeAccountId, venue, authorityType, operatorExecutionAuthorityId,
+                operatorExecutionAuthorityDigest, strategyReleaseId, releaseDigest,
                 releaseAdmissionRevision, riskLimitSetId, riskLimitSetDigest, credentialReference,
                 symbolAllowlist, capitalCap, executionWindowStart, executionWindowEnd, target,
                 Math.addExact(version, 1), approvalScopeHash, nextEventSequence,
@@ -196,7 +196,7 @@ public record LiveSession(
         }
         if (authorityType != LiveSessionAuthorityType.STRATEGY) {
             throw new LiveControlException(
-                    "OPERATOR_PILOT_SCOPE_IMMUTABLE", "operator pilot scope is fixed by its explicit authority");
+                    "OPERATOR_CONTROLLED_EXECUTION_SCOPE_IMMUTABLE", "operator pilot scope is fixed by its explicit authority");
         }
         LiveSession changed = new LiveSession(
                 id, ownerId, exchangeAccountId, venue, strategyReleaseId, releaseDigest,
@@ -232,13 +232,13 @@ public record LiveSession(
 
     public String approvalScopeSchemaVersion() {
         return authorityType == LiveSessionAuthorityType.STRATEGY
-                ? APPROVAL_SCOPE_SCHEMA : OPERATOR_PILOT_APPROVAL_SCOPE_SCHEMA;
+                ? APPROVAL_SCOPE_SCHEMA : OPERATOR_CONTROLLED_EXECUTION_APPROVAL_SCOPE_SCHEMA;
     }
 
     private LiveSession withScopeHash(String hash) {
         return new LiveSession(
-                id, ownerId, exchangeAccountId, venue, authorityType, operatorPilotAuthorityId,
-                operatorPilotAuthorityDigest, strategyReleaseId, releaseDigest,
+                id, ownerId, exchangeAccountId, venue, authorityType, operatorExecutionAuthorityId,
+                operatorExecutionAuthorityDigest, strategyReleaseId, releaseDigest,
                 releaseAdmissionRevision, riskLimitSetId, riskLimitSetDigest, credentialReference,
                 symbolAllowlist, capitalCap, executionWindowStart, executionWindowEnd, state,
                 version, hash, nextEventSequence, createdBy, createdAt, updatedAt

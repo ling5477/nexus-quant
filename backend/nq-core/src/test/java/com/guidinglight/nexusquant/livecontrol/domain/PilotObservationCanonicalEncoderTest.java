@@ -19,7 +19,7 @@ class PilotObservationCanonicalEncoderTest {
     @Test
     void shouldKeepHistoricalV1CanonicalBytesUnchanged() {
         var item = item(
-                PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.LEGACY_V40_REQUIRED,
+                PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.LEGACY_MINIMUM_EVIDENCE_REQUIRED,
                 new BigDecimal("5.000"), "USDT");
         String expectedPayload = "{\"schemaVersion\":\"instrument-metadata-observation.v1\",\"items\":[" +
                 "{\"symbol\":\"BTC-USDT\",\"tradingStatus\":\"LIVE\",\"tickSize\":\"0.1\"," +
@@ -62,7 +62,7 @@ class PilotObservationCanonicalEncoderTest {
     @Test
     void shouldKeepLegacyEvidenceOutOfV2Observations() {
         var legacy = item(
-                PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.LEGACY_V40_REQUIRED,
+                PilotPrerequisiteObservation.MinimumOrderValueEvidenceClass.LEGACY_MINIMUM_EVIDENCE_REQUIRED,
                 new BigDecimal("5"), "USDT");
         String digest = PilotObservationCanonicalEncoder.instrumentMetadataDigest(
                 PilotPrerequisiteObservation.InstrumentMetadata.LEGACY_SCHEMA_VERSION, List.of(legacy));

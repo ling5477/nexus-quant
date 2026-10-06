@@ -72,7 +72,7 @@ class AccountSnapshotSemanticsPostgresIntegrationTest {
                     .schemas(schema).defaultSchema(schema).createSchemas(true).load();
             latest.migrate();
             latest.validate();
-            assertEquals("58", latest.info().current().getVersion().getVersion());
+            assertEquals("59", latest.info().current().getVersion().getVersion());
             assertNull(jdbc.queryForObject("SELECT trade_env FROM account_snapshots WHERE snapshot_id=?",
                     String.class, legacyId));
             assertNull(jdbc.queryForObject("SELECT recorded_at FROM account_snapshots WHERE snapshot_id=?",

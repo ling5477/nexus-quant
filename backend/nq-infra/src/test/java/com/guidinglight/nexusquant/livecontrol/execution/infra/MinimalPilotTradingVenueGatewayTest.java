@@ -109,7 +109,7 @@ class MinimalPilotTradingVenueGatewayTest {
         LiveControlException failure = assertThrows(LiveControlException.class,
                 () -> MinimalPilotTradingVenueGateway.requirePlaceInvocation(request));
 
-        assertEquals("PILOT_PROVIDER_SCOPE_REQUIRED", failure.code());
+        assertEquals("EXECUTION_PROVIDER_SCOPE_REQUIRED", failure.code());
     }
 
     @Test
@@ -174,7 +174,7 @@ class MinimalPilotTradingVenueGatewayTest {
         LiveControlException error = assertThrows(LiveControlException.class,
                 () -> MinimalPilotTradingVenueGateway.refreshedReadOnlyContext(base, failed, now));
 
-        assertEquals("PILOT_RECONCILIATION_CLOCK_UNAVAILABLE", error.code());
+        assertEquals("EXECUTION_RECONCILIATION_CLOCK_UNAVAILABLE", error.code());
     }
 
     private static MinimalPilotTradingVenueGateway gateway(ExecutionIntentRepository intents) {

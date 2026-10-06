@@ -76,7 +76,7 @@ class JdbcExactPilotBindingRepositoryTest {
 
         LiveControlException second = assertThrows(LiveControlException.class,
                 () -> repository.consume(binding, session, correlation("consume-2"), NOW.plusSeconds(2)));
-        assertEquals("EXACT_PILOT_BINDING_ALREADY_CONSUMED", second.code());
+        assertEquals("EXACT_EXECUTION_BINDING_ALREADY_CONSUMED", second.code());
     }
 
     @Test
@@ -84,7 +84,7 @@ class JdbcExactPilotBindingRepositoryTest {
         JdbcTemplate jdbc = mock(JdbcTemplate.class);
         LiveControlRepository liveRepository = mock(LiveControlRepository.class);
         ExactPilotBinding binding = binding();
-        String tampered = "{\"schemaVersion\":\"exact-pilot-binding-event.v1\"," +
+        String tampered = "{\"schemaVersion\":\"exact-execution-binding-event.v1\"," +
                 "\"lifecycle\":\"VERIFIED\",\"bindingId\":\"" + binding.id() + "\"," +
                 "\"bindingDigest\":\"" + binding.bindingDigest() + "\"," +
                 "\"canonicalBinding\":\"{}\"}";
@@ -95,7 +95,7 @@ class JdbcExactPilotBindingRepositoryTest {
 
         LiveControlException exception = assertThrows(LiveControlException.class,
                 () -> repository.find(binding.sessionId(), binding.id()));
-        assertEquals("EXACT_PILOT_BINDING_FACT_CORRUPTED", exception.code());
+        assertEquals("EXACT_EXECUTION_BINDING_FACT_CORRUPTED", exception.code());
     }
 
     @Test

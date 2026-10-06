@@ -88,7 +88,7 @@ class MinimalLivePilotConfigurationTest {
         verify(ledger).postTrade(argThat(request -> request.tradeId().equals(existing.tradeId())));
         verify(audit).append(
                 ArgumentMatchers.eq("RECONCILE"),
-                ArgumentMatchers.eq("GATEY_PILOT_FILL_LEDGER_RECONCILED"),
+                ArgumentMatchers.eq("CONTROLLED_EXECUTION_FILL_LEDGER_RECONCILED"),
                 ArgumentMatchers.eq(order.orderId()),
                 ArgumentMatchers.eq("trace"),
                 ArgumentMatchers.anyMap());

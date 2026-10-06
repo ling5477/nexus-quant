@@ -48,7 +48,7 @@ public final class ExactPilotScopeControlSurfaceService implements ExactPilotSco
         Objects.requireNonNull(command, "command must not be null");
         if (creator.userId() == approver.userId()) {
             throw new LiveControlException(
-                    "EXACT_PILOT_SCOPE_SELF_APPROVAL_FORBIDDEN",
+                    "EXACT_EXECUTION_SCOPE_SELF_APPROVAL_FORBIDDEN",
                     "creator and approver must be independent principals");
         }
         scopeAuthorizationService.preflightPrincipals(creator, approver);
@@ -66,7 +66,7 @@ public final class ExactPilotScopeControlSurfaceService implements ExactPilotSco
         if (validation.lifecycle() != ExactPilotBinding.Lifecycle.VERIFIED
                 || validation.tradingAuthorized()) {
             throw new LiveControlException(
-                    "EXACT_PILOT_BINDING_POST_MATERIALIZATION_INVALID",
+                    "EXACT_EXECUTION_BINDING_POST_MATERIALIZATION_INVALID",
                     "materialized binding is not valid and unconsumed");
         }
         return new ExactPilotScopeControlResult(
@@ -83,7 +83,7 @@ public final class ExactPilotScopeControlSurfaceService implements ExactPilotSco
                 || !command.materialization().pilotScopeId().equals(result.pilotScopeId())
                 || !command.materialization().expectedPilotScopeHash().equals(result.pilotScopeHash())) {
             throw new LiveControlException(
-                    "EXACT_PILOT_SCOPE_MATERIALIZATION_MISMATCH",
+                    "EXACT_EXECUTION_SCOPE_MATERIALIZATION_MISMATCH",
                     "materialized pilot scope differs from explicit operator input");
         }
     }

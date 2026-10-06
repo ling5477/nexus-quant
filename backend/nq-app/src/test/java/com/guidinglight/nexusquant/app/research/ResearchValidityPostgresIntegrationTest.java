@@ -68,7 +68,7 @@ class ResearchValidityPostgresIntegrationTest {
                     .locations("classpath:db/migration").cleanDisabled(true).load();
             flyway.migrate();
             flyway.validate();
-            assertEquals("58", flyway.info().current().getVersion().getVersion());
+            assertEquals("59", flyway.info().current().getVersion().getVersion());
             var ds = new DriverManagerDataSource(url + "?currentSchema=" + schema, user, password);
             var jdbc = new JdbcTemplate(ds);
             seed(jdbc);

@@ -24,11 +24,11 @@ public final class LiveSessionApprovalScopeEncoder {
                 ",\"releaseAdmissionRevision\":" + value.releaseAdmissionRevision() +
                 ",\"riskLimitSetId\":" + CanonicalDigestSupport.quote(value.riskLimitSetId().toString()) +
                 ",\"riskLimitSetDigest\":" + CanonicalDigestSupport.quote(value.riskLimitSetDigest())
-                : ",\"authorityType\":\"OPERATOR_PILOT\"" +
-                ",\"operatorPilotAuthorityId\":" +
-                CanonicalDigestSupport.quote(value.operatorPilotAuthorityId().toString()) +
-                ",\"operatorPilotAuthorityDigest\":" +
-                CanonicalDigestSupport.quote(value.operatorPilotAuthorityDigest());
+                : ",\"authorityType\":\"OPERATOR_CONTROLLED_EXECUTION\"" +
+                ",\"operatorExecutionAuthorityId\":" +
+                CanonicalDigestSupport.quote(value.operatorExecutionAuthorityId().toString()) +
+                ",\"operatorExecutionAuthorityDigest\":" +
+                CanonicalDigestSupport.quote(value.operatorExecutionAuthorityDigest());
         return "{" +
                 "\"schemaVersion\":" + CanonicalDigestSupport.quote(value.approvalScopeSchemaVersion()) +
                 ",\"sessionId\":" + CanonicalDigestSupport.quote(value.id().toString()) +

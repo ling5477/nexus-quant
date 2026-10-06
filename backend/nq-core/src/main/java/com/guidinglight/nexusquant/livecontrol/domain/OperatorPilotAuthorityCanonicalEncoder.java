@@ -3,7 +3,7 @@ package com.guidinglight.nexusquant.livecontrol.domain;
 import java.util.Objects;
 
 /**
- * `operator-pilot-authority.v1` 固定字段顺序、UTC 与精确数值 canonical encoder。
+ * `operator-execution-authority.v1` 固定字段顺序、UTC 与精确数值 canonical encoder。
  */
 public final class OperatorPilotAuthorityCanonicalEncoder {
 

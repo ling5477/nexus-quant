@@ -89,7 +89,7 @@ public final class ExactPilotBindingService implements ExactPilotBindingControlP
         return transactions.execute(status -> {
             lockAuthorizedSession(actor, sessionId);
             ExactPilotBinding binding = repository.find(sessionId, bindingId).orElseThrow(() ->
-                    new LiveControlException("EXACT_PILOT_BINDING_NOT_FOUND", "exact pilot binding was not found"));
+                    new LiveControlException("EXACT_EXECUTION_BINDING_NOT_FOUND", "exact pilot binding was not found"));
             return validateLocked(actor, binding, repository.currentTransactionTime());
         });
     }
@@ -104,10 +104,10 @@ public final class ExactPilotBindingService implements ExactPilotBindingControlP
         return transactions.execute(status -> {
             LiveSession session = lockAuthorizedSession(actor, command.sessionId());
             ExactPilotBinding binding = repository.find(command.sessionId(), command.bindingId()).orElseThrow(() ->
-                    new LiveControlException("EXACT_PILOT_BINDING_NOT_FOUND", "exact pilot binding was not found"));
+                    new LiveControlException("EXACT_EXECUTION_BINDING_NOT_FOUND", "exact pilot binding was not found"));
             if (!binding.order().equals(command.order())) {
                 throw new LiveControlException(
-                        "EXACT_PILOT_ATTEMPT_ORDER_MISMATCH",
+                        "EXACT_EXECUTION_ATTEMPT_ORDER_MISMATCH",
                         "pilot attempt order differs from the exact binding"
                 );
             }
@@ -126,14 +126,14 @@ public final class ExactPilotBindingService implements ExactPilotBindingControlP
     private LiveSession lockAuthorizedSession(AuthenticatedLiveControlActor actor, UUID sessionId) {
         if (!authorization.lockAndCheckRole(actor.userId(), OPERATOR_ROLE)) {
             throw new LiveControlException(
-                    "EXACT_PILOT_BINDING_OPERATOR_ROLE_REQUIRED",
+                    "EXACT_EXECUTION_BINDING_OPERATOR_ROLE_REQUIRED",
                     "authenticated actor does not currently hold the required role"
             );
         }
         LiveSession session = repository.lockSession(sessionId);
         if (session.ownerId() != actor.userId()) {
             throw new LiveControlException(
-                    "EXACT_PILOT_BINDING_OWNER_MISMATCH",
+                    "EXACT_EXECUTION_BINDING_OWNER_MISMATCH",
                     "exact pilot binding session owner does not match the authenticated actor"
             );
         }
@@ -175,7 +175,7 @@ public final class ExactPilotBindingService implements ExactPilotBindingControlP
         ExactPilotBinding.AuthoritativeFacts current = authority.resolveCurrent(actor, binding, decisionAt);
         if (!binding.matchesAuthoritativeFacts(current)) {
             throw new LiveControlException(
-                    "EXACT_PILOT_BINDING_FACT_DRIFT",
+                    "EXACT_EXECUTION_BINDING_FACT_DRIFT",
                     "authoritative exact pilot facts changed after binding"
             );
         }
@@ -195,7 +195,7 @@ public final class ExactPilotBindingService implements ExactPilotBindingControlP
                 && facts.account().ownerId() == actor.userId();
         if (!exact) {
             throw new LiveControlException(
-                    "EXACT_PILOT_BINDING_SCOPE_EXPANSION_REJECTED",
+                    "EXACT_EXECUTION_BINDING_SCOPE_EXPANSION_REJECTED",
                     "resolved authoritative facts differ from the operator exact selection"
             );
         }
@@ -213,7 +213,7 @@ public final class ExactPilotBindingService implements ExactPilotBindingControlP
                 && command.bindingExpiresAt().equals(binding.bindingExpiresAt());
         if (!exact) {
             throw new LiveControlException(
-                    "EXACT_PILOT_BINDING_IDEMPOTENCY_CONFLICT",
+                    "EXACT_EXECUTION_BINDING_IDEMPOTENCY_CONFLICT",
                     "binding identity was reused with different exact facts"
             );
         }
@@ -231,9 +231,9 @@ public final class ExactPilotBindingService implements ExactPilotBindingControlP
 
     private static String consumptionError(ExactPilotBinding.Lifecycle lifecycle) {
         return switch (lifecycle) {
-            case CONSUMED -> "EXACT_PILOT_BINDING_ALREADY_CONSUMED";
-            case EXPIRED -> "EXACT_PILOT_BINDING_EXPIRED";
-            case INVALID -> "EXACT_PILOT_BINDING_INVALID";
+            case CONSUMED -> "EXACT_EXECUTION_BINDING_ALREADY_CONSUMED";
+            case EXPIRED -> "EXACT_EXECUTION_BINDING_EXPIRED";
+            case INVALID -> "EXACT_EXECUTION_BINDING_INVALID";
             case VERIFIED -> throw new IllegalArgumentException("verified binding has no consumption error");
         };
     }

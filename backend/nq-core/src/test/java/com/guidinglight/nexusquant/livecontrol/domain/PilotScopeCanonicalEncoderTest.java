@@ -20,16 +20,21 @@ class PilotScopeCanonicalEncoderTest {
     private static final Instant NOW = Instant.parse("2026-08-16T01:02:03.123456Z");
 
     @Test
-    void shouldProduceFrozenGoldenPayloadAndDigest() {
+    void shouldProduceFrozenGoldenPayloadAndDigest() throws Exception {
         LiveSession session = session();
         PilotScopeBinding scope = scope(session, "").withCanonicalHash(session);
 
         String canonical = PilotScopeCanonicalEncoder.encode(session, scope);
         assertEquals(
-                "be8cdd5153a053e10ed629d5b3932755b4e36cba31394ebf6e5c16f59d846741",
+                "9b4b9eb8bf53ad0a3a64fcd496aeb5d4a44f9f3a4c0497cbc6e21d3d91c82291",
                 scope.pilotScopeHash()
         );
-        assertTrue(canonical.startsWith("{\"schemaVersion\":\"pilot-scope.v1\",\"sessionId\":"));
+        // 回换唯一 schema 标签后仍得到历史 golden 摘要，证明其余字节合同保持一致。
+        assertEquals("be8cdd5153a053e10ed629d5b3932755b4e36cba31394ebf6e5c16f59d846741",
+                java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(
+                        canonical.replace("execution-scope.v1", "pilot-scope.v1")
+                                .getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+        assertTrue(canonical.startsWith("{\"schemaVersion\":\"execution-scope.v1\",\"sessionId\":"));
         assertTrue(canonical.endsWith("\"workerReleaseDigest\":\"" + B + "\"}"));
         assertEquals(scope.pilotScopeHash(), PilotScopeCanonicalEncoder.digest(session, scope));
     }

@@ -719,7 +719,7 @@ jobs:
         run: |
           set -euo pipefail
           mvn -f backend/pom.xml -pl nq-app -am test \
-            -Dtest=AccountSnapshotSemanticsPostgresIntegrationTest,OkxAccountFactsPostgresIntegrationTest,StrategySimPostgresIntegrationTest \
+            -Dtest=AccountSnapshotSemanticsPostgresIntegrationTest,OkxAccountFactsPostgresIntegrationTest,StrategySimPostgresIntegrationTest,SchemaSemanticConsolidationPostgresIntegrationTest \
             -Dsurefire.failIfNoSpecifiedTests=false \
             -Dnq.postgres.smoke.required=true \
             -Dnq.postgres.smoke.url="${NQ_FLYWAY_DB_URL}" \

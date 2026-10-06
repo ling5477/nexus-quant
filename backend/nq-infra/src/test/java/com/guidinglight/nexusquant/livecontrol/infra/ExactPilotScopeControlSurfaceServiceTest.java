@@ -101,7 +101,7 @@ class ExactPilotScopeControlSurfaceServiceTest {
                         new AuthenticatedLiveControlActor(CREATOR),
                         new AuthenticatedLiveControlActor(CREATOR), command));
 
-        assertEquals("EXACT_PILOT_SCOPE_SELF_APPROVAL_FORBIDDEN", exception.code());
+        assertEquals("EXACT_EXECUTION_SCOPE_SELF_APPROVAL_FORBIDDEN", exception.code());
         verify(pilotScopeControlPlane, never()).materialize(any(), any());
         verify(authorizationService, never()).preflightPrincipals(any(), any());
     }
@@ -118,7 +118,7 @@ class ExactPilotScopeControlSurfaceServiceTest {
                         new AuthenticatedLiveControlActor(CREATOR),
                         new AuthenticatedLiveControlActor(APPROVER), command));
 
-        assertEquals("EXACT_PILOT_SCOPE_MATERIALIZATION_MISMATCH", exception.code());
+        assertEquals("EXACT_EXECUTION_SCOPE_MATERIALIZATION_MISMATCH", exception.code());
         verify(pilotScopeControlPlane, never()).approve(any(), any());
         verify(bindingControlPlane, never()).create(any(), any());
     }

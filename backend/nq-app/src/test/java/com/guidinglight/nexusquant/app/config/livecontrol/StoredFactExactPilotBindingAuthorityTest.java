@@ -141,12 +141,12 @@ class StoredFactExactPilotBindingAuthorityTest {
         LiveControlException rejectedPrice = assertThrows(LiveControlException.class,
                 () -> authority.resolveForCreation(
                         new AuthenticatedLiveControlActor(OWNER), priceDrift, NOW));
-        assertEquals("EXACT_PILOT_BINDING_AUTHORITY_REJECTED", rejectedPrice.code());
+        assertEquals("EXACT_EXECUTION_BINDING_AUTHORITY_REJECTED", rejectedPrice.code());
 
         LiveControlException staleMarket = assertThrows(LiveControlException.class,
                 () -> authority.resolveForCreation(
                         new AuthenticatedLiveControlActor(OWNER), command, NOW.plusSeconds(61)));
-        assertEquals("EXACT_PILOT_BINDING_AUTHORITY_REJECTED", staleMarket.code());
+        assertEquals("EXACT_EXECUTION_BINDING_AUTHORITY_REJECTED", staleMarket.code());
         verify(credentialRepository, times(2)).findByCredentialIdForOwner(OWNER, ACCOUNT, CREDENTIAL);
         verifyNoMoreInteractions(credentialRepository);
     }
@@ -221,7 +221,7 @@ class StoredFactExactPilotBindingAuthorityTest {
         when(operatorAuthorityRepository.find(operatorAuthority.id())).thenReturn(Optional.of(mismatched));
         LiveControlException mismatch = assertThrows(LiveControlException.class,
                 () -> authority.resolveForCreation(new AuthenticatedLiveControlActor(OWNER), command, NOW));
-        assertEquals("EXACT_PILOT_BINDING_AUTHORITY_REJECTED", mismatch.code());
+        assertEquals("EXACT_EXECUTION_BINDING_AUTHORITY_REJECTED", mismatch.code());
         verifyNoMoreInteractions(admissionRepository);
     }
 

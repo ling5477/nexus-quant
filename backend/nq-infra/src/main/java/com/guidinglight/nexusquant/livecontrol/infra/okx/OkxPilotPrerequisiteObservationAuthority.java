@@ -57,7 +57,7 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
     public static final long OPERATOR_CLOCK_MAXIMUM_AGE_MS = 5_000L;
     public static final long OPERATOR_MAXIMUM_TOLERATED_SKEW_MS = 100L;
     public static final String OPERATOR_ENDPOINT_POLICY_VERSION =
-            "okx-operator-pilot-exact-endpoints.v1";
+            "okx-operator-execution-exact-endpoints.v1";
     public static final String OPERATOR_PROVIDER_CONTRACT_IDENTITY =
             "okx-spot-provider-contract.v1";
     private static final String ZERO_DIGEST = "0".repeat(64);
@@ -183,7 +183,7 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
         Objects.requireNonNull(resolvedAt, "resolvedAt must not be null");
         String stage = "OBSERVATION";
         try {
-            if (session.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
+            if (session.authorityType() != LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION
                     || createdBy <= 0 || createdBy != session.ownerId()) {
                 throw new IllegalArgumentException("operator pilot bootstrap scope mismatch");
             }
@@ -200,7 +200,7 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
             return new TrustedOperatorPilotBootstrap(scope, observations);
         } catch (RuntimeException failure) {
             throw new LiveControlException(
-                    "TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_" + stage + "_FAILED",
+                    "TRUSTED_OPERATOR_CONTROLLED_EXECUTION_SCOPE_BOOTSTRAP_" + stage + "_FAILED",
                     "trusted operator pilot scope bootstrap failed"
             );
         }
@@ -279,7 +279,7 @@ public final class OkxPilotPrerequisiteObservationAuthority implements PilotPrer
                 OPERATOR_ENDPOINT_POLICY_DIGEST,
                 OPERATOR_PROVIDER_CONTRACT_IDENTITY,
                 releaseManifestSha256,
-                "gatey-minimal-live-pilot@" + releaseId,
+                "controlled-live-execution@" + releaseId,
                 releaseManifestSha256,
                 ZERO_DIGEST,
                 createdBy,

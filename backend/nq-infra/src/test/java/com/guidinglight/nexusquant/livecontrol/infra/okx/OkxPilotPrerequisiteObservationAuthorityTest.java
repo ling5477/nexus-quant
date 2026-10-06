@@ -120,10 +120,10 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
         assertEquals(observations.feeSchedule().feeTier(), scope.feeTier());
         assertEquals(MANIFEST_SHA256, scope.providerArtifactDigest());
         assertEquals(MANIFEST_SHA256, scope.workerReleaseDigest());
-        assertEquals("gatey-minimal-live-pilot@" + RELEASE_ID, scope.workerIdentity());
+        assertEquals("controlled-live-execution@" + RELEASE_ID, scope.workerIdentity());
         assertEquals(OkxPilotPrerequisiteObservationAuthority.OPERATOR_ENDPOINT_POLICY_VERSION,
                 scope.endpointPolicyVersion());
-        assertEquals("d6c5aba2968ae54bc54d3285214aec144be80982728f2ccfe6e8046c17d1a886",
+        assertEquals("dfb8f8f9a29e8321c78df4b3a8d57d0cb1edc19236c03da9dddd7581fc000af7",
                 scope.endpointPolicyDigest());
         assertEquals(OkxPilotPrerequisiteObservationAuthority.OPERATOR_MAXIMUM_TOLERATED_SKEW_MS,
                 scope.maximumToleratedSkewMs());
@@ -157,7 +157,7 @@ class OkxPilotPrerequisiteObservationAuthorityTest {
                 () -> authority.bootstrapTrustedOperatorPilotScope(
                         operatorSession(), UUID.randomUUID(), OWNER_ID, NOW));
 
-        assertEquals("TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_FRESHNESS_FAILED", failure.code());
+        assertEquals("TRUSTED_OPERATOR_CONTROLLED_EXECUTION_SCOPE_BOOTSTRAP_FRESHNESS_FAILED", failure.code());
         assertEquals(1, executor.calls.get());
         assertTrue(catalog.items.isEmpty());
     }

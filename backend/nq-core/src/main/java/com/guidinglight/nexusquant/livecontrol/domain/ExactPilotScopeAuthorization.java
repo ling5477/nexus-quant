@@ -26,7 +26,7 @@ public record ExactPilotScopeAuthorization(
         ExactPilotBinding.Correlation bindingCorrelation,
         String scopeDigest
 ) {
-    public static final String SCHEMA_VERSION = "exact-pilot-scope-authorization.v1";
+    public static final String SCHEMA_VERSION = "exact-execution-scope-authorization.v1";
     private static final String ZERO_DIGEST = "0".repeat(64);
 
     public ExactPilotScopeAuthorization {

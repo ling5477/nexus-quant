@@ -101,7 +101,7 @@ class MinimalLivePilotControlServiceTest {
         LiveControlException failure = assertThrows(
                 LiveControlException.class, () -> fixture.service.prepare(command()));
 
-        assertEquals("BTC_USDT_VENUE_MINIMUM_EXCEEDS_PILOT_CAP", failure.code());
+        assertEquals("BTC_USDT_VENUE_MINIMUM_EXCEEDS_EXECUTION_CAP", failure.code());
         verify(fixture.bindings, never()).create(any(), any());
     }
 

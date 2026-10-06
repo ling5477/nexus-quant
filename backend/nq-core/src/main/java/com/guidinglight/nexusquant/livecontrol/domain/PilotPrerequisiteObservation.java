@@ -89,12 +89,12 @@ public sealed interface PilotPrerequisiteObservation permits
             if (LEGACY_SCHEMA_VERSION.equals(envelope.observationSchemaVersion())) {
                 PilotScopeBinding.require(items.stream().allMatch(item ->
                                 item.minimumOrderValueEvidenceClass()
-                                        == MinimumOrderValueEvidenceClass.LEGACY_V40_REQUIRED),
-                        "legacy instrument observation items require LEGACY_V40_REQUIRED evidence");
+                                        == MinimumOrderValueEvidenceClass.LEGACY_MINIMUM_EVIDENCE_REQUIRED),
+                        "legacy instrument observation items require LEGACY_MINIMUM_EVIDENCE_REQUIRED evidence");
             } else {
                 PilotScopeBinding.require(items.stream().noneMatch(item ->
                                 item.minimumOrderValueEvidenceClass()
-                                        == MinimumOrderValueEvidenceClass.LEGACY_V40_REQUIRED),
+                                        == MinimumOrderValueEvidenceClass.LEGACY_MINIMUM_EVIDENCE_REQUIRED),
                         "v2 instrument observation items cannot use legacy evidence");
             }
         }
@@ -224,7 +224,7 @@ public sealed interface PilotPrerequisiteObservation permits
                 case VENUE_NOT_PUBLISHED -> PilotScopeBinding.require(
                         minimumOrderValue == null && minimumOrderValueCurrency == null,
                         "VENUE_NOT_PUBLISHED cannot carry minimum order value facts");
-                case LEGACY_V40_REQUIRED -> {
+                case LEGACY_MINIMUM_EVIDENCE_REQUIRED -> {
                     requirePositive(minimumOrderValue, "minimumOrderValue");
                     PilotScopeBinding.require("USDT".equals(minimumOrderValueCurrency),
                             "legacy minimumOrderValueCurrency must be USDT");
@@ -281,6 +281,6 @@ public sealed interface PilotPrerequisiteObservation permits
     enum MinimumOrderValueEvidenceClass {
         VENUE_PUBLISHED,
         VENUE_NOT_PUBLISHED,
-        LEGACY_V40_REQUIRED
+        LEGACY_MINIMUM_EVIDENCE_REQUIRED
     }
 }

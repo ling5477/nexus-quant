@@ -103,6 +103,9 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                 .defaultSchema(schema).createSchemas(true).cleanDisabled(false)
                 .locations("filesystem:../nq-infra/src/main/resources/db/migration").load();
         try {
+            // 当前 repository 只使用最新业务 schema；历史版本升级由独立测试覆盖。
+            latest.migrate();
+            latest.validate();
             DriverManagerDataSource dataSource = new DriverManagerDataSource(schemaUrl, user, password);
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             Fixture fixture = seedOperator(jdbc);
@@ -142,25 +145,44 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                 sessionService.transitionMinimalPilot(
                         actor, session0.id(), command, "request-origin", "trace-origin", "idem-origin");
             }
+            transactions.executeWithoutResult(status -> {
+                // 真实事件 writer/reader 必须识别受控会话；其他 kill source 也不能绕过租约拒绝。
+                jdbc.update("UPDATE kill_switch_states SET status='DISENGAGED',source='OPERATOR' WHERE scope='GLOBAL_TRADING'");
+                long account = ensureLegacyAccount(jdbc, fixture.accountId());
+                var draft = com.guidinglight.nexusquant.livecontrol.execution.domain.ExecutionIntentCanonicalEncoder.place(
+                        UUID.randomUUID(), session0.id(), "BTC-USDT", "BUY",
+                        new BigDecimal("0.01"), new BigDecimal("100"), "order-without-lease");
+                jdbc.update("""
+                        INSERT INTO orders(order_id,account_id,symbol,client_order_id,side,type,price,qty,
+                                           status,trace_id,venue,trade_env)
+                        VALUES (?,?,?,?,'BUY','LIMIT',100,0.01,'SENT','isolated-lease-proof','OKX','LIVE')
+                        """, draft.localOrderId(), account, draft.symbol(), draft.clientOrderId());
+                var intents = new com.guidinglight.nexusquant.livecontrol.execution.infra.jdbc.JdbcExecutionIntentRepository(
+                        jdbc, new DataSourceTransactionManager(dataSource));
+                LiveControlException rejected = assertThrows(LiveControlException.class, () -> intents.createOrGet(draft));
+                assertEquals("CONTROLLED_EXECUTION_LEASE_NOT_ACTIVE", rejected.code());
+                assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM execution_intents", Integer.class));
+                status.setRollbackOnly();
+            });
             UUID lease0 = UUID.randomUUID();
             insertLease(jdbc, lease0, session0.id(), authority0.id(), fixture.ownerId(),
                     now, now.plusSeconds(1), null, null, 0, null);
-            jdbc.update("UPDATE pilot_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?",
+            jdbc.update("UPDATE controlled_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?",
                     Timestamp.from(now), lease0);
             Thread.sleep(3_100L);
             Instant terminal0 = Instant.now().truncatedTo(ChronoUnit.MICROS);
             jdbc.update("""
-                    UPDATE pilot_execution_leases
+                    UPDATE controlled_execution_leases
                     SET status='EXPIRED',closed_at=?,version=3,updated_at=? WHERE lease_id=?
                     """, Timestamp.from(terminal0), Timestamp.from(terminal0), lease0);
             UUID decision0 = UUID.randomUUID();
             jdbc.update("""
-                    INSERT INTO pilot_pre_place_recovery_decisions(
+                    INSERT INTO execution_pre_place_recovery_decisions(
                         decision_id,predecessor_lease_id,predecessor_session_id,decision,
                         place_intent_count,send_started_count,execution_intent_count,
                         execution_receipt_count,order_count,trade_count,ledger_count,
                         decided_by,request_id,trace_id,decided_at)
-                    VALUES (?,?,?,'REPLACEMENT_ALLOWED_ZERO_INTENT',0,0,0,0,0,0,0,?,?,?,?)
+                    VALUES (?,?,?,'PRE_PLACE_REGENERATION_ALLOWED',0,0,0,0,0,0,0,?,?,?,?)
                     """, decision0, lease0, session0.id(), fixture.ownerId(),
                     "request-decision0", "trace-decision0", Timestamp.from(terminal0));
             sessionService.terminalizeMinimalPilotPrePlaceRecovery(
@@ -176,7 +198,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             UUID lease1 = UUID.randomUUID();
             insertLease(jdbc, lease1, session1.id(), authority1.id(), fixture.ownerId(),
                     now1, now1.plusSeconds(120), lease0, decision0, 1,
-                    "PRE_PLACE_ZERO_INTENT_FAILURE");
+                    "PRE_PLACE_TERMINAL_REGENERATION");
             for (LiveSessionCommand command : List.of(
                     LiveSessionCommand.APPROVE, LiveSessionCommand.START, LiveSessionCommand.ACTIVATE,
                     LiveSessionCommand.STOP, LiveSessionCommand.BEGIN_RECONCILE,
@@ -184,11 +206,11 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                 sessionService.transitionMinimalPilot(
                         actor, session1.id(), command, "request-ordinal1", "trace-ordinal1", "idem-ordinal1");
             }
-            jdbc.update("UPDATE pilot_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?",
+            jdbc.update("UPDATE controlled_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?",
                     Timestamp.from(now1), lease1);
             Instant terminal1 = Instant.now().truncatedTo(ChronoUnit.MICROS);
             jdbc.update("""
-                    UPDATE pilot_execution_leases
+                    UPDATE controlled_execution_leases
                     SET status='FAILED',closed_at=?,version=3,updated_at=? WHERE lease_id=?
                     """, Timestamp.from(terminal1), Timestamp.from(terminal1), lease1);
 
@@ -235,10 +257,10 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             }
             assertEquals(1, regenerationWinners.get());
             UUID lease2 = jdbc.queryForObject(
-                    "SELECT lease_id FROM pilot_execution_leases WHERE predecessor_lease_id=?",
+                    "SELECT lease_id FROM controlled_execution_leases WHERE predecessor_lease_id=?",
                     UUID.class, lease1);
             assertEquals(2, jdbc.queryForObject(
-                    "SELECT replacement_ordinal FROM pilot_execution_leases WHERE lease_id=?",
+                    "SELECT replacement_ordinal FROM controlled_execution_leases WHERE lease_id=?",
                     Integer.class, lease2));
 
             for (LiveSessionCommand command : List.of(
@@ -246,7 +268,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                 sessionService.transitionMinimalPilot(
                         actor, session2.id(), command, "request-ordinal2", "trace-ordinal2", "idem-ordinal2");
             }
-            jdbc.update("UPDATE pilot_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?",
+            jdbc.update("UPDATE controlled_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?",
                     Timestamp.from(now2), lease2);
             for (LiveSessionCommand command : List.of(
                     LiveSessionCommand.ACTIVATE, LiveSessionCommand.STOP,
@@ -262,7 +284,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             transactions.executeWithoutResult(status -> {
                 Instant consumedAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
                 jdbc.update("""
-                        UPDATE pilot_execution_leases
+                        UPDATE controlled_execution_leases
                         SET status='CONSUMED',consumed_at=?,version=3,updated_at=? WHERE lease_id=?
                         """, Timestamp.from(consumedAt), Timestamp.from(consumedAt), lease2);
                 LiveControlException consumedRejected = assertThrows(LiveControlException.class,
@@ -275,7 +297,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             });
             Instant terminal2 = Instant.now().truncatedTo(ChronoUnit.MICROS);
             jdbc.update("""
-                    UPDATE pilot_execution_leases
+                    UPDATE controlled_execution_leases
                     SET status='FAILED',closed_at=?,version=3,updated_at=? WHERE lease_id=?
                     """, Timestamp.from(terminal2), Timestamp.from(terminal2), lease2);
             transactions.executeWithoutResult(status -> {
@@ -310,10 +332,10 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                     now3, now3.plusSeconds(120), lease2, decision2.decisionId(),
                     decision2.replacementOrdinal(), "PRE_PLACE_TERMINAL_REGENERATION");
             assertEquals(List.of(0, 1, 2, 3), jdbc.queryForList(
-                    "SELECT replacement_ordinal FROM pilot_execution_leases ORDER BY replacement_ordinal",
+                    "SELECT replacement_ordinal FROM controlled_execution_leases ORDER BY replacement_ordinal",
                     Integer.class));
             assertThrows(DataIntegrityViolationException.class, () -> jdbc.update(
-                    "UPDATE pilot_execution_leases SET replacement_ordinal=99 WHERE lease_id=?", lease0));
+                    "UPDATE controlled_execution_leases SET replacement_ordinal=99 WHERE lease_id=?", lease0));
             assertThrows(DataIntegrityViolationException.class, () -> insertLease(
                     jdbc, UUID.randomUUID(), session3.id(), authority3.id(), fixture.ownerId(),
                     now3, now3.plusSeconds(120), lease2, decision2.decisionId(), 3,
@@ -324,7 +346,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                 sessionService.transitionMinimalPilot(
                         actor, session3.id(), command, "request-ordinal3", "trace-ordinal3", "idem-ordinal3");
             }
-            jdbc.update("UPDATE pilot_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?",
+            jdbc.update("UPDATE controlled_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?",
                     Timestamp.from(now3), lease3);
             sessionService.transitionMinimalPilot(
                     actor, session3.id(), LiveSessionCommand.ACTIVATE,
@@ -339,7 +361,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                     futures.add(executor.submit(() -> {
                         try {
                             new JdbcTemplate(new DriverManagerDataSource(schemaUrl, user, password)).update("""
-                                    INSERT INTO pilot_execution_lease_intents(lease_id,intent_id,action,created_at)
+                                    INSERT INTO controlled_execution_lease_intents(lease_id,intent_id,action,created_at)
                                     VALUES (?,?,'PLACE',?)
                                     """, lease3, intent, Timestamp.from(now3));
                             placeWinners.incrementAndGet();
@@ -354,11 +376,11 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             }
             assertEquals(1, placeWinners.get());
             assertEquals(1, jdbc.queryForObject(
-                    "SELECT count(*) FROM pilot_execution_lease_intents WHERE action='PLACE'",
+                    "SELECT count(*) FROM controlled_execution_lease_intents WHERE action='PLACE'",
                     Integer.class));
             Instant postPlaceFailureAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
             jdbc.update("""
-                    UPDATE pilot_execution_leases
+                    UPDATE controlled_execution_leases
                     SET status='FAILED',closed_at=?,version=3,updated_at=? WHERE lease_id=?
                     """, Timestamp.from(postPlaceFailureAt), Timestamp.from(postPlaceFailureAt), lease3);
             LiveControlException postPlaceRejected = assertThrows(LiveControlException.class,
@@ -442,8 +464,8 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             }
             UUID predecessor = UUID.randomUUID();
             jdbc.update("""
-                    INSERT INTO pilot_execution_leases(
-                        lease_id,live_session_id,operator_pilot_authority_id,binding_id,binding_digest,
+                    INSERT INTO controlled_execution_leases(
+                        lease_id,live_session_id,operator_execution_authority_id,binding_id,binding_digest,
                         status,max_notional,valid_from,expires_at,created_by,version,created_at,updated_at)
                     VALUES (?,?,?,?,?,'CREATED',?,?,?,?,1,?,?)
                     """, predecessor, firstSession.id(), firstAuthority.id(), UUID.randomUUID(), "d".repeat(64),
@@ -451,7 +473,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                     fixture.ownerId(), Timestamp.from(now), Timestamp.from(now));
             Instant activatedAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
             jdbc.update("""
-                    UPDATE pilot_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?
+                    UPDATE controlled_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?
                     """, Timestamp.from(activatedAt), predecessor);
             LiveControlException activeRejected = assertThrows(LiveControlException.class, () -> recoveries.decide(
                     fixture.ownerId(), fixture.accountId(), fixture.credentialId(), "BTC-USDT",
@@ -461,7 +483,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             Thread.sleep(5_100L);
             Instant expiredAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
             jdbc.update("""
-                    UPDATE pilot_execution_leases
+                    UPDATE controlled_execution_leases
                     SET status='EXPIRED',closed_at=?,version=3,updated_at=? WHERE lease_id=?
                     """, Timestamp.from(expiredAt), Timestamp.from(expiredAt), predecessor);
 
@@ -518,7 +540,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                         """, Timestamp.from(factTime), intentId);
                 jdbc.update("""
                         INSERT INTO execution_receipts(
-                            receipt_id,intent_id,attempt_no,outcome,received_at,payload_digest,
+                            receipt_id,intent_id,receipt_ordinal,outcome,received_at,payload_digest,
                             payload_digest_schema_version)
                         VALUES (?,?,1,'UNKNOWN',?,?,'execution-receipt-envelope.v1')
                         """, UUID.randomUUID(), intentId, Timestamp.from(factTime), "c".repeat(64));
@@ -558,8 +580,8 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             sessionRepository.appendSessionEvent(new LiveSessionEvent(
                     UUID.randomUUID(), orphanSession.id(), 1,
                     LiveSessionState.APPROVAL_PENDING, LiveSessionState.APPROVAL_PENDING,
-                    "CREATE_EXACT_PILOT_BINDING", fixture.ownerId(),
-                    "request-orphan-binding", "trace-orphan-binding", "EXACT_PILOT_BINDING_VERIFIED",
+                    "CREATE_EXACT_EXECUTION_BINDING", fixture.ownerId(),
+                    "request-orphan-binding", "trace-orphan-binding", "EXACT_EXECUTION_BINDING_VERIFIED",
                     "idem-orphan-binding", "a".repeat(64),
                     "{\"bindingId\":\"fixture-unconsumed\"}", orphanNow));
             Thread.sleep(1_100L);
@@ -570,7 +592,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             assertEquals("REJECTED", jdbc.queryForObject(
                     "SELECT state FROM live_sessions WHERE session_id=?", String.class, orphanSession.id()));
             assertEquals("EXPIRED", jdbc.queryForObject(
-                    "SELECT status FROM operator_pilot_authorities WHERE authority_id=?",
+                    "SELECT status FROM operator_execution_authorities WHERE authority_id=?",
                     String.class, orphanAuthority.id()));
 
             Instant secondNow = Instant.now().truncatedTo(ChronoUnit.MICROS);
@@ -585,8 +607,8 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                 Callable<Void> insert = () -> {
                     try {
                         new JdbcTemplate(new DriverManagerDataSource(schemaUrl, user, password)).update("""
-                                INSERT INTO pilot_execution_leases(
-                                    lease_id,live_session_id,operator_pilot_authority_id,binding_id,binding_digest,
+                                INSERT INTO controlled_execution_leases(
+                                    lease_id,live_session_id,operator_execution_authority_id,binding_id,binding_digest,
                                     status,max_notional,valid_from,expires_at,created_by,version,created_at,updated_at,
                                     predecessor_lease_id,recovery_decision_id,replacement_ordinal,replacement_reason)
                                 VALUES (?,?,?,?,?,'CREATED',?,?,?,?,1,?,?,?,?,1,'PRE_PLACE_TERMINAL_REGENERATION')
@@ -608,12 +630,12 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             }
             assertEquals(1, succeeded.get());
             assertEquals(1, jdbc.queryForObject(
-                    "SELECT count(*) FROM pilot_execution_leases WHERE predecessor_lease_id=?",
+                    "SELECT count(*) FROM controlled_execution_leases WHERE predecessor_lease_id=?",
                     Integer.class, predecessor));
             assertEquals("EXPIRED", jdbc.queryForObject(
-                    "SELECT status FROM pilot_execution_leases WHERE lease_id=?", String.class, predecessor));
+                    "SELECT status FROM controlled_execution_leases WHERE lease_id=?", String.class, predecessor));
             UUID successor = jdbc.queryForObject(
-                    "SELECT lease_id FROM pilot_execution_leases WHERE predecessor_lease_id=?",
+                    "SELECT lease_id FROM controlled_execution_leases WHERE predecessor_lease_id=?",
                     UUID.class, predecessor);
             for (LiveSessionCommand command : List.of(
                     LiveSessionCommand.APPROVE, LiveSessionCommand.START, LiveSessionCommand.ACTIVATE)) {
@@ -622,22 +644,22 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             }
             Instant successorActiveAt = Instant.now().truncatedTo(ChronoUnit.MICROS);
             jdbc.update("""
-                    UPDATE pilot_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?
+                    UPDATE controlled_execution_leases SET status='ACTIVE',version=2,updated_at=? WHERE lease_id=?
                     """, Timestamp.from(successorActiveAt), successor);
             UUID firstIntent = insertCreatedPlaceIntent(
                     jdbc, secondSession.id(), legacyId, 1, "first", "f".repeat(64));
             jdbc.update("""
-                    INSERT INTO pilot_execution_lease_intents(lease_id,intent_id,action,created_at)
+                    INSERT INTO controlled_execution_lease_intents(lease_id,intent_id,action,created_at)
                     VALUES (?,?,'PLACE',?)
                     """, successor, firstIntent, Timestamp.from(successorActiveAt));
             UUID secondIntent = insertCreatedPlaceIntent(
                     jdbc, secondSession.id(), legacyId, 2, "second", "1".repeat(64));
             assertThrows(DataIntegrityViolationException.class, () -> jdbc.update("""
-                    INSERT INTO pilot_execution_lease_intents(lease_id,intent_id,action,created_at)
+                    INSERT INTO controlled_execution_lease_intents(lease_id,intent_id,action,created_at)
                     VALUES (?,?,'PLACE',?)
                     """, successor, secondIntent, Timestamp.from(successorActiveAt)));
             assertEquals(1, jdbc.queryForObject(
-                    "SELECT count(*) FROM pilot_execution_lease_intents WHERE action='PLACE'",
+                    "SELECT count(*) FROM controlled_execution_lease_intents WHERE action='PLACE'",
                     Integer.class));
         } finally {
             flyway.clean();
@@ -693,11 +715,11 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             OperatorPilotAuthority stored = transactions.execute(status -> authorityService.materialize(
                     new AuthenticatedLiveControlActor(fixture.ownerId()), authority));
             assertEquals(authority.canonicalDigest(), jdbc.queryForObject("""
-                    SELECT gate_y44_operator_pilot_authority_digest(
+                    SELECT operator_execution_authority_digest(
                         authority_id,owner_user_id,exchange_account_id,credential_reference_id,
                         instrument,side,order_type,max_notional,max_place_count,max_cancel_count,
                         transfer_allowed,withdraw_allowed,valid_from,expires_at,created_by,created_at)
-                    FROM operator_pilot_authorities WHERE authority_id=?
+                    FROM operator_execution_authorities WHERE authority_id=?
                     """, String.class, authority.id()));
 
             LiveSession session = LiveSession.createOperatorPilot(
@@ -711,26 +733,26 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             transactions.executeWithoutResult(status -> sessionService.createOperatorPilotSession(
                     new AuthenticatedLiveControlActor(fixture.ownerId()), session, stored, event));
             LiveSession reloaded = sessions.findSession(session.id()).orElseThrow();
-            assertEquals(LiveSessionAuthorityType.OPERATOR_PILOT, reloaded.authorityType());
+            assertEquals(LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION, reloaded.authorityType());
             assertNull(reloaded.strategyReleaseId());
             assertNull(reloaded.riskLimitSetId());
-            assertEquals(authority.id(), reloaded.operatorPilotAuthorityId());
+            assertEquals(authority.id(), reloaded.operatorExecutionAuthorityId());
 
             assertRejectedSessionVariant(jdbc, reloaded, "STRATEGY", null, null,
                     null, null, null, null, null, LiveSession.APPROVAL_SCOPE_SCHEMA);
             assertRejectedSessionVariant(jdbc, reloaded, "STRATEGY", authority.id(), authority.canonicalDigest(),
                     "synthetic-release", "b".repeat(64), 1L, UUID.randomUUID(), "c".repeat(64),
                     LiveSession.APPROVAL_SCOPE_SCHEMA);
-            assertRejectedSessionVariant(jdbc, reloaded, "OPERATOR_PILOT", null, null,
-                    null, null, null, null, null, LiveSession.OPERATOR_PILOT_APPROVAL_SCOPE_SCHEMA);
-            assertRejectedSessionVariant(jdbc, reloaded, "OPERATOR_PILOT", authority.id(),
+            assertRejectedSessionVariant(jdbc, reloaded, "OPERATOR_CONTROLLED_EXECUTION", null, null,
+                    null, null, null, null, null, LiveSession.OPERATOR_CONTROLLED_EXECUTION_APPROVAL_SCOPE_SCHEMA);
+            assertRejectedSessionVariant(jdbc, reloaded, "OPERATOR_CONTROLLED_EXECUTION", authority.id(),
                     authority.canonicalDigest(), "synthetic-release", "b".repeat(64), 1L,
-                    UUID.randomUUID(), "c".repeat(64), LiveSession.OPERATOR_PILOT_APPROVAL_SCOPE_SCHEMA);
+                    UUID.randomUUID(), "c".repeat(64), LiveSession.OPERATOR_CONTROLLED_EXECUTION_APPROVAL_SCOPE_SCHEMA);
 
             UUID leaseId = UUID.randomUUID();
             jdbc.update("""
-                            INSERT INTO pilot_execution_leases(
-                                lease_id,live_session_id,operator_pilot_authority_id,binding_id,binding_digest,
+                            INSERT INTO controlled_execution_leases(
+                                lease_id,live_session_id,operator_execution_authority_id,binding_id,binding_digest,
                                 status,max_notional,valid_from,expires_at,created_by,version,created_at,updated_at)
                             VALUES (?,?,?,?,?,'CREATED',?,?,?,?,1,?,?)
                             """, leaseId, session.id(), authority.id(), UUID.randomUUID(), "d".repeat(64),
@@ -738,11 +760,11 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
                     fixture.ownerId(), Timestamp.from(now), Timestamp.from(now));
             Instant closedAt = now.plusSeconds(1);
             jdbc.update("""
-                    UPDATE pilot_execution_leases
+                    UPDATE controlled_execution_leases
                     SET status='FAILED',closed_at=?,version=2,updated_at=? WHERE lease_id=?
                     """, Timestamp.from(closedAt), Timestamp.from(closedAt), leaseId);
             assertEquals("CLOSED", jdbc.queryForObject(
-                    "SELECT status FROM operator_pilot_authorities WHERE authority_id=?",
+                    "SELECT status FROM operator_execution_authorities WHERE authority_id=?",
                     String.class, authority.id()));
         } finally {
             flyway.clean();
@@ -765,7 +787,7 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
         assertThrows(DataIntegrityViolationException.class, () -> jdbc.update("""
                         INSERT INTO live_sessions(
                             session_id,owner_id,exchange_account_id,venue,authority_type,
-                            operator_pilot_authority_id,operator_pilot_authority_digest,strategy_release_id,
+                            operator_execution_authority_id,operator_execution_authority_digest,strategy_release_id,
                             release_digest,release_admission_revision,risk_limit_set_id,risk_limit_set_digest,
                             credential_reference,symbol_allowlist,capital_cap,execution_window_start,
                             execution_window_end,state,version,approval_scope_hash,approval_scope_schema_version,
@@ -794,8 +816,8 @@ class OperatorPilotAuthorityPostgresIntegrationTest {
             String replacementReason
     ) {
         jdbc.update("""
-                INSERT INTO pilot_execution_leases(
-                    lease_id,live_session_id,operator_pilot_authority_id,binding_id,binding_digest,
+                INSERT INTO controlled_execution_leases(
+                    lease_id,live_session_id,operator_execution_authority_id,binding_id,binding_digest,
                     status,max_notional,valid_from,expires_at,created_by,version,created_at,updated_at,
                     predecessor_lease_id,recovery_decision_id,replacement_ordinal,replacement_reason)
                 VALUES (?,?,?,?,?,'CREATED',10.00000000,?,?,?,1,?,?,?,?,?,?)

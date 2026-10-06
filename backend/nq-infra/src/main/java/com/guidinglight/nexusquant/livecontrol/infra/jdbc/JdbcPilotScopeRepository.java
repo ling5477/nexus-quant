@@ -30,7 +30,7 @@ import org.springframework.stereotype.Repository;
 public class JdbcPilotScopeRepository implements PilotScopeRepository {
 
     private static final String SCOPE_SELECT = """
-            SELECT pilot_scope_id, session_id, instrument_metadata_digest,
+            SELECT execution_scope_id, session_id, instrument_metadata_digest,
                    instrument_source_identity, instrument_source_schema_version, instrument_maximum_age_ms,
                    fee_schedule_digest, fee_tier, fee_evidence_class, fee_source_identity,
                    fee_source_schema_version, fee_maximum_age_ms, balance_source_identity,
@@ -38,11 +38,11 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
                    clock_source_schema_version, clock_maximum_age_ms, signed_timestamp_source,
                    maximum_tolerated_skew_ms, endpoint_policy_version, endpoint_policy_digest,
                    provider_contract_identity, provider_artifact_digest, worker_identity,
-                   worker_release_digest, pilot_scope_hash, created_by, created_at
-            FROM pilot_scope_bindings
+                   worker_release_digest, execution_scope_hash, created_by, created_at
+            FROM execution_scope_bindings
             """;
     private static final String OBSERVATION_SELECT = """
-            SELECT observation_id, pilot_scope_id, observation_set_id, observation_type,
+            SELECT observation_id, execution_scope_id, observation_set_id, observation_type,
                    observation_schema_version, observation_identity, source_identity,
                    source_schema_version, observed_at, recorded_at, recorder_identity,
                    observation_payload_hash, instrument_metadata_digest, fee_schedule_digest,
@@ -50,10 +50,10 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
                    fee_evidence_class, maker_fee_rate, taker_fee_rate, fee_loss_treatment,
                    balance_currency, available_balance, signed_timestamp_source, observed_skew_ms,
                    market_snapshot_digest, market_instrument, best_ask
-            FROM pilot_prerequisite_observations
+            FROM execution_prerequisite_observations
             """;
     private static final String APPROVAL_SELECT = """
-            SELECT approval_id, session_id, scope_schema_version, pilot_scope_id, scope_hash,
+            SELECT approval_id, session_id, scope_schema_version, execution_scope_id, scope_hash,
                    release_digest, risk_limit_set_digest, approver_id, approver_role, decision,
                    reason, approved_at, expires_at
             FROM operator_approvals
@@ -70,8 +70,8 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
         requireCanonicalScope(session, scope);
         int inserted = jdbcTemplate.update(connection -> {
             var statement = connection.prepareStatement("""
-                    INSERT INTO pilot_scope_bindings (
-                        pilot_scope_id, session_id, scope_schema_version,
+                    INSERT INTO execution_scope_bindings (
+                        execution_scope_id, session_id, scope_schema_version,
                         instrument_metadata_digest, instrument_source_identity,
                         instrument_source_schema_version, instrument_maximum_age_ms,
                         fee_schedule_digest, fee_tier, fee_evidence_class, fee_source_identity,
@@ -80,8 +80,8 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
                         clock_source_schema_version, clock_maximum_age_ms, signed_timestamp_source,
                         maximum_tolerated_skew_ms, endpoint_policy_version, endpoint_policy_digest,
                         provider_contract_identity, provider_artifact_digest, worker_identity,
-                        worker_release_digest, pilot_scope_hash, created_by, created_at
-                    ) VALUES (?, ?, 'pilot-scope.v1', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        worker_release_digest, execution_scope_hash, created_by, created_at
+                    ) VALUES (?, ?, 'execution-scope.v1', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT (session_id) DO NOTHING
                     """);
             int index = 1;
@@ -120,13 +120,13 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
             return scope;
         }
         PilotScopeBinding existing = findBySessionId(session.id()).orElseThrow(() -> new LiveControlException(
-                "PILOT_SCOPE_MATERIALIZATION_CONFLICT", "pilot scope conflict was not reconstructable"));
+                "EXECUTION_SCOPE_MATERIALIZATION_CONFLICT", "pilot scope conflict was not reconstructable"));
         if (PilotScopeCanonicalEncoder.encode(session, existing).equals(PilotScopeCanonicalEncoder.encode(session, scope))
                 && existing.pilotScopeHash().equals(scope.pilotScopeHash())) {
             return existing;
         }
         throw new LiveControlException(
-                "PILOT_SCOPE_MATERIALIZATION_CONFLICT",
+                "EXECUTION_SCOPE_MATERIALIZATION_CONFLICT",
                 "session is already bound to a different immutable pilot scope"
         );
     }
@@ -158,7 +158,7 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
         }
         for (PilotPrerequisiteObservation.InstrumentItem item : observations.instrumentMetadata().items()) {
             jdbcTemplate.update("""
-                    INSERT INTO pilot_instrument_observation_items (
+                    INSERT INTO execution_instrument_observation_items (
                         observation_id, observation_type, symbol, trading_status, tick_size, lot_size,
                         minimum_order_size, minimum_order_value_evidence_class,
                         minimum_order_value, minimum_order_value_currency
@@ -174,13 +174,13 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
     @Override
     public Optional<PilotObservationSet> findObservationSet(UUID pilotScopeId, UUID observationSetId) {
         List<PilotPrerequisiteObservation> values = jdbcTemplate.query(
-                OBSERVATION_SELECT + " WHERE pilot_scope_id = ? AND observation_set_id = ? ORDER BY observation_type",
+                OBSERVATION_SELECT + " WHERE execution_scope_id = ? AND observation_set_id = ? ORDER BY observation_type",
                 this::mapObservation, pilotScopeId, observationSetId);
         if (values.isEmpty()) {
             return Optional.empty();
         }
         if (values.size() != 5) {
-            throw new LiveControlException("PILOT_OBSERVATION_SET_INCOMPLETE", "stored observation set is incomplete");
+            throw new LiveControlException("EXECUTION_OBSERVATION_SET_INCOMPLETE", "stored observation set is incomplete");
         }
         Map<PilotPrerequisiteObservation.ObservationType, PilotPrerequisiteObservation> typed =
                 new EnumMap<>(PilotPrerequisiteObservation.ObservationType.class);
@@ -204,8 +204,8 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
     public Optional<PilotObservationSet> findLatestCompleteObservationSet(UUID pilotScopeId) {
         List<UUID> ids = jdbcTemplate.query("""
                 SELECT observation_set_id
-                FROM pilot_prerequisite_observations
-                WHERE pilot_scope_id = ?
+                FROM execution_prerequisite_observations
+                WHERE execution_scope_id = ?
                 GROUP BY observation_set_id
                 HAVING count(*) = 5 AND count(DISTINCT observation_type) = 5
                 ORDER BY max(observed_at) DESC, observation_set_id DESC
@@ -223,8 +223,8 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
     @Override
     public Optional<OperatorApproval> findValidPilotApproval(PilotScopeBinding scope, Instant decisionAt) {
         return first(jdbcTemplate.query(APPROVAL_SELECT + """
-                WHERE session_id = ? AND scope_schema_version = 'pilot-scope.v1'
-                  AND pilot_scope_id = ? AND scope_hash = ?
+                WHERE session_id = ? AND scope_schema_version = 'execution-scope.v1'
+                  AND execution_scope_id = ? AND scope_hash = ?
                   AND decision = 'APPROVED' AND approved_at <= ? AND expires_at > ?
                 ORDER BY approved_at DESC, approval_id DESC LIMIT 1
                 """, this::mapApproval, scope.sessionId(), scope.id(), scope.pilotScopeHash(),
@@ -236,8 +236,8 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
         for (PilotPrerequisiteObservation observation : requested.observations()) {
             List<ObservationIdentity> matches = jdbcTemplate.query("""
                     SELECT observation_id, observation_set_id, observation_payload_hash
-                    FROM pilot_prerequisite_observations
-                    WHERE pilot_scope_id = ? AND observation_type = ?
+                    FROM execution_prerequisite_observations
+                    WHERE execution_scope_id = ? AND observation_type = ?
                       AND source_identity = ? AND observation_identity = ?
                     """, (row, rowNumber) -> new ObservationIdentity(
                             row.getObject("observation_id", UUID.class),
@@ -271,8 +271,8 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
         Variant variant = Variant.from(observation);
         int inserted = jdbcTemplate.update(connection -> {
             var statement = connection.prepareStatement("""
-                    INSERT INTO pilot_prerequisite_observations (
-                        observation_id, pilot_scope_id, observation_set_id, observation_type,
+                    INSERT INTO execution_prerequisite_observations (
+                        observation_id, execution_scope_id, observation_set_id, observation_type,
                         observation_schema_version, observation_identity, source_identity,
                         source_schema_version, observed_at, recorded_at, recorder_identity,
                         observation_payload_hash, instrument_metadata_digest, fee_schedule_digest,
@@ -326,7 +326,7 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
 
     private PilotScopeBinding mapScope(ResultSet row, int rowNumber) throws SQLException {
         return new PilotScopeBinding(
-                row.getObject("pilot_scope_id", UUID.class), row.getObject("session_id", UUID.class),
+                row.getObject("execution_scope_id", UUID.class), row.getObject("session_id", UUID.class),
                 row.getString("instrument_metadata_digest"), row.getString("instrument_source_identity"),
                 row.getString("instrument_source_schema_version"), row.getLong("instrument_maximum_age_ms"),
                 row.getString("fee_schedule_digest"), row.getString("fee_tier"),
@@ -339,14 +339,14 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
                 row.getLong("maximum_tolerated_skew_ms"), row.getString("endpoint_policy_version"),
                 row.getString("endpoint_policy_digest"), row.getString("provider_contract_identity"),
                 row.getString("provider_artifact_digest"), row.getString("worker_identity"),
-                row.getString("worker_release_digest"), row.getString("pilot_scope_hash"),
+                row.getString("worker_release_digest"), row.getString("execution_scope_hash"),
                 row.getLong("created_by"), instant(row, "created_at")
         );
     }
 
     private PilotPrerequisiteObservation mapObservation(ResultSet row, int rowNumber) throws SQLException {
         PilotPrerequisiteObservation.Envelope envelope = new PilotPrerequisiteObservation.Envelope(
-                row.getObject("observation_id", UUID.class), row.getObject("pilot_scope_id", UUID.class),
+                row.getObject("observation_id", UUID.class), row.getObject("execution_scope_id", UUID.class),
                 row.getObject("observation_set_id", UUID.class), row.getString("observation_schema_version"),
                 row.getString("observation_identity"), row.getString("source_identity"),
                 row.getString("source_schema_version"), instant(row, "observed_at"),
@@ -380,7 +380,7 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
                 SELECT symbol, trading_status, tick_size, lot_size, minimum_order_size,
                        minimum_order_value_evidence_class, minimum_order_value,
                        minimum_order_value_currency
-                FROM pilot_instrument_observation_items
+                FROM execution_instrument_observation_items
                 WHERE observation_id = ? ORDER BY symbol
                 """, (row, rowNumber) -> new PilotPrerequisiteObservation.InstrumentItem(
                         row.getString("symbol"),
@@ -396,7 +396,7 @@ public class JdbcPilotScopeRepository implements PilotScopeRepository {
     private OperatorApproval mapApproval(ResultSet row, int rowNumber) throws SQLException {
         return new OperatorApproval(
                 row.getObject("approval_id", UUID.class), row.getObject("session_id", UUID.class),
-                row.getString("scope_schema_version"), row.getObject("pilot_scope_id", UUID.class),
+                row.getString("scope_schema_version"), row.getObject("execution_scope_id", UUID.class),
                 row.getString("scope_hash"), row.getString("release_digest"),
                 row.getString("risk_limit_set_digest"), row.getLong("approver_id"),
                 row.getString("approver_role"), OperatorApproval.Decision.valueOf(row.getString("decision")),

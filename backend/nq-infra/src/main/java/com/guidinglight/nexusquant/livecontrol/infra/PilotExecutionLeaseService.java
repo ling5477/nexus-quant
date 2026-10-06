@@ -114,7 +114,7 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
                     created.id(), created.version(), clock.instant(), correlation.requestId(), correlation.traceId());
             var kill = killSwitch.snapshot();
             if (kill.status() != KillSwitchStatus.ENGAGED) {
-                throw new LiveControlException("PILOT_KILL_NOT_ENGAGED", "pilot must start from ENGAGED");
+                throw new LiveControlException("EXECUTION_KILL_NOT_ENGAGED", "pilot must start from ENGAGED");
             }
             killSwitch.disengageForPilot(new PilotKillSwitchDisengageCommand(
                     KillSwitchScope.GLOBAL_TRADING, kill.version(), active.id(), active.expiresAt(),
@@ -122,7 +122,7 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
             transition(actor, binding.sessionId(), LiveSessionCommand.ACTIVATE, correlation);
             return active;
         } catch (RuntimeException failure) {
-            recoverLease(actor, created.id(), binding.sessionId(), correlation, "PILOT_ACTIVATION_FAILED");
+            recoverLease(actor, created.id(), binding.sessionId(), correlation, "EXECUTION_ACTIVATION_FAILED");
             throw failure;
         }
     }
@@ -139,7 +139,7 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
         Objects.requireNonNull(actor, "actor must not be null");
         Objects.requireNonNull(correlation, "correlation must not be null");
         if (killSwitch.snapshot().status() != KillSwitchStatus.ENGAGED) {
-            throw new LiveControlException("PILOT_KILL_NOT_ENGAGED", "recovery requires ENGAGED kill");
+            throw new LiveControlException("EXECUTION_KILL_NOT_ENGAGED", "recovery requires ENGAGED kill");
         }
         if (recoveries == null) {
             throw new LiveControlException(
@@ -170,7 +170,7 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
     ) {
         Objects.requireNonNull(actor, "actor must not be null");
         if (binding.account().ownerId() != actor.userId()) {
-            throw new LiveControlException("PILOT_LEASE_OWNER_MISMATCH", "binding owner differs from operator");
+            throw new LiveControlException("EXECUTION_LEASE_OWNER_MISMATCH", "binding owner differs from operator");
         }
         return leases.bindPlaceAndConsume(
                 leaseId, intentId, binding, clock.instant(), correlation.requestId(), correlation.traceId());
@@ -190,7 +190,7 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
             ExactPilotBinding.Correlation correlation
     ) {
         PilotExecutionLease current = leases.find(leaseId)
-                .orElseThrow(() -> new LiveControlException("PILOT_LEASE_NOT_FOUND", "lease was not found"));
+                .orElseThrow(() -> new LiveControlException("EXECUTION_LEASE_NOT_FOUND", "lease was not found"));
         try {
             try {
                 if (terminal == PilotExecutionLease.Status.CLOSED) {
@@ -222,13 +222,13 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
             PilotExecutionLease.Status terminal = now.isBefore(lease.expiresAt())
                     ? PilotExecutionLease.Status.FAILED : PilotExecutionLease.Status.EXPIRED;
             try {
-                leases.close(lease.id(), terminal, now, "PILOT_STARTUP_RECOVERY",
+                leases.close(lease.id(), terminal, now, "EXECUTION_STARTUP_RECOVERY",
                         "pilot-startup-recovery", "pilot-startup-recovery");
             } catch (RuntimeException ignored) {
                 // 继续执行global engage；execution send gate会独立拒绝非ACTIVE/过期lease。
             }
         }
-        engageIfRequired("PILOT_STARTUP_RECOVERY", "pilot-startup-recovery");
+        engageIfRequired("EXECUTION_STARTUP_RECOVERY", "pilot-startup-recovery");
     }
 
     @Override
@@ -247,12 +247,12 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
         Objects.requireNonNull(actor, "actor must not be null");
         Objects.requireNonNull(lease, "lease must not be null");
         if (lease.createdBy() != actor.userId() || lease.status() != PilotExecutionLease.Status.CONSUMED) {
-            throw new LiveControlException("PILOT_RECOVERY_LEASE_REJECTED", "consumed lease cannot be resumed");
+            throw new LiveControlException("EXECUTION_RECOVERY_LEASE_REJECTED", "consumed lease cannot be resumed");
         }
         if (!clock.instant().isBefore(lease.expiresAt())) return lease;
         var kill = killSwitch.snapshot();
         if (kill.status() != KillSwitchStatus.ENGAGED) {
-            throw new LiveControlException("PILOT_KILL_NOT_ENGAGED", "recovery must start from ENGAGED");
+            throw new LiveControlException("EXECUTION_KILL_NOT_ENGAGED", "recovery must start from ENGAGED");
         }
         killSwitch.disengageForPilot(new PilotKillSwitchDisengageCommand(
                 KillSwitchScope.GLOBAL_TRADING, kill.version(), lease.id(), lease.expiresAt(),
@@ -272,7 +272,7 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
         Objects.requireNonNull(correlation, "correlation must not be null");
         if (lease.createdBy() != actor.userId() || lease.status() != PilotExecutionLease.Status.CONSUMED) {
             throw new LiveControlException(
-                    "PILOT_RECOVERY_LEASE_REJECTED", "only the exact consumed lease can be suspended");
+                    "EXECUTION_RECOVERY_LEASE_REJECTED", "only the exact consumed lease can be suspended");
         }
         engageIfRequired(reasonCode, correlation.traceId());
     }
@@ -310,7 +310,7 @@ public final class PilotExecutionLeaseService implements PilotExecutionLeaseCont
     private void engageIfRequired(String reason, String traceId) {
         var snapshot = killSwitch.snapshot();
         if (snapshot.status() == KillSwitchStatus.DISENGAGED) {
-            killSwitch.engage(snapshot.version(), reason, "PILOT_RECOVERY", traceId);
+            killSwitch.engage(snapshot.version(), reason, "EXECUTION_RECOVERY", traceId);
         }
     }
 

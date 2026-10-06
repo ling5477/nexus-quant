@@ -13,7 +13,7 @@ public record ExactPilotScopeAuthorizationCommand(
         Instant approvedAt,
         Instant expiresAt
 ) {
-    public static final String REQUIRED_REASON = "APPROVED_FOR_EXACT_PILOT_MATERIALIZATION";
+    public static final String REQUIRED_REASON = "APPROVED_FOR_EXACT_EXECUTION_MATERIALIZATION";
 
     public ExactPilotScopeAuthorizationCommand {
         Objects.requireNonNull(creatorCorrelation, "creatorCorrelation must not be null");

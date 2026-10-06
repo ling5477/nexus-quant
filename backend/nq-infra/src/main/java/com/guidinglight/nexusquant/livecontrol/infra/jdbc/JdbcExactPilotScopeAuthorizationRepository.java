@@ -29,9 +29,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class JdbcExactPilotScopeAuthorizationRepository implements ExactPilotScopeAuthorizationRepository {
 
-    static final String AUTHORIZE_COMMAND = "AUTHORIZE_EXACT_PILOT_SCOPE";
-    static final String APPROVE_COMMAND = "APPROVE_EXACT_PILOT_SCOPE";
-    private static final String EVENT_SCHEMA = "exact-pilot-scope-authorization-event.v1";
+    static final String AUTHORIZE_COMMAND = "AUTHORIZE_EXACT_EXECUTION_SCOPE";
+    static final String APPROVE_COMMAND = "APPROVE_EXACT_EXECUTION_SCOPE";
+    private static final String EVENT_SCHEMA = "exact-execution-scope-authorization-event.v1";
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
@@ -75,7 +75,7 @@ public class JdbcExactPilotScopeAuthorizationRepository implements ExactPilotSco
         String metadata = metadata(authorization, approvedAt, expiresAt);
         appendEvent(
                 authorization, lockedSession, AUTHORIZE_COMMAND, authorization.creatorPrincipal(),
-                creatorCorrelation, "EXACT_PILOT_SCOPE_AUTHORIZED", metadata, approvedAt, expiresAt);
+                creatorCorrelation, "EXACT_EXECUTION_SCOPE_AUTHORIZED", metadata, approvedAt, expiresAt);
         appendEvent(
                 authorization, lockedSession, APPROVE_COMMAND, authorization.approverPrincipal(),
                 approverCorrelation, ExactPilotScopeAuthorizationCommand.REQUIRED_REASON,
@@ -107,7 +107,7 @@ public class JdbcExactPilotScopeAuthorizationRepository implements ExactPilotSco
         if (!creatorMetadata.equals(approverMetadata)
                 || creatorMetadata.creatorPrincipal() != creatorPrincipal
                 || creatorMetadata.approverPrincipal() != approver.actorId()
-                || !"EXACT_PILOT_SCOPE_AUTHORIZED".equals(creator.reasonCode())
+                || !"EXACT_EXECUTION_SCOPE_AUTHORIZED".equals(creator.reasonCode())
                 || !ExactPilotScopeAuthorizationCommand.REQUIRED_REASON.equals(approver.reasonCode())
                 || !creator.createdAt().equals(creatorMetadata.approvedAt())
                 || !approver.createdAt().equals(creatorMetadata.approvedAt())
@@ -181,7 +181,7 @@ public class JdbcExactPilotScopeAuthorizationRepository implements ExactPilotSco
                 ExactPilotScopeAuthorizationCommand.REQUIRED_REASON, approvedAt, expiresAt);
         if (creator.actorId() != authorization.creatorPrincipal()
                 || approver.actorId() != authorization.approverPrincipal()
-                || !"EXACT_PILOT_SCOPE_AUTHORIZED".equals(creator.reasonCode())
+                || !"EXACT_EXECUTION_SCOPE_AUTHORIZED".equals(creator.reasonCode())
                 || !ExactPilotScopeAuthorizationCommand.REQUIRED_REASON.equals(approver.reasonCode())
                 || !creator.correlation().equals(creatorCorrelation)
                 || !approver.correlation().equals(approverCorrelation)
@@ -304,7 +304,7 @@ public class JdbcExactPilotScopeAuthorizationRepository implements ExactPilotSco
 
     private static LiveControlException rejected(String message, Throwable cause) {
         LiveControlException exception = new LiveControlException(
-                "EXACT_PILOT_SCOPE_APPROVAL_REJECTED", message);
+                "EXACT_EXECUTION_SCOPE_APPROVAL_REJECTED", message);
         if (cause != null) {
             exception.initCause(cause);
         }

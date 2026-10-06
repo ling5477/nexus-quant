@@ -3,7 +3,7 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "99ae850b8d68b27eaea49da7c7f8fe9b792d13898f4e12ac053cdc604d3eee9e",
+      "sha256": "92c0744c5772f2d11f363a250c3223a2a0ce8b692bfca3e73dd0cc2bdca974f5",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
@@ -98,14 +98,6 @@
       "removalTrigger": "All retired-input rejection cases can be replaced by an equivalent schema-level rejection contract."
     },
     {
-      "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfiguration.java",
-      "sha256": "81e4dba3640ff22b36167f38caacddf4784eed01d781303a1d78f46b54d3c6c0",
-      "kind": "WIRE_COMPATIBILITY",
-      "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
-      "owner": "nq-app / MinimalLivePilotConfiguration contract owner",
-      "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
-    },
-    {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/admission/AdmissionGuardedMaterializationPostgresIntegrationTest.java",
       "sha256": "e3512a8c2d25fe17b9a76460f86d46f0a60e69a13bb8a4bfcdad8c1b8b9c8515",
       "kind": "FIXTURE_IDENTITY",
@@ -178,14 +170,6 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfigurationTest.java",
-      "sha256": "afd835805703a7fa3c3fe8ea4d0f03be1ae5b77654a0d7912594a353d41be570",
-      "kind": "NEGATIVE_REGRESSION",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/integration1/NqDhIntegration1ContractGapGuardTest.java",
       "sha256": "e3d2045c111549599e93e2c8ce52a79381ab1da1b77f07d2196e779d69b39acf",
       "kind": "FIXTURE_IDENTITY",
@@ -195,7 +179,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
-      "sha256": "785c43eb36a9757fb36a74d4e5e2cb2ba08772f4d4f9133f5be72d09b7a768f5",
+      "sha256": "c935021a596259eeaff7beb53ebaa06fb94086ede69c57e944e739c71e0f99b3",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -203,7 +187,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
-      "sha256": "eb7cfeb1a5e87e97f183ddfb8088d64dc58f8ae8aa45bdcb38c1ce66cf9f9292",
+      "sha256": "65d76d4b3f750eb46746478352c9d0ebce148b34c9a920de722a199fcb16c37c",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -328,14 +312,6 @@
       "reason": "Historical API/build/diagnostic provenance text; no stage selector, stage path or stage-controlled execution branch.",
       "owner": "Module owner",
       "removalTrigger": "Refresh display metadata when its public documentation contract is next revised."
-    },
-    {
-      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/domain/ExactPilotBinding.java",
-      "sha256": "5b3a8c642898126bdbac908a6dc72755b0df57425c309f7390349c90d0de77a7",
-      "kind": "WIRE_COMPATIBILITY",
-      "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
-      "owner": "nq-core / ExactPilotBinding contract owner",
-      "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
     },
     {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/application/provider/SpotProviderError.java",
@@ -483,34 +459,18 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java",
-      "sha256": "e55fc5d1e7b8a5156e3d50c87289052593ad1cb88b0c6e9302f576d69d0bd56d",
+      "sha256": "ff877e87f62d3df7a83a055ae3ad9c077da6eddebbbd0af1437953118cb92d4a",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / MinimalPilotTradingVenueGateway contract owner",
       "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
     },
     {
-      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/jdbc/JdbcExecutionIntentRepository.java",
-      "sha256": "8b7f637b6055ac432cca2d35a7eae98af8bb605af77a854f9263979379897511",
-      "kind": "WIRE_COMPATIBILITY",
-      "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
-      "owner": "nq-infra / JdbcExecutionIntentRepository contract owner",
-      "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
-    },
-    {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlService.java",
-      "sha256": "eed784c3a6c7d512c715df7e2510ed75ef16113612687bf6667d2995fc0e96ae",
+      "sha256": "02f267caf0c4d5ef457bb5b3b5c15cc1a8052c05f11c7a4a4b915f4d9e4f5f74",
       "kind": "WIRE_COMPATIBILITY",
       "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
       "owner": "nq-infra / MinimalLivePilotControlService contract owner",
-      "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
-    },
-    {
-      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthority.java",
-      "sha256": "d7b3c21c8dc7415a9c4b241d1cdac07d67973e72bf0dc99b7f4efac77d878789",
-      "kind": "WIRE_COMPATIBILITY",
-      "reason": "Existing serialized policy/evidence/permission identity or database primitive. Renaming changes signed, persisted or public contracts; it is not a deployment/profile entrypoint.",
-      "owner": "nq-infra / OkxPilotPrerequisiteObservationAuthority contract owner",
       "removalTrigger": "Separately authorized versioned contract migration with compatibility and stored-fact proof; no unversioned replacement."
     },
     {
@@ -635,7 +595,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/JdbcPilotScopeAuthorityResolverTest.java",
-      "sha256": "2a30f65de5d04eedb6dfd186f6fe83e86278dea403df294968d353148b9df503",
+      "sha256": "1c2580018aa1fe64e5551373a02a7ccd54394d43a9214b92b062b6d5fc6994e9",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -643,7 +603,7 @@
     },
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/PilotScopeControlPlaneServiceTest.java",
-      "sha256": "1d475d0ba1d7c92e8c2168f9642d58aa3d67dcc6d12dcd3a401751cf7da69983",
+      "sha256": "d2484ffbb85820942d86dc43a004a6957d27a4b600bf014c36a749fbc81ac3b9",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -652,14 +612,6 @@
     {
       "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/ReadOnlyQualificationObservationAuthorityTest.java",
       "sha256": "a3ae61b8a2ba6d127b5deb731c3ea6e2bb24f4d898bc561e99d1141e5c7bc441",
-      "kind": "FIXTURE_IDENTITY",
-      "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
-      "owner": "Capability test owner",
-      "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
-    },
-    {
-      "path": "backend/nq-infra/src/test/java/com/guidinglight/nexusquant/livecontrol/infra/okx/OkxPilotPrerequisiteObservationAuthorityTest.java",
-      "sha256": "a41a7e27402b9df7849dbd301364b16731448aab1ed9da607844a334881f4432",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
@@ -2622,7 +2574,7 @@
         "LIMIT",
         "Lifecycle",
         "MAXIMUM_LIFETIME",
-        "OPERATOR_PILOT_SCHEMA_VERSION",
+        "OPERATOR_CONTROLLED_EXECUTION_SCHEMA_VERSION",
         "ObservationIdentities",
         "OperatorPilotAuthorityIdentity",
         "OrderEnvelope",
@@ -4069,7 +4021,7 @@
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/domain/ExactPilotBindingCanonicalEncoder.java",
           "callerMember": "ExactPilotBindingCanonicalEncoder#encode(ExactPilotBinding)",
-          "contractMember": "OPERATOR_PILOT_SCHEMA_VERSION"
+          "contractMember": "OPERATOR_CONTROLLED_EXECUTION_SCHEMA_VERSION"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/domain/ExactPilotBindingCanonicalEncoder.java",
@@ -5434,7 +5386,7 @@
         {
           "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/jdbc/JdbcExactPilotBindingRepository.java",
           "callerMember": "JdbcExactPilotBindingRepository#parseBinding(String)",
-          "contractMember": "OPERATOR_PILOT_SCHEMA_VERSION"
+          "contractMember": "OPERATOR_CONTROLLED_EXECUTION_SCHEMA_VERSION"
         },
         {
           "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/jdbc/JdbcExactPilotBindingRepository.java",
@@ -8664,6 +8616,11 @@
         {
           "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/LiveSessionFactModelPostgresIntegrationTest.java",
           "callerMember": "LiveSessionFactModelPostgresIntegrationTest#shouldProveF003OrderExecutionIdentityConvergence()",
+          "contractMember": "JdbcExecutionIntentRepository"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/livecontrol/OperatorPilotAuthorityPostgresIntegrationTest.java",
+          "callerMember": "OperatorPilotAuthorityPostgresIntegrationTest#regeneratesTerminalZeroExecutionLineageAndKeepsAttemptPlaceExactlyOnce()",
           "contractMember": "JdbcExecutionIntentRepository"
         },
         {

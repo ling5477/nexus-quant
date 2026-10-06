@@ -44,7 +44,7 @@ public class OperatorPilotAuthorityService {
                 || authority.createdBy() != actor.userId()
                 || !authority.hasCanonicalDigest()
                 || !authorization.lockAndCheckRole(actor.userId(), OPERATOR_ROLE)) {
-            throw rejected("OPERATOR_PILOT_AUTHORITY_MATERIALIZATION_REJECTED");
+            throw rejected("OPERATOR_CONTROLLED_EXECUTION_AUTHORITY_MATERIALIZATION_REJECTED");
         }
         return repository.createOrGet(authority);
     }
@@ -53,10 +53,10 @@ public class OperatorPilotAuthorityService {
     public OperatorPilotAuthority requireActive(UUID authorityId, Instant decisionAt) {
         OperatorPilotAuthority authority = repository.find(
                         Objects.requireNonNull(authorityId, "authorityId must not be null"))
-                .orElseThrow(() -> rejected("OPERATOR_PILOT_AUTHORITY_NOT_FOUND"));
+                .orElseThrow(() -> rejected("OPERATOR_CONTROLLED_EXECUTION_AUTHORITY_NOT_FOUND"));
         if (!authority.activeAt(Objects.requireNonNull(decisionAt, "decisionAt must not be null"))
                 || !authority.hasCanonicalDigest()) {
-            throw rejected("OPERATOR_PILOT_AUTHORITY_NOT_ACTIVE");
+            throw rejected("OPERATOR_CONTROLLED_EXECUTION_AUTHORITY_NOT_ACTIVE");
         }
         return authority;
     }

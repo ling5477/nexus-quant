@@ -100,10 +100,10 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
     public MinimalLivePilotPermit prepare(MinimalLivePilotCommand command) {
         Objects.requireNonNull(command, "command must not be null");
         ExchangeAccountSummary account = accounts.findById(command.exchangeAccountId())
-                .orElseThrow(() -> rejected("PILOT_ACCOUNT_REFERENCE_MISMATCH"));
+                .orElseThrow(() -> rejected("EXECUTION_ACCOUNT_REFERENCE_MISMATCH"));
         if (!"OKX".equals(account.exchangeCode()) || !"LIVE".equals(account.tradeEnv())
                 || !"ACTIVE".equals(account.status())) {
-            throw rejected("PILOT_ACCOUNT_REFERENCE_MISMATCH");
+            throw rejected("EXECUTION_ACCOUNT_REFERENCE_MISMATCH");
         }
         UUID operationId = UUID.randomUUID();
         String requestId = "pilot-request-" + operationId;
@@ -134,11 +134,11 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
                 idempotencyKey, requestId, traceId));
         PilotObservationSet observations = scopeRepository.findObservationSet(
                         materialized.pilotScopeId(), materialized.observationSetId())
-                .orElseThrow(() -> rejected("PILOT_PREREQUISITE_FACTS_NOT_FOUND"));
+                .orElseThrow(() -> rejected("EXECUTION_PREREQUISITE_FACTS_NOT_FOUND"));
         List<InstrumentCatalogItem> catalog = instruments.findByExchangeAndSymbols(
                 "OKX", List.of(command.instrument()));
         if (catalog.size() != 1 || catalog.getFirst().instrumentId() == null) {
-            throw rejected("PILOT_INSTRUMENT_REFERENCE_MISMATCH");
+            throw rejected("EXECUTION_INSTRUMENT_REFERENCE_MISMATCH");
         }
         SafeOrderParameters parameters = calculateOrderParameters(
                 command, catalog.getFirst(), observations);
@@ -153,7 +153,7 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
                 start, end, correlation, end));
         var validation = bindings.validate(actor, sessionId, bindingId);
         if (validation.lifecycle() != ExactPilotBinding.Lifecycle.VERIFIED) {
-            throw rejected("PILOT_BINDING_VALIDATION_FAILED");
+            throw rejected("EXECUTION_BINDING_VALIDATION_FAILED");
         }
         var lease = replacement.isPresent()
                 ? leases.createReplacementAndActivate(
@@ -175,7 +175,7 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
     ) {
         CredentialPermissionProbeSummary summary = permissionProbeService.probe(
                 account.ownerUserId(), command.exchangeAccountId(), command.credentialReferenceId(),
-                "gatey-minimal-live-pilot",
+                "controlled-live-execution",
                 new CredentialPermissionProbeCommand(
                         "GateY minimal pilot prerequisite refresh", true,
                         "SCOPED_TRADE_READINESS", true),
@@ -193,7 +193,7 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
                 || summary.withdrawEnabled()
                 || !"PASSED".equals(summary.ipAllowlistProbeStatus())
                 || !fresh) {
-            throw rejected("PILOT_CREDENTIAL_PERMISSION_REFRESH_REJECTED");
+            throw rejected("EXECUTION_CREDENTIAL_PERMISSION_REFRESH_REJECTED");
         }
     }
 
@@ -205,13 +205,13 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
         PilotPrerequisiteObservation.InstrumentItem instrument = observations.instrumentMetadata().items().stream()
                 .filter(value -> value.symbol().equals(command.instrument()))
                 .findFirst()
-                .orElseThrow(() -> rejected("PILOT_INSTRUMENT_REFERENCE_MISMATCH"));
+                .orElseThrow(() -> rejected("EXECUTION_INSTRUMENT_REFERENCE_MISMATCH"));
         var market = observations.marketSnapshot();
         if (!command.instrument().equals(market.instrument())
                 || instrument.tradingStatus() != PilotPrerequisiteObservation.TradingStatus.LIVE
                 || !"LIVE".equals(catalog.status())
                 || market.bestAsk().remainder(instrument.tickSize()).compareTo(BigDecimal.ZERO) != 0) {
-            throw rejected("BTC_USDT_VENUE_MINIMUM_EXCEEDS_PILOT_CAP");
+            throw rejected("BTC_USDT_VENUE_MINIMUM_EXCEEDS_EXECUTION_CAP");
         }
 
         BigDecimal capital = observations.balanceSnapshot().availableBalance()
@@ -221,7 +221,7 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
         BigDecimal feeReserve = capital.multiply(feeRate).setScale(8, RoundingMode.CEILING);
         BigDecimal usable = capital.subtract(feeReserve).subtract(SAFETY_BUFFER_USDT);
         if (usable.signum() <= 0) {
-            throw rejected("BTC_USDT_VENUE_MINIMUM_EXCEEDS_PILOT_CAP");
+            throw rejected("BTC_USDT_VENUE_MINIMUM_EXCEEDS_EXECUTION_CAP");
         }
 
         BigDecimal price = market.bestAsk();
@@ -248,7 +248,7 @@ public final class MinimalLivePilotControlService implements MinimalLivePilotCon
                 && minimumValueSatisfied
                 && exactCatalog;
         if (!sufficient) {
-            throw rejected("BTC_USDT_VENUE_MINIMUM_EXCEEDS_PILOT_CAP");
+            throw rejected("BTC_USDT_VENUE_MINIMUM_EXCEEDS_EXECUTION_CAP");
         }
         return new SafeOrderParameters(price, quantity, notional);
     }

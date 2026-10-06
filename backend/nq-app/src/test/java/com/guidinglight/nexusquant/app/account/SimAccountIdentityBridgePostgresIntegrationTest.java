@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** 全新 V58 数据库上证明正式 SIM 账户可直接供 Strategy 使用，且旧账户补齐可并发重入。 */
+/** 全新当前数据库上证明正式 SIM 账户可直接供 Strategy 使用，且旧账户补齐可并发重入。 */
 @EnabledIfSystemProperty(named = "nq.sim-account.pg.required", matches = "true")
 @ActiveProfiles("local")
 @SpringBootTest(classes = NexusQuantApplication.class, webEnvironment = SpringBootTest.WebEnvironment.MOCK,
@@ -53,7 +53,7 @@ class SimAccountIdentityBridgePostgresIntegrationTest {
     @Test
     void freshAccountCreatesStrategyAndExistingAccountResolvesOnceUnderConcurrency() throws Exception {
         assertEquals(0, count("SELECT count(*) FROM accounts"));
-        assertEquals(58, count("SELECT max(version::integer) FROM flyway_schema_history WHERE success"));
+        assertEquals(59, count("SELECT max(version::integer) FROM flyway_schema_history WHERE success"));
         String token = mapper.readTree(mvc.perform(post("/api/auth/login")
                 .contentType("application/json")
                 .content("{\"username\":\"admin\",\"password\":\"ChangeMe123!\"}"))

@@ -274,9 +274,9 @@ public class MinimalLivePilotConfiguration {
                         permit.ownerId());
                 if (success) {
                     leases.close(actor, permit.leaseId(), PilotExecutionLease.Status.CLOSED,
-                            "PILOT_COMPLETED", correlation);
+                            "EXECUTION_COMPLETED", correlation);
                 } else {
-                    suspendOrFail(actor, permit.leaseId(), correlation, "PILOT_FAILED");
+                    suspendOrFail(actor, permit.leaseId(), correlation, "EXECUTION_FAILED");
                 }
             }
         }
@@ -290,14 +290,14 @@ public class MinimalLivePilotConfiguration {
                     || !binding.order().exchangeInstrumentId().equals(command.instrument())
                     || binding.order().side() != command.side()
                     || lease.maxNotional().compareTo(command.configuredPilotMaxNotional()) != 0) {
-                throw new IllegalStateException("PILOT_RECOVERY_OPERATOR_SCOPE_MISMATCH");
+                throw new IllegalStateException("EXECUTION_RECOVERY_OPERATOR_SCOPE_MISMATCH");
             }
             var actor = new AuthenticatedLiveControlActor(
                     binding.account().ownerId());
             leases.resumeConsumed(actor, lease, binding.correlation());
             String orderId = jdbc.queryForObject("""
                     SELECT intent.local_order_id
-                    FROM pilot_execution_lease_intents link
+                    FROM controlled_execution_lease_intents link
                     JOIN execution_intents intent ON intent.intent_id=link.intent_id
                     WHERE link.lease_id=? AND link.action='PLACE'
                     """, String.class, lease.id());
@@ -312,10 +312,10 @@ public class MinimalLivePilotConfiguration {
             } finally {
                 if (success) {
                     leases.close(actor, lease.id(), PilotExecutionLease.Status.CLOSED,
-                            "PILOT_RECOVERY_COMPLETED", binding.correlation());
+                            "EXECUTION_RECOVERY_COMPLETED", binding.correlation());
                 } else {
                     leases.suspendConsumedForRecovery(
-                            actor, lease, "PILOT_RECOVERY_INCOMPLETE", binding.correlation());
+                            actor, lease, "EXECUTION_RECOVERY_INCOMPLETE", binding.correlation());
                 }
             }
         }
@@ -361,7 +361,7 @@ public class MinimalLivePilotConfiguration {
                     .filter(candidate -> candidate.id().equals(leaseId));
             if (consumed.isPresent()) {
                 leases.suspendConsumedForRecovery(actor, consumed.get(),
-                        "PILOT_RECONCILIATION_REQUIRED", correlation);
+                        "EXECUTION_RECONCILIATION_REQUIRED", correlation);
                 return;
             }
             leases.close(actor, leaseId, PilotExecutionLease.Status.FAILED, reasonCode, correlation);
@@ -382,7 +382,7 @@ public class MinimalLivePilotConfiguration {
                 orders.cancelOrder(new CancelOrderRequest(
                         requestId + "-cancel", stored.orderId(), stored.accountId(), "OKX",
                         stored.symbol(), stored.clientOrderId(), stored.externalOrderId(),
-                        "PILOT_WINDOW_CLOSE", traceId));
+                        "EXECUTION_WINDOW_CLOSE", traceId));
                 stored = orderRepository.findByOrderId(stored.orderId()).orElseThrow();
                 reconciliation = gateway.reconcile(stored);
             }
@@ -421,7 +421,7 @@ public class MinimalLivePilotConfiguration {
                 case NOT_FOUND, UNKNOWN -> throw new IllegalStateException("pilot final order state is unresolved");
             };
             if (order.status() != target) {
-                lifecycle.applyExternalStatus(order.orderId(), target, "PILOT_RECONCILIATION", traceId);
+                lifecycle.applyExternalStatus(order.orderId(), target, "EXECUTION_RECONCILIATION", traceId);
             }
         }
 
@@ -483,7 +483,7 @@ public class MinimalLivePilotConfiguration {
             if (!posted.posted() && !posted.idempotentHit()) {
                 throw new IllegalStateException("REAL_ORDER_RECONCILIATION_DIVERGENCE");
             }
-            audit.append("RECONCILE", "GATEY_PILOT_FILL_LEDGER_RECONCILED", order.orderId(), traceId,
+            audit.append("RECONCILE", "CONTROLLED_EXECUTION_FILL_LEDGER_RECONCILED", order.orderId(), traceId,
                     Map.of("trade_id", trade.tradeId(), "exchange_trade_id", fill.exchangeTradeId()));
         }
     }

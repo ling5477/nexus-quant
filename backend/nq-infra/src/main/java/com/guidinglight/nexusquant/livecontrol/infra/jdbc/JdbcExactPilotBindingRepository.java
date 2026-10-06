@@ -32,9 +32,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class JdbcExactPilotBindingRepository implements ExactPilotBindingRepository {
 
-    static final String CREATE_COMMAND = "CREATE_EXACT_PILOT_BINDING";
-    static final String CONSUME_COMMAND = "CONSUME_EXACT_PILOT_BINDING";
-    private static final String EVENT_SCHEMA = "exact-pilot-binding-event.v1";
+    static final String CREATE_COMMAND = "CREATE_EXACT_EXECUTION_BINDING";
+    static final String CONSUME_COMMAND = "CONSUME_EXACT_EXECUTION_BINDING";
+    private static final String EVENT_SCHEMA = "exact-execution-binding-event.v1";
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
@@ -68,7 +68,7 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
         requireLockedSession(binding, lockedSession);
         if (!binding.hasCanonicalDigest()) {
             throw new LiveControlException(
-                    "EXACT_PILOT_BINDING_DIGEST_MISMATCH", "binding digest is not canonical");
+                    "EXACT_EXECUTION_BINDING_DIGEST_MISMATCH", "binding digest is not canonical");
         }
         Optional<ExactPilotBinding> existing = findCreated(binding.sessionId());
         if (existing.isPresent()) {
@@ -76,7 +76,7 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
                 return existing.get();
             }
             throw new LiveControlException(
-                    "EXACT_PILOT_BINDING_IDEMPOTENCY_CONFLICT",
+                    "EXACT_EXECUTION_BINDING_IDEMPOTENCY_CONFLICT",
                     "session is already bound to different exact pilot facts"
             );
         }
@@ -84,7 +84,7 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
         liveControlRepository.appendSessionEvent(new LiveSessionEvent(
                 UUID.randomUUID(), binding.sessionId(), 1, lockedSession.state(), lockedSession.state(),
                 CREATE_COMMAND, binding.account().ownerId(), binding.correlation().requestId(),
-                binding.correlation().traceId(), "EXACT_PILOT_BINDING_VERIFIED",
+                binding.correlation().traceId(), "EXACT_EXECUTION_BINDING_VERIFIED",
                 binding.correlation().idempotencyKey(), ExactPilotBindingCanonicalEncoder.eventDigest(
                 CREATE_COMMAND, binding.bindingDigest(), binding.correlation().idempotencyKey()),
                 metadata, binding.bindingCreatedAt()
@@ -130,18 +130,18 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
         Objects.requireNonNull(correlation, "correlation must not be null");
         Objects.requireNonNull(consumedAt, "consumedAt must not be null");
         ExactPilotBinding stored = find(binding.sessionId(), binding.id()).orElseThrow(() ->
-                new LiveControlException("EXACT_PILOT_BINDING_NOT_FOUND", "exact pilot binding was not found"));
+                new LiveControlException("EXACT_EXECUTION_BINDING_NOT_FOUND", "exact pilot binding was not found"));
         if (!stored.equals(binding) || !stored.hasCanonicalDigest()) {
             throw corrupted("stored binding differs from the verified binding");
         }
         if (isConsumed(binding.sessionId(), binding.id())) {
             throw new LiveControlException(
-                    "EXACT_PILOT_BINDING_ALREADY_CONSUMED", "exact pilot binding was already consumed");
+                    "EXACT_EXECUTION_BINDING_ALREADY_CONSUMED", "exact pilot binding was already consumed");
         }
         liveControlRepository.appendSessionEvent(new LiveSessionEvent(
                 UUID.randomUUID(), binding.sessionId(), 1, lockedSession.state(), lockedSession.state(),
                 CONSUME_COMMAND, binding.account().ownerId(), correlation.requestId(), correlation.traceId(),
-                "EXACT_PILOT_BINDING_CONSUMED", correlation.idempotencyKey(),
+                "EXACT_EXECUTION_BINDING_CONSUMED", correlation.idempotencyKey(),
                 ExactPilotBindingCanonicalEncoder.eventDigest(
                         CONSUME_COMMAND, binding.bindingDigest(), correlation.idempotencyKey()),
                 consumptionMetadata(binding, consumedAt), consumedAt
@@ -194,7 +194,7 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
             String storedDigest = text(stored, "bindingDigest");
             JsonNode value = objectMapper.readTree(canonical);
             String schemaVersion = text(value, "schemaVersion");
-            boolean operatorPilot = ExactPilotBinding.OPERATOR_PILOT_SCHEMA_VERSION.equals(schemaVersion);
+            boolean operatorPilot = ExactPilotBinding.OPERATOR_CONTROLLED_EXECUTION_SCHEMA_VERSION.equals(schemaVersion);
             if (!operatorPilot && !ExactPilotBinding.SCHEMA_VERSION.equals(schemaVersion)) {
                 throw new IllegalArgumentException("schemaVersion is unsupported");
             }
@@ -204,8 +204,8 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
                     text(value, "riskPolicyDigest"), text(value, "killSwitchState"));
             ExactPilotBinding.OperatorPilotAuthorityIdentity operatorAuthority = operatorPilot
                     ? new ExactPilotBinding.OperatorPilotAuthorityIdentity(
-                    uuid(value, "operatorPilotAuthorityId"),
-                    text(value, "operatorPilotAuthorityDigest"),
+                    uuid(value, "operatorExecutionAuthorityId"),
+                    text(value, "operatorExecutionAuthorityDigest"),
                     text(value, "operatorPilotInstrument"),
                     ExactPilotBinding.Side.valueOf(text(value, "operatorPilotSide")),
                     ExactPilotBinding.OrderType.valueOf(text(value, "operatorPilotOrderType")),
@@ -217,7 +217,7 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
                     text(value, "killSwitchState"))
                     : null;
             ExactPilotBinding binding = new ExactPilotBinding(
-                    uuid(value, "bindingId"), uuid(value, "sessionId"), uuid(value, "pilotScopeId"),
+                    uuid(value, "bindingId"), uuid(value, "sessionId"), uuid(value, "executionScopeId"),
                     uuid(value, "observationSetId"),
                     new ExactPilotBinding.DeploymentIdentity(
                             text(value, "sourceCommit"), text(value, "releaseId"),
@@ -237,7 +237,7 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
                             uuid(value, "balanceSnapshotIdentity"), uuid(value, "exchangeTimeSnapshotIdentity"),
                             uuid(value, "marketSnapshotIdentity"), text(value, "marketSnapshotDigest")),
                     risk, operatorAuthority,
-                    instant(value, "pilotWindowStart"), instant(value, "pilotWindowEnd"),
+                    instant(value, "executionWindowStart"), instant(value, "executionWindowEnd"),
                     new ExactPilotBinding.Correlation(
                             text(value, "requestId"), text(value, "traceId"), text(value, "idempotencyKey")),
                     instant(value, "bindingCreatedAt"), instant(value, "bindingExpiresAt"), storedDigest
@@ -261,7 +261,7 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
                 || binding.account().exchangeAccountId() != lockedSession.exchangeAccountId()
                 || binding.account().credentialReferenceId() != lockedSession.credentialReference()) {
             throw new LiveControlException(
-                    "EXACT_PILOT_BINDING_SESSION_MISMATCH", "binding differs from the locked session identity");
+                    "EXACT_EXECUTION_BINDING_SESSION_MISMATCH", "binding differs from the locked session identity");
         }
     }
 
@@ -328,7 +328,7 @@ public class JdbcExactPilotBindingRepository implements ExactPilotBindingReposit
     }
 
     private static LiveControlException corrupted(String message, Throwable cause) {
-        LiveControlException exception = new LiveControlException("EXACT_PILOT_BINDING_FACT_CORRUPTED", message);
+        LiveControlException exception = new LiveControlException("EXACT_EXECUTION_BINDING_FACT_CORRUPTED", message);
         if (cause != null) {
             exception.initCause(cause);
         }

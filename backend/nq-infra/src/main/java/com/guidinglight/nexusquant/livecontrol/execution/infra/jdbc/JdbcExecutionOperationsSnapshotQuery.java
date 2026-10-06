@@ -38,7 +38,7 @@ public class JdbcExecutionOperationsSnapshotQuery implements ExecutionOperations
                 ), latest_receipt AS (
                     SELECT r.* FROM execution_receipts r
                     JOIN latest_intent i ON i.intent_id=r.intent_id
-                    ORDER BY r.attempt_no DESC, r.receipt_id DESC LIMIT 1
+                    ORDER BY r.receipt_ordinal DESC, r.receipt_id DESC LIMIT 1
                 )
                 SELECT CURRENT_TIMESTAMP observed_at,
                        COALESCE((SELECT status FROM kill_switch_states WHERE scope='GLOBAL_TRADING'),'MISSING') kill_state,

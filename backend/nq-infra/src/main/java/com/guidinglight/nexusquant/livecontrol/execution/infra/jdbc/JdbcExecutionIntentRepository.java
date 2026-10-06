@@ -162,11 +162,11 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
             }
             stateMachine.transition(current.state(), target);
             Integer attemptNo = jdbc.queryForObject(
-                    "SELECT COALESCE(MAX(attempt_no),0)+1 FROM execution_receipts WHERE intent_id=?",
+                    "SELECT COALESCE(MAX(receipt_ordinal),0)+1 FROM execution_receipts WHERE intent_id=?",
                     Integer.class, intentId);
             jdbc.update("""
                             INSERT INTO execution_receipts(
-                                receipt_id,intent_id,attempt_no,outcome,exchange_request_id,exchange_order_id,
+                                receipt_id,intent_id,receipt_ordinal,outcome,exchange_request_id,exchange_order_id,
                                 error_category,error_code,received_at,payload_digest,payload_digest_schema_version
                             ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
                             """, receipt.receiptId(), intentId, attemptNo, receipt.outcome().name(),
@@ -205,7 +205,7 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
             List<OriginalPlaceFacts> places = jdbc.query("""
                             SELECT state,
                                    (SELECT outcome FROM execution_receipts er
-                                    WHERE er.intent_id=ei.intent_id ORDER BY attempt_no DESC LIMIT 1) AS latest_outcome
+                                    WHERE er.intent_id=ei.intent_id ORDER BY receipt_ordinal DESC LIMIT 1) AS latest_outcome
                             FROM execution_intents ei
                             WHERE session_id=? AND local_order_id=? AND action='PLACE' AND client_order_id=?
                             FOR UPDATE
@@ -343,20 +343,20 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
                     "GLOBAL_KILL_SWITCH_NOT_DISENGAGED", "new PLACE is blocked by the global kill switch");
         }
         boolean minimal = minimalPilotSession(sessionId);
-        if ("PILOT_EXECUTION_LEASE".equals(killStates.getFirst().source()) && !minimal) {
+        if ("CONTROLLED_EXECUTION_LEASE".equals(killStates.getFirst().source()) && !minimal) {
             throw new LiveControlException(
-                    "PILOT_KILL_WINDOW_SCOPE_MISMATCH", "pilot kill window cannot authorize another session");
+                    "EXECUTION_KILL_WINDOW_SCOPE_MISMATCH", "pilot kill window cannot authorize another session");
         }
         if (minimal) {
             List<Integer> leases = jdbc.query("""
-                    SELECT 1 FROM pilot_execution_leases
+                    SELECT 1 FROM controlled_execution_leases
                     WHERE live_session_id=? AND status='ACTIVE'
                       AND valid_from<=CURRENT_TIMESTAMP AND expires_at>CURRENT_TIMESTAMP
                     FOR UPDATE
                     """, (row, ignored) -> row.getInt(1), sessionId);
             if (leases.size() != 1) {
                 throw new LiveControlException(
-                        "PILOT_EXECUTION_LEASE_NOT_ACTIVE", "minimal pilot requires one active lease");
+                        "CONTROLLED_EXECUTION_LEASE_NOT_ACTIVE", "minimal pilot requires one active lease");
             }
         }
     }
@@ -366,25 +366,25 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
         if (!minimalPilotSession(intent.sessionId())) return;
         List<UUID> exact = jdbc.query("""
                         SELECT lease.lease_id
-                        FROM pilot_execution_lease_intents link
-                        JOIN pilot_execution_leases lease ON lease.lease_id=link.lease_id
+                        FROM controlled_execution_lease_intents link
+                        JOIN controlled_execution_leases lease ON lease.lease_id=link.lease_id
                         JOIN live_sessions session ON session.session_id=lease.live_session_id
-                        LEFT JOIN operator_pilot_authorities authority
-                          ON authority.authority_id=lease.operator_pilot_authority_id
-                         AND authority.authority_id=session.operator_pilot_authority_id
+                        LEFT JOIN operator_execution_authorities authority
+                          ON authority.authority_id=lease.operator_execution_authority_id
+                         AND authority.authority_id=session.operator_execution_authority_id
                         JOIN exchange_accounts account ON account.exchange_account_id=session.exchange_account_id
                         JOIN exchange_account_credentials credential
                           ON credential.credential_id=session.credential_reference
                          AND credential.exchange_account_id=session.exchange_account_id
-                        JOIN pilot_scope_bindings scope ON scope.session_id=session.session_id
+                        JOIN execution_scope_bindings scope ON scope.session_id=session.session_id
                         WHERE link.intent_id=? AND link.action='PLACE'
                           AND lease.live_session_id=? AND lease.status='CONSUMED'
                           AND lease.valid_from<=CURRENT_TIMESTAMP AND lease.expires_at>CURRENT_TIMESTAMP
                           AND (? * ?)<=lease.max_notional
                           AND (
-                            (session.authority_type='STRATEGY' AND lease.operator_pilot_authority_id IS NULL)
-                            OR (session.authority_type='OPERATOR_PILOT'
-                              AND session.operator_pilot_authority_digest=authority.canonical_digest
+                            (session.authority_type='STRATEGY' AND lease.operator_execution_authority_id IS NULL)
+                            OR (session.authority_type='OPERATOR_CONTROLLED_EXECUTION'
+                              AND session.operator_execution_authority_digest=authority.canonical_digest
                               AND authority.status='ACTIVE'
                               AND authority.valid_from<=CURRENT_TIMESTAMP AND authority.expires_at>CURRENT_TIMESTAMP
                               AND authority.owner_user_id=session.owner_id
@@ -408,10 +408,10 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
                           AND credential.last_permission_probe_at + INTERVAL '1 minute'>=CURRENT_TIMESTAMP
                           AND credential.revoked_at IS NULL AND credential.rotated_at IS NULL
                           AND EXISTS (
-                              SELECT 1 FROM pilot_prerequisite_observations observation
-                              JOIN pilot_instrument_observation_items item
+                              SELECT 1 FROM execution_prerequisite_observations observation
+                              JOIN execution_instrument_observation_items item
                                 ON item.observation_id=observation.observation_id
-                              WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                              WHERE observation.execution_scope_id=scope.execution_scope_id
                                 AND observation.observation_type='INSTRUMENT_METADATA'
                                 AND observation.observed_at + scope.instrument_maximum_age_ms * INTERVAL '1 millisecond'
                                     >= CURRENT_TIMESTAMP
@@ -420,35 +420,35 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
                                 AND (? * ?) >= COALESCE(item.minimum_order_value,0)
                           )
                           AND EXISTS (
-                              SELECT 1 FROM pilot_prerequisite_observations observation
-                              WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                              SELECT 1 FROM execution_prerequisite_observations observation
+                              WHERE observation.execution_scope_id=scope.execution_scope_id
                                 AND observation.observation_type='MARKET_SNAPSHOT'
                                 AND observation.market_instrument=? AND observation.best_ask=?
-                                AND observation.market_snapshot_digest=gate_y43_market_snapshot_digest(
+                                AND observation.market_snapshot_digest=execution_market_snapshot_digest(
                                     observation.market_instrument,observation.best_ask,observation.observed_at,
                                     observation.source_identity,observation.source_schema_version)
                                 AND observation.observed_at + scope.instrument_maximum_age_ms * INTERVAL '1 millisecond'
                                     >= CURRENT_TIMESTAMP
                           )
                           AND EXISTS (
-                              SELECT 1 FROM pilot_prerequisite_observations observation
-                              WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                              SELECT 1 FROM execution_prerequisite_observations observation
+                              WHERE observation.execution_scope_id=scope.execution_scope_id
                                 AND observation.observation_type='FEE_SCHEDULE'
                                 AND observation.fee_evidence_class='OBSERVED_PRIVATE'
                                 AND observation.observed_at + scope.fee_maximum_age_ms * INTERVAL '1 millisecond'
                                     >= CURRENT_TIMESTAMP
                           )
                           AND EXISTS (
-                              SELECT 1 FROM pilot_prerequisite_observations observation
-                              WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                              SELECT 1 FROM execution_prerequisite_observations observation
+                              WHERE observation.execution_scope_id=scope.execution_scope_id
                                 AND observation.observation_type='BALANCE_SNAPSHOT'
                                 AND observation.available_balance >= (? * ?)
                                 AND observation.observed_at + scope.balance_maximum_age_ms * INTERVAL '1 millisecond'
                                     >= CURRENT_TIMESTAMP
                           )
                           AND EXISTS (
-                              SELECT 1 FROM pilot_prerequisite_observations observation
-                              WHERE observation.pilot_scope_id=scope.pilot_scope_id
+                              SELECT 1 FROM execution_prerequisite_observations observation
+                              WHERE observation.execution_scope_id=scope.execution_scope_id
                                 AND observation.observation_type='CLOCK_SYNC'
                                 AND abs(observation.observed_skew_ms) <= scope.maximum_tolerated_skew_ms
                                 AND observation.observed_at + scope.clock_maximum_age_ms * INTERVAL '1 millisecond'
@@ -461,9 +461,9 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
                 intent.limitPrice(), intent.quantity(), intent.symbol(), intent.quantity(),
                 intent.limitPrice(), intent.quantity(), intent.symbol(), intent.limitPrice(),
                 intent.limitPrice(), intent.quantity());
-        if (exact.size() != 1 || !killFacts().getFirst().reasonCode().equals("PILOT_LEASE_" + exact.getFirst())) {
+        if (exact.size() != 1 || !killFacts().getFirst().reasonCode().equals("EXECUTION_LEASE_" + exact.getFirst())) {
             throw new LiveControlException(
-                    "PILOT_EXECUTION_LEASE_SEND_REJECTED", "PLACE send is outside exact consumed lease");
+                    "CONTROLLED_EXECUTION_LEASE_SEND_REJECTED", "PLACE send is outside exact consumed lease");
         }
     }
 
@@ -478,10 +478,10 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
             throw new LiveControlException(
                     "GLOBAL_KILL_SWITCH_NOT_DISENGAGED", "new PLACE is blocked by the global kill switch");
         }
-        if ("PILOT_EXECUTION_LEASE".equals(killStates.getFirst().source())
+        if ("CONTROLLED_EXECUTION_LEASE".equals(killStates.getFirst().source())
                 && !minimalPilotSession(sessionId)) {
             throw new LiveControlException(
-                    "PILOT_KILL_WINDOW_SCOPE_MISMATCH", "pilot kill window cannot authorize another session");
+                    "EXECUTION_KILL_WINDOW_SCOPE_MISMATCH", "pilot kill window cannot authorize another session");
         }
     }
 
@@ -489,12 +489,12 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
         requirePlaceCreationSafetyGateForSend(intent.sessionId());
         List<UUID> leases = jdbc.query("""
                         SELECT lease.lease_id
-                        FROM pilot_execution_lease_intents link
-                        JOIN pilot_execution_leases lease ON lease.lease_id=link.lease_id
+                        FROM controlled_execution_lease_intents link
+                        JOIN controlled_execution_leases lease ON lease.lease_id=link.lease_id
                         JOIN live_sessions session ON session.session_id=lease.live_session_id
-                        LEFT JOIN operator_pilot_authorities authority
-                          ON authority.authority_id=lease.operator_pilot_authority_id
-                         AND authority.authority_id=session.operator_pilot_authority_id
+                        LEFT JOIN operator_execution_authorities authority
+                          ON authority.authority_id=lease.operator_execution_authority_id
+                         AND authority.authority_id=session.operator_execution_authority_id
                         JOIN exchange_account_credentials credential
                           ON credential.credential_id=session.credential_reference
                          AND credential.exchange_account_id=session.exchange_account_id
@@ -502,9 +502,9 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
                           AND lease.live_session_id=? AND lease.status='CONSUMED'
                           AND lease.expires_at>CURRENT_TIMESTAMP
                           AND (
-                            (session.authority_type='STRATEGY' AND lease.operator_pilot_authority_id IS NULL)
-                            OR (session.authority_type='OPERATOR_PILOT'
-                              AND session.operator_pilot_authority_digest=authority.canonical_digest
+                            (session.authority_type='STRATEGY' AND lease.operator_execution_authority_id IS NULL)
+                            OR (session.authority_type='OPERATOR_CONTROLLED_EXECUTION'
+                              AND session.operator_execution_authority_digest=authority.canonical_digest
                               AND authority.status='ACTIVE' AND authority.expires_at>CURRENT_TIMESTAMP
                               AND authority.instrument=? AND authority.max_cancel_count=1
                               AND authority.transfer_allowed=FALSE AND authority.withdraw_allowed=FALSE)
@@ -523,10 +523,10 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
                 intent.symbol());
         List<KillFact> kill = killFacts();
         if (leases.size() != 1 || kill.size() != 1
-                || !"PILOT_EXECUTION_LEASE".equals(kill.getFirst().source())
-                || !kill.getFirst().reasonCode().equals("PILOT_LEASE_" + leases.getFirst())) {
+                || !"CONTROLLED_EXECUTION_LEASE".equals(kill.getFirst().source())
+                || !kill.getFirst().reasonCode().equals("EXECUTION_LEASE_" + leases.getFirst())) {
             throw new LiveControlException(
-                    "PILOT_EXECUTION_LEASE_CANCEL_SEND_REJECTED",
+                    "CONTROLLED_EXECUTION_LEASE_CANCEL_SEND_REJECTED",
                     "CANCEL send is outside exact consumed lease");
         }
     }
@@ -542,7 +542,7 @@ public class JdbcExecutionIntentRepository implements ExecutionIntentRepository 
     private boolean minimalPilotSession(UUID sessionId) {
         Integer count = jdbc.queryForObject("""
                 SELECT count(*) FROM live_session_events
-                WHERE session_id=? AND command='MINIMAL_PILOT_APPROVE'
+                WHERE session_id=? AND command='CONTROLLED_EXECUTION_APPROVE'
                 """, Integer.class, sessionId);
         return count != null && count == 1;
     }

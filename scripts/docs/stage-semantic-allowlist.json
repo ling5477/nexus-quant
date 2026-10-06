@@ -86,13 +86,6 @@
       "lineSha256": "629935dd8eefe23bab103363f95aa38d2276d89db3d542fa332896275aa57cdd"
     },
     {
-      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/jdbc/JdbcExecutionIntentRepository.java",
-      "token": "gate_y43",
-      "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
-      "reason": "The SQL function name is defined in immutable Flyway V43 and asserted by migration contract tests.",
-      "lineSha256": "017a1359879461739479aaf723efec0bb861f9ac272385312c22bf589c091f27"
-    },
-    {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlService.java",
       "token": "GateY",
       "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
