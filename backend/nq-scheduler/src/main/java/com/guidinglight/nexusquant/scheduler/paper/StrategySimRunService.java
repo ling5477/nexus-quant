@@ -503,7 +503,8 @@ public class StrategySimRunService {
                 PublicReplayAssumptionIdentity.sha256(costs));
     }
 
-    @Transactional(readOnly = true, timeout = 10)
+    /** 同次经济投影使用一致的数据库读快照；事件估值时点单独返回。 */
+    @Transactional(readOnly = true, isolation = org.springframework.transaction.annotation.Isolation.REPEATABLE_READ, timeout = 10)
     public FactsView facts(String paperRunId) {
         PaperTradingRun run = paperRuns.getById(paperRunId);
         Long accountId = jdbc.queryForObject("""
@@ -567,16 +568,31 @@ public class StrategySimRunService {
                 summary.path("barContentSha256").asText(), budget, cash, quantity, mark,
                 equity, equity.subtract(budget),
                 jdbc.queryForList("""
-                        SELECT order_id,strategy_run_id,client_order_id,side,type,status,qty,price,created_at
+                        SELECT order_id,strategy_run_id,client_order_id,account_id,symbol,side,type,status,reason,qty,price,qty::text AS exact_qty,price::text AS exact_price,created_at,updated_at
                         FROM orders WHERE account_id=? ORDER BY created_at,order_id LIMIT 500
                         """, accountId),
                 jdbc.queryForList("""
-                        SELECT trade_id,order_id,price,qty,fee,fee_currency,ts
-                        FROM trades WHERE account_id=? ORDER BY ts,trade_id LIMIT 500
+                        SELECT t.trade_id,t.order_id,t.account_id,t.symbol,o.side,t.price,t.qty,t.fee,t.fee_currency,t.ts,t.qty::text AS exact_qty,t.price::text AS exact_price,t.fee::text AS exact_fee
+                        FROM trades t JOIN orders o ON o.order_id=t.order_id AND o.account_id=t.account_id
+                        WHERE t.account_id=? ORDER BY t.ts,t.trade_id LIMIT 500
                         """, accountId),
                 jdbc.queryForList("""
-                        SELECT entry_id,currency,delta,ref_type,ref_id,idempotency_key,ts
+                        SELECT entry_id,currency,delta,delta::text AS exact_delta,ref_type,ref_id,idempotency_key,ts
                         FROM ledger_entries WHERE account_id=? ORDER BY ts,entry_id LIMIT 2000
+                        """, accountId), latestEvent,
+                jdbc.queryForObject("SELECT max(ts) FROM ledger_entries WHERE account_id=?",
+                        java.sql.Timestamp.class, accountId),
+                jdbc.queryForObject("SELECT max(updated_at) FROM positions WHERE account_id=?",
+                        java.sql.Timestamp.class, accountId),
+                jdbc.queryForList("""
+                        SELECT e.risk_event_id,e.scope_id AS order_id,e.rule_id,e.decision,e.reason,e.created_at
+                        FROM risk_events e JOIN orders o ON e.scope='ORDER' AND e.scope_id=o.order_id
+                        WHERE o.account_id=? ORDER BY e.created_at,e.risk_event_id LIMIT 500
+                        """, accountId),
+                jdbc.queryForList("""
+                        SELECT id,account_id,symbol,qty,avg_price,updated_at,
+                               qty::text AS exact_qty,avg_price::text AS exact_avg_price
+                        FROM positions WHERE account_id=? ORDER BY symbol LIMIT 500
                         """, accountId));
     }
 
@@ -699,5 +715,13 @@ public class StrategySimRunService {
                             String strategyVersionId, String inputSha256, BigDecimal initialBudget,
                             BigDecimal cash, BigDecimal positionQuantity, BigDecimal markPrice,
                             BigDecimal equity, BigDecimal pnl, List<Map<String, Object>> orders,
-                            List<Map<String, Object>> trades, List<Map<String, Object>> ledgerEntries) { }
+                            List<Map<String, Object>> trades, List<Map<String, Object>> ledgerEntries,
+                            Instant markAsOf, java.sql.Timestamp ledgerAsOf,
+                            java.sql.Timestamp positionAsOf, List<Map<String, Object>> riskEvents, List<Map<String, Object>> positions) {
+        /** 同一计算结果的十进制文本，避免浏览器解析 JSON 数值时损失有效位。 */
+        public Map<String, String> getExactValues() {
+            return Map.of("cash", cash.toPlainString(), "positionQuantity", positionQuantity.toPlainString(),
+                    "markPrice", markPrice.toPlainString(), "equity", equity.toPlainString(), "pnl", pnl.toPlainString());
+        }
+    }
 }

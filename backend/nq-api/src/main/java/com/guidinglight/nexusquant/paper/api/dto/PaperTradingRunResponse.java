@@ -25,7 +25,8 @@ public record PaperTradingRunResponse(
         String configSnapshotJson,
         String createdBy,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        Long canonicalAccountId
 ) {
     public static PaperTradingRunResponse from(PaperTradingRun run) {
         return new PaperTradingRunResponse(
@@ -47,7 +48,8 @@ public record PaperTradingRunResponse(
                 run.configSnapshotJson(),
                 run.createdBy(),
                 run.createdAt(),
-                run.updatedAt()
+                run.updatedAt(),
+                run.canonicalAccountId()
         );
     }
 }

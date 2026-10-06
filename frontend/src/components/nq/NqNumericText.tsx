@@ -16,6 +16,7 @@ export type {NqNumberFormatOptions} from '@/nq-design-system/format/nqFormat';
 interface NqNumericTextProps {
     value: string | number | null | undefined;
     precision?: number;
+    exact?: boolean;
     signed?: boolean;
     /** 按正负着色：正=up（红涨），负=down（绿跌）。 */
     colorBySign?: boolean;
@@ -36,8 +37,8 @@ function signClassName(value: string | number | null | undefined, colorBySign: b
     return numeric > 0 ? ' nq-text-up' : ' nq-text-down';
 }
 
-function NqNumericText({value, precision = 2, signed = false, colorBySign = false, suffix = ''}: NqNumericTextProps) {
-    const text = formatNqNumber(value, {precision, signed});
+function NqNumericText({value, precision = 2, exact = false, signed = false, colorBySign = false, suffix = ''}: NqNumericTextProps) {
+    const text = formatNqNumber(value, {precision, exact, signed});
 
     return (
         <span className={`nq-num${signClassName(value, colorBySign)}`}>

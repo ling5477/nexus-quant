@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-V1-CLOSURE-PLAN
+accepted_batch=NQ-V1-C3-PRODUCT-UX-CLOSURE
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=fcce148101c05eec24377686495b00939c0a8121
-accepted_batch_acceptance_head=7efb9efb33ecad512d6dfb5180a890c07ad960d2
-accepted_batch_ci_run=36549515053
-work_batch=NQ-V1-CLOSURE-PLAN
+accepted_batch_implementation_commit=07958d143bf05d7e37fd9aacf270244bc0ae5451
+accepted_batch_acceptance_head=07958d143bf05d7e37fd9aacf270244bc0ae5451
+accepted_batch_ci_run=37418672434
+work_batch=NQ-V1-C3-PRODUCT-UX-CLOSURE
 work_batch_status=ACCEPTED|CI_GREEN
-work_batch_commit=7efb9efb33ecad512d6dfb5180a890c07ad960d2
-work_batch_ci_run=36549515053
-next_action=NQ-V1-C1-FRESH-INSTALL-GOLDEN-PATH-CLOSURE-IMPLEMENTATION
+work_batch_commit=07958d143bf05d7e37fd9aacf270244bc0ae5451
+work_batch_ci_run=37418672434
+next_action=NQ-V1-C4-SERVER-CONTINUOUS-SIM-RC-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,7 +31,7 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
-V1 产品收敛计划见 [NQ_V1_CLOSURE_PLAN.md](NQ_V1_CLOSURE_PLAN.md)。计划本体提交 `fcce148101c05eec24377686495b00939c0a8121` 经 PR #59 合并于 `7efb9efb33ecad512d6dfb5180a890c07ad960d2`，该 head 的 push CI `36549515053` 为 9/9 SUCCESS。规划已接受；V1-C1 是下一实现任务，尚未开始。GateZ 冻结身份不变。
+V1 产品收敛计划见 [NQ_V1_CLOSURE_PLAN.md](NQ_V1_CLOSURE_PLAN.md)。C1 已接受：PR #61、dev `02536d050bdca953ddda54388735744bc15050c7`、exact-head CI `36705151215 / 9 of 9 SUCCESS`。C2 已接受：PR #62、dev `354c03415e2eb1fc40c289361d352301d2b555a5`、exact-head CI `37414767478 / 9 of 9 SUCCESS`。C3 产品 UX 候选已接受：implementation/accepted technical head `07958d143bf05d7e37fd9aacf270244bc0ae5451`、PR CI `37418672434 / 9 of 9 SUCCESS`，跨页面 canonical identity、精度、决策/风控原因、调度与恢复状态通过真实 API/browser 验证，见 [C3 evidence](evidence/NQ_V1_C3_PRODUCT_UX_CLOSURE.md)。本次最小 authority 同步不替换上述技术接受身份；PR 最终 head 与合并后 dev 仍须各自完成 exact-head CI。下一任务为 `NQ-V1-C4-SERVER-CONTINUOUS-SIM-RC`，机器字段附 `IMPLEMENTATION` 以符合现有动作类型合同。C4 尚未开始，不声明 V1 或 release READY。GateZ 冻结身份及生产运行边界不变。
 
 ## 1. 当前阶段
 

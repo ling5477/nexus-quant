@@ -1,4 +1,5 @@
 export interface PaperTradingRunItem {
+    canonicalAccountId?: number | null;
     paperRunId: string;
     publishId: string;
     strategyVersionId: string | null;
@@ -57,10 +58,16 @@ export interface StrategySimDecision {
     side: string | null;
     quantity: string | null;
     executionPrice: string;
+    strategyRunId?: string | null;
     orderId: string | null;
 }
 
 export interface StrategySimFacts {
+    exactValues?: Partial<Record<'cash' | 'positionQuantity' | 'markPrice' | 'equity' | 'pnl', string>>;
+    canonicalAccountId: number;
+    markAsOf?: string | null;
+    ledgerAsOf?: string | null;
+    positionAsOf?: string | null;
     paperRunId: string;
     publishId: string;
     strategyVersionId: string;
@@ -74,6 +81,8 @@ export interface StrategySimFacts {
     orders: Array<Record<string, unknown>>;
     trades: Array<Record<string, unknown>>;
     ledgerEntries: Array<Record<string, unknown>>;
+    riskEvents?: Array<Record<string, unknown>>;
+    positions?: Array<Record<string, unknown>>;
 }
 
 export interface PaperTradingOrderItem {

@@ -2123,6 +2123,102 @@ class StrategySimPostgresIntegrationTest {
         assertTrue(facts.cash().signum() >= 0);
     }
 
+    @Test
+    @EnabledIfSystemProperty(named = "nq.c3.browser.required", matches = "true")
+    void productUxRealApiAndBrowserUseOneCanonicalRun() throws Exception {
+        Fixture fixture = seedPublicHourly();
+        Instant observed = Instant.parse("2026-09-25T06:01:00Z");
+        schedulerObservation.set(observation(observed, observed.plusSeconds(1),
+                List.of(hourBar(3, "103"), hourBar(4, "104"), availableAt(hourBar(5, "105"), observed.toString()))));
+        var auth = applicationContext.getBean(com.guidinglight.nexusquant.auth.application.service.AuthSeedService.class);
+        var encoder = applicationContext.getBean(org.springframework.security.crypto.password.PasswordEncoder.class);
+        auth.bootstrapAdmin(new com.guidinglight.nexusquant.auth.application.command.SeedUserCommand(
+                "c3-disposable", encoder.encode("c3-disposable-password"), List.of("ADMIN", "OPERATOR", "VIEWER"), true));
+        try (ConfigurableApplicationContext web = new SpringApplicationBuilder(NexusQuantApplication.class, SchedulerFeedConfiguration.class, ProductUxRiskConfiguration.class)
+                .profiles("ci-app-smoke", "public-marketdata-manual").web(WebApplicationType.SERVLET)
+                .initializers(new NqAppContextPostgresSmokeTest.NoOutboundInitializer())
+                .run("--server.port=18889", "--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema,
+                        "--spring.datasource.username=" + databaseUser, "--spring.datasource.password=" + databasePassword,
+                        "--spring.flyway.enabled=false", "--spring.sql.init.mode=never",
+                        "--nq.runtime.trading-components.enabled=true", "--nq.strategy-sim.enabled=true",
+                        "--nq.continuous-sim.enabled=true", "--nq.public-marketdata.outbound.enabled=false",
+                        "--nq.auth.bootstrap-admin.enabled=false", "--nq.instrument.catalog-sync.enabled=false",
+                        "--nq.okx.recovery.enabled=false", "--nq.okx.ws.enabled=false", "--nq.binance.ws.enabled=false",
+                        "--nq.account.credentials.verification-mode=STRUCTURAL",
+                        "--nq.account.credentials.master-key=strategy-sim-synthetic-master-key-123456789",
+                        "--nq.security.issuer=nexus-quant-strategy-sim-synthetic",
+                        "--nq.security.secret=strategy-sim-synthetic-secret-123456789", "--nq.security.access-token-ttl=PT30M")) {
+            var login = c3Http("POST", "/api/auth/login", "{\"username\":\"c3-disposable\",\"password\":\"c3-disposable-password\"}", null);
+            String token = login.path("accessToken").asText();
+            assertTrue(!token.isBlank());
+            String createJson = "{\"publishId\":\"" + fixture.publishId() + "\",\"budget\":\"100\"}";
+            String filled = c3Http("POST", "/api/paper-trading/strategy-sim/runs/continuous", createJson, token).path("paperRunId").asText();
+            c3Http("POST", "/api/scheduler/jobs/CONTINUOUS_SIM_POLL/run-once", "{}", token);
+            c3Http("POST", "/api/scheduler/jobs/PAPER_MATCHING/run-once", "{}", token);
+            assertEquals(1, sim.facts(filled).trades().size());
+            c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + filled + "/continuous/stop", "{}", token);
+            String noSignal = c3Http("POST", "/api/paper-trading/strategy-sim/runs", createJson, token).path("paperRunId").asText();
+            c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + noSignal + "/start", "{}", token);
+            assertEquals("NO_SIGNAL", c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + noSignal + "/advance", "{}", token).path("status").asText());
+            String rejected = c3Http("POST", "/api/paper-trading/strategy-sim/runs", createJson, token).path("paperRunId").asText();
+            c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + rejected + "/start", "{}", token);
+            c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + rejected + "/advance", "{}", token);
+            c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + rejected + "/advance", "{}", token);
+            ProductUxRiskConfiguration.disabled.add(runs.getById(rejected).canonicalAccountId());
+            assertEquals("RISK_REJECTED", c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + rejected + "/advance", "{}", token).path("status").asText());
+            assertTrue(!sim.facts(rejected).riskEvents().isEmpty());
+            var exact = c3Http("GET", "/api/paper-trading/strategy-sim/runs/" + filled + "/facts", null, token);
+            assertEquals(sim.facts(filled).cash().toPlainString(), exact.path("exactValues").path("cash").asText());
+            assertNotNull(sim.facts(filled).markAsOf());
+            assertEquals(sim.facts(filled).canonicalAccountId(), runs.getById(filled).canonicalAccountId());
+            ProcessBuilder browser = new ProcessBuilder("node", "tests/e2e/run-e2e.mjs", "product-ux-real.spec.ts", "--output=test-results/c3-real");
+            Path frontend = Path.of("../..").toAbsolutePath().normalize().resolve("frontend");
+            browser.directory(frontend.toFile());
+            browser.environment().put("VITE_API_PROXY_TARGET", "http://127.0.0.1:18889");
+            browser.environment().put("VITE_STRATEGY_SIM_ENABLED", "true");
+            browser.environment().put("VITE_CONTINUOUS_SIM_ENABLED", "true");
+            browser.environment().put("E2E_BASE_URL", "http://127.0.0.1:51889");
+            browser.environment().put("C3_FILLED_RUN", filled);
+            browser.environment().put("C3_NO_SIGNAL_RUN", noSignal);
+            browser.environment().put("C3_REJECTED_RUN", rejected);
+            Path browserLog = Path.of("target", "product-ux-real-browser.log");
+            browser.redirectErrorStream(true).redirectOutput(browserLog.toFile());
+            Process process = browser.start();
+            try {
+                assertTrue(process.waitFor(180, TimeUnit.SECONDS), "bounded real browser smoke timed out");
+                assertEquals(0, process.exitValue(), "real backend/browser smoke failed; see " + browserLog);
+                Files.readAllLines(browserLog).stream().filter(line -> line.startsWith("C3_CANONICAL_MATRIX"))
+                        .forEach(System.out::println);
+            } finally { if (process.isAlive()) process.destroyForcibly(); }
+        } finally { schedulerObservation.set(null); ProductUxRiskConfiguration.disabled.clear(); }
+    }
+
+    @TestConfiguration
+    static class ProductUxRiskConfiguration {
+        private static final java.util.Set<Long> disabled = new java.util.concurrent.CopyOnWriteArraySet<>();
+        /** 测试账户禁用仍由正式 RiskRule 校验；不替换 risk gate 或 Order writer。 */
+        @Bean
+        @org.springframework.context.annotation.Primary
+        com.guidinglight.nexusquant.risk.application.config.PreTradeRiskSettings productUxRiskSettings() {
+            var defaults = com.guidinglight.nexusquant.risk.application.config.PreTradeRiskSettings.defaults();
+            return new com.guidinglight.nexusquant.risk.application.config.PreTradeRiskSettings(
+                    true, disabled, defaults.enabledSymbolsByVenue(), defaults.maxPriceScale(),
+                    defaults.maxQuantityScale(), defaults.minNotional(), defaults.maxOrderNotional(),
+                    defaults.duplicateWindow(), defaults.rateLimitWindow(), defaults.rateLimitMaxRequests());
+        }
+    }
+
+    private com.fasterxml.jackson.databind.JsonNode c3Http(String method, String path, String json, String token) throws Exception {
+        var builder = java.net.http.HttpRequest.newBuilder(URI.create("http://127.0.0.1:18889" + path))
+                .timeout(java.time.Duration.ofSeconds(20)).header("Content-Type", "application/json");
+        if (token != null) builder.header("Authorization", "Bearer " + token);
+        builder.method(method, json == null ? java.net.http.HttpRequest.BodyPublishers.noBody()
+                : java.net.http.HttpRequest.BodyPublishers.ofString(json));
+        var response = HttpClient.newHttpClient().send(builder.build(), java.net.http.HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode(), path + " failed");
+        return mapper.readTree(response.body());
+    }
+
     private Fixture seed() {
         return seed(List.of(bar(0, "100"), bar(1, "101"), bar(2, "102"),
                 bar(3, "103"), bar(4, "104")));

@@ -23,6 +23,8 @@ import {
 import type {ColumnsType} from 'antd/es/table';
 import type {FormInstance} from 'antd';
 import {useEffect, useMemo, useState} from 'react';
+import {useSearchParams} from 'react-router-dom';
+import {CanonicalSimFacts} from '@/features/paper-trading/components/CanonicalSimFacts';
 
 import {formatApiError, showApiError} from '@/api/errors';
 import {RuntimeGuardBanner} from '@/components/nq';
@@ -74,6 +76,8 @@ interface TradingOrderListForm {
 export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPageProps) {
     const {i18n: pageI18n} = useTranslation('pages');
     const {message} = App.useApp();
+    const [searchParams] = useSearchParams();
+    const canonicalPaperRunId = searchParams.get('paperRunId');
     const [listForm] = useLocalizedForm<TradingOrderListForm>();
     const [placeForm] = useLocalizedForm<OrderSubmitRequest>();
     const [cancelForm] = useLocalizedForm<OrderCancelRequestBody>();
@@ -92,8 +96,8 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
     const [activeAction, setActiveAction] = useState<ActionDrawer>(null);
     const [lastActionResult, setLastActionResult] = useState<OperationTriggerResponse | null>(null);
 
-    const orderListQuery = useTradingOrderListQuery(submittedListRequest, listSearchVersion);
-    const detailQuery = useTradingWorkbenchLookupQuery(detailRequest, detailSearchVersion);
+    const orderListQuery = useTradingOrderListQuery(canonicalPaperRunId ? null : submittedListRequest, listSearchVersion);
+    const detailQuery = useTradingWorkbenchLookupQuery(canonicalPaperRunId ? null : detailRequest, detailSearchVersion);
     const placeOrderMutation = usePlaceOrderMutation();
     const cancelOrderMutation = useCancelOrderMutation();
     const reconcileMutation = useReconcileMutation();
@@ -105,7 +109,7 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
         : t('pages:noCanonicalAccountContextSelected');
 
     useEffect(() => {
-        if (!accountContextReady || !selectedExchangeAccountId) {
+        if (canonicalPaperRunId || !accountContextReady || !selectedExchangeAccountId) {
             setSubmittedListRequest(null);
             return;
         }
@@ -125,6 +129,7 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
         setListSearchVersion((value) => value + 1);
     }, [
         accountContextReady,
+        canonicalPaperRunId,
         cancelForm,
         exchangeCode,
         listForm,
@@ -279,6 +284,11 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
             setActiveAction(null);
         }
     };
+
+    if (canonicalPaperRunId) return <NqPageScaffold>
+        <NqPageHeader title={t('pages:simReadOnlyContext')} description={t('pages:simCanonical')}/>
+        <Card><CanonicalSimFacts paperRunId={canonicalPaperRunId} details/></Card>
+    </NqPageScaffold>;
 
     return (
         <>
