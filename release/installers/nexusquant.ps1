@@ -84,7 +84,8 @@ function Write-Text([string]$Path, [string]$Text) {
     $bytes = (New-Object Text.UTF8Encoding($false)).GetBytes($Text)
     $stream = [IO.File]::Open($temporary, [IO.FileMode]::CreateNew, [IO.FileAccess]::Write, [IO.FileShare]::None)
     try { $stream.Write($bytes,0,$bytes.Length); $stream.Flush($true) } finally { $stream.Dispose() }
-    if (Test-Path -LiteralPath $Path) { [IO.File]::Replace($temporary,$Path,$null) } else { [IO.File]::Move($temporary,$Path) }
+    # Windows PowerShell 5 会把 string 参数的 $null 绑定为空路径；NullString 提供真正的 null，保留 .NET 的无备份原子替换。
+    if (Test-Path -LiteralPath $Path) { [IO.File]::Replace($temporary,$Path,[NullString]::Value) } else { [IO.File]::Move($temporary,$Path) }
 }
 function Write-Metadata([string]$Path, [hashtable]$Values) { Write-Text $Path ((($Values.Keys | Sort-Object | ForEach-Object { $_ + '=' + $Values[$_] }) -join "`n") + "`n") }
 function Parse-Metadata([string]$Text) {

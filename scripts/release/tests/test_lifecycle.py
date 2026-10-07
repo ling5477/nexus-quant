@@ -62,6 +62,42 @@ foreach($case in @(@(1,4,10),@(2,3.99,10),@(2,4,9.99),@([double]::NaN,4,10),
 '''
         self.evaluate(expression)
 
+    def test_actual_powershell_atomic_writer_creates_and_replaces_runtime_metadata(self):
+        self.evaluate('''$directory=Join-Path $env:NQ_PS_PACKAGE 'atomic writer proof'
+[void][IO.Directory]::CreateDirectory($directory)
+$version=Join-Path $directory 'VERSION'
+Write-Text $version "1.0.0`n"
+Write-Text $version "1.0.1`n"
+if([IO.File]::ReadAllText($version) -cne "1.0.1`n") { throw 'Existing VERSION was not atomically replaced' }
+$metadata=Join-Path $directory 'phase.env'
+Write-Metadata $metadata @{FORMAT='1';PHASE='PENDING';TEXT='初始资格事实'}
+Write-Metadata $metadata @{FORMAT='1';PHASE='DB_MAY_CHANGE';TEXT='保留完整资格事实'}
+Write-Metadata $metadata @{FORMAT='1';PHASE='SUCCESS';TEXT='完整覆盖已完成'}
+$expected="FORMAT=1`nPHASE=SUCCESS`nTEXT=完整覆盖已完成`n"
+$actual=[IO.File]::ReadAllBytes($metadata)
+$expectedBytes=(New-Object Text.UTF8Encoding($false)).GetBytes($expected)
+if([Convert]::ToBase64String($actual) -cne [Convert]::ToBase64String($expectedBytes)) {
+    throw 'Metadata overwrite changed UTF-8 encoding, newlines, ordering, or content'
+}
+if(@(Get-ChildItem -LiteralPath $directory -Filter '*.tmp').Count -ne 0) {
+    throw 'Successful atomic replacement left a pending temporary file'
+}
+''')
+
+    def test_actual_powershell_atomic_writer_locked_target_preserves_original(self):
+        self.evaluate('''$target=Join-Path $env:NQ_PS_PACKAGE 'locked-target.env'
+Write-Text $target "FORMAT=1`nPHASE=OLD_COMPLETE`n"
+$original=[IO.File]::ReadAllBytes($target)
+$handle=[IO.File]::Open($target,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::None)
+$rejected=$false
+try { try { Write-Text $target "FORMAT=1`nPHASE=NEW_COMPLETE`n" } catch { $rejected=$true } }
+finally { $handle.Dispose() }
+if(-not $rejected) { throw 'Locked target overwrite falsely reported success' }
+if([Convert]::ToBase64String([IO.File]::ReadAllBytes($target)) -cne [Convert]::ToBase64String($original)) {
+    throw 'Failed atomic replacement damaged prior complete metadata'
+}
+''')
+
     def test_package_parser_success_and_strict_negative_fields(self):
         expression = '$null=Read-Package $env:NQ_PS_PACKAGE $env:NQ_PS_TRUST amd64'
         self.evaluate(expression)

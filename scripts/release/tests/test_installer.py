@@ -157,6 +157,21 @@ compose)
 esac
 ''')
 
+    def isolate_missing_docker(self):
+        (self.bin / 'docker').unlink()
+        # 固定工具白名单排除宿主 Docker；不能让负例访问真实 daemon。
+        tools = ('dirname', 'grep', 'sed', 'awk', 'wc', 'cut', 'tr', 'od', 'chmod', 'mkdir',
+                 'cp', 'mv', 'sync', 'date', 'cat', 'sleep', 'timeout', 'dd', 'mktemp', 'rm',
+                 'rmdir', 'head', 'tail', 'basename', 'cmp', 'sha256sum', 'shasum')
+        lookup = 'for tool in ' + ' '.join(tools) + '; do command -v "$tool" || :; done'
+        clean_env = {key: value for key, value in os.environ.items() if key not in ('BASH_ENV', 'ENV')}
+        locations = subprocess.run([self.shell, '-c', lookup], env=clean_env, capture_output=True,
+                                   text=True, encoding='utf-8', check=True, timeout=10).stdout.splitlines()
+        for location in locations:
+            name = location.rsplit('/', 1)[-1]
+            self.script(name, 'exec ' + "'" + location.replace("'", "'\\''") + "'" + ' "$@"\n')
+        self.initializer.write_text('export PATH="$NQ_FIXTURE_BIN"\n', newline='\n')
+
     def run(self, *args, success=True, **env):
         result = subprocess.run([self.shell, shell_path(self.package / 'installers/nexusquant.sh'), *args],
                                 env=self.env | env, capture_output=True, text=True, timeout=60)
@@ -295,6 +310,75 @@ class PosixInstallerTest(unittest.TestCase):
         f.run('install', success=False, NQ_INSTALL_ROOT=shell_path(other), NQ_FIX_PORT_CONFLICT='1')
         self.assertNotIn('load ', f.calls()); self.assertFalse((other / 'config/runtime.env').exists())
 
+    def test_existing_start_restart_bootstrap_daemon_only_after_installed_identity(self):
+        f = self.fixture; f.run('install'); config = f.config(); facts = f.facts()
+        for action in ('start', 'restart'):
+            with self.subTest(action=action):
+                (f.state / 'daemon-stopped').touch(); f.clear_calls()
+                f.run(action)
+                self.assertIn('OPEN', f.calls()); self.assertIn('up -d', f.calls())
+                self.assertNotIn('DOWNLOAD', f.calls())
+                self.assertFalse((f.state / 'daemon-stopped').exists())
+                self.assertEqual(config, f.config()); self.assertEqual(facts, f.facts())
+        (f.home / 'runtime/VERSION').write_text('9.9.9\n', newline='\n')
+        (f.state / 'daemon-stopped').touch(); f.clear_calls()
+        f.run('start', success=False)
+        self.assertNotIn('OPEN', f.calls()); self.assertNotIn('info ', f.calls())
+        self.assertTrue((f.state / 'daemon-stopped').exists())
+
+    def test_stopped_daemon_readonly_and_nonstartup_actions_do_not_start_host(self):
+        f = self.fixture; f.run('install'); f.run('backup')
+        backup = sorted((f.home / 'backups').iterdir())[-1]
+        cases = (('status',), ('doctor',), ('stop',), ('backup',),
+                 ('restore', shell_path(backup)), ('update', *f.target_args(), '--yes'), ('uninstall',))
+        for args in cases:
+            with self.subTest(action=args[0]):
+                (f.state / 'daemon-stopped').touch(); f.clear_calls()
+                result = f.run(*args, success=False)
+                self.assertIn('Docker daemon unavailable', result.stderr)
+                self.assertNotIn('OPEN', f.calls()); self.assertNotIn('DOWNLOAD', f.calls())
+                self.assertNotIn('up -d', f.calls())
+                self.assertTrue((f.state / 'daemon-stopped').exists())
+        f.clear_calls(); f.run('check-update', *f.target_args())
+        self.assertNotIn('OPEN', f.calls()); self.assertNotIn('DOWNLOAD', f.calls())
+        self.assertNotIn('info ', f.calls())
+
+    def test_linux_daemon_bootstrap_start_restart_preserves_bounded_systemctl_contract(self):
+        f = self.fixture; f.run('install')
+        source = (f.package / 'installers/nexusquant.sh').read_text(encoding='utf-8')
+        parts = source.split('\nhost_identity\n')
+        self.assertEqual(2, len(parts))
+        runner = f.root / 'linux-daemon-helper.sh'
+        runner.write_text(parts[0] + '''
+host_os=Linux; host_arch=amd64
+verify_installed
+bootstrap_docker
+printf '%s\\n' SIMULATED_LINUX_DAEMON_READY
+''', encoding='utf-8', newline='\n')
+        f.script('sudo', '''[ "$*" = 'systemctl start docker' ] || exit 1
+printf '%s\\n' SYSTEMCTL_START_DOCKER >> "$NQ_FIX_STATE/calls"
+[ "$NQ_FIX_FAIL" != DAEMON_START ] || exit 1
+rm -f "$NQ_FIX_STATE/daemon-stopped"
+''')
+        for action in ('start', 'restart'):
+            with self.subTest(action=action):
+                (f.state / 'daemon-stopped').touch(); f.clear_calls()
+                result = subprocess.run([self.shell, shell_path(runner), action], env=f.env,
+                                        capture_output=True, text=True, timeout=30)
+                self.assertEqual(0, result.returncode, result.stderr[-1000:])
+                self.assertIn('SYSTEMCTL_START_DOCKER', f.calls())
+                self.assertIn('SIMULATED_LINUX_DAEMON_READY', result.stdout)
+                self.assertNotIn('DOWNLOAD', f.calls())
+        (f.state / 'daemon-stopped').touch(); f.clear_calls()
+        result = subprocess.run([self.shell, shell_path(runner), 'start'],
+                                env=f.env | {'NQ_FIX_FAIL': 'DAEMON_START'},
+                                capture_output=True, text=True, timeout=30)
+        self.assertNotEqual(0, result.returncode)
+        self.assertNotIn('SIMULATED_LINUX_DAEMON_READY', result.stdout)
+        self.assertTrue((f.state / 'daemon-stopped').exists())
+        self.assertIn('bounded 120 sudo systemctl start docker', source)
+        self.assertIn("Docker daemon did not become ready within 300 seconds", source)
+
     def test_remote_docker_host_rejected_before_any_daemon_access(self):
         f = self.fixture
         f.run('install', success=False, DOCKER_HOST='tcp://synthetic-host.invalid:2376')
@@ -313,24 +397,26 @@ class PosixInstallerTest(unittest.TestCase):
         self.assertNotIn('AMBIENT_COMPOSE_OVERRIDE', f.calls())
 
     def test_missing_docker_official_download_failure_is_bounded(self):
-        f = self.fixture; (f.bin / 'docker').unlink()
+        f = self.fixture
         if Path('/Applications/Docker.app/Contents/Resources/bin/docker').exists():
             self.skipTest('Preserve host Docker.app; absent case requires isolated host')
-        # 用固定工具白名单构造PATH；即使Linux宿主有/usr/bin/docker也不会命中它。
-        tools = ('dirname', 'grep', 'sed', 'awk', 'wc', 'cut', 'tr', 'od', 'chmod', 'mkdir',
-                 'cp', 'mv', 'sync', 'date', 'cat', 'sleep', 'timeout', 'dd', 'mktemp', 'rm',
-                 'rmdir', 'head', 'tail', 'basename', 'cmp', 'sha256sum', 'shasum')
-        lookup = 'for tool in ' + ' '.join(tools) + '; do command -v "$tool" || :; done'
-        clean_env = {key: value for key, value in os.environ.items() if key not in ('BASH_ENV', 'ENV')}
-        locations = subprocess.run([self.shell, '-c', lookup], env=clean_env, capture_output=True,
-                                   text=True, encoding='utf-8', check=True, timeout=10).stdout.splitlines()
-        for location in locations:
-            name = location.rsplit('/', 1)[-1]
-            f.script(name, 'exec ' + "'" + location.replace("'", "'\\''") + "'" + ' "$@"\n')
-        f.initializer.write_text('export PATH="$NQ_FIXTURE_BIN"\n', newline='\n')
+        f.isolate_missing_docker()
         result = f.run('install', success=False)
         self.assertIn('Official Docker DMG download failed', result.stderr)
         self.assertIn('DOWNLOAD', f.calls()); self.assertFalse((f.home / 'config/runtime.env').exists())
+
+    def test_existing_start_restart_and_readonly_never_install_missing_docker(self):
+        f = self.fixture
+        if Path('/Applications/Docker.app/Contents/Resources/bin/docker').exists():
+            self.skipTest('Preserve host Docker.app; absent case requires isolated host')
+        f.run('install'); original_config = f.config(); facts = f.facts()
+        f.isolate_missing_docker()
+        for action in ('start', 'restart', 'status', 'doctor', 'backup'):
+            with self.subTest(action=action):
+                f.clear_calls(); result = f.run(action, success=False)
+                self.assertIn('Docker is absent', result.stderr)
+                self.assertNotIn('DOWNLOAD', f.calls()); self.assertNotIn('OPEN', f.calls())
+                self.assertEqual(original_config, f.config()); self.assertEqual(facts, f.facts())
 
     def test_update_requires_confirmation_before_mutation(self):
         f = self.fixture; f.run('install'); before = f.tree(); facts = f.facts(); f.clear_calls()

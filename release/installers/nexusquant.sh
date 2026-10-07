@@ -241,7 +241,8 @@ bootstrap_docker() {
         if ! docker_timeout=10 docker_cmd info --format '{{.ServerVersion}}' >/dev/null 2>&1; then docker_group=true; fi
     fi
     if ! docker_timeout=10 docker_cmd info --format '{{.ServerVersion}}' >/dev/null 2>&1; then
-        [ "$action" = install ] || fail 'Docker daemon unavailable; start Docker before this operation'
+        # 已安装身份已先校验；显式启动操作可恢复本机 daemon，其他操作不得扩大宿主副作用。
+        case "$action" in install|start|restart) ;; *) fail 'Docker daemon unavailable; start Docker before this operation';; esac
         case "$host_os" in
             Darwin) bounded 60 open -a Docker >/dev/null 2>&1 || fail 'Docker Desktop launch failed';;
             Linux)
