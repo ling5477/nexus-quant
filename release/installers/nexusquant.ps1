@@ -530,7 +530,7 @@ try {
             Assert-Hash (Join-Path $transaction.Directory 'receipt.env') (File-Hash (Join-Path $transaction.Directory 'phase.env'))
             if ($config.PACKAGE_MANIFEST_SHA256 -cne $transaction.Record.TARGET_MANIFEST_SHA256) { throw 'Installed version does not match known update receipt' }
         }
-        Confirm-Choice $ConfirmRollback 'ROLLBACK'; Ensure-Docker $false
+        Confirm-Choice -Confirmed:$ConfirmRollback -Word 'ROLLBACK'; Ensure-Docker $false
         Write-Text $pendingPath ((Split-Path $transaction.Directory -Leaf)+"`n")
         try { Recover-Transaction $transaction } catch {
             $transaction.Record.RESULT='ROLLBACK_FAILED'; $transaction.Record.ROLLBACK_RESULT='FAILED'; $transaction.Record.COMPLETED_AT=[DateTime]::UtcNow.ToString('o'); $transaction.Record.SCHEMA_AFTER='UNKNOWN'
@@ -549,7 +549,7 @@ try {
         if ($Action -eq 'check-update') { Write-Host ('Current: '+$version+'; available: '+$target.Manifest.VERSION+'; updateAvailable='+$available+'; AUTO_UPDATE=OFF'); return }
         $installedManifest=Read-Env (Join-Path $InstallRoot 'runtime/package.env')
         if (-not $available -or [int]$target.Manifest.SCHEMA_VERSION -lt [int]$config.SCHEMA_VERSION -or $target.Manifest.POSTGRES_CONFIG_DIGEST -cne $installedManifest.POSTGRES_CONFIG_DIGEST) { throw 'Update requires newer version, monotonic schema and unchanged verified PG16 configuration digest' }
-        Confirm-Choice $ConfirmUpdate 'UPDATE'; Ensure-Docker $false
+        Confirm-Choice -Confirmed:$ConfirmUpdate -Word 'UPDATE'; Ensure-Docker $false
         [void](Host-Preflight)
         $id=[DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')+'-'+[Guid]::NewGuid().ToString('N').Substring(0,8)
         $directory=Join-Path $InstallRoot ('runtime/transactions/'+$id); [void](New-Item -ItemType Directory -Path $directory)
@@ -632,7 +632,7 @@ try {
             Remove-Item -LiteralPath $pendingRestorePath -Force
         }
         uninstall {
-            if ($PurgeData) { Confirm-Choice $ConfirmPurge 'DELETE' }
+            if ($PurgeData) { Confirm-Choice -Confirmed:$ConfirmPurge -Word 'DELETE' }
             [void](Compose @('down','--timeout','30'))
             if ($PurgeData) {
                 foreach ($name in @('data','backups')) {

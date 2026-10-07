@@ -98,6 +98,77 @@ if([Convert]::ToBase64String([IO.File]::ReadAllBytes($target)) -cne [Convert]::T
 }
 ''')
 
+    def test_public_confirmation_switches_forward_without_prompt_on_ps5_and_ps7(self):
+        expression = '''$commands=@($ast.FindAll({param($node)
+    $node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -eq 'Confirm-Choice'
+},$true))
+if($commands.Count -ne 3) { throw 'Public lifecycle confirmation coverage changed' }
+$ConfirmUpdate=[switch]$true; $ConfirmRollback=[switch]$true; $ConfirmPurge=[switch]$true
+foreach($command in $commands) {
+    # 执行真实生产调用 AST；NonInteractive 中任何意外提示都会让测试失败。
+    . ([scriptblock]::Create($command.Extent.Text))
+}
+foreach($command in $commands) {
+    $publicSwitch=@($command.FindAll({param($node)
+        $node -is [Management.Automation.Language.VariableExpressionAst] -and
+        $node.VariablePath.UserPath -in @('ConfirmUpdate','ConfirmRollback','ConfirmPurge')
+    },$true))
+    if($publicSwitch.Count -ne 1) { throw 'Public switch forwarding identity missing' }
+    Set-Variable -Name $publicSwitch[0].VariablePath.UserPath -Value ([switch]$false)
+    $rejected=$false
+    try { . ([scriptblock]::Create($command.Extent.Text)) }
+    catch { if($_.Exception.GetType().Name -ne 'PSInvalidOperationException') { throw }; $rejected=$true }
+    if(-not $rejected) { throw 'Unconfirmed NonInteractive lifecycle operation was accepted' }
+    Set-Variable -Name $publicSwitch[0].VariablePath.UserPath -Value ([switch]$true)
+}
+'''
+        original_shell = self.shell
+        try:
+            for shell in (shutil.which('powershell'), shutil.which('pwsh')):
+                if not shell:
+                    continue
+                with self.subTest(shell=Path(shell).name):
+                    self.shell = shell
+                    self.evaluate(expression)
+        finally:
+            self.shell = original_shell
+
+    def test_public_confirmation_interactive_requires_exact_words_on_ps5_and_ps7(self):
+        expression = '''$commands=@($ast.FindAll({param($node)
+    $node -is [Management.Automation.Language.CommandAst] -and $node.GetCommandName() -eq 'Confirm-Choice'
+},$true))
+if($commands.Count -ne 3) { throw 'Public lifecycle confirmation coverage changed' }
+$ConfirmUpdate=[switch]$false; $ConfirmRollback=[switch]$false; $ConfirmPurge=[switch]$false
+function Read-Host([string]$Prompt) { $script:PromptCount++; $script:ObservedPrompt=$Prompt; return $script:Reply }
+foreach($command in $commands) {
+    $word=@($command.FindAll({param($node)
+        $node -is [Management.Automation.Language.StringConstantExpressionAst] -and
+        $node.Value -in @('UPDATE','ROLLBACK','DELETE')
+    },$true))
+    if($word.Count -ne 1) { throw 'Expected confirmation word missing' }
+    $script:Reply=$word[0].Value; $script:PromptCount=0
+    . ([scriptblock]::Create($command.Extent.Text))
+    if($script:PromptCount -ne 1 -or $script:ObservedPrompt -cne ('Type '+$word[0].Value+' to confirm')) {
+        throw 'Interactive confirmation received wrong action or prompt count'
+    }
+    foreach($wrong in @('', $word[0].Value.ToLowerInvariant(), ($word[0].Value+' '))) {
+        $script:Reply=$wrong; $rejected=$false
+        try { . ([scriptblock]::Create($command.Extent.Text)) } catch { $rejected=$true }
+        if(-not $rejected) { throw 'Nonexact interactive confirmation accepted' }
+    }
+}
+'''
+        original_shell = self.shell
+        try:
+            for shell in (shutil.which('powershell'), shutil.which('pwsh')):
+                if not shell:
+                    continue
+                with self.subTest(shell=Path(shell).name):
+                    self.shell = shell
+                    self.evaluate(expression)
+        finally:
+            self.shell = original_shell
+
     def test_package_parser_success_and_strict_negative_fields(self):
         expression = '$null=Read-Package $env:NQ_PS_PACKAGE $env:NQ_PS_TRUST amd64'
         self.evaluate(expression)
