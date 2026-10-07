@@ -4,11 +4,24 @@
 
 ## 系统要求与发行包
 
-Windows 10/11、macOS Intel / Apple Silicon、Linux x86_64 / arm64；建议至少 4 CPU、8 GB RAM、10 GB 可用空间（备份另计）。需要运行中的 Docker daemon 与 Compose v2（支持 `up --wait`）。Windows/macOS 使用 Docker Desktop 的 Linux containers；Linux 使用 Docker Engine + Compose plugin。macOS/Linux 使用系统 shell、curl 和标准文件工具。
+安装入口面向 Windows amd64、macOS 与 Ubuntu 22.04/24.04；正式支持只以完成真实安装、更新恢复和业务 smoke 的平台为准。目前为预发布验证，正式支持矩阵尚未冻结。
 
-用户无需 Java、Maven、Node、PostgreSQL 或 Python。安装器不编译源码，不自动安装 Docker。
+| 平台 | 正式资格状态 |
+| --- | --- |
+| Windows amd64 | 安装与运维变更的真机重验证待完成 |
+| macOS Apple Silicon arm64 | 真机资格待完成 |
+| Ubuntu amd64 | 独立 VM / 主机资格待完成 |
+| macOS Intel amd64 / Ubuntu arm64 | 未取得真实资格证据，不声明正式支持 |
 
-官方预构建包包含 VERSION、runtime、installers、产品文档，以及 `images-amd64.tar` / `images-arm64.tar` 和对应 `.sha256`。从可信发行渠道取得整个包；摘要用于损坏检测，不能代替发行渠道真实性。安装器按 Docker daemon 架构选择镜像，Compose 不强制 amd64。维护者通过 `release/build-package.ps1 -OutputDirectory <新目录>` 构建两种 Linux 架构并打包；只构建当前架构可传 `-Architectures amd64`。源码导出不是可安装镜像包。
+最低 2 logical CPU、4 GiB RAM、10 GiB 可用空间（镜像及备份另计）；建议至少 4 CPU、8 GiB RAM。Docker Engine 最低 24.0.0、Compose 最低 2.20.0。Windows/macOS 使用 Docker Desktop Linux containers；Ubuntu 使用 Docker Engine + Compose plugin。macOS/Linux 需要系统 shell、curl 和标准文件工具。
+
+用户无需 Java、Maven、Node、PostgreSQL 或 Python。安装器不编译源码。Docker 已运行时复用；已安装但停止时启动并等待；缺失时从官方发行渠道安装，必要时由 UAC / sudo 提权。Docker 版本过低时报告受支持的显式升级路径，不静默替换现有版本。安装失败按阶段报告，保留数据，不改变用户 Docker 代理或全局资源配置。
+
+Ubuntu 安装使用 Docker 官方签名 apt 仓库。普通用户加入 docker 组后可运行容器，无需持续 sudo；docker 组具有主机管理权限。macOS/Windows 首次启动 Docker Desktop 可能需要完成操作系统或 Docker Desktop 自身的交互提示。
+
+预构建包包含 VERSION、runtime、installers、产品文档，以及相应架构的 `images-<arch>.tar`、`package-<arch>.env` 和 `.sha256`。manifest 绑定 exact Git SHA、release-source hash、schema、镜像 archive、immutable image config ID 和安装器/runtime 文件摘要。安装器验证文件并按主机架构选择包，Compose 直接使用 `sha256:<image config ID>`，避免 Docker save/load 丢失 registry RepoDigest 后退回浮动 tag。OCI index / RepoDigests 另存于 `package-<arch>.images.json` 供审计，不能与 config ID 混用，也不代表平台运行资格。
+
+首次安装必须从可信发行渠道取得整个包；同包 `.sha256` 只检测损坏，不能证明发行者真实性。更新必须额外提供从可信独立渠道取得的 manifest SHA256，不能把目标包自行计算的摘要当作信任授权。维护者从验证过且未生成构建产物的 source export 执行 `release/build-package.ps1 -OutputDirectory <新目录>`；需要 PowerShell 7 和 Docker。只构建某架构可传 `-Architectures amd64`。源码导出不是可安装镜像包；未正式发布的资格 fixture 不作为公开 release。
 
 当前 distribution contract 为 **release-package local image load**，尚未发布 registry 镜像。许可证选择与跨平台验收完成前，构建包只用于预发布验证。
 
@@ -36,6 +49,20 @@ sh installers/install-linux.sh
 
 macOS/Linux 数据目录 `~/.nexusquant`。安装会检查 Docker/daemon、加载镜像、生成随机内部密码与密钥、启动 PG16 和 backend、等待健康、启动 frontend、验证 bootstrap 并显示地址。重跑同一版本保留配置、角色和密码。
 
+## Host preflight / Runtime Profile
+
+检查 OS/version、架构、CPU、RAM、可用空间、virtualization 可观察状态、Docker/Compose、代理是否配置、目录及端口。代理只报告存在状态，不输出 URL、账号或凭据，不覆盖系统设置。首次安装端口冲突时给出明确错误与端口参数；不会终止占用端口的其他进程。
+
+按主机与 Docker 可用资源上限的较小值确定 profile，同一资源输入产生相同结果。已有安装重跑不自动改变其持久化 profile。
+
+| Profile | 资源条件 | Backend / PostgreSQL / Frontend memory | CPU limits |
+| --- | --- | --- | --- |
+| LIGHT | 低于 4 CPU 或 8 GiB，且满足最低要求 | 768m / 512m / 128m | 1 / 0.5 / 0.25 |
+| STANDARD | 满足 LIGHT 上界，但低于 8 CPU 或 16 GiB | 2048m / 1024m / 256m | 2 / 1 / 0.5 |
+| PERFORMANCE | 至少 8 CPU 与 16 GiB | 4096m / 2048m / 256m | 4 / 2 / 0.5 |
+
+JVM MaxRAMPercentage=65、InitialRAMPercentage=20。Profile 仅设置容器资源与 JVM 内存，不修改 Strategy、Risk、Order 或交易行为。实际选择写入本地受限配置。
+
 ## URLs / ports
 
 UI: <http://127.0.0.1:18080>；backend: <http://127.0.0.1:18888>；健康检查 `/actuator/health`。PostgreSQL 只在 Compose 内网，未发布主机端口。服务默认仅本机可访问，不应直接暴露默认登录到公网。首次安装 Windows 可传 `-FrontendPort` / `-BackendPort`；macOS/Linux 可设置 `NQ_FRONTEND_PORT` / `NQ_BACKEND_PORT`。已有安装以持久化配置为准。
@@ -46,18 +73,22 @@ UI: <http://127.0.0.1:18080>；backend: <http://127.0.0.1:18888>；健康检查 
 
 必须修改初始密码。当前密码需正确，新密码至少 8 个字符、最多 72 个 UTF-8 字节，且不同于当前密码和 `123456`。成功后客户端清除旧令牌并返回登录页；请使用新密码重新登录。刷新或直接访问业务 URL 仍进入改密页面，后端同时拒绝业务 API。重启或重跑安装不会恢复默认密码。
 
-## Start / stop / restart
+## Start / stop / restart / status / doctor
 
 ```powershell
 & "$env:USERPROFILE\.nexusquant\runtime\nexusquant.ps1" -Action start
 & "$env:USERPROFILE\.nexusquant\runtime\nexusquant.ps1" -Action stop
 & "$env:USERPROFILE\.nexusquant\runtime\nexusquant.ps1" -Action restart
+& "$env:USERPROFILE\.nexusquant\runtime\nexusquant.ps1" -Action status
+& "$env:USERPROFILE\.nexusquant\runtime\nexusquant.ps1" -Action doctor
 ```
 
 ```sh
 sh ~/.nexusquant/runtime/nexusquant.sh start
 sh ~/.nexusquant/runtime/nexusquant.sh stop
 sh ~/.nexusquant/runtime/nexusquant.sh restart
+sh ~/.nexusquant/runtime/nexusquant.sh status
+sh ~/.nexusquant/runtime/nexusquant.sh doctor
 ```
 
 ## Backup
@@ -82,27 +113,52 @@ sh ~/.nexusquant/runtime/nexusquant.sh backup
 sh ~/.nexusquant/runtime/nexusquant.sh restore '<备份目录>'
 ```
 
-仅支持相同 VERSION、V1 schema、PG16。先验证 manifest 与文件摘要，再停止 frontend/backend，单事务恢复 PostgreSQL，恢复 JWT/凭据加密密钥，保持当前安装路径、DB 密码与端口，重启并检查健康。失败时业务容器保持停止，先处理错误再重试；不要启动半恢复的数据。恢复会回到备份时点的用户/密码状态，必要时重新改密。跨版本或历史开发库恢复会拒绝。
+普通 restore 只接受相同 VERSION/schema、PG16。先验证 manifest 与文件摘要，再停止 frontend/backend，重建当前安装的应用数据库并从完整 dump 恢复，恢复 JWT/凭据加密密钥，保持当前安装路径、DB 密码与端口，重启并检查健康。完整数据库恢复确保备份之后新增的对象与事实不会残留。失败时业务容器保持停止，先处理错误再重试；不要启动半恢复的数据。恢复会回到备份时点的用户/密码状态，必要时重新改密。跨版本或历史开发库的普通 restore 会拒绝。
 
-## Upgrade policy
+## Check update / update / rollback
 
-本次 V1 必须 fresh DB。正式发布后 V1 baseline 不再修改，后续 schema 只采用 forward-only V2+。没有受支持的跨版本升级包时，请备份并等待明确的升级说明；安装器拒绝版本不一致的重跑与恢复。
+`AUTO_UPDATE=OFF`。没有后台、启动时或静默更新。`check-update` 只验证可信目标 metadata 并提示版本，不下载/加载镜像、不修改数据库或安装状态。不存在可信目标 metadata 时，doctor 的更新可用性为 UNKNOWN，不当作“没有更新”。
+
+```powershell
+$runtime = "$env:USERPROFILE\.nexusquant\runtime\nexusquant.ps1"
+& $runtime -Action check-update -TargetPackageRoot '<目标包目录>' -TrustedManifestSha256 '<可信渠道提供的64位摘要>'
+& $runtime -Action update -TargetPackageRoot '<目标包目录>' -TrustedManifestSha256 '<可信摘要>'
+# 无交互脚本的明确选择
+& $runtime -Action update -TargetPackageRoot '<目标包目录>' -TrustedManifestSha256 '<可信摘要>' -ConfirmUpdate
+& $runtime -Action rollback -ConfirmRollback
+```
+
+```sh
+sh ~/.nexusquant/runtime/nexusquant.sh check-update --package '<目标包绝对目录>' --manifest-sha256 '<可信摘要>'
+sh ~/.nexusquant/runtime/nexusquant.sh update --package '<目标包绝对目录>' --manifest-sha256 '<可信摘要>'
+# --yes 表示用户显式确认
+sh ~/.nexusquant/runtime/nexusquant.sh update --package '<目标包绝对目录>' --manifest-sha256 '<可信摘要>' --yes
+sh ~/.nexusquant/runtime/nexusquant.sh rollback --yes
+```
+
+确认后验证并加载目标 assets，停止应用写入，创建更新前完整备份，再切换目标应用、检查 health/schema/smoke。只有成功后才提交本地 VERSION 和 SUCCESS receipt。停止应用后备份消除了备份到停写之间产生事实、回滚时丢失的窗口。开始目标 backend 前先持久化数据库可能变更的 journal，migration 仍由既有 Flyway 路径执行。
+
+DB 变更前的 image/验证失败保持旧数据库；目标启动可能触发 schema 变更后的失败恢复更新前完整数据库与旧应用。不会执行 Flyway repair。进程中断且 journal 未收敛时阻止普通启动，保留恢复信息。rollback 仅接受已知上次成功更新的 manifest、immutable image IDs、备份和 receipt，不接收任意镜像。
+
+receipt 记录 from/to version、时间、manifest、image digest、backup identity、schema before/after、结果与 rollback 结果，不含 secrets。恢复后回到备份时点；不要将恢复过程手动中断或启动未验证的数据。
+
+V1 初次安装必须 fresh DB。正式发布后 V1 baseline 不再修改，后续 schema 只采用 forward-only V2+；开发数据库不是更新目标。
 
 ## Uninstall
 
 ```powershell
 & "$env:USERPROFILE\.nexusquant\runtime\nexusquant.ps1" -Action uninstall
 # 明确删除数据及备份
-& "$env:USERPROFILE\.nexusquant\runtime\nexusquant.ps1" -Action uninstall -PurgeData
+& "$env:USERPROFILE\.nexusquant\runtime\nexusquant.ps1" -Action uninstall -PurgeData -ConfirmPurge
 ```
 
 ```sh
 sh ~/.nexusquant/runtime/nexusquant.sh uninstall
 # 明确删除数据及备份
-sh ~/.nexusquant/runtime/nexusquant.sh uninstall --purge-data
+sh ~/.nexusquant/runtime/nexusquant.sh uninstall --purge-data --confirm-purge
 ```
 
-默认删除容器并保留 data / backups / config。purge 仅删除当前安装目录下 data、backups，不删除其他项目数据。删除后再次安装会创建新的默认管理员。
+默认删除容器并保留 data / backups / config。purge 需要显式参数和第二次确认；没有确认参数时要求输入 DELETE。只删除经过路径验证的本安装目录下 data、backups；不可恢复，先保留必要备份。删除后再次安装会创建新的默认管理员。
 
 ## Data directory
 

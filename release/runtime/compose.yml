@@ -1,6 +1,8 @@
 services:
   postgres:
-    image: postgres:16.15
+    image: ${POSTGRES_IMAGE:?verified PG16 image digest required}
+    mem_limit: ${POSTGRES_MEMORY:?runtime profile required}
+    cpus: ${POSTGRES_CPUS:?runtime profile required}
     restart: unless-stopped
     environment:
       POSTGRES_DB: nexus_quant
@@ -17,12 +19,15 @@ services:
       driver: json-file
       options: {max-size: 10m, max-file: '3'}
   backend:
-    image: nexusquant/backend:${NQ_VERSION:?VERSION required}
+    image: ${BACKEND_IMAGE:?verified backend image digest required}
+    mem_limit: ${BACKEND_MEMORY:?runtime profile required}
+    cpus: ${BACKEND_CPUS:?runtime profile required}
     restart: unless-stopped
     depends_on:
       postgres: {condition: service_healthy}
     environment:
       NQ_PROFILE: prod,public-marketdata-manual
+      JAVA_TOOL_OPTIONS: '-XX:MaxRAMPercentage=65 -XX:InitialRAMPercentage=20'
       NQ_PROD_DB_URL: jdbc:postgresql://postgres:5432/nexus_quant
       NQ_PROD_DB_USER: nexusquant
       NQ_PROD_DB_PASSWORD: ${DB_PASSWORD}
@@ -54,7 +59,9 @@ services:
       start_period: 30s
     logging: *logging
   frontend:
-    image: nexusquant/frontend:${NQ_VERSION}
+    image: ${FRONTEND_IMAGE:?verified frontend image digest required}
+    mem_limit: ${FRONTEND_MEMORY:?runtime profile required}
+    cpus: ${FRONTEND_CPUS:?runtime profile required}
     restart: unless-stopped
     depends_on:
       backend: {condition: service_healthy}

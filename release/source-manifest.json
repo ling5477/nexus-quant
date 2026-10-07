@@ -2626,6 +2626,8 @@
       "scripts/java-standard/tests/Test-ShadowReportProofHash.ps1",
       "scripts/java-standard/tests/Test-SongshanHistoryBoundary.ps1",
       "scripts/release/tests/test_installer.py",
+      "scripts/release/tests/test_lifecycle.py",
+      "scripts/release/tests/test_package_builder.py",
       "scripts/release/tests/test_release_source.py"
     ],
     "EXCLUDE_GOVERNANCE": [
