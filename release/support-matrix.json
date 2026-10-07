@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "version": "1.0.0",
+  "qualificationStatus": "PENDING_EXACT_CANDIDATE_RUNTIME_ACCEPTANCE",
+  "requiredClaimedHosts": [
+    {
+      "os": "Windows 11",
+      "architecture": "amd64",
+      "dockerDesktop": "INSTALLED",
+      "dockerDaemon": "RUNNING",
+      "containerOs": "linux"
+    }
+  ],
+  "unclaimedEnvironments": [
+    {"environment": "Windows Docker missing", "status": ["IMPLEMENTED", "NOT_QUALIFIED", "NOT_CLAIMED"]},
+    {"environment": "Windows daemon stopped", "status": ["IMPLEMENTED", "NOT_QUALIFIED", "NOT_CLAIMED"]},
+    {"environment": "Ubuntu amd64", "status": ["NOT_QUALIFIED", "NOT_CLAIMED"]},
+    {"environment": "Ubuntu arm64", "status": ["NOT_QUALIFIED", "NOT_CLAIMED"]},
+    {"environment": "macOS arm64", "status": ["NOT_QUALIFIED", "NOT_CLAIMED"]},
+    {"environment": "macOS amd64", "status": ["NOT_CLAIMED"]}
+  ],
+  "retainedUnqualifiedCapabilities": {
+    "dockerBootstrap": "AVAILABLE_BUT_UNQUALIFIED",
+    "daemonRecovery": "AVAILABLE_BUT_UNQUALIFIED",
+    "linuxInstaller": "AVAILABLE_BUT_UNQUALIFIED",
+    "macosInstaller": "AVAILABLE_BUT_UNQUALIFIED"
+  },
+  "arm64ImageBuild": "BUILD_AVAILABLE_IS_NOT_RUNTIME_QUALIFICATION",
+  "hostDevelopmentToolsRequired": [],
+  "licenseStatus": "LICENSE_PENDING_USER_DECISION",
+  "publicReleaseStatus": "WAITING_FOR_C4_ACCEPTANCE_AND_LICENSE_DECISION"
+}

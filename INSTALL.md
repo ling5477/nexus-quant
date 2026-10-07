@@ -4,18 +4,23 @@
 
 ## 系统要求与发行包
 
-安装入口面向 Windows amd64、macOS 与 Ubuntu 22.04/24.04；正式支持只以完成真实安装、更新恢复和业务 smoke 的平台为准。目前为预发布验证，正式支持矩阵尚未冻结。
+V1.0.0 唯一 REQUIRED / CLAIMED host platform 为 **Windows 11 amd64，Docker Desktop 已安装且 daemon 正在运行（Linux containers）**。支持范围现已冻结；预发布资格结论仍须由同一 exact candidate 的真实安装、完整 Continuous 经济链、重启续跑和备份恢复证据验收，不能由本矩阵或镜像构建结果推导 PASS。
 
-| 平台 | 正式资格状态 |
+| 平台 / 环境 | V1.0.0 合同 |
 | --- | --- |
-| Windows amd64 | 安装与运维变更的真机重验证待完成 |
-| macOS Apple Silicon arm64 | 真机资格待完成 |
-| Ubuntu amd64 | 独立 VM / 主机资格待完成 |
-| macOS Intel amd64 / Ubuntu arm64 | 未取得真实资格证据，不声明正式支持 |
+| Windows 11 amd64，Docker Desktop 已安装且运行 | 唯一 REQUIRED / CLAIMED；真实候选资格验收仍须完成 |
+| Windows Docker missing | IMPLEMENTED / NOT_QUALIFIED / NOT_CLAIMED |
+| Windows daemon stopped | IMPLEMENTED / NOT_QUALIFIED / NOT_CLAIMED |
+| Ubuntu amd64 | NOT_QUALIFIED / NOT_CLAIMED |
+| Ubuntu arm64 | NOT_QUALIFIED / NOT_CLAIMED |
+| macOS arm64 | NOT_QUALIFIED / NOT_CLAIMED |
+| macOS amd64 | NOT_CLAIMED |
+
+Docker bootstrap、daemon recovery 和 Linux/macOS 安装器保留为 `AVAILABLE_BUT_UNQUALIFIED`。其他平台 **not officially qualified for v1.0.0**；这仅表示本版本未完成正式资格验证。模拟环境、POSIX fixture 和 multiarch image build 不构成真实宿主资格；arm64 镜像即使可构建也仅为 `BUILD_AVAILABLE`。发布源码中的 `release/support-matrix.json` 绑定相同机器可读合同，发行包中的本表提供完整合同。
 
 最低 2 logical CPU、4 GiB RAM、10 GiB 可用空间（镜像及备份另计）；建议至少 4 CPU、8 GiB RAM。Docker Engine 最低 24.0.0、Compose 最低 2.20.0。Windows/macOS 使用 Docker Desktop Linux containers；Ubuntu 使用 Docker Engine + Compose plugin。macOS/Linux 需要系统 shell、curl 和标准文件工具。
 
-用户无需 Java、Maven、Node、PostgreSQL 或 Python。安装器不编译源码。Docker 已运行时复用；已安装但停止时启动并等待；缺失时从官方发行渠道安装，必要时由 UAC / sudo 提权。Docker 版本过低时报告受支持的显式升级路径，不静默替换现有版本。安装失败按阶段报告，保留数据，不改变用户 Docker 代理或全局资源配置。
+用户无需 Java、Maven、Node、PostgreSQL 或 Python。安装器不编译源码。正式支持范围要求 Docker 已安装并运行，安装器直接复用。已安装但停止时的启动恢复、缺失时的官方渠道安装及 UAC / sudo 提权能力尚未取得本版本正式资格。Docker 版本过低时报告显式升级路径，不静默替换现有版本。安装失败按阶段报告，保留数据，不改变用户 Docker 代理或全局资源配置。
 
 Ubuntu 安装使用 Docker 官方签名 apt 仓库。普通用户加入 docker 组后可运行容器，无需持续 sudo；docker 组具有主机管理权限。macOS/Windows 首次启动 Docker Desktop 可能需要完成操作系统或 Docker Desktop 自身的交互提示。
 
@@ -23,7 +28,7 @@ Ubuntu 安装使用 Docker 官方签名 apt 仓库。普通用户加入 docker �
 
 首次安装必须从可信发行渠道取得整个包；同包 `.sha256` 只检测损坏，不能证明发行者真实性。更新必须额外提供从可信独立渠道取得的 manifest SHA256，不能把目标包自行计算的摘要当作信任授权。维护者从验证过且未生成构建产物的 source export 执行 `release/build-package.ps1 -OutputDirectory <新目录>`；需要 PowerShell 7.4+ 和使用 containerd image store 的本机 Docker。打包器验证 OCI index → platform manifest → config/layers 与 Docker 兼容 manifest 的摘要绑定，只生成可由两种 store 加载的发行归档；此构建要求不要求用户改变安装主机的 image store。只构建某架构可传 `-Architectures amd64`。源码导出不是可安装镜像包；未正式发布的资格 fixture 不作为公开 release。
 
-当前 distribution contract 为 **release-package local image load**，尚未发布 registry 镜像。许可证选择与跨平台验收完成前，构建包只用于预发布验证。
+当前 distribution contract 为 **release-package local image load**，尚未发布 registry 镜像。C4 验收与许可证选择完成前，构建包只用于预发布验证；本版本未声明的平台不阻断 B7 技术验收。
 
 ## Windows
 
@@ -37,11 +42,15 @@ Ubuntu 安装使用 Docker 官方签名 apt 仓库。普通用户加入 docker �
 
 ## macOS
 
+`AVAILABLE_BUT_UNQUALIFIED`：not officially qualified for v1.0.0。
+
 ```sh
 sh installers/install-macos.sh
 ```
 
 ## Linux
+
+`AVAILABLE_BUT_UNQUALIFIED`：not officially qualified for v1.0.0。
 
 ```sh
 sh installers/install-linux.sh
@@ -185,4 +194,4 @@ PG16（`postgres:16.15`）、backend、frontend 三个服务。允许受现有 p
 - 行情无法连接：检查网络对 `https://www.okx.com` 的可达性，private API 仍保持关闭；网络失败不能当作零行情。
 - 启动报告 checksum 不一致：确认是新的 V1 数据目录。旧开发库不是升级目标。
 - 忘记修改后的管理员密码：重跑安装不会重置；使用已有备份恢复或等待正式账户恢复能力。
-- LICENSE 为 PENDING_USER_DECISION；最终 v1.0.0 发布受阻，跨平台 clean-machine qualification 由后续验收完成。
+- LICENSE 为 `LICENSE_PENDING_USER_DECISION`；公开 v1.0.0 发布仍等待 C4 验收和许可证选择。本版本只要求 Windows 11 amd64 / 已运行 Docker Desktop 的真实资格，其他平台不声明正式支持。
