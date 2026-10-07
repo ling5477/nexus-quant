@@ -14,6 +14,7 @@ source = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(source)
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import scan_release_secrets as secrets
+import verify_release_boundary as boundary
 
 
 class ReleaseSourceTest(unittest.TestCase):
@@ -203,6 +204,41 @@ class ReleaseSourceTest(unittest.TestCase):
         b = self.commit("overlap", [source.MANIFEST])
         with self.assertRaisesRegex(ValueError, "CONFLICTING_CLASSIFICATION"):
             source.plan(self.repo, b)
+
+
+class ReleaseLegalTest(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="nq-release-legal-")
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        repo = Path(__file__).resolve().parents[3]
+        self.names = set(boundary.RELEASE_DOCS)
+        for path in self.names:
+            (self.root / path).write_bytes((repo / path).read_bytes())
+
+    def test_legal_docs_and_links_are_complete(self):
+        self.assertEqual([], boundary.legal_errors(self.root, self.names))
+
+    def test_missing_disclaimer_fails(self):
+        (self.root / "DISCLAIMER.md").unlink()
+        self.names.remove("DISCLAIMER.md")
+        self.assertIn("MISSING_RELEASE_DOC: DISCLAIMER.md", boundary.legal_errors(self.root, self.names))
+
+    def test_license_domain_clause_tamper_fails(self):
+        with (self.root / "LICENSE").open("ab") as stream:
+            stream.write(b"\nSYNTHETIC FINANCIAL CLAUSE\n")
+        self.assertIn("NONSTANDARD_APACHE_LICENSE", boundary.legal_errors(self.root, self.names))
+
+    def test_broken_install_link_fails(self):
+        path = self.root / "INSTALL.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("(DISCLAIMER.md)", "(missing.md)"), encoding="utf-8")
+        self.assertIn("MISSING_LEGAL_LINK: INSTALL.md:DISCLAIMER.md", boundary.legal_errors(self.root, self.names))
+
+    def test_pending_wording_in_extensionless_release_file_fails(self):
+        path = "legacy-note"
+        self.names.add(path)
+        (self.root / path).write_bytes(b"LICENSE_PENDING_USER_DECISION")
+        self.assertIn("PENDING_LICENSE: " + path, boundary.legal_errors(self.root, self.names))
 
 
 if __name__ == "__main__":

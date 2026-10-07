@@ -37,10 +37,20 @@ sh installers/install-linux.sh
 
 打开 <http://127.0.0.1:18080>，使用 **admin / 123456** 登录。首次登录只能查看自己的认证资料、修改密码或退出；新密码至少 8 个字符，不能使用当前密码或 `123456`。改密成功后重新登录，所有旧令牌立即失效，重启后仍失效。
 
-正式支持合同要求先安装并运行 Docker Desktop；安装器复用 Docker 并加载经 manifest 校验的 immutable 镜像，用户无需 Java、Maven、Node、PostgreSQL 或 Python，也不执行源码编译。Docker 缺失时的自动安装、daemon recovery 和 Linux/macOS 安装器保留为 `AVAILABLE_BUT_UNQUALIFIED`，不属于 V1.0.0 正式支持合同。更新默认关闭，`check-update` 只提示，实际更新需用户选择。冻结矩阵详见 [INSTALL.md](INSTALL.md)；公开发行仍等待持续运行验收和许可证选择。
+正式支持合同要求先安装并运行 Docker Desktop；安装器复用 Docker 并加载经 manifest 校验的 immutable 镜像，用户无需 Java、Maven、Node、PostgreSQL 或 Python，也不执行源码编译。Docker 缺失时的自动安装、daemon recovery 和 Linux/macOS 安装器保留为 `AVAILABLE_BUT_UNQUALIFIED`，不属于 V1.0.0 正式支持合同。更新默认关闭，`check-update` 只提示，实际更新需用户选择。冻结矩阵详见 [INSTALL.md](INSTALL.md)；公开发行状态以最终 Release qualification / current release authority 为准。
 
 ## 安全默认值
 
 SIM 可用；public OKX marketdata 允许访问。LIVE、真实交易所写入、真实 provider/client、私有 OKX diagnostics、transfer/withdraw 均关闭；kill switch 初始为 ENGAGED。内部数据库密码、JWT 密钥和凭据加密密钥随机生成，服务只绑定本机地址。
 
-安装、运维、数据目录、版本兼容和排障详见 [INSTALL.md](INSTALL.md)。产品变化见 [CHANGELOG.md](CHANGELOG.md)。LICENSE 当前为 `PENDING_USER_DECISION`，最终 v1.0.0 release 尚未获准。
+安装、运维、数据目录、版本兼容和排障详见 [INSTALL.md](INSTALL.md)。产品变化见 [CHANGELOG.md](CHANGELOG.md)。
+
+## License
+
+NexusQuant is licensed under the Apache License 2.0 (SPDX: `Apache-2.0`).
+See [LICENSE](LICENSE).
+
+## Financial Risk
+
+NexusQuant is quantitative trading software and does not provide investment advice.
+Before using any real-money functionality, read [DISCLAIMER.md](DISCLAIMER.md).

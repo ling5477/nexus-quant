@@ -13,6 +13,27 @@ import release_source as source
 RULES = "scripts/docs/check-stage-semantic-leakage.py"
 POLICY = "scripts/docs/stage-semantic-allowlist.json"
 TEXT = {".java", ".ts", ".tsx", ".js", ".css", ".json", ".xml", ".yml", ".yaml", ".sql", ".csv", ".html", ".md", ".ps1", ".psm1", ".sh"}
+RELEASE_DOCS = {"README.md", "INSTALL.md", "CHANGELOG.md", "LICENSE", "DISCLAIMER.md", "VERSION"}
+# 官方 https://www.apache.org/licenses/LICENSE-2.0.txt 的完整原始字节摘要；禁止混入领域风险条款。
+APACHE_LICENSE_SHA256 = "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+
+
+def legal_errors(output: Path, names: set[str]) -> list[str]:
+    errors = ["MISSING_RELEASE_DOC: " + path for path in sorted(RELEASE_DOCS - names)]
+    if "LICENSE" in names and source.sha((output / "LICENSE").read_bytes()) != APACHE_LICENSE_SHA256:
+        errors.append("NONSTANDARD_APACHE_LICENSE")
+    for path in ("README.md", "INSTALL.md"):
+        if path in names:
+            text = (output / path).read_text(encoding="utf-8-sig")
+            for target in ("LICENSE", "DISCLAIMER.md"):
+                if not re.search(r"\[[^\]\n]+\]\(" + re.escape(target) + r"\)", text) or target not in names:
+                    errors.append(f"MISSING_LEGAL_LINK: {path}:{target}")
+    # 扫描全部发布文件，包括无扩展名文件；开发树中的历史证据不影响发布结论。
+    for path in sorted(names):
+        raw = (output / path).read_bytes()
+        if b"LICENSE_PENDING_USER_DECISION" in raw or b"PENDING_USER_DECISION" in raw:
+            errors.append("PENDING_LICENSE: " + path)
+    return errors
 
 
 def check(repo: Path, commit: str, output: Path) -> dict:
@@ -31,6 +52,10 @@ def check(repo: Path, commit: str, output: Path) -> dict:
     dev_reference = re.compile(r"(?:docs/(?:current|gate[s]|audit|archive)/|research/py/|scripts/(?:docs|ci|java-standard)/|\.agents/|AGENTS\.md|CLAUDE\.md|src/test/)")
     errors, retained = [], set()
     names = {e["path"] for e in metadata["files"]}
+    errors.extend(legal_errors(output, names))
+    for path in ("LICENSE", "DISCLAIMER.md"):
+        if audit["paths"].get(path) != "INCLUDE_RELEASE_DOC":
+            errors.append("LEGAL_DOC_CLASSIFICATION: " + path)
     if any(p.startswith("frontend/src/pages/dev/") for p in names):
         errors.append("DEVELOPMENT_PAGE_INCLUDED")
     for entry in metadata["files"]:

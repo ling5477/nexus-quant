@@ -150,7 +150,7 @@ $refs | ConvertTo-Json -Depth 9
     def complete_export(self):
         for name in ('runtime', 'installers', 'docker'):
             shutil.copytree(REPO / 'release' / name, self.export / 'release' / name)
-        for name in ('README.md', 'INSTALL.md', 'CHANGELOG.md'):
+        for name in ('README.md', 'INSTALL.md', 'CHANGELOG.md', 'LICENSE', 'DISCLAIMER.md'):
             (self.export / name).write_text('SYNTHETIC BUILDER FIXTURE\n', encoding='utf-8', newline='\n')
         migration = self.export / 'backend/fixture/db/migration/V1__fixture.sql'
         migration.parent.mkdir(parents=True); migration.write_text('SELECT 1;\n', newline='\n')
@@ -230,6 +230,9 @@ public class FixtureDocker {
         self.assertEqual(digest(self.output / 'package-amd64.env'),
                          (self.output / 'package-amd64.env.sha256').read_text().strip())
         self.assertTrue(self.sentinel.exists())
+
+        for name in ('README.md', 'INSTALL.md', 'CHANGELOG.md', 'LICENSE', 'DISCLAIMER.md', 'VERSION'):
+            self.assertEqual((self.export / name).read_bytes(), (self.output / name).read_bytes(), name)
 
     def test_builder_local_context_priority_rejects_remote_before_daemon_access(self):
         self.complete_export()

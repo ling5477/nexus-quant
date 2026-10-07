@@ -1635,6 +1635,14 @@
         "release/runtime/compose.yml",
         "release/runtime/runtime.yml"
       ]
+    },
+    {
+      "category": "INCLUDE_RELEASE_DOC",
+      "purpose": "软件许可证与独立金融风险声明。",
+      "paths": [
+        "LICENSE",
+        "DISCLAIMER.md"
+      ]
     }
   ],
   "excludedPaths": {
@@ -4515,7 +4523,12 @@
     },
     {
       "path": "LICENSE",
-      "status": "LICENSE_PENDING_USER_DECISION",
+      "status": "ESTABLISHED_APACHE_2_0",
+      "owner": "USER"
+    },
+    {
+      "path": "DISCLAIMER.md",
+      "status": "ESTABLISHED_BILINGUAL_FINANCIAL_RISK_NOTICE",
       "owner": "USER"
     },
     {
