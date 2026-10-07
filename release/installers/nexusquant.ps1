@@ -304,17 +304,24 @@ function Check-Health {
     $pgMajor = Compose @('exec','-T','postgres','psql','-U','nexusquant','-d','nexus_quant','-At','-v','ON_ERROR_STOP=1','-c',"SELECT current_setting('server_version_num')::int / 10000")
     if ($pgMajor -ne '16') { throw 'PostgreSQL 16 required' }
 }
-function Start-Runtime([switch]$ForceRecreate) {
-    $config = Read-Config
-    foreach ($pair in @(@('frontend',$config.FRONTEND_PORT),@('backend',$config.BACKEND_PORT))) {
+function Assert-RuntimePorts([hashtable]$Config) {
+    foreach ($pair in @(@('frontend',$Config.FRONTEND_PORT),@('backend',$Config.BACKEND_PORT))) {
         $port = 0
         if (-not [int]::TryParse($pair[1],[ref]$port) -or $port -lt 1024 -or $port -gt 65535) { throw 'Invalid stored loopback port' }
-        $listener = New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback,$port)
-        try { $listener.Start() } catch {
+        # Docker Desktop 停止容器后可能保留转发预留；host bind 的 10048 不能证明其他进程占用。
+        # 只拒绝真实回环或通配监听；无监听时由 Docker 原子绑定及既有有界健康校验决定结果。
+        $listeners = @([Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActiveTcpListeners() | Where-Object {
+            $_.Port -eq $port -and ($_.Address.Equals([Net.IPAddress]::Loopback) -or $_.Address.Equals([Net.IPAddress]::Any) -or $_.Address.Equals([Net.IPAddress]::IPv6Any))
+        })
+        if ($listeners.Count -gt 0) {
             $container = Compose @('ps','-q',$pair[0])
             if (-not $container -or (Invoke-Docker @('port',$container,'8080/tcp') 15) -cne ('127.0.0.1:'+$port)) { throw ('Loopback port '+$port+' occupied by another process; preserve it and choose installer port overrides') }
-        } finally { $listener.Stop() }
+        }
     }
+}
+function Start-Runtime([switch]$ForceRecreate) {
+    $config = Read-Config
+    Assert-RuntimePorts $config
     if ($ForceRecreate) {
         [void](Compose @('up','-d','--no-build','--pull','never','--wait','--wait-timeout','120','postgres'))
         [void](Compose @('up','-d','--no-build','--pull','never','--no-deps','--force-recreate','--wait','--wait-timeout','300','backend'))

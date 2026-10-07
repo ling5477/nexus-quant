@@ -139,6 +139,94 @@ if($info.EnvironmentVariables['HTTP_PROXY'] -ne 'synthetic-proxy' -or $info.Envi
 if($env:DOCKER_DEFAULT_PLATFORM -cne 'synthetic-parent-platform') { throw 'Parent Docker platform changed' }
 ''')
 
+    def test_existing_runtime_reservation_defers_to_docker_and_bind_failure_stops_health(self):
+        sockets = [socket.socket(), socket.socket()]
+        for sock in sockets:
+            self.addCleanup(sock.close)
+            # 只 bind 不 listen，真实制造 host 不能绑定但没有 LISTEN 的保留端口。
+            sock.bind(('127.0.0.1', 0))
+        self.evaluate('''$script:FixtureConfig=@{FRONTEND_PORT=$env:NQ_PS_FRONT;BACKEND_PORT=$env:NQ_PS_BACK}
+$probe=New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback,[int]$env:NQ_PS_FRONT)
+$hostBindRejected=$false
+try { $probe.Start() } catch { $hostBindRejected=$true } finally { $probe.Stop() }
+if(-not $hostBindRejected) { throw 'Reservation fixture failed to block host bind' }
+function Read-Config { return $script:FixtureConfig }
+function Compose([string[]]$Arguments) {
+    if($Arguments[0] -cne 'up' -or '--wait' -notin $Arguments -or '--wait-timeout' -notin $Arguments) {
+        throw 'Existing runtime did not defer to bounded Docker bind authority'
+    }
+    $script:UpCalls++
+    if($script:FailDockerBind) { throw 'Fixture Docker actual bind failure' }
+}
+function Invoke-Docker([string[]]$DockerArgs,[int]$TimeoutSeconds=600) { throw 'No LISTEN permits no ownership lookup' }
+function Check-Health { $script:HealthCalls++ }
+$script:UpCalls=0; $script:HealthCalls=0; $script:FailDockerBind=$false
+Start-Runtime
+if($script:UpCalls -ne 2 -or $script:HealthCalls -ne 1) { throw 'Reservation blocked bounded runtime start' }
+$script:UpCalls=0; $script:HealthCalls=0; $script:FailDockerBind=$true
+$rejected=$false; try { Start-Runtime } catch { $rejected=$true }
+if(-not $rejected -or $script:UpCalls -ne 1 -or $script:HealthCalls -ne 0) {
+    throw 'Docker bind failure reached health or successful completion'
+}
+''', NQ_PS_FRONT=str(sockets[0].getsockname()[1]), NQ_PS_BACK=str(sockets[1].getsockname()[1]))
+
+    def test_existing_runtime_preserves_true_external_listener_before_docker_up(self):
+        external = socket.socket()
+        backend = socket.socket()
+        self.addCleanup(external.close)
+        self.addCleanup(backend.close)
+        external.bind(('127.0.0.1', 0)); external.listen()
+        backend.bind(('127.0.0.1', 0))
+        self.evaluate('''function Read-Config { return @{FRONTEND_PORT=$env:NQ_PS_FRONT;BACKEND_PORT=$env:NQ_PS_BACK} }
+$script:UpCalls=0; $script:HealthCalls=0
+function Compose([string[]]$Arguments) {
+    if($Arguments[0] -eq 'ps') { return '' }
+    $script:UpCalls++; throw 'Docker must not start while a foreign LISTEN is present'
+}
+function Check-Health { $script:HealthCalls++ }
+$message=''; try { Start-Runtime } catch { $message=$_.Exception.Message }
+if($message -notlike '*occupied by another process*' -or $script:UpCalls -ne 0 -or $script:HealthCalls -ne 0) {
+    throw 'External listener was not rejected before any start operation'
+}
+''', NQ_PS_FRONT=str(external.getsockname()[1]), NQ_PS_BACK=str(backend.getsockname()[1]))
+        self.assertEqual(0, external.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR))
+
+    def test_existing_runtime_allows_only_running_own_exact_published_port(self):
+        published = socket.socket()
+        backend = socket.socket()
+        self.addCleanup(published.close)
+        self.addCleanup(backend.close)
+        published.bind(('127.0.0.1', 0)); published.listen()
+        backend.bind(('127.0.0.1', 0))
+        self.evaluate('''function Read-Config { return @{FRONTEND_PORT=$env:NQ_PS_FRONT;BACKEND_PORT=$env:NQ_PS_BACK} }
+function Compose([string[]]$Arguments) {
+    if($Arguments[0] -eq 'ps') {
+        if($Arguments.Count -ne 3 -or $Arguments[1] -cne '-q' -or $Arguments[2] -cne 'frontend') {
+            throw 'Ownership proof must use running service in the already bound Compose project'
+        }
+        return 'fixture-owned-running-container'
+    }
+    if($Arguments[0] -cne 'up') { throw 'Unexpected runtime command' }
+    $script:UpCalls++
+}
+function Invoke-Docker([string[]]$DockerArgs,[int]$TimeoutSeconds=600) {
+    if(($DockerArgs -join '|') -cne 'port|fixture-owned-running-container|8080/tcp') {
+        throw 'Published-port proof queried another container or port'
+    }
+    return $script:PublishedPort
+}
+function Check-Health { $script:HealthCalls++ }
+$script:PublishedPort='127.0.0.1:'+$env:NQ_PS_FRONT
+$script:UpCalls=0; $script:HealthCalls=0
+Start-Runtime
+if($script:UpCalls -ne 2 -or $script:HealthCalls -ne 1) { throw 'Owned running port was rejected' }
+$script:PublishedPort='0.0.0.0:'+$env:NQ_PS_FRONT
+$script:UpCalls=0; $script:HealthCalls=0
+$rejected=$false; try { Start-Runtime } catch { $rejected=$true }
+if(-not $rejected -or $script:UpCalls -ne 0 -or $script:HealthCalls -ne 0) { throw 'Mismatched publication accepted' }
+''', NQ_PS_FRONT=str(published.getsockname()[1]), NQ_PS_BACK=str(backend.getsockname()[1]))
+        self.assertEqual(0, published.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR))
+
     def test_local_docker_guard_honors_context_priority_before_daemon_access(self):
         self.evaluate('''function Invoke-Docker([string[]]$DockerArgs,[int]$TimeoutSeconds=600) {
     if(($DockerArgs[0] -cne 'context') -or ($DockerArgs[1] -cne 'inspect')) { throw 'Guard accessed a daemon' }
