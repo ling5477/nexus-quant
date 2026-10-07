@@ -102,7 +102,14 @@ compose_with_env() (
 )
 compose() { compose_with_env "$install_root/config/runtime.env" "$project" "$install_root/runtime/compose.yml" "$@"; }
 db_query() { compose exec -T postgres psql -v ON_ERROR_STOP=1 -U nexusquant -d nexus_quant -At -c "$1"; }
-atomic_copy() { cp "$1" "$2.tmp"; chmod 600 "$2.tmp"; mv -f "$2.tmp" "$2"; }
+atomic_copy() {
+    cp "$1" "$2.tmp"
+    copy_mode=600
+    # 静态运行配置不含秘密；bind mount 的后端 UID 不同，必须允许读取实际安装文件。
+    [ "$2" != "$install_root/runtime/runtime.yml" ] || copy_mode=644
+    chmod "$copy_mode" "$2.tmp"
+    mv -f "$2.tmp" "$2"
+}
 atomic_text() { printf '%s\n' "$1" > "$2.tmp"; chmod 600 "$2.tmp"; mv -f "$2.tmp" "$2"; }
 version_valid() { printf '%s' "$1" | grep -Eq '^[0-9]{1,6}\.[0-9]{1,6}\.[0-9]{1,6}$'; }
 version_greater() { awk -v a="$1" -v b="$2" 'BEGIN{split(a,x,".");split(b,y,".");for(i=1;i<=3;i++){if(x[i]+0>y[i]+0)exit 0;if(x[i]+0<y[i]+0)exit 1}exit 1}'; }

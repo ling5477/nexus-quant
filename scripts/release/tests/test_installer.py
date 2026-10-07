@@ -3,6 +3,7 @@ import hashlib
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import tempfile
 import unittest
@@ -432,6 +433,41 @@ class PosixInstallerTest(unittest.TestCase):
         f.run('update', *f.target_args(), '--yes', success=False)
         self.assertEqual(before, f.config()); self.assertEqual('1\nFACTS_A\n', f.facts())
         self.assertNotIn('load ', f.calls()); self.assertNotIn(' stop ', f.calls())
+
+    @unittest.skipIf(os.name == 'nt', 'Real POSIX file modes require a POSIX filesystem; Git Bash cannot prove them')
+    def test_real_posix_static_runtime_readable_and_secrets_private_across_asset_lifecycle(self):
+        """真实POSIX文件系统权限回归；宿主身份、Docker和数据库仍是SIMULATED。"""
+        f = self.fixture
+
+        def assert_modes(expected_runtime):
+            for path in (f.home, f.home / 'config', f.home / 'backups', f.home / 'runtime'):
+                self.assertEqual(0o700, stat.S_IMODE(path.stat().st_mode), str(path.relative_to(f.root)))
+            self.assertEqual(0o600, stat.S_IMODE((f.home / 'config/runtime.env').stat().st_mode))
+            runtime = f.home / 'runtime/runtime.yml'
+            self.assertEqual(0o644, stat.S_IMODE(runtime.stat().st_mode),
+                             'Non-root backend UID requires read permission on the bind-mounted static file')
+            self.assertEqual(expected_runtime, digest(runtime))
+            for backup in (f.home / 'backups').iterdir():
+                if backup.is_dir():
+                    for name in ('runtime.env', 'database.dump', 'assets/runtime.yml'):
+                        self.assertEqual(0o600, stat.S_IMODE((backup / name).stat().st_mode),
+                                         'Backup assets and authentication configuration must stay private')
+
+        original_runtime = digest(f.package / 'runtime/runtime.yml')
+        target_runtime = f.target / 'runtime/runtime.yml'
+        target_runtime.write_bytes(target_runtime.read_bytes() + '\n# 隔离权限回归的目标静态配置。\n'.encode('utf-8'))
+        fields = metadata(f.target_manifest); fields['RUNTIME_SHA256'] = digest(target_runtime)
+        f.target_manifest.write_text(''.join(f'{key}={value}\n' for key, value in fields.items()),
+                                     encoding='utf-8', newline='\n')
+        f.run('install'); original_config = f.config(); assert_modes(original_runtime)
+        f.run('update', *f.target_args(), '--yes'); assert_modes(digest(target_runtime))
+        f.run('rollback', '--yes'); assert_modes(original_runtime)
+        self.assertEqual(original_config, f.config()); self.assertEqual('1\nFACTS_A\n', f.facts())
+        f.run('backup')
+        backup = sorted((f.home / 'backups').iterdir())[-1]
+        (f.state / 'facts').write_text('1\nFACTS_A\nFACTS_B\n', newline='\n')
+        f.run('restore', shell_path(backup)); assert_modes(original_runtime)
+        self.assertEqual(original_config, f.config()); self.assertEqual('1\nFACTS_A\n', f.facts())
 
     def test_ubuntu_apt_proxy_helper_preserves_only_requested_child_keys(self):
         f = self.fixture
