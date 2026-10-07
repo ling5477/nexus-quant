@@ -19,9 +19,9 @@
 
 Ubuntu 安装使用 Docker 官方签名 apt 仓库。普通用户加入 docker 组后可运行容器，无需持续 sudo；docker 组具有主机管理权限。macOS/Windows 首次启动 Docker Desktop 可能需要完成操作系统或 Docker Desktop 自身的交互提示。
 
-预构建包包含 VERSION、runtime、installers、产品文档，以及相应架构的 `images-<arch>.tar`、`package-<arch>.env` 和 `.sha256`。manifest 绑定 exact Git SHA、release-source hash、schema、镜像 archive、immutable image config ID 和安装器/runtime 文件摘要。安装器验证文件并按主机架构选择包，Compose 直接使用 `sha256:<image config ID>`，避免 Docker save/load 丢失 registry RepoDigest 后退回浮动 tag。OCI index / RepoDigests 另存于 `package-<arch>.images.json` 供审计，不能与 config ID 混用，也不代表平台运行资格。
+预构建包包含 VERSION、runtime、installers、产品文档，以及相应架构的 `images-<arch>.tar`、`package-<arch>.env` 和 `.sha256`。manifest 的 18 个字段绑定 exact Git SHA、release-source hash、schema、镜像 archive、每个组件的 OCI native/index ID 与 config digest，以及安装器/runtime 文件摘要。Docker containerd store 与 classic store 使用不同的镜像寻址身份：安装器只尝试这两个已声明的摘要，核对实际 ID、OS 与架构，然后持久化本机可运行的 immutable ID。Compose 直接使用该 `sha256:<ID>`，不会退回浮动 tag。两种摘要与 RepoDigests 分列记录于 `package-<arch>.images.json`，镜像身份不代表平台运行资格。
 
-首次安装必须从可信发行渠道取得整个包；同包 `.sha256` 只检测损坏，不能证明发行者真实性。更新必须额外提供从可信独立渠道取得的 manifest SHA256，不能把目标包自行计算的摘要当作信任授权。维护者从验证过且未生成构建产物的 source export 执行 `release/build-package.ps1 -OutputDirectory <新目录>`；需要 PowerShell 7 和 Docker。只构建某架构可传 `-Architectures amd64`。源码导出不是可安装镜像包；未正式发布的资格 fixture 不作为公开 release。
+首次安装必须从可信发行渠道取得整个包；同包 `.sha256` 只检测损坏，不能证明发行者真实性。更新必须额外提供从可信独立渠道取得的 manifest SHA256，不能把目标包自行计算的摘要当作信任授权。维护者从验证过且未生成构建产物的 source export 执行 `release/build-package.ps1 -OutputDirectory <新目录>`；需要 PowerShell 7.4+ 和使用 containerd image store 的本机 Docker。打包器验证 OCI index → platform manifest → config/layers 与 Docker 兼容 manifest 的摘要绑定，只生成可由两种 store 加载的发行归档；此构建要求不要求用户改变安装主机的 image store。只构建某架构可传 `-Architectures amd64`。源码导出不是可安装镜像包；未正式发布的资格 fixture 不作为公开 release。
 
 当前 distribution contract 为 **release-package local image load**，尚未发布 registry 镜像。许可证选择与跨平台验收完成前，构建包只用于预发布验证。
 

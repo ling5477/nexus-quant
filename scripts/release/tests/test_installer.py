@@ -34,7 +34,10 @@ def make_package(root, version='1.0.0', schema='1', image_digit='a'):
               'RELEASE_SOURCE_HASH': '2' * 64, 'SCHEMA_VERSION': schema, 'ARCH': 'amd64',
               'ARCHIVE': archive.name, 'ARCHIVE_SHA256': digest(archive),
               'BACKEND_IMAGE': 'sha256:' + image_digit * 64,
-              'FRONTEND_IMAGE': 'sha256:' + 'b' * 64, 'POSTGRES_IMAGE': 'sha256:' + 'c' * 64}
+              'FRONTEND_IMAGE': 'sha256:' + 'b' * 64, 'POSTGRES_IMAGE': 'sha256:' + 'c' * 64,
+              'BACKEND_CONFIG_DIGEST': 'sha256:' + ('4' if image_digit == 'a' else '5') * 64,
+              'FRONTEND_CONFIG_DIGEST': 'sha256:' + '6' * 64,
+              'POSTGRES_CONFIG_DIGEST': 'sha256:' + '7' * 64}
     for asset, field in (('runtime/compose.yml', 'COMPOSE_SHA256'),
                          ('runtime/runtime.yml', 'RUNTIME_SHA256'),
                          ('installers/nexusquant.ps1', 'PS_INSTALLER_SHA256'),
@@ -65,7 +68,7 @@ class PosixFixture:
             'TMPDIR': shell_path(self.root / 'tmp'),
             'NQ_FIX_DOCKER_VERSION': '29.8.0', 'NQ_FIX_COMPOSE_VERSION': '2.39.4',
             'DOCKER_HOST': '', 'DOCKER_CONTEXT': '',
-            'NQ_FIX_FAIL': '', 'NQ_FIX_PORT_CONFLICT': ''}
+            'NQ_FIX_FAIL': '', 'NQ_FIX_PORT_CONFLICT': '', 'NQ_FIX_STORE': 'CONTAINERD'}
         self.initializer = self.root / 'init.sh'
         self.initializer.write_text('export PATH="$NQ_FIXTURE_BIN:$PATH"\n', newline='\n')
         self.env['BASH_ENV'] = shell_path(self.initializer)
@@ -112,9 +115,21 @@ load) [ "$NQ_FIX_FAIL" != LOAD ] || exit 1;;
 image)
     [ "$NQ_FIX_FAIL" != IMAGE ] || exit 1
     for arg do case "$arg" in sha256:*) identity=$arg;; esac; done
-    case "$*" in *'{{.Id}}|{{.Os}}|{{.Architecture}}'*) echo "$identity|linux|amd64";;
-    *Architecture*) echo amd64;; *Os*) echo linux;; *) echo "$identity";; esac;;
-run) echo 'postgres (PostgreSQL) 16.15';;
+    case "$identity" in
+    sha256:aaaaaaaa*|sha256:bbbbbbbb*|sha256:cccccccc*|sha256:dddddddd*|sha256:88888888*)
+        [ "$NQ_FIX_STORE" != CLASSIC ] || exit 1;;
+    sha256:44444444*|sha256:55555555*|sha256:66666666*|sha256:77777777*)
+        [ "$NQ_FIX_STORE" != CONTAINERD ] || exit 1;;
+    *) exit 1;; esac
+    [ "$NQ_FIX_FAIL" != WRONG_ID ] || identity=sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+    image_arch=amd64; [ "$NQ_FIX_FAIL" != WRONG_PLATFORM ] || image_arch=arm64
+    case "$*" in *'{{.Id}}|{{.Os}}|{{.Architecture}}'*) echo "$identity|linux|$image_arch";;
+    *Architecture*) echo "$image_arch";; *Os*) echo linux;; *) echo "$identity";; esac;;
+run)
+    case "$*" in *sha256:77777777*) [ "$NQ_FIX_STORE" != CONTAINERD ] || exit 1;;
+    *sha256:cccccccc*|*sha256:88888888*) [ "$NQ_FIX_STORE" != CLASSIC ] || exit 1;;
+    *) exit 1;; esac
+    echo 'postgres (PostgreSQL) 16.15';;
 inspect)
     case "$*" in *Config.Env*) echo 'SIM=ENABLED LIVE=DISABLED REAL_EXCHANGE=DISABLED REAL_PROVIDER=DISABLED REAL_CLIENT=DISABLED';;
     *) echo 'running healthy';; esac;;
@@ -223,6 +238,10 @@ class PosixInstallerTest(unittest.TestCase):
     def test_manifest_rejections_precede_docker_or_config_mutation(self):
         f = self.fixture; original = f.manifest.read_bytes()
         cases = {'duplicate': original + b'FORMAT=1\n', 'unknown': original + b'UNKNOWN=1\n',
+                 'duplicate_config': original + b'BACKEND_CONFIG_DIGEST=sha256:' + b'4' * 64 + b'\n',
+                 'missing_config': original.replace(b'BACKEND_CONFIG_DIGEST=sha256:' + b'4' * 64 + b'\n', b''),
+                 'mutable_config': original.replace(b'BACKEND_CONFIG_DIGEST=sha256:' + b'4' * 64,
+                                                    b'BACKEND_CONFIG_DIGEST=synthetic:mutable'),
                  'missing': original.replace(b'FORMAT=1\n', b''),
                  'archive_path': original.replace(b'ARCHIVE=images-amd64.tar', b'ARCHIVE=../images-amd64.tar'),
                  'mutable_image': original.replace(b'BACKEND_IMAGE=sha256:' + b'a' * 64,
@@ -349,6 +368,120 @@ class PosixInstallerTest(unittest.TestCase):
         self.assertEqual('UPDATE_FAILED', receipt['RESULT']); self.assertEqual('ROLLBACK_SUCCESS', receipt['ROLLBACK_RESULT'])
         self.assertEqual('1', receipt['SCHEMA_BEFORE']); self.assertEqual('2', receipt['SCHEMA_AFTER'])
         f.run('start')
+
+    def test_dual_store_resolution_records_actual_ids_and_restores_known_backup(self):
+        f = self.fixture
+        for store, old_digit, target_digit, pg_digit in (
+                ('CONTAINERD', 'a', 'd', 'c'), ('CLASSIC', '4', '5', '7')):
+            with self.subTest(store=store):
+                f.home = f.root / ('home-' + store.lower())
+                f.env.update(NQ_INSTALL_ROOT=shell_path(f.home), NQ_FIX_STORE=store)
+                (f.state / 'facts').write_text('1\nFACTS_A\n', newline='\n')
+                f.run('install'); before = f.config()
+                config = metadata(f.home / 'config/runtime.env')
+                self.assertEqual('sha256:' + old_digit * 64, config['BACKEND_IMAGE'])
+                installed = metadata(f.home / 'runtime/package.env')
+                self.assertEqual('sha256:' + '4' * 64, installed['BACKEND_CONFIG_DIGEST'])
+                self.assertEqual('sha256:' + pg_digit * 64, config['POSTGRES_IMAGE'])
+                f.run('update', *f.target_args(), '--yes')
+                config = metadata(f.home / 'config/runtime.env')
+                self.assertEqual('sha256:' + target_digit * 64, config['BACKEND_IMAGE'])
+                installed = metadata(f.home / 'runtime/package.env')
+                self.assertEqual('sha256:' + '5' * 64, installed['BACKEND_CONFIG_DIGEST'])
+                receipt, = f.receipts()
+                self.assertEqual('sha256:' + target_digit * 64, receipt['BACKEND_IMAGE'])
+                self.assertEqual('sha256:' + old_digit * 64, receipt['SOURCE_BACKEND_IMAGE'])
+                backup = metadata(f.home / 'backups' / receipt['BACKUP_ID'] / 'runtime.env')
+                self.assertEqual('sha256:' + old_digit * 64, backup['BACKEND_IMAGE'])
+                backup_manifest = metadata(f.home / 'backups' / receipt['BACKUP_ID'] / 'assets/package.env')
+                self.assertEqual('sha256:' + '4' * 64, backup_manifest['BACKEND_CONFIG_DIGEST'])
+                f.run('rollback', '--yes')
+                self.assertEqual(before, f.config())
+                self.assertEqual('1\nFACTS_A\n', f.facts())
+
+    def test_wrong_observed_id_or_platform_rejected_before_database_start(self):
+        f = self.fixture
+        for mode in ('WRONG_ID', 'WRONG_PLATFORM'):
+            with self.subTest(mode=mode):
+                f.clear_calls()
+                f.run('install', success=False, NQ_FIX_FAIL=mode)
+                self.assertNotIn(' up ', f.calls())
+                self.assertFalse((f.home / 'config/runtime.env').exists())
+                self.assertEqual('1\nFACTS_A\n', f.facts())
+
+    def test_selected_runtime_id_outside_declared_pair_rejected_before_docker(self):
+        f = self.fixture; f.run('install')
+        path = f.home / 'config/runtime.env'
+        path.write_bytes(path.read_bytes().replace(b'BACKEND_IMAGE=sha256:' + b'a' * 64,
+                                                  b'BACKEND_IMAGE=sha256:' + b'e' * 64))
+        f.clear_calls(); f.run('start', success=False)
+        self.assertEqual('', f.calls())
+        self.assertEqual('1\nFACTS_A\n', f.facts())
+
+    def test_postgres_compatibility_uses_config_digest_and_not_native_index(self):
+        f = self.fixture; f.run('install')
+        f.target_manifest.write_bytes(f.target_manifest.read_bytes().replace(
+            b'POSTGRES_IMAGE=sha256:' + b'c' * 64, b'POSTGRES_IMAGE=sha256:' + b'8' * 64))
+        f.run('update', *f.target_args(), '--yes')
+        self.assertEqual('sha256:' + '8' * 64, metadata(f.home / 'config/runtime.env')['POSTGRES_IMAGE'])
+        f.run('rollback', '--yes')
+        before = f.config(); f.clear_calls()
+        f.target_manifest.write_bytes(f.target_manifest.read_bytes().replace(
+            b'POSTGRES_CONFIG_DIGEST=sha256:' + b'7' * 64,
+            b'POSTGRES_CONFIG_DIGEST=sha256:' + b'9' * 64))
+        f.run('update', *f.target_args(), '--yes', success=False)
+        self.assertEqual(before, f.config()); self.assertEqual('1\nFACTS_A\n', f.facts())
+        self.assertNotIn('load ', f.calls()); self.assertNotIn(' stop ', f.calls())
+
+    def test_ubuntu_apt_proxy_helper_preserves_only_requested_child_keys(self):
+        f = self.fixture
+        source = (f.package / 'installers/nexusquant.sh').read_text(encoding='utf-8')
+        parts = source.split('\nhost_identity\n')
+        self.assertEqual(2, len(parts), 'Production lifecycle main entry marker changed')
+        runner = f.root / 'apt-helper.sh'
+        runner.write_text(parts[0] + '''
+HTTP_PROXY=$NQ_INPUT_UPPER_HTTP; HTTPS_PROXY=$NQ_INPUT_UPPER_HTTPS; NO_PROXY=$NQ_INPUT_UPPER_NO
+http_proxy=$NQ_INPUT_LOWER_HTTP; https_proxy=$NQ_INPUT_LOWER_HTTPS; no_proxy=$NQ_INPUT_LOWER_NO
+export HTTP_PROXY HTTPS_PROXY NO_PROXY http_proxy https_proxy no_proxy
+ubuntu_apt update
+[ "$http_proxy" = "$NQ_EXPECT_PARENT_HTTP" ] || fail 'Parent http proxy changed'
+[ "$https_proxy" = "$NQ_EXPECT_PARENT_HTTPS" ] || fail 'Parent https proxy changed'
+[ "$no_proxy" = "$NQ_EXPECT_PARENT_NO" ] || fail 'Parent no_proxy changed'
+printf '%s\\n' PARENT_PROXY_UNCHANGED
+''', encoding='utf-8', newline='\n')
+        f.script('sudo', '''[ "$1" = '--preserve-env=http_proxy,https_proxy,no_proxy' ] || exit 1
+[ "$http_proxy" = "$NQ_EXPECT_APT_HTTP" ] || exit 1
+[ "$https_proxy" = "$NQ_EXPECT_APT_HTTPS" ] || exit 1
+[ "$no_proxy" = "$NQ_EXPECT_APT_NO" ] || exit 1
+printf '%s\\n' "$*" >> "$NQ_FIX_STATE/calls"
+printf '%s\\n' SIMULATED_APT_PROXY_VERIFIED
+''')
+        for lower in (True, False):
+            with self.subTest(lowercase_priority=lower):
+                # Windows环境块不区分同名变量大小写；在Bash内部构造两组真实变量。
+                values = {'NQ_INPUT_UPPER_HTTP': 'http://synthetic:upper@upper.invalid:8123',
+                          'NQ_INPUT_UPPER_HTTPS': 'http://synthetic:upper@upper.invalid:8124',
+                          'NQ_INPUT_UPPER_NO': 'upper.invalid',
+                          'NQ_INPUT_LOWER_HTTP': 'http://synthetic:lower@lower.invalid:8123' if lower else '',
+                          'NQ_INPUT_LOWER_HTTPS': 'http://synthetic:lower@lower.invalid:8124' if lower else '',
+                          'NQ_INPUT_LOWER_NO': 'lower.invalid' if lower else ''}
+                for short in ('HTTP', 'HTTPS', 'NO'):
+                    values['NQ_EXPECT_PARENT_' + short] = values['NQ_INPUT_LOWER_' + short]
+                    values['NQ_EXPECT_APT_' + short] = (values['NQ_INPUT_LOWER_' + short]
+                                                       or values['NQ_INPUT_UPPER_' + short])
+                f.clear_calls()
+                result = subprocess.run([self.shell, shell_path(runner)], env=f.env | values,
+                                        capture_output=True, text=True, encoding='utf-8', timeout=20)
+                self.assertEqual(0, result.returncode, 'Production APT helper rejected the bounded proxy fixture')
+                self.assertIn('SIMULATED_APT_PROXY_VERIFIED', result.stdout)
+                self.assertIn('PARENT_PROXY_UNCHANGED', result.stdout)
+                self.assertIn('--preserve-env=http_proxy,https_proxy,no_proxy', f.calls())
+                self.assertIn('timeout --kill-after=10 850 apt-get', f.calls())
+                self.assertNotIn('sudo -E', f.calls())
+                for value in values.values():
+                    if value:
+                        self.assertFalse(value in result.stdout + result.stderr + f.calls(),
+                                         'A proxy value appeared in APT helper logs or argv')
 
     def test_successful_update_known_rollback_and_backup_tamper_refusal(self):
         f = self.fixture; f.run('install'); old_config = f.config()

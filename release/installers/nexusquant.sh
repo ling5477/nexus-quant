@@ -13,6 +13,7 @@ target_package= trusted_hash= confirm=false purge=false confirm_purge=false back
 docker_group=false lock_owned=false transaction_active=false transaction_dir= update_app_stopped=false
 recovery_lock_owned=false bootstrap_dir= bootstrap_mounted=false
 manifest_workdir= verified_manifest= package_stage=
+selected_backend_image= selected_frontend_image= selected_postgres_image=
 update_attempt_active=false attempt_schema=UNKNOWN
 fail() { printf '%s\n' "$*" >&2; exit 1; }
 meta() { sed -n "s/^$2=//p" "$1"; }
@@ -76,6 +77,14 @@ bounded() (
     kill "$watcher" 2>/dev/null || :; wait "$watcher" 2>/dev/null || :
     exit "$result"
 )
+ubuntu_apt() (
+    # sudo 默认清空代理；只向本次 APT 子进程继承三个代理键，不改变调用者或系统配置。
+    http_proxy=${http_proxy:-${HTTP_PROXY:-}}
+    https_proxy=${https_proxy:-${HTTPS_PROXY:-}}
+    no_proxy=${no_proxy:-${NO_PROXY:-}}
+    export http_proxy https_proxy no_proxy
+    bounded 900 sudo --preserve-env=http_proxy,https_proxy,no_proxy timeout --kill-after=10 850 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 "$@"
+)
 docker_cmd() {
     if [ "$docker_group" = true ]; then
         # sg 只接受命令字符串；逐参数单引号编码，禁止原始路径或用户输入拼接。
@@ -88,7 +97,7 @@ compose_with_env() (
     selected_env=$1; selected_project=$2; selected_compose=$3; shift 3
     # Compose 优先使用父进程环境；必须隔离这些键才能使已验证配置成为唯一挂载及镜像身份。
     unset NQ_HOME NQ_VERSION DB_PASSWORD JWT_SECRET CREDENTIALS_KEY FRONTEND_PORT BACKEND_PORT PROJECT_NAME AUTO_UPDATE RUNTIME_PROFILE BACKEND_MEMORY BACKEND_CPUS POSTGRES_MEMORY POSTGRES_CPUS FRONTEND_MEMORY FRONTEND_CPUS SCHEMA_VERSION SOURCE_SHA RELEASE_SOURCE_HASH BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE PACKAGE_MANIFEST_SHA256
-    unset COMPOSE_FILE COMPOSE_PROJECT_NAME COMPOSE_ENV_FILES COMPOSE_PROFILES COMPOSE_DISABLE_ENV_FILE COMPOSE_PATH_SEPARATOR
+    unset COMPOSE_FILE COMPOSE_PROJECT_NAME COMPOSE_ENV_FILES COMPOSE_PROFILES COMPOSE_DISABLE_ENV_FILE COMPOSE_PATH_SEPARATOR DOCKER_DEFAULT_PLATFORM
     docker_cmd compose --env-file "$selected_env" -p "$selected_project" -f "$selected_compose" "$@"
 )
 compose() { compose_with_env "$install_root/config/runtime.env" "$project" "$install_root/runtime/compose.yml" "$@"; }
@@ -101,7 +110,7 @@ verify_manifest() {
     [ -f "$1" ] && [ ! -L "$1" ] || fail 'Release package manifest missing or unsafe'
     [ "$(wc -c < "$1" | tr -d ' ')" -le 8192 ] || fail 'Release manifest is too large'
     strict_lf "$1"
-    awk -F= 'BEGIN {n=split("FORMAT VERSION SOURCE_SHA RELEASE_SOURCE_HASH SCHEMA_VERSION ARCH ARCHIVE ARCHIVE_SHA256 BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE COMPOSE_SHA256 RUNTIME_SHA256 PS_INSTALLER_SHA256 SH_INSTALLER_SHA256",keys," ");for(i=1;i<=n;i++)allowed[keys[i]]=1}
+    awk -F= 'BEGIN {n=split("FORMAT VERSION SOURCE_SHA RELEASE_SOURCE_HASH SCHEMA_VERSION ARCH ARCHIVE ARCHIVE_SHA256 BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE BACKEND_CONFIG_DIGEST FRONTEND_CONFIG_DIGEST POSTGRES_CONFIG_DIGEST COMPOSE_SHA256 RUNTIME_SHA256 PS_INSTALLER_SHA256 SH_INSTALLER_SHA256",keys," ");for(i=1;i<=n;i++)allowed[keys[i]]=1}
       NF!=2 || !allowed[$1] || seen[$1]++ || $2=="" || $0~/\r/ {exit 1}
       END {for(i=1;i<=n;i++)if(!seen[keys[i]])exit 1}' "$1" || fail 'Invalid release manifest fields (LF, exact allowlist and unique keys required)'
     [ "$(meta "$1" FORMAT)" = 1 ] || fail 'Unsupported release manifest format'
@@ -113,9 +122,9 @@ verify_manifest() {
     for field in RELEASE_SOURCE_HASH ARCHIVE_SHA256 COMPOSE_SHA256 RUNTIME_SHA256 PS_INSTALLER_SHA256 SH_INSTALLER_SHA256; do
         hex_hash "$(meta "$1" "$field")" || fail 'Invalid manifest digest'
     done
-    for field in BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE; do
+    for field in BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE BACKEND_CONFIG_DIGEST FRONTEND_CONFIG_DIGEST POSTGRES_CONFIG_DIGEST; do
         image=$(meta "$1" "$field")
-        case "$image" in sha256:*) hex_hash "${image#sha256:}" || fail 'Exact immutable image configuration digest required';; *) fail 'Exact immutable image configuration digest required';; esac
+        case "$image" in sha256:*) hex_hash "${image#sha256:}" || fail 'Exact declared immutable image/config digest required';; *) fail 'Exact declared immutable image/config digest required';; esac
     done
 }
 verify_package() {
@@ -157,8 +166,8 @@ bootstrap_docker() {
     if [ "$action" = install ] && ! command -v curl >/dev/null 2>&1; then
         [ "$host_os" = Linux ] || fail 'The system curl required by macOS is unavailable'
         printf '%s\n' 'Installing Ubuntu curl and CA prerequisites for official Docker bootstrap and local health checks.'
-        bounded 900 sudo timeout --kill-after=10 850 apt-get -o Acquire::Retries=2 -o Acquire::https::Timeout=30 update >/dev/null 2>&1 || fail 'Ubuntu curl prerequisite package index update failed'
-        bounded 900 sudo timeout --kill-after=10 850 apt-get -y install ca-certificates curl >/dev/null 2>&1 || fail 'Ubuntu curl prerequisite installation failed'
+        ubuntu_apt update >/dev/null 2>&1 || fail 'Ubuntu curl prerequisite package index update failed'
+        ubuntu_apt -y install ca-certificates curl >/dev/null 2>&1 || fail 'Ubuntu curl prerequisite installation failed'
     fi
     # Desktop 已存在而 CLI 未加入 PATH 时直接复用，不重复下载或覆盖用户安装。
     if [ "$host_os" = Darwin ] && ! command -v docker >/dev/null 2>&1 && [ -x /Applications/Docker.app/Contents/Resources/bin/docker ]; then
@@ -186,8 +195,8 @@ bootstrap_docker() {
                 PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"; export PATH
                 ;;
             Linux)
-                bounded 900 sudo timeout --kill-after=10 850 apt-get -o Acquire::Retries=2 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 update >/dev/null 2>&1 || fail 'Ubuntu package index update failed'
-                bounded 900 sudo timeout --kill-after=10 850 apt-get -y install ca-certificates curl gnupg >/dev/null 2>&1 || fail 'Ubuntu Docker prerequisites installation failed'
+                ubuntu_apt update >/dev/null 2>&1 || fail 'Ubuntu package index update failed'
+                ubuntu_apt -y install ca-certificates curl gnupg >/dev/null 2>&1 || fail 'Ubuntu Docker prerequisites installation failed'
                 curl -fsS --connect-timeout 20 --max-time 120 --proto '=https' --proto-redir '=https' https://download.docker.com/linux/ubuntu/gpg -o "$bootstrap_dir/docker.asc" || fail 'Official Docker repository key download failed'
                 bounded 60 gpg --batch --show-keys --with-colons "$bootstrap_dir/docker.asc" > "$bootstrap_dir/key-info" 2>/dev/null || fail 'Docker repository key validation failed'
                 fingerprint=$(awk -F: '$1=="fpr"{print $10;exit}' "$bootstrap_dir/key-info")
@@ -201,8 +210,8 @@ bootstrap_docker() {
                 printf 'deb [arch=%s signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu %s stable\n' "$host_arch" "$codename" > "$bootstrap_dir/docker.list"
                 [ ! -e /etc/apt/sources.list.d/nexusquant-docker.list ] || cmp -s "$bootstrap_dir/docker.list" /etc/apt/sources.list.d/nexusquant-docker.list || fail 'Existing repository configuration preserved'
                 bounded 60 sudo install -m 0644 "$bootstrap_dir/docker.list" /etc/apt/sources.list.d/nexusquant-docker.list >/dev/null 2>&1 || fail 'Docker repository configuration failed'
-                bounded 900 sudo timeout --kill-after=10 850 apt-get -o Acquire::Retries=2 -o Acquire::https::Timeout=30 update >/dev/null 2>&1 || fail 'Official Docker repository unavailable'
-                bounded 900 sudo timeout --kill-after=10 850 apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin >/dev/null 2>&1 || fail 'Official Docker Engine installation failed'
+                ubuntu_apt update >/dev/null 2>&1 || fail 'Official Docker repository unavailable'
+                ubuntu_apt -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin >/dev/null 2>&1 || fail 'Official Docker Engine installation failed'
                 bounded 120 sudo systemctl start docker >/dev/null 2>&1 || fail 'Docker daemon start failed'
                 normal_user=$(id -un); printf '%s' "$normal_user" | grep -Eq '^[a-zA-Z_][a-zA-Z0-9_.-]*[$]?$' || fail 'Unsupported user identity'
                 bounded 60 sudo usermod -aG docker "$normal_user" >/dev/null 2>&1 || fail 'Docker group enrollment failed'
@@ -313,15 +322,38 @@ verify_installed() {
     done
     [ "$(meta "$installed_manifest" VERSION)" = "$(value NQ_VERSION)" ] && [ "$(meta "$installed_manifest" SCHEMA_VERSION)" = "$(value SCHEMA_VERSION)" ] || fail 'Installed version/schema identity mismatch'
     [ -f "$install_root/runtime/VERSION" ] && [ ! -L "$install_root/runtime/VERSION" ] && [ "$(cat "$install_root/runtime/VERSION")" = "$(meta "$installed_manifest" VERSION)" ] || fail 'Authoritative installed VERSION mismatch'
-    for field in BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE SOURCE_SHA RELEASE_SOURCE_HASH; do
+    for field in SOURCE_SHA RELEASE_SOURCE_HASH; do
         [ "$(meta "$installed_manifest" "$field")" = "$(value "$field")" ] || fail 'Installed runtime image/source identity mismatch'
     done
+    for field in BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE; do image_in_manifest "$installed_manifest" "$field" "$(value "$field")" || fail 'Installed selected image is not a declared immutable identity'; done
     [ "$(value NQ_HOME)" = "$install_root" ] || fail 'Installation location mismatch'
     project=$(value PROJECT_NAME); case "$project" in ''|*[!a-z0-9-]*) fail 'Invalid installed project identity';; esac
     for key in DB_PASSWORD JWT_SECRET CREDENTIALS_KEY; do hex_hash "$(value "$key")" || fail 'Invalid installed secret metadata'; done
     [ "$(value AUTO_UPDATE)" = OFF ] || fail 'Automatic update must remain OFF'
     frontend_port=$(value FRONTEND_PORT); backend_port=$(value BACKEND_PORT)
     port_valid "$frontend_port" && port_valid "$backend_port" && [ "$frontend_port" != "$backend_port" ] || fail 'Invalid installed ports'
+}
+image_in_manifest() {
+    [ "$3" = "$(meta "$1" "$2")" ] || [ "$3" = "$(meta "$1" "${2%_IMAGE}_CONFIG_DIGEST")" ]
+}
+resolve_image() {
+    # 两种 store 的寻址身份不同；只探测包声明的 index/native ID 与 config ID，绝不使用 tag 回退。
+    for candidate_id in "$(meta "$1" "$2")" "$(meta "$1" "${2%_IMAGE}_CONFIG_DIGEST")"; do
+        observed_identity=$(docker_timeout=30 docker_cmd image inspect "$candidate_id" --format '{{.Id}}|{{.Os}}|{{.Architecture}}' 2>/dev/null) || continue
+        [ "$observed_identity" = "$candidate_id|linux|$host_arch" ] || fail 'Addressed image ID/platform differs from its exact declared immutable candidate'
+        printf '%s\n' "$candidate_id"; return 0
+    done
+    fail 'No declared immutable image ID is addressable on this Docker store with the exact required platform'
+}
+resolve_images() {
+    selected_backend_image=$(resolve_image "$1" BACKEND_IMAGE) || fail 'Backend immutable identity resolution failed'
+    selected_frontend_image=$(resolve_image "$1" FRONTEND_IMAGE) || fail 'Frontend immutable identity resolution failed'
+    selected_postgres_image=$(resolve_image "$1" POSTGRES_IMAGE) || fail 'PostgreSQL immutable identity resolution failed'
+}
+set_selected_images() {
+    set_env BACKEND_IMAGE "$selected_backend_image"
+    set_env FRONTEND_IMAGE "$selected_frontend_image"
+    set_env POSTGRES_IMAGE "$selected_postgres_image"
 }
 verify_runtime_env() {
     [ -f "$1" ] && [ ! -L "$1" ] || fail 'Runtime configuration missing or unsafe'
@@ -342,14 +374,12 @@ load_images() {
     bounded 600 cp "$1/$(meta "$2" ARCHIVE)" "$package_stage/$(meta "$2" ARCHIVE)" || fail 'Release image archive staging failed'
     [ "$(file_hash "$package_stage/$(meta "$2" ARCHIVE)")" = "$(meta "$2" ARCHIVE_SHA256)" ] || fail 'Staged release image archive checksum mismatch'
     docker_cmd load --input "$package_stage/$(meta "$2" ARCHIVE)" >/dev/null 2>&1 || fail 'Image archive load failed before application/DB change'
-    for field in BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE; do
-        image_identity=$(docker_cmd image inspect "$(meta "$2" "$field")" --format '{{.Id}}|{{.Os}}|{{.Architecture}}' 2>/dev/null) || fail 'Verified digest unavailable after archive load'
-        [ "$image_identity" = "$(meta "$2" "$field")|linux|$host_arch" ] || fail 'Loaded image configuration digest/platform does not match release manifest'
-    done
-    pg_version=$(docker_cmd run --rm --pull never --entrypoint postgres "$(meta "$2" POSTGRES_IMAGE)" --version 2>/dev/null)
+    resolve_images "$2"
+    pg_version=$(docker_cmd run --rm --pull never --platform "linux/$host_arch" --entrypoint postgres "$selected_postgres_image" --version 2>/dev/null)
     printf '%s' "$pg_version" | grep -Eq '^postgres \(PostgreSQL\) 16\.' || fail 'Verified PostgreSQL image must be major 16'
 }
 switch_package() {
+    image_in_manifest "$2" BACKEND_IMAGE "$selected_backend_image" && image_in_manifest "$2" FRONTEND_IMAGE "$selected_frontend_image" && image_in_manifest "$2" POSTGRES_IMAGE "$selected_postgres_image" || fail 'Package switching requires a complete resolved identity from the declared digest pairs'
     atomic_copy "$1/runtime/compose.yml" "$install_root/runtime/compose.yml"
     atomic_copy "$1/runtime/runtime.yml" "$install_root/runtime/runtime.yml"
     atomic_copy "$1/installers/nexusquant.sh" "$install_root/runtime/nexusquant.sh"
@@ -357,10 +387,11 @@ switch_package() {
     for mapping in 'compose.yml:COMPOSE_SHA256' 'runtime.yml:RUNTIME_SHA256' 'nexusquant.sh:SH_INSTALLER_SHA256'; do
         [ "$(file_hash "$install_root/runtime/${mapping%:*}")" = "$(meta "$2" "${mapping#*:}")" ] || fail 'Installed staged release asset checksum mismatch'
     done
-    for field in VERSION SCHEMA_VERSION SOURCE_SHA RELEASE_SOURCE_HASH BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE; do
+    for field in VERSION SCHEMA_VERSION SOURCE_SHA RELEASE_SOURCE_HASH; do
         key=$field; [ "$field" != VERSION ] || key=NQ_VERSION
         set_env "$key" "$(meta "$2" "$field")"
     done
+    set_selected_images
     set_env PACKAGE_MANIFEST_SHA256 "$(file_hash "$2")"
 }
 start_runtime() {
@@ -429,7 +460,8 @@ verify_backup() {
     [ "$(meta "$1/assets/package.env" VERSION)" = "$(meta "$1/manifest.env" APP_VERSION)" ] && [ "$(meta "$1/assets/package.env" SCHEMA_VERSION)" = "$(meta "$1/manifest.env" SCHEMA_VERSION)" ] || fail 'Backup source identity mismatch'
     [ "$(meta "$1/runtime.env" NQ_VERSION)" = "$(meta "$1/manifest.env" APP_VERSION)" ] && [ "$(meta "$1/runtime.env" AUTO_UPDATE)" = OFF ] || fail 'Backup runtime version/update policy mismatch'
     [ "$(meta "$1/runtime.env" PACKAGE_MANIFEST_SHA256)" = "$(meta "$1/manifest.env" PACKAGE_MANIFEST_SHA256)" ] || fail 'Backup runtime manifest identity mismatch'
-    for field in SCHEMA_VERSION SOURCE_SHA RELEASE_SOURCE_HASH BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE; do [ "$(meta "$1/runtime.env" "$field")" = "$(meta "$1/assets/package.env" "$field")" ] || fail 'Backup runtime source/image identity mismatch'; done
+    for field in SCHEMA_VERSION SOURCE_SHA RELEASE_SOURCE_HASH; do [ "$(meta "$1/runtime.env" "$field")" = "$(meta "$1/assets/package.env" "$field")" ] || fail 'Backup runtime source/image identity mismatch'; done
+    for field in BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE; do image_in_manifest "$1/assets/package.env" "$field" "$(meta "$1/runtime.env" "$field")" || fail 'Backup selected image is not a declared immutable identity'; done
     for field in COMPOSE_SHA256 RUNTIME_SHA256 SH_INSTALLER_SHA256; do [ "$(meta "$1/assets/package.env" "$field")" = "$(meta "$1/manifest.env" "$field")" ] || fail 'Backup release asset mismatch'; done
     for key in DB_PASSWORD JWT_SECRET CREDENTIALS_KEY; do hex_hash "$(meta "$1/runtime.env" "$key")" || fail 'Invalid backup key metadata'; done
 }
@@ -465,9 +497,9 @@ SOURCE_BACKEND_IMAGE=$(meta "$transaction_dir/identity.env" SOURCE_BACKEND_IMAGE
 SOURCE_FRONTEND_IMAGE=$(meta "$transaction_dir/identity.env" SOURCE_FRONTEND_IMAGE)
 SOURCE_POSTGRES_IMAGE=$(meta "$transaction_dir/identity.env" SOURCE_POSTGRES_IMAGE)
 QUIESCED_AT=$(meta "$transaction_dir/identity.env" QUIESCED_AT)
-BACKEND_IMAGE=$(meta "$transaction_dir/target.env" BACKEND_IMAGE)
-FRONTEND_IMAGE=$(meta "$transaction_dir/target.env" FRONTEND_IMAGE)
-POSTGRES_IMAGE=$(meta "$transaction_dir/target.env" POSTGRES_IMAGE)
+BACKEND_IMAGE=$(meta "$transaction_dir/identity.env" BACKEND_IMAGE)
+FRONTEND_IMAGE=$(meta "$transaction_dir/identity.env" FRONTEND_IMAGE)
+POSTGRES_IMAGE=$(meta "$transaction_dir/identity.env" POSTGRES_IMAGE)
 BACKUP_ID=$(meta "$transaction_dir/identity.env" BACKUP_ID)
 SCHEMA_BEFORE=$(meta "$transaction_dir/identity.env" SCHEMA_BEFORE)
 SCHEMA_AFTER=$(meta "$transaction_dir/identity.env" SCHEMA_AFTER)
@@ -488,7 +520,7 @@ transaction_verify() {
     [ -f "$transaction_dir/identity.env" ] && [ ! -L "$transaction_dir/identity.env" ] || fail 'Known transaction metadata missing'
     [ "$(wc -c < "$transaction_dir/identity.env" | tr -d ' ')" -le 8192 ] || fail 'Transaction metadata is too large'
     strict_lf "$transaction_dir/identity.env"
-    awk -F= 'BEGIN{n=split("FORMAT FROM_VERSION TO_VERSION STARTED_AT SOURCE_MANIFEST_SHA256 TARGET_MANIFEST_SHA256 SOURCE_BACKEND_IMAGE SOURCE_FRONTEND_IMAGE SOURCE_POSTGRES_IMAGE QUIESCED_AT BACKUP_ID BACKUP_MANIFEST_SHA256 SCHEMA_BEFORE SCHEMA_AFTER",k," ");for(i=1;i<=n;i++)a[k[i]]=1}NF!=2||!a[$1]||seen[$1]++||$2==""||$0~/\r/{exit 1}END{for(i=1;i<=n;i++)if(!seen[k[i]])exit 1}' "$transaction_dir/identity.env" || fail 'Invalid transaction metadata'
+    awk -F= 'BEGIN{n=split("FORMAT FROM_VERSION TO_VERSION STARTED_AT SOURCE_MANIFEST_SHA256 TARGET_MANIFEST_SHA256 SOURCE_BACKEND_IMAGE SOURCE_FRONTEND_IMAGE SOURCE_POSTGRES_IMAGE BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE QUIESCED_AT BACKUP_ID BACKUP_MANIFEST_SHA256 SCHEMA_BEFORE SCHEMA_AFTER",k," ");for(i=1;i<=n;i++)a[k[i]]=1}NF!=2||!a[$1]||seen[$1]++||$2==""||$0~/\r/{exit 1}END{for(i=1;i<=n;i++)if(!seen[k[i]])exit 1}' "$transaction_dir/identity.env" || fail 'Invalid transaction metadata'
     [ "$(meta "$transaction_dir/identity.env" FORMAT)" = 1 ] || fail 'Unsupported transaction format'
     previous_backup_id=$(meta "$transaction_dir/identity.env" BACKUP_ID)
     printf '%s' "$previous_backup_id" | grep -Eq '^[0-9]{8}T[0-9]{6}Z-[0-9]+$' || fail 'Invalid known backup identity'
@@ -497,10 +529,11 @@ transaction_verify() {
     [ "$(meta "$previous_backup/runtime.env" NQ_HOME)" = "$install_root" ] || fail 'Known transaction backup belongs to a different installation'
     [ "$(file_hash "$previous_backup/manifest.env")" = "$(meta "$transaction_dir/identity.env" BACKUP_MANIFEST_SHA256)" ] || fail 'Known backup trust anchor mismatch'
     [ "$(file_hash "$previous_backup/assets/package.env")" = "$(meta "$transaction_dir/identity.env" SOURCE_MANIFEST_SHA256)" ] || fail 'Known previous release mismatch'
-    for field in BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE; do [ "$(meta "$previous_backup/assets/package.env" "$field")" = "$(meta "$transaction_dir/identity.env" "SOURCE_$field")" ] || fail 'Known previous image identity mismatch'; done
+    for field in BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE; do [ "$(meta "$previous_backup/runtime.env" "$field")" = "$(meta "$transaction_dir/identity.env" "SOURCE_$field")" ] || fail 'Known previous selected image identity mismatch'; done
     [ "$(meta "$previous_backup/manifest.env" APP_VERSION)" = "$(meta "$transaction_dir/identity.env" FROM_VERSION)" ] && [ "$(meta "$previous_backup/manifest.env" SCHEMA_VERSION)" = "$(meta "$transaction_dir/identity.env" SCHEMA_BEFORE)" ] || fail 'Known previous version/schema mismatch'
     verify_manifest "$transaction_dir/target.env"
     [ "$(file_hash "$transaction_dir/target.env")" = "$(meta "$transaction_dir/identity.env" TARGET_MANIFEST_SHA256)" ] || fail 'Known target release mismatch'
+    for field in BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE; do image_in_manifest "$transaction_dir/target.env" "$field" "$(meta "$transaction_dir/identity.env" "$field")" || fail 'Known target selected image is not a declared immutable identity'; done
     [ "$(meta "$transaction_dir/target.env" VERSION)" = "$(meta "$transaction_dir/identity.env" TO_VERSION)" ] && [ "$(meta "$transaction_dir/target.env" SCHEMA_VERSION)" = "$(meta "$transaction_dir/identity.env" SCHEMA_AFTER)" ] || fail 'Known target version/schema mismatch'
 }
 verify_success_receipt() {
@@ -512,7 +545,7 @@ verify_success_receipt() {
     for field in FROM_VERSION TO_VERSION STARTED_AT SOURCE_MANIFEST_SHA256 TARGET_MANIFEST_SHA256 SOURCE_BACKEND_IMAGE SOURCE_FRONTEND_IMAGE SOURCE_POSTGRES_IMAGE QUIESCED_AT BACKUP_ID SCHEMA_BEFORE SCHEMA_AFTER; do
         [ "$(meta "$receipt" "$field")" = "$(meta "$transaction_dir/identity.env" "$field")" ] || fail 'Known receipt transaction identity mismatch'
     done
-    for field in BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE; do [ "$(meta "$receipt" "$field")" = "$(meta "$transaction_dir/target.env" "$field")" ] || fail 'Known receipt target digest mismatch'; done
+    for field in BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE; do [ "$(meta "$receipt" "$field")" = "$(meta "$transaction_dir/identity.env" "$field")" ] || fail 'Known receipt selected target digest mismatch'; done
     printf '%s' "$(meta "$receipt" COMPLETED_AT)" | grep -Eq '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$' || fail 'Invalid completion timestamp in known receipt'
 }
 failed_attempt_receipt() {
@@ -556,7 +589,8 @@ recover_transaction() {
     for name in compose.yml runtime.yml nexusquant.sh package.env VERSION; do atomic_copy "$previous_backup/assets/$name" "$install_root/runtime/$name"; done
     atomic_copy "$previous_backup/runtime.env" "$install_root/config/runtime.env"
     project=$(value PROJECT_NAME)
-    for field in BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE; do docker_cmd image inspect "$(value "$field")" --format '{{.Id}}' >/dev/null 2>&1 || fail 'Known previous image no longer available'; done
+    resolve_images "$previous_backup/assets/package.env"
+    set_selected_images
     if [ "$recovery_phase" != PREPARED ]; then restore_database "$previous_backup" true; fi
     verify_installed
     start_runtime true
@@ -792,6 +826,7 @@ EOF
         target_manifest=$verified_manifest
         version_greater "$(meta "$target_manifest" VERSION)" "$(cat "$install_root/runtime/VERSION")" || fail 'Update target must have a newer version'
         [ "$(meta "$target_manifest" SCHEMA_VERSION)" -ge "$(value SCHEMA_VERSION)" ] || fail 'Schema downgrade is not an update'
+        [ "$(meta "$target_manifest" POSTGRES_CONFIG_DIGEST)" = "$(meta "$install_root/runtime/package.env" POSTGRES_CONFIG_DIGEST)" ] || fail 'PostgreSQL image upgrades require a separate qualified database lifecycle'
         preflight
         printf 'Verified update: %s -> %s (manifest %s).\n' "$(value NQ_VERSION)" "$(meta "$target_manifest" VERSION)" "$trusted_hash"
         confirm_action 'Update changes installed application and may migrate its isolated database.'
@@ -820,6 +855,9 @@ TARGET_MANIFEST_SHA256=$trusted_hash
 SOURCE_BACKEND_IMAGE=$(value BACKEND_IMAGE)
 SOURCE_FRONTEND_IMAGE=$(value FRONTEND_IMAGE)
 SOURCE_POSTGRES_IMAGE=$(value POSTGRES_IMAGE)
+BACKEND_IMAGE=$selected_backend_image
+FRONTEND_IMAGE=$selected_frontend_image
+POSTGRES_IMAGE=$selected_postgres_image
 QUIESCED_AT=$quiesced_at
 BACKUP_ID=$backup_id
 BACKUP_MANIFEST_SHA256=$(file_hash "$dest/manifest.env")

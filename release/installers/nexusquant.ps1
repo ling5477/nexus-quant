@@ -43,7 +43,7 @@ function Remove-RuntimeEnvironment([Diagnostics.ProcessStartInfo]$Info) {
     # Compose 的 shell 环境优先于 --env-file；仅清洗子进程，避免越过安装身份或读取其他数据目录。
     $names = @('NQ_HOME','NQ_VERSION','SOURCE_SHA','RELEASE_SOURCE_HASH','SCHEMA_VERSION','PACKAGE_MANIFEST_SHA256','AUTO_UPDATE','ARCH','RUNTIME_PROFILE','BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE','BACKEND_MEMORY','BACKEND_CPUS','FRONTEND_MEMORY','FRONTEND_CPUS','POSTGRES_MEMORY','POSTGRES_CPUS','DB_PASSWORD','JWT_SECRET','CREDENTIALS_KEY','FRONTEND_PORT','BACKEND_PORT','PROJECT_NAME')
     foreach ($name in @($Info.EnvironmentVariables.Keys)) {
-        if ($name -in $names -or $name -like 'COMPOSE_*') { $Info.EnvironmentVariables.Remove($name) }
+        if ($name -in $names -or $name -like 'COMPOSE_*' -or $name -eq 'DOCKER_DEFAULT_PLATFORM') { $Info.EnvironmentVariables.Remove($name) }
     }
 }
 function Invoke-External([string]$Executable, [string[]]$Arguments, [int]$TimeoutSeconds = 600, [switch]$CleanRuntimeEnvironment) {
@@ -120,12 +120,12 @@ function Read-Package([string]$Root, [string]$ExpectedHash, [string]$Arch) {
     $raw = (New-Object Text.UTF8Encoding($false,$true)).GetString($bytes)
     if ($raw.Contains("`r") -or -not $raw.EndsWith("`n",[StringComparison]::Ordinal)) { throw 'Package manifest must be UTF-8 LF metadata' }
     $metadata = Parse-Metadata $raw
-    $fields = @('FORMAT','VERSION','SOURCE_SHA','RELEASE_SOURCE_HASH','SCHEMA_VERSION','ARCH','ARCHIVE','ARCHIVE_SHA256','BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE','COMPOSE_SHA256','RUNTIME_SHA256','PS_INSTALLER_SHA256','SH_INSTALLER_SHA256')
+    $fields = @('FORMAT','VERSION','SOURCE_SHA','RELEASE_SOURCE_HASH','SCHEMA_VERSION','ARCH','ARCHIVE','ARCHIVE_SHA256','BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE','BACKEND_CONFIG_DIGEST','FRONTEND_CONFIG_DIGEST','POSTGRES_CONFIG_DIGEST','COMPOSE_SHA256','RUNTIME_SHA256','PS_INSTALLER_SHA256','SH_INSTALLER_SHA256')
     if ($metadata.Count -ne $fields.Count) { throw 'Unknown or missing package manifest field' }
     foreach ($field in $fields) { if (-not $metadata.ContainsKey($field)) { throw 'Missing package manifest field' } }
     if ($metadata.FORMAT -cne '1' -or $metadata.VERSION -cnotmatch '^(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})$' -or $metadata.SOURCE_SHA -cnotmatch '^[a-f0-9]{40}$' -or $metadata.RELEASE_SOURCE_HASH -cnotmatch '^[a-f0-9]{64}$' -or $metadata.SCHEMA_VERSION -cnotmatch '^[1-9][0-9]{0,5}$' -or $metadata.ARCH -cne $Arch -or $metadata.ARCHIVE -cne ('images-' + $Arch + '.tar')) { throw 'Invalid release identity' }
-    foreach ($key in @('BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE')) {
-        if ($metadata[$key] -cnotmatch '^sha256:[a-f0-9]{64}$') { throw 'Exact immutable image config digest required' }
+    foreach ($key in @('BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE','BACKEND_CONFIG_DIGEST','FRONTEND_CONFIG_DIGEST','POSTGRES_CONFIG_DIGEST')) {
+        if ($metadata[$key] -cnotmatch '^sha256:[a-f0-9]{64}$') { throw 'Exact declared immutable image identities required' }
     }
     foreach ($pair in @(@($metadata.ARCHIVE,'ARCHIVE_SHA256'),@('runtime/compose.yml','COMPOSE_SHA256'),@('runtime/runtime.yml','RUNTIME_SHA256'),@('installers/nexusquant.ps1','PS_INSTALLER_SHA256'),@('installers/nexusquant.sh','SH_INSTALLER_SHA256'))) {
         $file = Join-Path $Root $pair[0]; [void](Assert-SafePath $file); Assert-Hash $file $metadata[$pair[1]]
@@ -133,10 +133,19 @@ function Read-Package([string]$Root, [string]$ExpectedHash, [string]$Arch) {
     return @{Root=$Root; Manifest=$metadata; Hash=$manifestHash; Path=$path; Text=$raw}
 }
 function Set-PackageConfig([hashtable]$Config, [hashtable]$Package) {
-    foreach ($field in @('VERSION','SOURCE_SHA','RELEASE_SOURCE_HASH','SCHEMA_VERSION','BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE')) {
+    foreach ($field in @('VERSION','SOURCE_SHA','RELEASE_SOURCE_HASH','SCHEMA_VERSION')) {
         $key = $field; if ($field -eq 'VERSION') { $key = 'NQ_VERSION' }; $Config[$key] = $Package.Manifest[$field]
     }
+    if (-not $Package.ResolvedImages) { throw 'Images must be verified before runtime configuration switch' }
+    Assert-ImageMembership $Package.ResolvedImages $Package.Manifest
+    foreach ($key in @('BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE')) { $Config[$key]=$Package.ResolvedImages[$key] }
     $Config.PACKAGE_MANIFEST_SHA256 = $Package.Hash; $Config.ARCH = $Package.Manifest.ARCH; $Config.AUTO_UPDATE = 'OFF'
+}
+function Assert-ImageMembership([hashtable]$Config, [hashtable]$Manifest) {
+    foreach ($component in @('BACKEND','FRONTEND','POSTGRES')) {
+        $imageKey=$component+'_IMAGE'; $configKey=$component+'_CONFIG_DIGEST'
+        if ($Manifest[$imageKey] -cnotmatch '^sha256:[a-f0-9]{64}$' -or $Manifest[$configKey] -cnotmatch '^sha256:[a-f0-9]{64}$' -or @($Manifest[$imageKey],$Manifest[$configKey]) -cnotcontains $Config[$imageKey]) { throw 'Runtime image is outside the declared immutable identity pair' }
+    }
 }
 function Install-Assets([hashtable]$Package) {
     foreach ($pair in @(@('runtime/compose.yml','compose.yml'),@('runtime/runtime.yml','runtime.yml'),@('installers/nexusquant.ps1','nexusquant.ps1'),@('installers/nexusquant.sh','nexusquant.sh'))) {
@@ -150,7 +159,8 @@ function Assert-Installed {
     Assert-Hash $manifestPath $config.PACKAGE_MANIFEST_SHA256
     $manifest = Read-Env $manifestPath
     foreach ($pair in @(@('compose.yml','COMPOSE_SHA256'),@('runtime.yml','RUNTIME_SHA256'),@('nexusquant.ps1','PS_INSTALLER_SHA256'),@('nexusquant.sh','SH_INSTALLER_SHA256'))) { Assert-Hash (Join-Path $InstallRoot ('runtime/' + $pair[0])) $manifest[$pair[1]] }
-    foreach ($key in @('SOURCE_SHA','RELEASE_SOURCE_HASH','SCHEMA_VERSION','BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE','ARCH')) { if ($config[$key] -cne $manifest[$key]) { throw 'Installed runtime identity mismatch' } }
+    foreach ($key in @('SOURCE_SHA','RELEASE_SOURCE_HASH','SCHEMA_VERSION','ARCH')) { if ($config[$key] -cne $manifest[$key]) { throw 'Installed runtime identity mismatch' } }
+    Assert-ImageMembership $config $manifest
     if ($config.NQ_VERSION -cne $manifest.VERSION -or $config.AUTO_UPDATE -cne 'OFF' -or $config.NQ_HOME -cne $InstallRoot.Replace('\','/') -or $config.PROJECT_NAME -cnotmatch '^[a-z0-9][a-z0-9-]{0,48}$') { throw 'Installed configuration identity mismatch' }
     if ([IO.File]::ReadAllText((Join-Path $InstallRoot 'runtime/VERSION')).Trim() -cne $config.NQ_VERSION) { throw 'Committed installed VERSION identity mismatch' }
     return $config
@@ -158,7 +168,7 @@ function Assert-Installed {
 function Assert-LocalDocker {
     # context inspect 仅读取本地元数据；不得为检查资格环境而连接远端 Docker。
     $endpoint = Invoke-Docker @('context','inspect','--format','{{.Endpoints.docker.Host}}') 15
-    if ($env:DOCKER_HOST) { $endpoint = $env:DOCKER_HOST }
+    if ($env:DOCKER_HOST -and -not $env:DOCKER_CONTEXT) { $endpoint = $env:DOCKER_HOST }
     if ($endpoint -cnotmatch '^npipe:////\./pipe/(docker_engine|dockerDesktopLinuxEngine)$') { throw 'Windows qualification requires local Docker Desktop; remote Docker endpoints are rejected before connection' }
 }
 function Download-OfficialDocker([string]$Url, [string]$Destination) {
@@ -316,12 +326,22 @@ function Start-Runtime([switch]$ForceRecreate) {
     Check-Health
 }
 function Verify-Images([hashtable]$Manifest) {
-    foreach ($key in @('BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE')) {
-        $identity = Invoke-Docker @('image','inspect','--format','{{.Id}}|{{.Os}}|{{.Architecture}}', $Manifest[$key]) 30
-        if ($identity -cne ($Manifest[$key] + '|linux|' + $Manifest.ARCH)) { throw 'Exact digest or platform image unavailable after archive load' }
+    $resolved=@{}
+    foreach ($component in @('BACKEND','FRONTEND','POSTGRES')) {
+        $key=$component+'_IMAGE'; $configKey=$component+'_CONFIG_DIGEST'
+        # 两种 store 的查询身份不同；只尝试可信清单已声明的两个 ID，绝不接受 tag 或其他观察值。
+        foreach ($candidate in @($Manifest[$key],$Manifest[$configKey])) {
+            if ($candidate -cnotmatch '^sha256:[a-f0-9]{64}$') { throw 'Invalid declared immutable image identity' }
+            try { $identity = Invoke-Docker @('image','inspect','--format','{{.Id}}|{{.Os}}|{{.Architecture}}',$candidate) 30 } catch { continue }
+            if ($identity -cne ($candidate+'|linux|'+$Manifest.ARCH)) { throw 'Declared image identity or platform mismatch' }
+            $resolved[$key]=$candidate; break
+        }
+        if (-not $resolved.ContainsKey($key)) { throw 'Neither declared immutable image identity is available after archive load' }
     }
-    $pgVersion = Invoke-Docker @('run','--rm','--network','none','--entrypoint','postgres',$Manifest.POSTGRES_IMAGE,'--version') 60
+    Assert-ImageMembership $resolved $Manifest
+    $pgVersion = Invoke-Docker @('run','--rm','--network','none','--entrypoint','postgres',$resolved.POSTGRES_IMAGE,'--version') 60
     if ($pgVersion -notmatch '^postgres \(PostgreSQL\) 16\.') { throw 'Verified package requires PostgreSQL 16 image' }
+    return $resolved
 }
 function Load-PackageImages([hashtable]$Package) {
     $archive = Join-Path $Package.Root $Package.Manifest.ARCHIVE
@@ -333,7 +353,7 @@ function Load-PackageImages([hashtable]$Package) {
         $digest = ([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','').ToLowerInvariant()
         if ($digest -cne $Package.Manifest.ARCHIVE_SHA256) { throw 'Release archive changed after manifest verification' }
         [void](Invoke-Docker @('load','--input',$archive))
-        Verify-Images $Package.Manifest
+        $Package.ResolvedImages=Verify-Images $Package.Manifest
     } finally { $sha.Dispose(); $stream.Dispose() }
 }
 function New-Backup {
@@ -363,6 +383,7 @@ function Validate-Backup([string]$Path) {
     $package = Read-Env (Join-Path $Path 'assets/package.env')
     foreach ($pair in @(@('compose.yml','COMPOSE_SHA256'),@('runtime.yml','RUNTIME_SHA256'),@('nexusquant.ps1','PS_INSTALLER_SHA256'),@('nexusquant.sh','SH_INSTALLER_SHA256'))) { [void](Assert-SafePath (Join-Path $Path ('assets/' + $pair[0]))); Assert-Hash (Join-Path $Path ('assets/' + $pair[0])) $package[$pair[1]] }
     $saved = Read-Env (Join-Path $Path 'runtime.env')
+    Assert-ImageMembership $saved $package
     foreach ($key in @('JWT_SECRET','CREDENTIALS_KEY','DB_PASSWORD')) { if ($saved[$key] -cnotmatch '^[a-f0-9]{64}$') { throw 'Invalid protected backup configuration' } }
     if ($saved.NQ_VERSION -cne $manifest.APP_VERSION -or $saved.SCHEMA_VERSION -cne $manifest.SCHEMA_VERSION -or $saved.PACKAGE_MANIFEST_SHA256 -cne $manifest.PACKAGE_MANIFEST_SHA256 -or $package.VERSION -cne $saved.NQ_VERSION -or $package.SCHEMA_VERSION -cne $saved.SCHEMA_VERSION) { throw 'Backup identity mismatch' }
     if ([IO.File]::ReadAllText((Join-Path $Path 'assets/VERSION')).Trim() -cne $saved.NQ_VERSION) { throw 'Backup committed VERSION mismatch' }
@@ -397,11 +418,11 @@ function Get-Transaction([string]$Id) {
     $backup = Validate-Backup (Join-Path $InstallRoot ('backups/' + $record.BACKUP_ID))
     if ($record.SOURCE_MANIFEST_SHA256 -cne $backup.Manifest.PACKAGE_MANIFEST_SHA256 -or (File-Hash (Join-Path $backup.Path 'manifest.env')) -cne $record.BACKUP_MANIFEST_SHA256 -or $backup.Config.NQ_HOME -cne $InstallRoot.Replace('\','/') -or $backup.Config.PROJECT_NAME -cne $ProjectName) { throw 'Transaction backup identity mismatch' }
     if ($backup.Config.NQ_VERSION -cne $record.FROM_VERSION -or $backup.Config.SCHEMA_VERSION -cne $record.SCHEMA_BEFORE) { throw 'Transaction source identity mismatch' }
-    foreach ($key in @('BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE')) { if ($record['SOURCE_'+$key] -cne $backup.Package[$key]) { throw 'Transaction source digest mismatch' } }
+    foreach ($key in @('BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE')) { if ($record['SOURCE_'+$key] -cne $backup.Config[$key]) { throw 'Transaction source digest mismatch' } }
     Assert-Hash (Join-Path $directory 'target.env') $record.TARGET_MANIFEST_SHA256
     $target = Read-Env (Join-Path $directory 'target.env')
     if ($target.VERSION -cne $record.TO_VERSION) { throw 'Transaction target identity mismatch' }
-    foreach ($key in @('BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE')) { if ($record[$key] -cne $target[$key]) { throw 'Transaction target digest mismatch' } }
+    Assert-ImageMembership $record $target
     return @{Directory=$directory; Record=$record; Backup=$backup; Target=$target}
 }
 function Stop-ProjectApps {
@@ -420,9 +441,11 @@ function Recover-Transaction([hashtable]$Transaction) {
     $record=$Transaction.Record; $backup=$Transaction.Backup
     # 不依赖可能写到一半的 compose，先按已验证项目/服务标签停止当前应用。
     Stop-ProjectApps
-    Verify-Images $backup.Package
+    $resolved=Verify-Images $backup.Package
     foreach ($name in @('compose.yml','runtime.yml','nexusquant.ps1','nexusquant.sh','package.env','VERSION')) { Copy-Item -LiteralPath (Join-Path $backup.Path ('assets/' + $name)) -Destination (Join-Path $InstallRoot ('runtime/' + $name)) -Force }
-    Copy-Item -LiteralPath (Join-Path $backup.Path 'runtime.env') -Destination (Join-Path $InstallRoot 'config/runtime.env') -Force
+    $restoredConfig=$backup.Config.Clone()
+    foreach ($key in @('BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE')) { $restoredConfig[$key]=$resolved[$key] }
+    Write-Metadata (Join-Path $InstallRoot 'config/runtime.env') $restoredConfig
     [void](Compose @('stop','--timeout','30','frontend','backend'))
     # DB_MAY_CHANGE 在后端启动前落盘；该阶段之后恢复完整 dump，绝不 repair。
     if ($record.PHASE -ne 'PREPARED') { Restore-Database $backup.Path }
@@ -456,7 +479,8 @@ try {
         if (-not $newConfig) {
             if ($firstInstallPending) { $config=Read-Config } else { $config=Assert-Installed }
             if ($config.PACKAGE_MANIFEST_SHA256 -cne $package.Hash -or $config.PROJECT_NAME -cne $ProjectName -or $config.NQ_HOME -cne $InstallRoot.Replace('\','/')) { throw 'Rerun requires identical package and project identity; use explicit update' }
-            foreach ($field in @('SOURCE_SHA','RELEASE_SOURCE_HASH','SCHEMA_VERSION','BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE','ARCH')) { if ($config[$field] -cne $package.Manifest[$field]) { throw 'Pending installation runtime identity mismatch' } }
+            foreach ($field in @('SOURCE_SHA','RELEASE_SOURCE_HASH','SCHEMA_VERSION','ARCH')) { if ($config[$field] -cne $package.Manifest[$field]) { throw 'Pending installation runtime identity mismatch' } }
+            Assert-ImageMembership $config $package.Manifest
             if ($config.NQ_VERSION -cne $package.Manifest.VERSION -or $config.AUTO_UPDATE -cne 'OFF') { throw 'Pending installation version identity mismatch' }
         }
         Assert-HostBootstrap
@@ -515,7 +539,8 @@ try {
         if ($version -cne $config.NQ_VERSION) { throw 'Installed VERSION mismatch' }
         $available=[version]$target.Manifest.VERSION -gt [version]$version
         if ($Action -eq 'check-update') { Write-Host ('Current: '+$version+'; available: '+$target.Manifest.VERSION+'; updateAvailable='+$available+'; AUTO_UPDATE=OFF'); return }
-        if (-not $available -or [int]$target.Manifest.SCHEMA_VERSION -lt [int]$config.SCHEMA_VERSION -or $target.Manifest.POSTGRES_IMAGE -cne $config.POSTGRES_IMAGE) { throw 'Update requires newer version, monotonic schema and unchanged verified PG16 image' }
+        $installedManifest=Read-Env (Join-Path $InstallRoot 'runtime/package.env')
+        if (-not $available -or [int]$target.Manifest.SCHEMA_VERSION -lt [int]$config.SCHEMA_VERSION -or $target.Manifest.POSTGRES_CONFIG_DIGEST -cne $installedManifest.POSTGRES_CONFIG_DIGEST) { throw 'Update requires newer version, monotonic schema and unchanged verified PG16 configuration digest' }
         Confirm-Choice $ConfirmUpdate 'UPDATE'; Ensure-Docker $false
         [void](Host-Preflight)
         $id=[DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')+'-'+[Guid]::NewGuid().ToString('N').Substring(0,8)
@@ -525,6 +550,7 @@ try {
         $quiesced=$false
         try {
             Load-PackageImages $target
+            foreach ($key in @('BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE')) { $record[$key]=$target.ResolvedImages[$key] }
             $quiesced=$true
             [void](Compose @('stop','--timeout','30','frontend','backend'))
             $record.QUIESCED_AT=[DateTime]::UtcNow.ToString('o')

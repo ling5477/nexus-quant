@@ -67,6 +67,10 @@ foreach($case in @(@(1,4,10),@(2,3.99,10),@(2,4,9.99),@([double]::NaN,4,10),
         self.evaluate(expression)
         original = self.manifest.read_bytes()
         cases = (original + b'FORMAT=1\n', original + b'UNKNOWN=1\n',
+                 original + b'BACKEND_CONFIG_DIGEST=sha256:' + b'4' * 64 + b'\n',
+                 original.replace(b'BACKEND_CONFIG_DIGEST=sha256:' + b'4' * 64 + b'\n', b''),
+                 original.replace(b'BACKEND_CONFIG_DIGEST=sha256:' + b'4' * 64,
+                                  b'BACKEND_CONFIG_DIGEST=synthetic:mutable'),
                  original.replace(b'FORMAT=1\n', b''), original.replace(b'\n', b'\r\n'),
                  b'\xef\xbb\xbf' + original, original.rstrip(b'\n'),
                  original.replace(b'ARCHIVE=images-amd64.tar', b'ARCHIVE=../images-amd64.tar'),
@@ -80,6 +84,33 @@ foreach($case in @(@(1,4,10),@(2,3.99,10),@(2,4,9.99),@([double]::NaN,4,10),
         (self.package / 'images-amd64.tar').write_bytes(b'TAMPERED')
         self.evaluate(expression, success=False)
 
+    def test_dual_store_resolver_and_membership_use_only_declared_pairs(self):
+        self.evaluate('''$script:FixtureManifest=(Read-Package $env:NQ_PS_PACKAGE $env:NQ_PS_TRUST amd64).Manifest
+function Invoke-Docker([string[]]$DockerArgs,[int]$TimeoutSeconds=600) {
+    $candidate=@($DockerArgs | Where-Object { $_ -match '^sha256:' })[0]
+    $allowed=if($script:FixtureStore -eq 'CLASSIC') { @($script:FixtureManifest.BACKEND_CONFIG_DIGEST,$script:FixtureManifest.FRONTEND_CONFIG_DIGEST,$script:FixtureManifest.POSTGRES_CONFIG_DIGEST) } else { @($script:FixtureManifest.BACKEND_IMAGE,$script:FixtureManifest.FRONTEND_IMAGE,$script:FixtureManifest.POSTGRES_IMAGE) }
+    if($candidate -notin $allowed) { throw 'Fixture identity is not addressable in this image store' }
+    if($DockerArgs[0] -eq 'run') { return 'postgres (PostgreSQL) 16.15' }
+    if($script:WrongObservedIdentity) { return ('sha256:'+('e'*64)+'|linux|amd64') }
+    return ($candidate+'|linux|amd64')
+}
+foreach($store in @('CONTAINERD','CLASSIC')) {
+    $script:FixtureStore=$store; $script:WrongObservedIdentity=$false
+    $resolved=Verify-Images $script:FixtureManifest
+    $expected=if($store -eq 'CLASSIC') { $script:FixtureManifest.BACKEND_CONFIG_DIGEST } else { $script:FixtureManifest.BACKEND_IMAGE }
+    if($resolved.BACKEND_IMAGE -cne $expected) { throw 'Resolver did not use the available declared identity' }
+    $config=@{}; foreach($key in $script:FixtureManifest.Keys) { $config[$key]=$script:FixtureManifest[$key] }
+    foreach($key in $resolved.Keys) { $config[$key]=$resolved[$key] }
+    Assert-ImageMembership $config $script:FixtureManifest
+    $config.BACKEND_IMAGE='sha256:'+('e'*64)
+    $rejected=$false; try { Assert-ImageMembership $config $script:FixtureManifest } catch { $rejected=$true }
+    if(-not $rejected) { throw 'Runtime identity outside the declared pair accepted' }
+}
+$script:FixtureStore='CONTAINERD'; $script:WrongObservedIdentity=$true
+$rejected=$false; try { $null=Verify-Images $script:FixtureManifest } catch { $rejected=$true }
+if(-not $rejected) { throw 'Observed identity mismatch accepted' }
+''')
+
     def test_safe_paths_and_live_port_occupant_are_preserved(self):
         sock = socket.socket()
         self.addCleanup(sock.close)
@@ -91,18 +122,37 @@ foreach($case in @(@(1,4,10),@(2,3.99,10),@(2,4,9.99),@([double]::NaN,4,10),
         self.evaluate('$null=Assert-SafePath ($env:NQ_PS_PACKAGE + "/../other")', success=False)
 
     def test_compose_child_environment_cleans_identity_and_preserves_host_settings(self):
-        self.evaluate('''$info=New-Object Diagnostics.ProcessStartInfo
+        self.evaluate('''$env:DOCKER_DEFAULT_PLATFORM='synthetic-parent-platform'
+$info=New-Object Diagnostics.ProcessStartInfo
 $info.EnvironmentVariables['NQ_HOME']='synthetic-untrusted'
 $info.EnvironmentVariables['BACKEND_IMAGE']='synthetic:untrusted'
 $info.EnvironmentVariables['DB_PASSWORD']='synthetic-untrusted'
 $info.EnvironmentVariables['COMPOSE_FILE']='synthetic-untrusted'
+$info.EnvironmentVariables['DOCKER_DEFAULT_PLATFORM']='synthetic-parent-platform'
 $info.EnvironmentVariables['HTTP_PROXY']='synthetic-proxy'
 $info.EnvironmentVariables['DOCKER_HOST']='synthetic-docker'
 Remove-RuntimeEnvironment $info
-foreach($name in @('NQ_HOME','BACKEND_IMAGE','DB_PASSWORD','COMPOSE_FILE')) {
+foreach($name in @('NQ_HOME','BACKEND_IMAGE','DB_PASSWORD','COMPOSE_FILE','DOCKER_DEFAULT_PLATFORM')) {
     if($info.EnvironmentVariables.ContainsKey($name)) { throw ('Ambient runtime override survived: '+$name) }
 }
 if($info.EnvironmentVariables['HTTP_PROXY'] -ne 'synthetic-proxy' -or $info.EnvironmentVariables['DOCKER_HOST'] -ne 'synthetic-docker') { throw 'Unrelated host setting changed' }
+if($env:DOCKER_DEFAULT_PLATFORM -cne 'synthetic-parent-platform') { throw 'Parent Docker platform changed' }
+''')
+
+    def test_local_docker_guard_honors_context_priority_before_daemon_access(self):
+        self.evaluate('''function Invoke-Docker([string[]]$DockerArgs,[int]$TimeoutSeconds=600) {
+    if(($DockerArgs[0] -cne 'context') -or ($DockerArgs[1] -cne 'inspect')) { throw 'Guard accessed a daemon' }
+    return $script:FixtureEndpoint
+}
+foreach($case in @(
+    @('synthetic-remote','npipe:////./pipe/docker_engine','tcp://fixture.invalid:2376',$false),
+    @('synthetic-local','tcp://fixture.invalid:2376','npipe:////./pipe/docker_engine',$true),
+    @('','npipe:////./pipe/docker_engine','tcp://fixture.invalid:2376',$true),
+    @('','tcp://fixture.invalid:2376','npipe:////./pipe/docker_engine',$false))) {
+    $env:DOCKER_CONTEXT=$case[0]; $env:DOCKER_HOST=$case[1]; $script:FixtureEndpoint=$case[2]
+    $accepted=$true; try { Assert-LocalDocker } catch { $accepted=$false }
+    if($accepted -ne $case[3]) { throw 'Docker local endpoint/context priority regression' }
+}
 ''')
 
     def test_actual_powershell5_file_defaults_reach_safe_path_rejection(self):
