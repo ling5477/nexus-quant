@@ -70,15 +70,22 @@ public class PublicMarketDataOutboundConfiguration {
             name = "enabled",
             havingValue = "true")
     public PublicMarketDataOutboundClient publicMarketDataOutboundClient(
-            @Value("${nq.public-marketdata.outbound.base-url:http://127.0.0.1:0}") String baseUrl,
+            @Value("${nq.public-marketdata.outbound.base-url:${NQ_PUBLIC_MARKETDATA_BASE_URL:http://127.0.0.1:0}}") String baseUrl,
             @Value("${nq.public-marketdata.outbound.connect-timeout:PT3S}") String connectTimeout,
             @Value("${nq.public-marketdata.outbound.read-timeout:PT5S}") String readTimeout,
             @Value("${nq.public-marketdata.outbound.total-request-timeout:PT8S}") String totalRequestTimeout,
             @Value("${nq.public-marketdata.outbound.max-retries:2}") int maxRetries,
             @Value("${nq.public-marketdata.outbound.first-backoff:PT0.5S}") String firstBackoff,
             @Value("${nq.public-marketdata.outbound.second-backoff:PT1S}") String secondBackoff) {
+        URI origin;
+        try {
+            origin = URI.create(baseUrl);
+        } catch (IllegalArgumentException | NullPointerException ignored) {
+            // 同一启动配置也由该 client 消费，不能依赖 Bean 构造顺序保证异常脱敏。
+            throw new IllegalArgumentException("PUBLIC_MARKETDATA_ORIGIN_INVALID");
+        }
         return new JdkPublicMarketDataOutboundClient(
-                URI.create(baseUrl),
+                origin,
                 new PublicMarketDataOutboundPolicy(),
                 new PublicMarketDataOutboundSettings(
                         parseDuration(connectTimeout),

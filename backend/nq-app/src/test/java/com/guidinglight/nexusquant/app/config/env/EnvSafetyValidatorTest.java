@@ -5,8 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.env.MockEnvironment;
 
 /**
  * EnvSafetyValidatorTest 固化 GateK Batch 5B-ENV 的 fail-closed 冲突矩阵。
@@ -16,6 +18,19 @@ import org.junit.jupiter.api.Test;
  * real credential material、AI/DH runtime 一旦进入 CI/test/no-outbound 边界就启动失败。</p>
  */
 class EnvSafetyValidatorTest {
+
+    @Test
+    void canonicalPublicOriginEnvironmentRemainsVisibleToNoOutboundGuard() {
+        var environment = new MockEnvironment();
+        environment.setActiveProfiles("ci");
+        var facts = EnvSafetyGuardConfiguration.factsFrom(environment,
+                Map.of("NQ_PUBLIC_MARKETDATA_OUTBOUND_BASE_URL", "https://www.okx.com"), new Properties());
+        assertContains(EnvSafetyValidator.validate(facts),
+                "no-outbound=true forbids real exchange endpoint: NQ_PUBLIC_MARKETDATA_OUTBOUND_BASE_URL");
+        var localFacts = EnvSafetyGuardConfiguration.factsFrom(environment,
+                Map.of("NQ_PUBLIC_MARKETDATA_OUTBOUND_BASE_URL", "http://127.0.0.1:32123"), new Properties());
+        assertTrue(EnvSafetyValidator.validate(localFacts).isEmpty());
+    }
 
     @Test
     void shouldAllowCiTestDefaultSafeBoundary() {

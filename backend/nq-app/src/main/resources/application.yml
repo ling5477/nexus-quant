@@ -62,7 +62,7 @@ nq:
       # NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=true 并构造受 policy 保护的 public REST client。
       enabled: false
       fallback-origin: ${NQ_PUBLIC_MARKETDATA_FALLBACK_ORIGIN:LOCAL_DB}
-      base-url: ${NQ_PUBLIC_MARKETDATA_BASE_URL:http://127.0.0.1:0}
+      # origin 由启动 property 或 NQ_PUBLIC_MARKETDATA_OUTBOUND_BASE_URL 绑定；不向禁外联环境注入地址默认值。
       connect-timeout: ${NQ_PUBLIC_MARKETDATA_CONNECT_TIMEOUT:PT3S}
       read-timeout: ${NQ_PUBLIC_MARKETDATA_READ_TIMEOUT:PT5S}
       total-request-timeout: ${NQ_PUBLIC_MARKETDATA_TOTAL_REQUEST_TIMEOUT:PT8S}

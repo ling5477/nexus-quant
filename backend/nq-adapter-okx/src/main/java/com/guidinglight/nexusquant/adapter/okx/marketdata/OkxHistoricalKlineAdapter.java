@@ -67,7 +67,7 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
 
     @Autowired
     public OkxHistoricalKlineAdapter(
-            @Value("${nq.public-marketdata.outbound.base-url:http://127.0.0.1:0}") String baseUrl,
+            @Value("${nq.public-marketdata.outbound.base-url:${NQ_PUBLIC_MARKETDATA_BASE_URL:http://127.0.0.1:0}}") String baseUrl,
             @Value("${nq.public-marketdata.outbound.total-request-timeout:PT8S}") Duration timeout) {
         this(new OkxHttpClient(
                 HttpClient.newHttpClient(),

@@ -24,10 +24,12 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-/** 固定 OKX 公开端点的有界轮询；只有受控连续 SIM profile 显式开启时装配。 */
+/** 启动时绑定公开行情 origin，轮询路径固定；只有受控连续 SIM profile 显式开启时装配。 */
 @Component
 @Profile("public-marketdata-manual")
 @ConditionalOnProperty(prefix = "nq.public-marketdata.outbound", name = "enabled", havingValue = "true")
@@ -47,10 +49,40 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
                 OKX_ORIGIN, new ObjectMapper());
     }
 
+    @Autowired
+    public OkxClosedBarMarketFeed(
+            @Value("${nq.public-marketdata.outbound.base-url:${NQ_PUBLIC_MARKETDATA_BASE_URL:https://www.okx.com}}")
+            String baseUrl) {
+        this(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build(),
+                configuredOrigin(baseUrl), new ObjectMapper());
+    }
+
     OkxClosedBarMarketFeed(HttpClient http, URI origin, ObjectMapper mapper) {
         this.http = Objects.requireNonNull(http);
         this.origin = Objects.requireNonNull(origin);
         this.mapper = Objects.requireNonNull(mapper);
+    }
+
+    private static URI configuredOrigin(String value) {
+        URI uri;
+        try {
+            uri = URI.create(value);
+        } catch (IllegalArgumentException | NullPointerException ignored) {
+            // 解析异常可能含原始配置及凭证，不能保留 cause 或回显输入。
+            throw new IllegalArgumentException("PUBLIC_MARKETDATA_ORIGIN_INVALID");
+        }
+        String host = uri.getHost();
+        boolean https = "https".equalsIgnoreCase(uri.getScheme());
+        boolean localHttp = "http".equalsIgnoreCase(uri.getScheme())
+                && ("127.0.0.1".equals(host) || "localhost".equalsIgnoreCase(host));
+        if ((!https && !localHttp) || host == null || uri.getRawUserInfo() != null
+                || uri.getRawQuery() != null || uri.getRawFragment() != null
+                || !(uri.getRawPath().isEmpty() || "/".equals(uri.getRawPath()))
+                || uri.getPort() == 0 || uri.getPort() > 65535
+                || uri.getRawAuthority().endsWith(":")) {
+            throw new IllegalArgumentException("PUBLIC_MARKETDATA_ORIGIN_INVALID");
+        }
+        return uri;
     }
 
     @Override
