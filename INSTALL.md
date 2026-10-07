@@ -28,7 +28,7 @@ Ubuntu 安装使用 Docker 官方签名 apt 仓库。普通用户加入 docker �
 
 首次安装必须从可信发行渠道取得整个包；同包 `.sha256` 只检测损坏，不能证明发行者真实性。更新必须额外提供从可信独立渠道取得的 manifest SHA256，不能把目标包自行计算的摘要当作信任授权。维护者从验证过且未生成构建产物的 source export 执行 `release/build-package.ps1 -OutputDirectory <新目录>`；需要 PowerShell 7.4+ 和使用 containerd image store 的本机 Docker。打包器验证 OCI index → platform manifest → config/layers 与 Docker 兼容 manifest 的摘要绑定，只生成可由两种 store 加载的发行归档；此构建要求不要求用户改变安装主机的 image store。只构建某架构可传 `-Architectures amd64`。源码导出不是可安装镜像包；未正式发布的资格 fixture 不作为公开 release。
 
-当前 distribution contract 为 **release-package local image load**，尚未发布 registry 镜像。C4 验收与许可证选择完成前，构建包只用于预发布验证；本版本未声明的平台不阻断 B7 技术验收。
+当前 distribution contract 为 **release-package local image load**，尚未发布 registry 镜像。持续运行验收与许可证选择完成前，构建包只用于预发布验证；本版本未声明的平台不阻断技术验收。
 
 ## Windows
 
@@ -194,4 +194,4 @@ PG16（`postgres:16.15`）、backend、frontend 三个服务。允许受现有 p
 - 行情无法连接：检查网络对 `https://www.okx.com` 的可达性，private API 仍保持关闭；网络失败不能当作零行情。
 - 启动报告 checksum 不一致：确认是新的 V1 数据目录。旧开发库不是升级目标。
 - 忘记修改后的管理员密码：重跑安装不会重置；使用已有备份恢复或等待正式账户恢复能力。
-- LICENSE 为 `LICENSE_PENDING_USER_DECISION`；公开 v1.0.0 发布仍等待 C4 验收和许可证选择。本版本只要求 Windows 11 amd64 / 已运行 Docker Desktop 的真实资格，其他平台不声明正式支持。
+- LICENSE 为 `LICENSE_PENDING_USER_DECISION`；公开 v1.0.0 发布仍等待持续运行验收和许可证选择。本版本只要求 Windows 11 amd64 / 已运行 Docker Desktop 的真实资格，其他平台不声明正式支持。
