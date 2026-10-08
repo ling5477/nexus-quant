@@ -13,19 +13,39 @@ import release_source as source
 RULES = "scripts/docs/check-stage-semantic-leakage.py"
 POLICY = "scripts/docs/stage-semantic-allowlist.json"
 TEXT = {".java", ".ts", ".tsx", ".js", ".css", ".json", ".xml", ".yml", ".yaml", ".sql", ".csv", ".html", ".md", ".ps1", ".psm1", ".sh"}
-RELEASE_DOCS = {"README.md", "INSTALL.md", "CHANGELOG.md", "LICENSE", "DISCLAIMER.md", "VERSION"}
+RELEASE_DOCS = {"README.md", "INSTALL.md", "CHANGELOG.md", "LICENSE", "DISCLAIMER.md", "THIRD_PARTY_NOTICES.md", "VERSION"}
 # 官方 https://www.apache.org/licenses/LICENSE-2.0.txt 的完整原始字节摘要；禁止混入领域风险条款。
 APACHE_LICENSE_SHA256 = "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+# v5.2.0 tag 与其 peeled commit 的官方资产逐字节一致；保留原文中的 Unicode 字符。
+LIGHTWEIGHT_CHARTS_NOTICE_SHA256 = "f76c6afab94884448f0426e30d6e9d555ca7247894cd3484e477d2f87513036e"
+LIGHTWEIGHT_CHARTS_LICENSE_SHA256 = "70c9d5382506dd184465425c08a99ad9bd6d9ac1313c252968ba0b585e5ef823"
 
 
 def legal_errors(output: Path, names: set[str]) -> list[str]:
     errors = ["MISSING_RELEASE_DOC: " + path for path in sorted(RELEASE_DOCS - names)]
     if "LICENSE" in names and source.sha((output / "LICENSE").read_bytes()) != APACHE_LICENSE_SHA256:
         errors.append("NONSTANDARD_APACHE_LICENSE")
+    if "THIRD_PARTY_NOTICES.md" in names:
+        raw = (output / "THIRD_PARTY_NOTICES.md").read_bytes()
+        blocks = re.findall(rb"```text\n(.*?)```", raw, re.DOTALL)
+        if len(blocks) != 2 or source.sha(blocks[0]) != LIGHTWEIGHT_CHARTS_NOTICE_SHA256:
+            errors.append("LIGHTWEIGHT_CHARTS_NOTICE_MISMATCH")
+        if len(blocks) != 2 or source.sha(blocks[1]) != LIGHTWEIGHT_CHARTS_LICENSE_SHA256:
+            errors.append("LIGHTWEIGHT_CHARTS_LICENSE_MISMATCH")
+        for required in (b"`lightweight-charts`", b"`5.2.0`", b"`Apache-2.0`", b"`v5.2.0`",
+                         b"https://github.com/tradingview/lightweight-charts"):
+            if required not in raw:
+                errors.append("LIGHTWEIGHT_CHARTS_PROVENANCE_MISSING")
+    if "frontend/package-lock.json" in names:
+        lock = json.loads((output / "frontend/package-lock.json").read_bytes())
+        package = lock.get("packages", {}).get("node_modules/lightweight-charts", {})
+        if (package.get("version") != "5.2.0" or package.get("license") != "Apache-2.0"
+                or package.get("resolved") != "https://registry.npmjs.org/lightweight-charts/-/lightweight-charts-5.2.0.tgz"):
+            errors.append("LIGHTWEIGHT_CHARTS_LOCK_IDENTITY_MISMATCH")
     for path in ("README.md", "INSTALL.md"):
         if path in names:
             text = (output / path).read_text(encoding="utf-8-sig")
-            for target in ("LICENSE", "DISCLAIMER.md"):
+            for target in ("LICENSE", "DISCLAIMER.md", "THIRD_PARTY_NOTICES.md"):
                 if not re.search(r"\[[^\]\n]+\]\(" + re.escape(target) + r"\)", text) or target not in names:
                     errors.append(f"MISSING_LEGAL_LINK: {path}:{target}")
     # 扫描全部发布文件，包括无扩展名文件；开发树中的历史证据不影响发布结论。
@@ -53,7 +73,7 @@ def check(repo: Path, commit: str, output: Path) -> dict:
     errors, retained = [], set()
     names = {e["path"] for e in metadata["files"]}
     errors.extend(legal_errors(output, names))
-    for path in ("LICENSE", "DISCLAIMER.md"):
+    for path in ("LICENSE", "DISCLAIMER.md", "THIRD_PARTY_NOTICES.md"):
         if audit["paths"].get(path) != "INCLUDE_RELEASE_DOC":
             errors.append("LEGAL_DOC_CLASSIFICATION: " + path)
     if any(p.startswith("frontend/src/pages/dev/") for p in names):

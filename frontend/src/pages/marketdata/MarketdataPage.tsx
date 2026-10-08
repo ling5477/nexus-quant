@@ -37,6 +37,7 @@ import type {
     PublicMarketCapture,
 } from '@/types/marketdata';
 import {formatDateTime, formatNumber} from '@/utils/formatters';
+import thirdPartyNotices from '../../../../THIRD_PARTY_NOTICES.md?raw';
 
 const columns: ColumnsType<MarketdataBar> = [
     {get title() { return t('pages:exchange'); }, dataIndex: 'exchangeCode', key: 'exchangeCode', width: 120},
@@ -1656,6 +1657,11 @@ export function MarketdataPage() {
                     </div>
                     <Typography.Text type="secondary">
                         {t('pages:thisViewUsesApiMarketdataBarsAndMarketdataapiListbarsItHasNoWebsocketPrivateExchangeFeedTradingSigna')}</Typography.Text>
+                    <details data-testid="third-party-notices">
+                        <summary>Third-Party Notices / 第三方声明</summary>
+                        {/* 页面和发布包共享同一原文，避免上游声明在两处维护时漂移。 */}
+                        <pre style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontFamily: 'inherit'}}>{thirdPartyNotices}</pre>
+                    </details>
                 </div>
             </Card>
             <MarketdataQualityCenterPanel

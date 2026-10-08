@@ -213,7 +213,9 @@ class ReleaseLegalTest(unittest.TestCase):
         self.root = Path(self.temp.name)
         repo = Path(__file__).resolve().parents[3]
         self.names = set(boundary.RELEASE_DOCS)
+        self.names.add("frontend/package-lock.json")
         for path in self.names:
+            (self.root / path).parent.mkdir(parents=True, exist_ok=True)
             (self.root / path).write_bytes((repo / path).read_bytes())
 
     def test_legal_docs_and_links_are_complete(self):
@@ -223,6 +225,27 @@ class ReleaseLegalTest(unittest.TestCase):
         (self.root / "DISCLAIMER.md").unlink()
         self.names.remove("DISCLAIMER.md")
         self.assertIn("MISSING_RELEASE_DOC: DISCLAIMER.md", boundary.legal_errors(self.root, self.names))
+
+    def test_missing_third_party_notices_fails(self):
+        (self.root / "THIRD_PARTY_NOTICES.md").unlink()
+        self.names.remove("THIRD_PARTY_NOTICES.md")
+        self.assertIn("MISSING_RELEASE_DOC: THIRD_PARTY_NOTICES.md", boundary.legal_errors(self.root, self.names))
+
+    def test_notice_unicode_and_license_tamper_fail(self):
+        path = self.root / "THIRD_PARTY_NOTICES.md"
+        original = path.read_bytes()
+        for old, new, error in (("(с)".encode(), b"(c)", "LIGHTWEIGHT_CHARTS_NOTICE_MISMATCH"),
+                                (b"Version 2.0, January 2004", b"SYNTHETIC LICENSE", "LIGHTWEIGHT_CHARTS_LICENSE_MISMATCH")):
+            with self.subTest(error=error):
+                path.write_bytes(original.replace(old, new))
+                self.assertIn(error, boundary.legal_errors(self.root, self.names))
+
+    def test_locked_dependency_upgrade_fails(self):
+        path = self.root / "frontend/package-lock.json"
+        lock = json.loads(path.read_bytes())
+        lock["packages"]["node_modules/lightweight-charts"]["version"] = "5.2.1"
+        path.write_text(json.dumps(lock), encoding="utf-8")
+        self.assertIn("LIGHTWEIGHT_CHARTS_LOCK_IDENTITY_MISMATCH", boundary.legal_errors(self.root, self.names))
 
     def test_license_domain_clause_tamper_fails(self):
         with (self.root / "LICENSE").open("ab") as stream:

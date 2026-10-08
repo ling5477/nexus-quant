@@ -141,7 +141,7 @@ if ($dockerEndpoint -cnotmatch '^(npipe:////\./pipe/(docker_engine|dockerDesktop
 [void](New-Item -ItemType Directory -Path $output)
 Copy-Item -LiteralPath (Join-Path $root 'VERSION') -Destination $output
 foreach ($name in @('runtime','installers')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination $output -Recurse }
-foreach ($name in @('README.md','INSTALL.md','CHANGELOG.md','LICENSE','DISCLAIMER.md')) { Copy-Item -LiteralPath (Join-Path $root $name) -Destination $output }
+foreach ($name in @('README.md','INSTALL.md','CHANGELOG.md','LICENSE','DISCLAIMER.md','THIRD_PARTY_NOTICES.md')) { Copy-Item -LiteralPath (Join-Path $root $name) -Destination $output }
 foreach ($arch in $Architectures) {
     $refs = @{}
     foreach ($component in @('backend','frontend')) {

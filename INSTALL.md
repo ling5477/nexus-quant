@@ -200,6 +200,7 @@ PG16（`postgres:16.15`）、backend、frontend 三个服务。允许受现有 p
 License: `Apache-2.0`.
 NexusQuant is licensed under the Apache License 2.0.
 See [LICENSE](LICENSE) for software licensing terms.
+Third-party attribution: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 NexusQuant does not provide investment advice.
 See [DISCLAIMER.md](DISCLAIMER.md) for financial and trading risk information before enabling any real-money functionality.

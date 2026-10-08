@@ -1638,10 +1638,11 @@
     },
     {
       "category": "INCLUDE_RELEASE_DOC",
-      "purpose": "软件许可证与独立金融风险声明。",
+      "purpose": "软件许可证、独立金融风险声明与第三方 attribution。",
       "paths": [
         "LICENSE",
-        "DISCLAIMER.md"
+        "DISCLAIMER.md",
+        "THIRD_PARTY_NOTICES.md"
       ]
     }
   ],
@@ -2548,6 +2549,7 @@
       "frontend/tests/e2e/evaluation-report-enhanced-smoke.spec.ts",
       "frontend/tests/e2e/first-login-real.spec.ts",
       "frontend/tests/e2e/gatei2-fixtures.ts",
+      "frontend/tests/e2e/lightweight-charts-attribution.spec.ts",
       "frontend/tests/e2e/localization-error-ux.spec.ts",
       "frontend/tests/e2e/login-page-smoke.spec.ts",
       "frontend/tests/e2e/marketdata-bars-query-smoke.spec.ts",
@@ -4524,6 +4526,11 @@
     {
       "path": "LICENSE",
       "status": "ESTABLISHED_APACHE_2_0",
+      "owner": "USER"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "status": "PRESERVED_LIGHTWEIGHT_CHARTS_5_2_0_ATTRIBUTION",
       "owner": "USER"
     },
     {

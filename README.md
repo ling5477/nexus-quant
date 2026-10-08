@@ -49,6 +49,7 @@ SIM 可用；public OKX marketdata 允许访问。LIVE、真实交易所写入�
 
 NexusQuant is licensed under the Apache License 2.0 (SPDX: `Apache-2.0`).
 See [LICENSE](LICENSE).
+Third-party attribution: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Financial Risk
 
