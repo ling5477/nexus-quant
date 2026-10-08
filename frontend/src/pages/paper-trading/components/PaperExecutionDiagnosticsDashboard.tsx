@@ -1,6 +1,7 @@
 import {StatusTag, type StatusTone} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
+import {localizedPaperLabel, localizedPaperOptions} from './paperAnalysisOptions';
 import {Button, Card, Select, Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
@@ -79,14 +80,14 @@ const EXECUTION_CAUSE_FILTER_OPTIONS: ReadonlyArray<{label: string; value: Execu
 
 const EXECUTION_SEVERITY_FILTER_OPTIONS: ReadonlyArray<{label: string; value: ExecutionSeverityFilter}> = [
     {get label() { return t('pages:allSeverities'); }, value: 'all'},
-    {label: 'CRITICAL', value: 'CRITICAL'},
-    {label: 'WARNING', value: 'WARNING'},
-    {label: 'INFO', value: 'INFO'},
+    {get label() { return localizedPaperLabel('CRITICAL'); }, value: 'CRITICAL'},
+    {get label() { return localizedPaperLabel('WARNING'); }, value: 'WARNING'},
+    {get label() { return localizedPaperLabel('INFO'); }, value: 'INFO'},
 ];
 
-/** cause 标签（中文名 + 语义色），缺省回退原始枚举值，不伪造。 */
+/** 归因标签按当前语言显示；未知枚举保留在诊断 title，不解释为正常。 */
 function executionCauseTag(cause: PaperExecutionCause) {
-    return <StatusTag title="" variant="pill" status={EXECUTION_CAUSE_LABEL[cause] ?? cause} tone={EXECUTION_CAUSE_TONE[cause] ?? 'neutral'}/>;
+    return <StatusTag title={cause} variant="pill" status={cause} label={EXECUTION_CAUSE_LABEL[cause] ?? localizedPaperLabel(cause)} tone={EXECUTION_CAUSE_TONE[cause] ?? 'neutral'}/>;
 }
 
 /**
@@ -159,7 +160,7 @@ function PaperExecutionDiagnosticsBody({diagnostics}: {diagnostics: PaperExecuti
 
     const runColumns: ColumnsType<PaperExecutionRunDiagnostic> = [
         {title: t('pages:paperRun'), dataIndex: 'paperRunId', key: 'paperRunId', width: 150, render: (v: string) => <span className="nq-mono">{v}</span>},
-        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v}/>},
+        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title={v} variant="pill" status={v} label={localizedPaperLabel(v)}/>},
         {title: t('pages:primaryCause'), key: 'primaryCause', width: 120, render: (_: unknown, r) => executionCauseTag(r.primaryCause)},
         {
             title: t('pages:secondaryCauses'), key: 'secondaryCauses', width: 200,
@@ -167,8 +168,8 @@ function PaperExecutionDiagnosticsBody({diagnostics}: {diagnostics: PaperExecuti
                 ? <Space size={4} wrap>{r.secondaryCauses.map((c) => <span key={c}>{executionCauseTag(c)}</span>)}</Space>
                 : <Typography.Text type="secondary">-</Typography.Text>,
         },
-        {title: t('pages:severity2'), key: 'severity', width: 110, render: (_: unknown, r) => <StatusTag title="" variant="pill" status={r.severity} tone={EXECUTION_SEVERITY_TONE[r.severity]}/>},
-        {title: t('pages:confidence'), key: 'causeConfidence', width: 110, render: (_: unknown, r) => <StatusTag title="" variant="pill" status={r.causeConfidence} tone={EXECUTION_CONFIDENCE_TONE[r.causeConfidence]}/>},
+        {title: t('pages:severity2'), key: 'severity', width: 110, render: (_: unknown, r) => <StatusTag title={r.severity} variant="pill" status={r.severity} label={localizedPaperLabel(r.severity)} tone={EXECUTION_SEVERITY_TONE[r.severity]}/>},
+        {title: t('pages:confidence'), key: 'causeConfidence', width: 110, render: (_: unknown, r) => <StatusTag title={r.causeConfidence} variant="pill" status={r.causeConfidence} label={localizedPaperLabel(r.causeConfidence)} tone={EXECUTION_CONFIDENCE_TONE[r.causeConfidence]}/>},
         nqNumericColumn({title: t('pages:order'), dataIndex: 'orderCount', key: 'orderCount', width: 70}),
         nqNumericColumn({title: t('pages:trade'), dataIndex: 'tradeCount', key: 'tradeCount', width: 70}),
         nqNumericColumn({
@@ -202,8 +203,8 @@ function PaperExecutionDiagnosticsBody({diagnostics}: {diagnostics: PaperExecuti
                 ? <Space size={4} wrap>{g.topCauses.map((c) => <span key={c}>{executionCauseTag(c)}</span>)}</Space>
                 : <Typography.Text type="secondary">-</Typography.Text>,
         },
-        {title: t('pages:severity2'), key: 'severity', width: 100, render: (_: unknown, g) => <StatusTag title="" variant="pill" status={g.severity} tone={EXECUTION_SEVERITY_TONE[g.severity]}/>},
-        {title: t('pages:confidence'), key: 'causeConfidence', width: 100, render: (_: unknown, g) => <StatusTag title="" variant="pill" status={g.causeConfidence} tone={EXECUTION_CONFIDENCE_TONE[g.causeConfidence]}/>},
+        {title: t('pages:severity2'), key: 'severity', width: 100, render: (_: unknown, g) => <StatusTag title={g.severity} variant="pill" status={g.severity} label={localizedPaperLabel(g.severity)} tone={EXECUTION_SEVERITY_TONE[g.severity]}/>},
+        {title: t('pages:confidence'), key: 'causeConfidence', width: 100, render: (_: unknown, g) => <StatusTag title={g.causeConfidence} variant="pill" status={g.causeConfidence} label={localizedPaperLabel(g.causeConfidence)} tone={EXECUTION_CONFIDENCE_TONE[g.causeConfidence]}/>},
         nqNumericColumn({title: t('pages:noOrders'), dataIndex: 'noOrderCount', key: 'noOrderCount', width: 80}),
         nqNumericColumn({title: t('pages:ordersWithoutFills2'), dataIndex: 'orderNoFillCount', key: 'orderNoFillCount', width: 100}),
         nqNumericColumn({title: t('pages:tradingLoss'), dataIndex: 'filledLossCount', key: 'filledLossCount', width: 90}),
@@ -237,8 +238,8 @@ function PaperExecutionDiagnosticsBody({diagnostics}: {diagnostics: PaperExecuti
                         columns={[
                             {title: t('pages:reason'), key: 'cause', width: 140, render: (_: unknown, d) => executionCauseTag(d.cause)},
                             nqNumericColumn({title: t('pages:runCount'), dataIndex: 'count', key: 'count', width: 90}),
-                            {title: t('pages:severity2'), key: 'severity', width: 110, render: (_: unknown, d) => <StatusTag title="" variant="pill" status={d.severity} tone={EXECUTION_SEVERITY_TONE[d.severity]}/>},
-                            {title: t('pages:representativeConfidence'), key: 'confidence', width: 120, render: (_: unknown, d) => <StatusTag title="" variant="pill" status={d.confidence} tone={EXECUTION_CONFIDENCE_TONE[d.confidence]}/>},
+                            {title: t('pages:severity2'), key: 'severity', width: 110, render: (_: unknown, d) => <StatusTag title={d.severity} variant="pill" status={d.severity} label={localizedPaperLabel(d.severity)} tone={EXECUTION_SEVERITY_TONE[d.severity]}/>},
+                            {title: t('pages:representativeConfidence'), key: 'confidence', width: 120, render: (_: unknown, d) => <StatusTag title={d.confidence} variant="pill" status={d.confidence} label={localizedPaperLabel(d.confidence)} tone={EXECUTION_CONFIDENCE_TONE[d.confidence]}/>},
                             {title: t('pages:explanation2'), dataIndex: 'description', key: 'description', render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
                         ]}
                         scroll={{x: 720}}
@@ -268,7 +269,7 @@ function PaperExecutionDiagnosticsBody({diagnostics}: {diagnostics: PaperExecuti
                             size="small"
                             value={causeFilter}
                             onChange={setCauseFilter}
-                            options={EXECUTION_CAUSE_FILTER_OPTIONS as Array<{label: string; value: ExecutionCauseFilter}>}
+                            options={localizedPaperOptions(EXECUTION_CAUSE_FILTER_OPTIONS)}
                             style={{width: 230}}
                             virtual={false}
                         />
@@ -277,7 +278,7 @@ function PaperExecutionDiagnosticsBody({diagnostics}: {diagnostics: PaperExecuti
                             size="small"
                             value={severityFilter}
                             onChange={setSeverityFilter}
-                            options={EXECUTION_SEVERITY_FILTER_OPTIONS as Array<{label: string; value: ExecutionSeverityFilter}>}
+                            options={localizedPaperOptions(EXECUTION_SEVERITY_FILTER_OPTIONS)}
                             style={{width: 150}}
                             virtual={false}
                         />

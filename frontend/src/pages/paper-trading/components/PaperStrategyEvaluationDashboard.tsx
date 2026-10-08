@@ -1,6 +1,7 @@
 import {StatusTag, type StatusTone} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
+import {localizedPaperLabel, localizedPaperOptions} from './paperAnalysisOptions';
 import {Button, Card, Descriptions, Segmented, Select, Space, Tag, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
@@ -77,17 +78,17 @@ const EVAL_RATING_FILTER_OPTIONS: ReadonlyArray<{label: string; value: EvalRatin
 
 const EVAL_CONFIDENCE_FILTER_OPTIONS: ReadonlyArray<{label: string; value: EvalConfidenceFilter}> = [
     {get label() { return t('pages:allConfidenceLevels'); }, value: 'all'},
-    {label: 'HIGH', value: 'HIGH'},
-    {label: 'MEDIUM', value: 'MEDIUM'},
-    {label: 'LOW', value: 'LOW'},
+    {get label() { return localizedPaperLabel('HIGH'); }, value: 'HIGH'},
+    {get label() { return localizedPaperLabel('MEDIUM'); }, value: 'MEDIUM'},
+    {get label() { return localizedPaperLabel('LOW'); }, value: 'LOW'},
 ];
 
 const EVAL_DEVIATION_FILTER_OPTIONS: ReadonlyArray<{label: string; value: EvalDeviationFilter}> = [
     {get label() { return t('pages:allDeviations'); }, value: 'all'},
-    {label: 'LOW', value: 'LOW'},
-    {label: 'MEDIUM', value: 'MEDIUM'},
-    {label: 'HIGH', value: 'HIGH'},
-    {label: 'UNAVAILABLE', value: 'UNAVAILABLE'},
+    {get label() { return localizedPaperLabel('LOW'); }, value: 'LOW'},
+    {get label() { return localizedPaperLabel('MEDIUM'); }, value: 'MEDIUM'},
+    {get label() { return localizedPaperLabel('HIGH'); }, value: 'HIGH'},
+    {get label() { return localizedPaperLabel('UNAVAILABLE'); }, value: 'UNAVAILABLE'},
 ];
 
 const EVAL_SORT_OPTIONS: ReadonlyArray<{label: string; value: EvalSortDim}> = [
@@ -103,7 +104,7 @@ const EVAL_SORT_OPTIONS: ReadonlyArray<{label: string; value: EvalSortDim}> = [
 ];
 
 function ratingTag(rating: PaperStrategyRatingLabel) {
-    return <StatusTag title="" variant="pill" status={RATING_LABEL_TEXT[rating] ?? rating} tone={RATING_LABEL_TONE[rating] ?? 'neutral'}/>;
+    return <StatusTag title={rating} variant="pill" status={rating} label={RATING_LABEL_TEXT[rating] ?? localizedPaperLabel(rating)} tone={RATING_LABEL_TONE[rating] ?? 'neutral'}/>;
 }
 
 /** 取评估行某排序维度的数值；不可比 / 缺失返回 null（恒排末尾，不伪造）。 */
@@ -239,12 +240,12 @@ function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEva
             render: (_: unknown, r: PaperStrategyEvaluationItem) => <span className="nq-num"><strong>{r.compositeScore}</strong></span>}),
         ...subScoreColumns,
         {title: t('pages:rating'), key: 'ratingLabel', width: 110, render: (_: unknown, r) => ratingTag(r.ratingLabel)},
-        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <StatusTag title="" variant="pill" status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence]}/>},
-        {title: t('pages:mainWeaknesses'), dataIndex: 'primaryWeakness', key: 'primaryWeakness', width: 130, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}}>{v}</Typography.Text>},
+        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <StatusTag title={r.evaluationConfidence} variant="pill" status={r.evaluationConfidence} label={localizedPaperLabel(r.evaluationConfidence)} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence]}/>},
+        {title: t('pages:mainWeaknesses'), dataIndex: 'primaryWeakness', key: 'primaryWeakness', width: 130, render: (v: string) => <Typography.Text type="secondary" style={{fontSize: 12}} title={v}>{localizedPaperLabel(v)}</Typography.Text>},
         {
             title: t('pages:warnings'), key: 'warnings', width: 220,
             render: (_: unknown, r) => r.warnings.length > 0
-                ? <Space size={4} wrap>{r.warnings.map((w) => <Tag key={w} color="warning">{w}</Tag>)}</Space>
+                ? <Space size={4} wrap>{r.warnings.map((w) => <Tag key={w} color="warning" title={w}>{localizedPaperLabel(w)}</Tag>)}</Space>
                 : <Typography.Text type="secondary">-</Typography.Text>,
         },
         {title: t('pages:latestRun'), dataIndex: 'latestRunTime', key: 'latestRunTime', width: 170, render: (v: string | null) => v ? formatDateTime(v) : '-'},
@@ -272,11 +273,11 @@ function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEva
         nqNumericColumn({title: t('pages:backtestDeviationScore'), key: 'backtestDeviationScore', width: 130,
             render: (_: unknown, r: PaperPublishEvaluationItem) => scoreCell(r.backtestDeviationScore)}),
         {title: t('pages:rating'), key: 'ratingLabel', width: 110, render: (_: unknown, r) => ratingTag(r.ratingLabel)},
-        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <StatusTag title="" variant="pill" status={r.evaluationConfidence} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence]}/>},
+        {title: t('pages:confidence'), key: 'evaluationConfidence', width: 100, render: (_: unknown, r) => <StatusTag title={r.evaluationConfidence} variant="pill" status={r.evaluationConfidence} label={localizedPaperLabel(r.evaluationConfidence)} tone={EVAL_CONFIDENCE_TONE[r.evaluationConfidence]}/>},
         {
             title: t('pages:warnings'), key: 'warnings', width: 200,
             render: (_: unknown, r) => r.warnings.length > 0
-                ? <Space size={4} wrap>{r.warnings.map((w) => <Tag key={w} color="warning">{w}</Tag>)}</Space>
+                ? <Space size={4} wrap>{r.warnings.map((w) => <Tag key={w} color="warning" title={w}>{localizedPaperLabel(w)}</Tag>)}</Space>
                 : <Typography.Text type="secondary">-</Typography.Text>,
         },
         {title: t('pages:latestRun'), dataIndex: 'latestRunTime', key: 'latestRunTime', width: 170, render: (v: string | null) => v ? formatDateTime(v) : '-'},
@@ -306,7 +307,7 @@ function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEva
         {title: t('pages:deviationLevel'), key: 'deviationLevel', width: 120,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => {
                 const level: PaperBacktestDeviationLevel = r.backtestDeviation?.deviationLevel ?? 'UNAVAILABLE';
-                return <StatusTag title="" variant="pill" status={level} tone={DEVIATION_LEVEL_TONE[level]}/>;
+                return <StatusTag title={level} variant="pill" status={level} label={localizedPaperLabel(level)} tone={DEVIATION_LEVEL_TONE[level]}/>;
             }},
         {title: t('pages:explanation2'), key: 'deviationExplanation', width: 320,
             render: (_: unknown, r: PaperStrategyEvaluationItem) => (
@@ -362,19 +363,19 @@ function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEva
                         <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:rating')}</Typography.Text>
                         <Select<EvalRatingFilter>
                             size="small" value={ratingFilter} onChange={setRatingFilter}
-                            options={EVAL_RATING_FILTER_OPTIONS as Array<{label: string; value: EvalRatingFilter}>}
+                            options={localizedPaperOptions(EVAL_RATING_FILTER_OPTIONS)}
                             style={{width: 240}} virtual={false}
                         />
                         <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:confidence')}</Typography.Text>
                         <Select<EvalConfidenceFilter>
                             size="small" value={confidenceFilter} onChange={setConfidenceFilter}
-                            options={EVAL_CONFIDENCE_FILTER_OPTIONS as Array<{label: string; value: EvalConfidenceFilter}>}
+                            options={localizedPaperOptions(EVAL_CONFIDENCE_FILTER_OPTIONS)}
                             style={{width: 140}} virtual={false}
                         />
                         <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:backtestDeviation')}</Typography.Text>
                         <Select<EvalDeviationFilter>
                             size="small" value={deviationFilter} onChange={setDeviationFilter}
-                            options={EVAL_DEVIATION_FILTER_OPTIONS as Array<{label: string; value: EvalDeviationFilter}>}
+                            options={localizedPaperOptions(EVAL_DEVIATION_FILTER_OPTIONS)}
                             style={{width: 150}} virtual={false}
                         />
                     </div>
@@ -386,7 +387,7 @@ function PaperStrategyEvaluationBody({evaluation}: {evaluation: PaperStrategyEva
                         <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:sortBy')}</Typography.Text>
                         <Select<EvalSortDim>
                             size="small" value={sortDim} onChange={setSortDim}
-                            options={EVAL_SORT_OPTIONS as Array<{label: string; value: EvalSortDim}>}
+                            options={localizedPaperOptions(EVAL_SORT_OPTIONS)}
                             style={{width: 160}} virtual={false}
                         />
                         <Segmented

@@ -1,6 +1,7 @@
 import {StatusTag, type StatusTone} from '@/nq-design-system/status/StatusTag';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
+import {localizedPaperLabel, localizedPaperOptions} from './paperAnalysisOptions';
 import {Button, Card, Collapse, Descriptions, Select, Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
@@ -113,7 +114,7 @@ function deriveExecProgress(run: PaperPortfolioRunRef): {label: string; tone: St
 function riskRunColumns(): ColumnsType<PaperPortfolioRunRef> {
     return [
         {title: t('pages:paperRun'), dataIndex: 'paperRunId', key: 'paperRunId', width: 180, render: (v: string) => <span className="nq-mono">{v}</span>},
-        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <StatusTag title="" variant="pill" status={v}/>},
+        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <StatusTag title={v} variant="pill" status={v} label={localizedPaperLabel(v)}/>},
         {
             title: t('pages:strategyVersionPublish'),
             key: 'lineage',
@@ -541,10 +542,10 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                     onClick={() => handleRiskCardClick('terminal')}
                 >
                     <NqMetricCard
-                        label="FAILED / CANCELLED"
+                        label={t('pages:abnormalTerminalState')}
                         value={String(failedCancelledCount)}
                         tone={failedCancelledCount > 0 ? 'danger' : 'muted'}
-                        footer={`FAILED ${overview.failedCount} · CANCELLED ${overview.cancelledCount}`}
+                        footer={`${localizedPaperLabel('FAILED')} ${overview.failedCount} · ${localizedPaperLabel('CANCELLED')} ${overview.cancelledCount}`}
                     />
                 </ClickableMetricCard>
                 <ClickableMetricCard
@@ -583,7 +584,7 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                             size="small"
                             value={riskFilter}
                             onChange={setRiskFilter}
-                            options={RISK_RUN_FILTER_OPTIONS as Array<{label: string; value: RiskRunFilter}>}
+                            options={localizedPaperOptions(RISK_RUN_FILTER_OPTIONS)}
                             style={{width: 150}}
                             virtual={false}
                         />
@@ -699,7 +700,7 @@ function PaperRiskDrawdownBody({portfolio}: {portfolio: PaperPortfolioSummaryRes
                         dataSource={highlights.noTradeRuns}
                         columns={[
                             {title: t('pages:paperRun'), dataIndex: 'paperRunId', key: 'paperRunId', width: 180, render: (v: string) => <span className="nq-mono">{v}</span>},
-                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <StatusTag title="" variant="pill" status={v}/>},
+                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <StatusTag title={v} variant="pill" status={v} label={localizedPaperLabel(v)}/>},
                             {
                                 title: t('pages:possibleCauses'),
                                 key: 'cause',

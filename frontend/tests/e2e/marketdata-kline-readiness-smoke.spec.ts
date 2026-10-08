@@ -174,5 +174,26 @@ test.describe('marketdata kline readiness view', () => {
         await expect(chartPanel.getByText('GAP_DETECTED')).toBeVisible();
         await expect(chartPanel.getByText(/缺口 \/ qualityStatus：1/)).toBeVisible();
         await expect(page.getByText('Marketdata bars 查询失败')).toHaveCount(0);
+        const plot = kline.locator('.nq-chart__canvas');
+        await plot.scrollIntoViewIfNeeded();
+        const box = (await plot.boundingBox())!;
+        const inspection = kline.getByTestId('kline-inspection');
+        const seen = new Set<string>();
+        for (const fraction of [0.15, 0.35, 0.55, 0.75]) {
+            await page.mouse.move(box.x + (box.width - 60) * fraction, box.y + 70);
+            const time = await inspection.locator('time').textContent();
+            const bar = SAMPLE_BARS.find(b => `${b.openTime.replace('T', ' ').replace('Z', '')} UTC` === time);
+            expect(bar).toBeDefined();
+            seen.add(time!);
+            const values = await inspection.locator('strong').allTextContents();
+            expect(values.map(v => Number(v.replaceAll(',', '')))).toEqual([bar!.openPrice, bar!.highPrice, bar!.lowPrice, bar!.closePrice, bar!.volume]);
+        }
+        expect(seen.size).toBeGreaterThan(1);
+        await page.mouse.move(box.x - 5, box.y - 5);
+        await expect(inspection.locator('time')).toHaveCount(0);
+        await inspection.getByRole('slider').focus();
+        await page.keyboard.press('End');
+        await expect(inspection.locator('time')).toHaveText('2026-06-29 01:03:00 UTC');
+        await expect(kline.getByRole('link', {name: /TradingView/})).toBeVisible();
     });
 });

@@ -12,7 +12,7 @@ import {BrandLockup} from '@/nq-design-system/brand/BrandLockup';
 
 export function ConsoleLayout() {
     const {t} = useTranslation();
-    const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(() => window.matchMedia('(max-width: 767px)').matches);
     const matches = useMatches();
     const breadcrumbItems = matches
         .map((match) => match.handle as RouteHandle | undefined)

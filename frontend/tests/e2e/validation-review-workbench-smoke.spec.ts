@@ -218,7 +218,7 @@ test.describe('GateV-4 validation review workbench', () => {
 
         const workbench = page.getByTestId('validation-review-workbench');
         await expect(workbench.getByRole('heading', {name: '验证复核工作台', exact: true})).toBeVisible();
-        await expect(workbench).toContainText('诊断审查流程，不构成交易授权，也不会启动 LIVE 或 Shadow trading。');
+        await expect(workbench).toContainText('诊断审查不构成交易授权，也不会启动 LIVE 或影子交易。');
         await expect(page.getByLabel('所有者 ID')).toBeVisible();
         await expect(page.getByTestId('validation-review-queue').locator('tbody tr.ant-table-row')).toHaveCount(20);
         await page.getByRole('button', {name: '下一页'}).click();
@@ -339,7 +339,7 @@ test.describe('GateV-4 validation review workbench', () => {
     test('empty queue 展示明确空态', async ({page}) => {
         const emptyAudit = await seedReviewWorkbench(page, {roles: ['OPERATOR'], listMode: 'empty'});
         await page.goto('/strategies/validation');
-        await expect(page.getByText('当前筛选条件下没有 review case。')).toBeVisible();
+        await expect(page.getByText('当前筛选条件下没有复核事项。')).toBeVisible();
         expectOnlyAllowedReviewRequests(emptyAudit.requests);
         expectNoUnexpectedRuntimeErrors(emptyAudit);
     });

@@ -271,7 +271,15 @@
     "returnValue": "Return: {{value}}",
     "runCounts": "Source runs: {{source}} · Missing runs: {{missing}}",
     "drawdownValue": "Drawdown: {{value}}",
-    "peakValue": "Peak equity: {{value}}"
+    "peakValue": "Peak equity: {{value}}",
+    "hoveredBar": "Hovered candle",
+    "selectedBar": "Selected candle",
+    "inspectHint": "Hover over a candle to inspect it. The right axis shows the cursor price.",
+    "selectBar": "Select candle (keyboard / touch)",
+    "open": "Open",
+    "high": "High",
+    "low": "Low",
+    "close": "Close"
   },
   "risk": {
     "info": "Information",

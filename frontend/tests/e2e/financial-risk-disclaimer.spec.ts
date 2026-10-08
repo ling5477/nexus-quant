@@ -39,7 +39,7 @@ for (const marketdataState of ['empty', 'unavailable'] as const) {
             await page.setViewportSize(viewport);
             const surface = page.getByTestId('financial-risk-disclaimer');
             const summary = surface.locator('summary');
-            await expect(summary).toHaveText('Financial Risk Disclaimer / 金融风险声明');
+            await expect(summary).toHaveText('金融风险声明');
             await summary.scrollIntoViewIfNeeded();
             await summary.focus();
             await page.keyboard.press('Enter');

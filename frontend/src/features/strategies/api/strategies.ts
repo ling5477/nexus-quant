@@ -1,12 +1,17 @@
 import {apiClient} from '@/api/client';
 import type {
     StrategyDefinitionListItem,
+    StrategyDefinitionCreateRequest,
     StrategyStatusUpdateRequest,
     StrategyVersionCreateRequest,
     StrategyVersionItem,
 } from '@/features/strategies/types/strategies';
 
 export const strategiesApi = {
+    async create(request: StrategyDefinitionCreateRequest): Promise<StrategyDefinitionListItem> {
+        const {data} = await apiClient.post<StrategyDefinitionListItem>('/strategies', request);
+        return data;
+    },
     async list(): Promise<StrategyDefinitionListItem[]> {
         const {data} = await apiClient.get<StrategyDefinitionListItem[]>('/strategies');
         return data;

@@ -271,7 +271,15 @@
     "returnValue": "收益率：{{value}}",
     "runCounts": "在册 run：{{source}} · 缺失 run：{{missing}}",
     "drawdownValue": "回撤：{{value}}",
-    "peakValue": "资金峰值：{{value}}"
+    "peakValue": "资金峰值：{{value}}",
+    "hoveredBar": "悬停 K 线",
+    "selectedBar": "所选 K 线",
+    "inspectHint": "移动到 K 线查看行情；光标价格显示在右轴。",
+    "selectBar": "选择 K 线（键盘／触屏）",
+    "open": "开盘价",
+    "high": "最高价",
+    "low": "最低价",
+    "close": "收盘价"
   },
   "risk": {
     "info": "提示",

@@ -74,6 +74,9 @@ export interface SimPnlSnapshotItem {
 }
 
 export interface BacktestRunDetailItem {
+    evaluationStatus?: string | null;
+    publishStatus?: string | null;
+    failureCode?: string | null;
     backtestRunId: string;
     backtestConfigId: string;
     researchConfigId: string;

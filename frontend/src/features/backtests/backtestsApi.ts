@@ -46,6 +46,14 @@ export const backtestsApi = {
         const {data} = await apiClient.get<BacktestRunDetailItem>(`/backtest-runs/${runId}`);
         return data;
     },
+    async startRun(runId: string): Promise<BacktestRunDetailItem> {
+        const {data} = await apiClient.post<BacktestRunDetailItem>(`/backtest-runs/${encodeURIComponent(runId)}/start`);
+        return data;
+    },
+    async listRuns(backtestConfigId: string): Promise<BacktestRunDetailItem[]> {
+        const {data} = await apiClient.get<BacktestRunDetailItem[]>('/backtest-runs', {params: {backtestConfigId}});
+        return data;
+    },
     async pnlSnapshots(runId: string): Promise<SimPnlSnapshotItem[]> {
         // 回测权益/PnL 时间序列;复用既有 run-level 端点,无新增后端 API。按 snapshotTime 升序返回。
         const {data} = await apiClient.get<SimPnlSnapshotItem[]>(`/backtest-runs/${runId}/pnl-snapshots`);

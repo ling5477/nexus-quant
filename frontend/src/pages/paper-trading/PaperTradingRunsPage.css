@@ -1,0 +1,50 @@
+.paper-runs-workspace,
+.paper-runs-workspace .ant-space-item,
+.paper-runs-workspace .ant-col,
+.paper-runs-workspace .ant-card,
+.paper-runs-workspace .ant-card-body {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.paper-runs-workspace .nq-mono,
+.paper-runs-workspace .ant-descriptions-item-content {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.paper-runs-workspace .nq-run-id {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+.paper-runs-workspace .ant-table-wrapper,
+.paper-runs-workspace .ant-tabs {
+    min-width: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 767px) {
+    .paper-runs-workspace > .ant-space-item > .ant-card > .ant-card-head {
+        padding-inline: 12px;
+    }
+
+    .paper-runs-workspace .ant-card-head-wrapper {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .paper-runs-workspace .ant-card-extra {
+        margin-inline-start: 0;
+        max-width: 100%;
+    }
+
+    .paper-runs-query-actions {
+        padding-block: 8px;
+    }
+
+    .paper-runs-workspace .nq-status-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

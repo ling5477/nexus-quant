@@ -1,5 +1,6 @@
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
+import {localizedPaperOptions} from './paperAnalysisOptions';
 import {Card, Segmented, Select, Space, Typography} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState, type ReactNode} from 'react';
@@ -499,7 +500,7 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                     size="small"
                     value={sortDim}
                     onChange={setSortDim}
-                    options={RANKING_SORT_OPTIONS as Array<{label: string; value: RankingSortDim}>}
+                    options={localizedPaperOptions(RANKING_SORT_OPTIONS)}
                     style={{width: 132}}
                     virtual={false}
                 />
@@ -514,7 +515,7 @@ function PaperStrategyRankingBody({portfolio}: {portfolio: PaperPortfolioSummary
                     size="small"
                     value={rankFilter}
                     onChange={setRankFilter}
-                    options={RANKING_FILTER_OPTIONS as Array<{label: string; value: RankingFilter}>}
+                    options={localizedPaperOptions(RANKING_FILTER_OPTIONS)}
                     style={{width: 160}}
                     virtual={false}
                 />

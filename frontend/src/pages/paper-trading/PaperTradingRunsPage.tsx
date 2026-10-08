@@ -2,11 +2,14 @@ import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
+import {localizedPaperLabel, localizedPaperOptions} from './components/paperAnalysisOptions';
+import './PaperTradingRunsPage.css';
 import {
     App,
     Button,
     Card,
     Col,
+    Collapse,
     Descriptions,
     Form,
     Input,
@@ -144,8 +147,8 @@ export function PaperTradingRunsPage() {
     const [searchVersion, setSearchVersion] = useState(0);
     const [selectedRow, setSelectedRow] = useState<PaperRunRow | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
-    // 保持旧 runs 页 factTab 行为：切换 run 时回到 snapshots，明细 tab 按激活项懒加载，避免首屏扇出事实查询。
-    const [factTab, setFactTab] = useState('snapshots');
+    // 切换运行时优先读取订单，明细 tab 按激活项懒加载，避免首屏扇出事实查询。
+    const [factTab, setFactTab] = useState('orders');
 
     const listQuery = usePaperTradingListQuery(
         {
@@ -162,9 +165,9 @@ export function PaperTradingRunsPage() {
         : selectedRow?.paperRunId === focusRunId ? selectedRow : null;
     const legacyRunId = identityRun && !identityRun.canonicalAccountId ? focusRunId : null;
     const summaryQuery = usePaperRunSummaryQuery(legacyRunId);
-    const ordersQuery = usePaperTradingOrdersQuery(focusRunId, factTab === 'orders');
-    const tradesQuery = usePaperTradingTradesQuery(focusRunId, factTab === 'trades');
-    const positionsQuery = usePaperTradingPositionsQuery(focusRunId, factTab === 'positions');
+    const ordersQuery = usePaperTradingOrdersQuery(legacyRunId, factTab === 'orders');
+    const tradesQuery = usePaperTradingTradesQuery(legacyRunId, factTab === 'trades');
+    const positionsQuery = usePaperTradingPositionsQuery(legacyRunId, factTab === 'positions');
     const riskResultsQuery = usePaperTradingRiskResultsQuery(legacyRunId, factTab === 'risk-results');
     const equityCurveQuery = usePaperTradingEquityCurveQuery(legacyRunId);
     const positionCurveQuery = usePaperTradingPositionCurveQuery(legacyRunId, factTab === 'position-curve');
@@ -176,7 +179,7 @@ export function PaperTradingRunsPage() {
     }, [detailQuery.data, focusRunId, selectedRow]);
 
     useEffect(() => {
-        setFactTab('snapshots');
+        setFactTab('orders');
     }, [focusRunId]);
 
     const createMutation = useCreatePaperTradingRunMutation();
@@ -267,7 +270,7 @@ export function PaperTradingRunsPage() {
                 <Space direction="vertical" size={2} style={{width: '100%'}}>
                     <span className="nq-mono nq-run-id" title={value}>{value}</span>
                     <Space size={6}>
-                        <StatusTag title="" variant="pill" status={record.status}/>
+                        <StatusTag title={record.status} variant="pill" status={record.status} label={localizedPaperLabel(record.status)}/>
                         <TradingEnvironmentTag env={record.tradeEnv}/>
                     </Space>
                     <Typography.Text type="secondary" style={{fontSize: 12}}>
@@ -311,7 +314,7 @@ export function PaperTradingRunsPage() {
 
     return (
         <>
-            <Space direction="vertical" size={12} style={{display: 'flex'}}>
+            <Space className="paper-runs-workspace" direction="vertical" size={12} style={{display: 'flex'}}>
                 <Card className="page-card" variant="borderless">
                     <NqPageHeader
                         title={t('pages:paperTrading')}
@@ -327,21 +330,9 @@ export function PaperTradingRunsPage() {
                     />
                 </Card>
 
-                <ExecutionNavigationCard/>
-                {(import.meta.env.VITE_STRATEGY_SIM_ENABLED === 'true' || Boolean(focusRun?.canonicalAccountId)) && <StrategySimPanel
-                    selectedRun={focusRun ?? null}
-                    onCreated={(paperRunId) => {
-                        void paperTradingApi.detail(paperRunId).then((run) => {
-                            setSelectedRow(run);
-                            setSearchParams({paperRunId: run.paperRunId});
-                            setSearchVersion((version) => version + 1);
-                        }).catch((error) => showApiError(error as AppApiError, message));
-                    }}
-                />}
-
                 <NqFilterBar
                     actions={(
-                        <Space>
+                        <Space wrap className="paper-runs-query-actions">
                             <Button type="primary" onClick={() => queryForm.submit()}>
                                 {t('pages:search')}</Button>
                             <Button onClick={handleReset}>
@@ -352,6 +343,7 @@ export function PaperTradingRunsPage() {
                     )}
                 >
                     <Form
+                        name="paper-runs-query"
                         form={queryForm}
                         layout="vertical"
                         initialValues={defaultPaperTradingListFilters}
@@ -365,7 +357,7 @@ export function PaperTradingRunsPage() {
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label={t('pages:status')} name="status">
-                                    <Select allowClear placeholder={t('pages:allStatuses')} options={PAPER_RUN_STATUS_OPTIONS}/>
+                                    <Select allowClear placeholder={t('pages:allStatuses')} options={localizedPaperOptions(PAPER_RUN_STATUS_OPTIONS)}/>
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -404,7 +396,7 @@ export function PaperTradingRunsPage() {
                                     showHeader={false}
                                     pagination={{pageSize: 10, showSizeChanger: false, simple: true}}
                                     rowClassName={(record) => (record.paperRunId === focusRunId ? 'nq-row-active' : '')}
-                                    scroll={{y: 420}}
+                                    scroll={{x: 300, y: 420}}
                                     locale={{emptyText: t('pages:noPaperTradingRunsMatchTheseFilters')}}
                                 />
                             )}
@@ -412,6 +404,16 @@ export function PaperTradingRunsPage() {
                     </Col>
 
                     <Col xs={24} xl={17} xxl={18}>
+                        <StrategySimPanel
+                            selectedRun={focusRun ?? null}
+                            onCreated={(paperRunId) => {
+                                void paperTradingApi.detail(paperRunId).then((run) => {
+                                    setSelectedRow(run);
+                                    setSearchParams({paperRunId: run.paperRunId});
+                                    setSearchVersion((version) => version + 1);
+                                }).catch((error) => showApiError(error as AppApiError, message));
+                            }}
+                        />
                         {!focusRun ? (
                             <Card className="page-section" variant="borderless">
                                 {detailQuery.error ? <NqErrorState title={t('pages:failedToLoadPaperRunDetails')} error={detailQuery.error as AppApiError}/>
@@ -423,7 +425,7 @@ export function PaperTradingRunsPage() {
                                     <Card className="page-section" variant="borderless">
                                         <Space size={8} wrap style={{marginBottom: 12}}>
                                             <Typography.Text strong>{t('pages:runConsole')}</Typography.Text>
-                                            <StatusTag title="" variant="pill" status={focusStatus}/>
+                                            <StatusTag title={focusStatus} variant="pill" status={focusStatus} label={localizedPaperLabel(focusStatus)}/>
                                             <TradingEnvironmentTag env={focusRun.tradeEnv}/>
                                             <Typography.Text>{focusRun.canonicalAccountId ? t('pages:simCanonical') : t('pages:simLegacy')}</Typography.Text>
                                             <Typography.Text type="secondary" className="nq-mono" style={{fontSize: 12}}>
@@ -431,33 +433,7 @@ export function PaperTradingRunsPage() {
                                             </Typography.Text>
                                         </Space>
 
-                                        <div className="nq-status-strip">
-                                            <NqMetricCard label={t('pages:runStatus')} value={<StatusTag title="" variant="pill" status={focusStatus}/>}/>
-                                            <NqMetricCard label={t('pages:orderFacts')} value={orderCount === null ? '-' : String(orderCount)} loading={summaryQuery.isPending}/>
-                                            <NqMetricCard label={t('pages:tradeFacts')} value={fillCount === null ? '-' : String(fillCount)} loading={summaryQuery.isPending}/>
-                                            <NqMetricCard label={t('pages:positionFacts')} value={positionCount === null ? '-' : String(positionCount)} loading={summaryQuery.isPending}/>
-                                            <NqMetricCard
-                                                label={t('pages:netPnl2')}
-                                                value={<NqAmountText exact value={netPnl} signed colorBySign/>}
-                                                tone={amountTone(netPnl)}
-                                                loading={summaryQuery.isPending}
-                                            />
-                                            <NqMetricCard
-                                                label={t('pages:riskControlLifecycle')}
-                                                value={latestRisk ? <StatusTag title="" variant="pill" status={latestRisk.status} tone={latestRisk.status === 'PASSED' ? 'success' : latestRisk.status === 'REJECTED' ? 'danger' : 'warning'}/> : '-'}
-                                                footer={latestRisk ? `${latestRisk.checkType} · ${latestRisk.severity}` : t('pages:noRiskChecks')}
-                                                loading={summaryQuery.isPending}
-                                            />
-                                            <NqMetricCard
-                                                label={t('pages:unresolvedAlerts')}
-                                                value={openAlertCount === null ? '-' : String(openAlertCount)}
-                                                tone={openAlertCount && openAlertCount > 0 ? 'warning' : 'muted'}
-                                                loading={summaryQuery.isPending}
-                                            />
-                                            <NqMetricCard label={t('pages:tradingEnvironment')} value={<TradingEnvironmentTag env={focusRun.tradeEnv}/>} footer={t('pages:liveDisabled2')}/>
-                                        </div>
-
-                                        <Space size={8} wrap style={{marginTop: 12}}>
+                                        <Space size={8} wrap style={{marginBottom: 12}}>
                                             <Button
                                                 type="primary"
                                                 size="small"
@@ -474,9 +450,57 @@ export function PaperTradingRunsPage() {
                                                 onClick={() => handleStop(focusRun.paperRunId)}
                                             >
                                                 {t('pages:stopPaperRun')}</Button>
+                                            <NqDangerConfirmButton
+                                                size="small"
+                                                disabled={focusStatus !== 'RUNNING'}
+                                                loading={emergencyStopMutation.isPending}
+                                                confirmTitle={t('pages:confirmEmergencyStop')}
+                                                confirmContent={t('pages:thisImmediatelyStopsTheCurrentSimPaperRunItDoesNotPlaceOrCancelRealLiveOrdersContinue')}
+                                                okText={t('pages:confirmStop')}
+                                                onConfirm={() => emergencyStopMutation.mutate(
+                                                    {
+                                                        paperRunId: focusRun.paperRunId,
+                                                        request: {triggerType: 'MANUAL', reason: '手动紧急停机', triggeredBy: 'console-user'},
+                                                    },
+                                                    {
+                                                        onSuccess: () => {
+                                                            message.success(t('pages:emergencyStopCompleted'));
+                                                            setSearchVersion((v) => v + 1);
+                                                        },
+                                                        onError: (err) => showApiError(err as AppApiError, message),
+                                                    },
+                                                )}
+                                            >
+                                                {t('pages:emergencyStop')}</NqDangerConfirmButton>
                                             <Typography.Text type="secondary" style={{fontSize: 12}}>
                                                 {t('pages:lifecycleActionsAffectThisSimPaperRunOnlyLiveIsDisabledAndNoRealExchangeActionIsTriggered')}</Typography.Text>
                                         </Space>
+
+                                        <div className="nq-status-strip">
+                                            <NqMetricCard label={t('pages:runStatus')} value={<StatusTag title={focusStatus} variant="pill" status={focusStatus} label={localizedPaperLabel(focusStatus)}/>}/>
+                                            <NqMetricCard label={t('pages:orderFacts')} value={orderCount === null ? '-' : String(orderCount)} loading={summaryQuery.isPending}/>
+                                            <NqMetricCard label={t('pages:tradeFacts')} value={fillCount === null ? '-' : String(fillCount)} loading={summaryQuery.isPending}/>
+                                            <NqMetricCard label={t('pages:positionFacts')} value={positionCount === null ? '-' : String(positionCount)} loading={summaryQuery.isPending}/>
+                                            <NqMetricCard
+                                                label={t('pages:netPnl2')}
+                                                value={<NqAmountText exact value={netPnl} signed colorBySign/>}
+                                                tone={amountTone(netPnl)}
+                                                loading={summaryQuery.isPending}
+                                            />
+                                            <NqMetricCard
+                                                label={t('pages:riskControlLifecycle')}
+                                                value={latestRisk ? <StatusTag title={latestRisk.status} variant="pill" status={latestRisk.status} label={localizedPaperLabel(latestRisk.status)} tone={latestRisk.status === 'PASSED' ? 'success' : latestRisk.status === 'REJECTED' ? 'danger' : 'warning'}/> : '-'}
+                                                footer={latestRisk ? `${latestRisk.checkType} · ${localizedPaperLabel(latestRisk.severity)}` : t('pages:noRiskChecks')}
+                                                loading={summaryQuery.isPending}
+                                            />
+                                            <NqMetricCard
+                                                label={t('pages:unresolvedAlerts')}
+                                                value={openAlertCount === null ? '-' : String(openAlertCount)}
+                                                tone={openAlertCount && openAlertCount > 0 ? 'warning' : 'muted'}
+                                                loading={summaryQuery.isPending}
+                                            />
+                                            <NqMetricCard label={t('pages:tradingEnvironment')} value={<TradingEnvironmentTag env={focusRun.tradeEnv}/>} footer={t('pages:liveDisabled2')}/>
+                                        </div>
 
                                         {detailQuery.error ? (
                                             <div style={{marginTop: 12}}>
@@ -488,8 +512,8 @@ export function PaperTradingRunsPage() {
                                         ) : null}
                                     </Card>
 
-                                    <Row gutter={[12, 12]} align="top">
-                                        <Col xs={24} xl={15}>
+                                    <Space direction="vertical" size={12} style={{display: 'flex'}}>
+                                        <div>
                                             <RunFactsCard
                                                 selectedRow={focusRun}
                                                 factTab={factTab}
@@ -507,36 +531,14 @@ export function PaperTradingRunsPage() {
                                                     onError: (err) => showApiError(err as AppApiError, message),
                                                 })}
                                             />
-                                        </Col>
-                                        <Col xs={24} xl={9}>
+                                        </div>
+                                        <Collapse items={[{key: 'operations', label: t('pages:paperRunOperationsDetails'), children: (
                                             <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                                                <Card className="page-section" variant="borderless" title={t('pages:runActions')}>
+                                                <Card className="page-section" variant="borderless" title={t('pages:paperRunEmergencyHistory')}>
                                                     <Space direction="vertical" size={8} style={{display: 'flex'}}>
                                                         <Typography.Text type="secondary" style={{fontSize: 12}}>
                                                             {t('pages:emergencyStopAffectsThisSimPaperRunAndRecordsAStopEventItDoesNotPlaceOrCancelRealLiveOrders')}</Typography.Text>
-                                                        <NqDangerConfirmButton
-                                                            size="small"
-                                                            block
-                                                            disabled={focusStatus !== 'RUNNING'}
-                                                            loading={emergencyStopMutation.isPending}
-                                                            confirmTitle={t('pages:confirmEmergencyStop')}
-                                                            confirmContent={t('pages:thisImmediatelyStopsTheCurrentSimPaperRunItDoesNotPlaceOrCancelRealLiveOrdersContinue')}
-                                                            okText={t('pages:confirmStop')}
-                                                            onConfirm={() => emergencyStopMutation.mutate(
-                                                                {
-                                                                    paperRunId: focusRun.paperRunId,
-                                                                    request: {triggerType: 'MANUAL', reason: '手动紧急停机', triggeredBy: 'console-user'},
-                                                                },
-                                                                {
-                                                                    onSuccess: () => {
-                                                                        message.success(t('pages:emergencyStopCompleted'));
-                                                                        setSearchVersion((v) => v + 1);
-                                                                    },
-                                                                    onError: (err) => showApiError(err as AppApiError, message),
-                                                                },
-                                                            )}
-                                                        >
-                                                            {t('pages:emergencyStop')}</NqDangerConfirmButton>
+
                                                         {(emergencyStopsQuery.data ?? []).length > 0 ? (
                                                             <NqDataTable
                                                                 rowKey="emergencyStopId"
@@ -545,7 +547,7 @@ export function PaperTradingRunsPage() {
                                                                 scroll={{y: 180}}
                                                                 columns={[
                                                                     {title: t('pages:triggerType2'), dataIndex: 'triggerType', key: 'triggerType', width: 110},
-                                                                    {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v} tone={v === 'APPLIED' ? 'danger' : v === 'RESOLVED' ? 'success' : 'warning'}/>},
+                                                                    {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title={v} variant="pill" status={v} label={localizedPaperLabel(v)} tone={v === 'APPLIED' ? 'danger' : v === 'RESOLVED' ? 'success' : 'warning'}/>},
                                                                     {title: t('pages:triggeredAt'), dataIndex: 'triggeredAt', key: 'triggeredAt', width: 170, render: (v: string) => formatDateTime(v)},
                                                                 ]}
                                                             />
@@ -559,13 +561,14 @@ export function PaperTradingRunsPage() {
                                                 <NqRecoveryPanel paperRunId={focusRun.paperRunId}/>
                                                 <NqAlertPanel paperRunId={focusRun.paperRunId}/>
                                             </Space>
-                                        </Col>
-                                    </Row>
+                                        )}]}/>
+                                    </Space>
                                 </Space>
                             </section>
                         )}
                     </Col>
                 </Row>
+                <Collapse items={[{key: 'analysis', label: t('pages:analysisWorkspaces'), children: <ExecutionNavigationCard/>}]}/>
             </Space>
 
             <Modal
@@ -577,6 +580,7 @@ export function PaperTradingRunsPage() {
                 destroyOnClose
             >
                 <Form
+                    name="paper-runs-create"
                     form={createForm}
                     layout="vertical"
                     initialValues={DEFAULT_CREATE_VALUES}
@@ -590,19 +594,19 @@ export function PaperTradingRunsPage() {
                         <Input placeholder={t('pages:publishRecordIdPublishid')}/>
                     </Form.Item>
                     <Form.Item label={t('pages:tradingEnvironment')} name="tradeEnv" rules={[{required: true}]}>
-                        <Select options={TRADE_ENV_OPTIONS}/>
+                        <Select options={localizedPaperOptions(TRADE_ENV_OPTIONS)}/>
                     </Form.Item>
                     <Form.Item label={t('pages:exchange')} name="exchangeCode" rules={[{required: true}]}>
-                        <Select options={EXCHANGE_OPTIONS}/>
+                        <Select options={localizedPaperOptions(EXCHANGE_OPTIONS)}/>
                     </Form.Item>
                     <Form.Item label={t('pages:marketType')} name="marketType" rules={[{required: true}]}>
-                        <Select options={MARKET_TYPE_OPTIONS}/>
+                        <Select options={localizedPaperOptions(MARKET_TYPE_OPTIONS)}/>
                     </Form.Item>
                     <Form.Item label={t('pages:symbol')} name="symbol" rules={[{required: true}]}>
-                        <Select showSearch options={SYMBOL_OPTIONS}/>
+                        <Select showSearch options={localizedPaperOptions(SYMBOL_OPTIONS)}/>
                     </Form.Item>
                     <Form.Item label={t('pages:interval')} name="intervalCode" rules={[{required: true}]}>
-                        <Select options={INTERVAL_OPTIONS}/>
+                        <Select options={localizedPaperOptions(INTERVAL_OPTIONS)}/>
                     </Form.Item>
                     <Form.Item label={t('pages:runConfigurationSnapshotJsonOptional')} name="configSnapshotJson">
                         <Input.TextArea rows={3} placeholder='{"feeRate":"0.001","slippageBps":"10"}'/>
@@ -683,7 +687,7 @@ function RunFactsCard({
     useTranslation('pages');
     return (
         <Card className="page-section" variant="borderless" title={t('pages:runFacts')}>
-            <Descriptions bordered column={3} size="small" style={{marginBottom: 12}}>
+            <Descriptions bordered column={{xs: 1, md: 2, xl: 3}} size="small" style={{marginBottom: 12}}>
                 <Descriptions.Item label={t('pages:paperRunId')}>
                     <span className="nq-mono">{selectedRow.paperRunId}</span>
                 </Descriptions.Item>
@@ -720,7 +724,7 @@ function RunFactsCard({
                                         {title: t('pages:type'), dataIndex: 'orderType', key: 'orderType', width: 80},
                                         nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText exact value={v as string}/>}),
                                         nqNumericColumn({title: t('pages:price'), dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText exact value={v as string}/>}),
-                                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v}/>},
+                                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title={v} variant="pill" status={v} label={localizedPaperLabel(v)}/>},
                                         {title: t('pages:createdAt'), dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
                                     ]}
                                 />
@@ -800,7 +804,7 @@ function RunFactsCard({
                                         scroll={{x: 900}}
                                         columns={[
                                             {title: t('pages:checkType'), dataIndex: 'checkType', key: 'checkType', width: 180},
-                                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title="" variant="pill" status={v} tone={v === 'PASSED' ? 'success' : v === 'REJECTED' ? 'danger' : 'warning'}/>},
+                                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title={v} variant="pill" status={v} label={localizedPaperLabel(v)} tone={v === 'PASSED' ? 'success' : v === 'REJECTED' ? 'danger' : 'warning'}/>},
                                             {title: t('pages:severity'), dataIndex: 'severity', key: 'severity', width: 100},
                                             {title: t('pages:message'), dataIndex: 'message', key: 'message'},
                                             {title: t('pages:time'), dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
@@ -945,7 +949,7 @@ function RunDailyReportPanel({paperRunId}: {paperRunId: string}) {
                         scroll={{x: 900, y: 240}}
                         columns={[
                             {title: t('pages:date'), dataIndex: 'reportDate', key: 'reportDate', width: 120},
-                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <StatusTag title="" variant="pill" status={v} tone={v === 'GENERATED' ? 'success' : 'warning'}/>},
+                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <StatusTag title={v} variant="pill" status={v} label={localizedPaperLabel(v)} tone={v === 'GENERATED' ? 'success' : 'warning'}/>},
                             nqNumericColumn({title: t('pages:totalEquity'), dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText exact value={v as string}/>}),
                             nqNumericColumn({title: t('pages:dailyPnl'), dataIndex: 'dailyPnl', key: 'dailyPnl', width: 120, render: (v) => <NqAmountText exact value={v as string} signed colorBySign/>}),
                             nqNumericColumn({title: t('pages:dailyReturn2'), dataIndex: 'dailyReturn', key: 'dailyReturn', width: 110, render: (v) => <NqPercentText value={v as string} ratio colorBySign/>}),
@@ -986,10 +990,10 @@ function PaperFactSection({query, emptyText, children}: PaperFactSectionProps) {
 function SnapshotBlock({title, content}: {title: string; content?: string | null}) {
     useTranslation('pages');
     return (
-        <Card size="small" title={title}>
-            <Typography.Paragraph className="nq-mono" style={{whiteSpace: 'pre-wrap', marginBottom: 0}}>
+        <Collapse items={[{key: 'snapshot', label: title, children:
+            <Typography.Paragraph className="nq-mono" style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', marginBottom: 0}}>
                 {content || '-'}
-            </Typography.Paragraph>
-        </Card>
+            </Typography.Paragraph>,
+        }]}/>
     );
 }

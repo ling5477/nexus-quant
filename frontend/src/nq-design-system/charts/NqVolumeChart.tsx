@@ -48,7 +48,7 @@ export function NqVolumeChart({
 
     const chart = createChart(element, {
       ...nqLwcOptions(),
-      height,
+      height: Math.max(height - 34, 120),
       width: Math.max(element.clientWidth, 1),
     });
     chartRef.current = chart;
@@ -62,7 +62,7 @@ export function NqVolumeChart({
     chart.timeScale().fitContent();
 
     const observer = new ResizeObserver(([entry]) => {
-      chart.resize(Math.max(Math.floor(entry.contentRect.width), 1), height);
+      chart.resize(Math.max(Math.floor(entry.contentRect.width), 1), Math.max(height - 34, 120));
     });
     observer.observe(element);
 
@@ -76,7 +76,7 @@ export function NqVolumeChart({
   return (
     <div
       className={className ? `nq-chart ${className}` : 'nq-chart'}
-      style={{height}}
+      style={{minHeight: height}}
       data-testid="nq-volume-chart"
     >
       <div className="nq-chart__header">

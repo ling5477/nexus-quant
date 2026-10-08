@@ -8,8 +8,8 @@ it('unknown and non-finite research returns remain missing while measured zero i
     expect(researchPercent(null)).toBe('—');
     expect(researchPercent(undefined)).toBe('—');
     expect(researchPercent(Number.NaN)).toBe('—');
-    expect(researchPercent(0)).toBe('0%');
-    expect(researchPercent(-0.123)).toBe('-12.3%');
+    expect(researchPercent(0)).toBe('0.0000%');
+    expect(researchPercent(-0.123)).toBe('-12.3000%');
 });
 
 it('old reports render the explicit missing state and chronological disclosure', () => {

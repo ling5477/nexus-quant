@@ -3,7 +3,7 @@ import {t} from '@/i18n';
 import {Alert, Button, Card, Col, Descriptions, Empty, Row, Space, Spin, Typography} from 'antd';
 import {useEffect, useMemo, type ReactNode} from 'react';
 import {useQuery} from '@tanstack/react-query';
-import {useNavigate, useParams} from 'react-router-dom';
+import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 
 import {backtestsApi} from '@/features/backtests/backtestsApi';
 import {evaluationsApi} from '@/api/evaluations';
@@ -66,6 +66,8 @@ export function BacktestDetailPage() {
     useTranslation('pages');
     const navigate = useNavigate();
     const {backtestConfigId} = useParams<{backtestConfigId: string}>();
+    const [params] = useSearchParams();
+    const requestedRunId = params.get('backtestRunId');
     const configId = backtestConfigId ?? '';
 
     // 进入页面注入 v2 CSS 变量(additive 的 --nq-*,与 v1 的 --nq-color-* 不冲突),供表格列组件读色/等宽。
@@ -83,9 +85,20 @@ export function BacktestDetailPage() {
     const evaluationsQuery = useQuery({
         queryKey: evaluationsQueryKeys.list({backtestConfigId: configId}, 1),
         queryFn: () => evaluationsApi.list({backtestConfigId: configId}),
-        enabled: Boolean(configId),
+        enabled: Boolean(configId) && !requestedRunId,
     });
-    const selectedEvaluation = pickEvaluation(evaluationsQuery.data);
+    const requestedRun = useQuery({queryKey: [...backtestsQueryKeys.all, 'run-detail', requestedRunId ?? ''],
+        queryFn: () => backtestsApi.getRun(requestedRunId!), enabled: Boolean(requestedRunId), retry: false});
+    // 禁用请求不会清除共享缓存，消费报告和动作前必须再次校验归属关系。
+    const requestedRunMatches = !requestedRun.isError && requestedRun.data?.backtestConfigId === configId
+        && requestedRun.data?.backtestRunId === requestedRunId;
+    const requestedEvaluation = useQuery({queryKey: evaluationsQueryKeys.forRun(requestedRunId ?? ''),
+        queryFn: () => evaluationsApi.forRun(requestedRunId!), enabled: Boolean(requestedRunId)
+            && requestedRunMatches && requestedRun.data?.evaluationStatus === 'SUCCEEDED', retry: false});
+    const selectedEvaluation = requestedRunId
+        ? requestedRunMatches && !requestedEvaluation.isError && requestedEvaluation.data?.backtestRunId === requestedRunId
+            ? requestedEvaluation.data : null
+        : pickEvaluation(evaluationsQuery.data);
     const evalReportId = selectedEvaluation?.evalReportId ?? null;
 
     // 评估明细用 useLiveQuery:仅 manual refresh + freshness,不轮询静态回测结果。
@@ -154,10 +167,11 @@ export function BacktestDetailPage() {
 
     const refreshAll = () => {
         void configQuery.refetch();
-        void evaluationsQuery.refetch();
-        evalLive.refresh();
+        if (!requestedRunId) void evaluationsQuery.refetch();
+        if (requestedRunId) {void requestedRun.refetch(); if (requestedRunMatches && requestedRun.data?.evaluationStatus === 'SUCCEEDED') void requestedEvaluation.refetch();}
+        if (evalReportId) evalLive.refresh();
         void datasetsQuery.refetch();
-        pnlLive.refresh();
+        if (runId) pnlLive.refresh();
     };
 
     if (!configId) {
@@ -199,6 +213,8 @@ export function BacktestDetailPage() {
                 </Row>
             </Card>
 
+            {requestedRunId && requestedRun.data && !requestedRun.isError && !requestedRunMatches
+                && <Alert type="warning" showIcon message={t('pages:workflowRunConfigMismatch')}/>}
             {configQuery.isLoading ? (
                 <Card className="page-section" variant="borderless">
                     <Spin/>
@@ -229,23 +245,16 @@ export function BacktestDetailPage() {
                         ) : (
                             <Row gutter={[12, 12]}>
                                 <Col xs={12} md={8} xl={6}>
-                                    <MetricCard label={t('pages:totalReturn')}>
-                                        {evaluation?.totalReturn != null
-                                            ? <ChangeCell value={evaluation.totalReturn} precision={2}/>
-                                            : UNAVAILABLE}
-                                    </MetricCard>
-                                </Col>
-                                <Col xs={12} md={8} xl={6}>
                                     <MetricCard label={t('pages:totalReturnRate')}>
                                         {evaluation?.totalReturnRate != null
-                                            ? <ChangeCell value={evaluation.totalReturnRate} percent ratio/>
+                                            ? <ChangeCell value={evaluation.totalReturnRate} percent ratio precision={4}/>
                                             : UNAVAILABLE}
                                     </MetricCard>
                                 </Col>
                                 <Col xs={12} md={8} xl={6}>
-                                    <MetricCard label={t('pages:maximumDrawdown')}>
+                                    <MetricCard label={t('pages:maximumDrawdownRate')}>
                                         {evaluation?.maxDrawdownRate != null
-                                            ? <PercentCell value={evaluation.maxDrawdownRate} ratio signed={false} colorBySign={false}/>
+                                            ? <PercentCell value={evaluation.maxDrawdownRate} ratio precision={4} signed={false} colorBySign={false}/>
                                             : UNAVAILABLE}
                                     </MetricCard>
                                 </Col>
@@ -259,7 +268,7 @@ export function BacktestDetailPage() {
                                 <Col xs={12} md={8} xl={6}>
                                     <MetricCard label={t('pages:winRate')}>
                                         {evaluation?.winRate != null
-                                            ? <PercentCell value={evaluation.winRate} ratio signed={false}/>
+                                            ? <PercentCell value={evaluation.winRate} ratio precision={4} signed={false}/>
                                             : UNAVAILABLE}
                                     </MetricCard>
                                 </Col>
@@ -287,7 +296,7 @@ export function BacktestDetailPage() {
                             </Row>
                         )}
                         <Typography.Text type="secondary" style={{display: 'block', marginTop: 8, fontSize: 12}}>
-                            {t('pages:returnDrawdownAndWinRatiosAreDisplayedAsBackendRatios100BackendValuesMustUseTheSameRatioConvention')}</Typography.Text>
+                            {t('pages:returnDrawdownAndWinRatiosAreDisplayedAsBackendRatios100BackendValuesMustUseTheSameRatioConvention')} {t('pages:financialAmountCurrency')}</Typography.Text>
                     </Card>
 
                     {/* 权益 / 回撤曲线:真实来源 GET /api/backtest-runs/{runId}/pnl-snapshots;回撤客户端派生 */}
@@ -322,8 +331,12 @@ export function BacktestDetailPage() {
                                 <BacktestCurveChart points={drawdownPoints} kind="drawdown" unavailableText={curveUnavailable}/>
                             </Col>
                         </Row>
-                        <Typography.Text type="secondary" style={{display: 'block', marginTop: 8, fontSize: 12}}>
-                            {t('pages:sourceGetApiBacktestRuns')}{'{runId}'}{t('pages:pnlSnapshotsSimPnlSnapshotsOrderedBySnapshottimeAscendingDrawdownIsDerivedAsEquityMinusTheRunningPea')}</Typography.Text>
+                        <details style={{marginTop: 8}}>
+                            <summary>{t('pages:validationAdvancedDiagnostics')}</summary>
+                            <Typography.Text type="secondary">
+                                {t('pages:sourceGetApiBacktestRuns')}{'{runId}'}{t('pages:pnlSnapshotsSimPnlSnapshotsOrderedBySnapshottimeAscendingDrawdownIsDerivedAsEquityMinusTheRunningPea')}
+                            </Typography.Text>
+                        </details>
                     </Card>
 
                     {/* 交易 / 风险摘要(聚合,复用表格列组件) */}

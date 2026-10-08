@@ -29,9 +29,11 @@ export function useEvaluateMutation() {
 
     return useMutation({
         mutationFn: (runId: string) => evaluationsApi.evaluate(runId),
-        onSuccess: (_, runId) => {
-            queryClient.invalidateQueries({queryKey: evaluationsQueryKeys.all});
-            queryClient.invalidateQueries({queryKey: evaluationsQueryKeys.detail(runId)});
+        onSuccess: (report, runId) => {
+            // 重新评估可能生成新报告 ID；先缓存新报告，避免刷新已经被替换的旧详情。
+            queryClient.setQueryData(evaluationsQueryKeys.detail(report.evalReportId), report);
+            queryClient.setQueryData(evaluationsQueryKeys.forRun(runId), report);
+            queryClient.invalidateQueries({queryKey: [...evaluationsQueryKeys.all, 'list']});
         },
     });
 }

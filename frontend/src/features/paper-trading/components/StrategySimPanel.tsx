@@ -1,4 +1,5 @@
-import {App, Button, Card, Form, Input, Space, Typography} from 'antd';
+import {Alert, App, Button, Card, Form, Input, Space, Typography} from 'antd';
+import {useSearchParams} from 'react-router-dom';
 import {useState} from 'react';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {paperTradingQueryKeys} from '@/api/query-keys';
@@ -23,6 +24,7 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
     const [busy, setBusy] = useState(false);
     const queryClient = useQueryClient();
     const [form] = Form.useForm<{publishId: string; budget: string}>();
+    const [params] = useSearchParams();
     const strategyEnabled = import.meta.env.VITE_STRATEGY_SIM_ENABLED === 'true';
     const continuousEnabled = import.meta.env.VITE_CONTINUOUS_SIM_ENABLED === 'true';
     const selectedId = Boolean(selectedRun?.canonicalAccountId) ? selectedRun!.paperRunId : null;
@@ -82,7 +84,10 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
     return <Card className="page-section" variant="borderless" title={t('pages:strategySimTitle')}>
         <Space direction="vertical" size={12} style={{display: 'flex'}}>
             <Typography.Text type="secondary">{t('pages:strategySimDescription')}</Typography.Text>
-            {strategyEnabled && <Form form={form} layout="inline" onFinish={(values) => { void create(values); }}>
+            {!strategyEnabled && <Alert type="info" showIcon message={t('pages:workflowSimUnavailable')}
+                description={params.get('publishId') ? <Typography.Text copyable>{params.get('publishId')}</Typography.Text> : undefined}/>}
+            {strategyEnabled && <Form name="strategy-sim-create" form={form} layout="inline"
+                initialValues={{publishId: params.get('publishId') ?? ''}} onFinish={(values) => { void create(values); }}>
                 <Form.Item name="publishId" label={t('pages:publishId')}
                            rules={[{required: true, message: t('pages:strategySimPublishRequired')}]}>
                     <Input style={{width: 220}}/>

@@ -19,6 +19,7 @@ import {
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
+import {Link, useSearchParams} from 'react-router-dom';
 
 import {formatApiError, showApiError} from '@/api/errors';
 import {NqPageHeader} from '@/components/nq/NqPageHeader';
@@ -41,12 +42,13 @@ type ResearchRow = ResearchConfigListItem;
 export function ResearchPage() {
     useTranslation('pages');
     const {message} = App.useApp();
+    const [params] = useSearchParams();
     const [queryForm] = useLocalizedForm<ResearchListFilters>();
     const [createForm] = useLocalizedForm<ResearchConfigCreateRequest>();
     const [submittedFilters, setSubmittedFilters] = useState<ResearchListFilters>(defaultResearchListFilters);
     const [searchVersion, setSearchVersion] = useState(0);
-    const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
-    const [createOpen, setCreateOpen] = useState(false);
+    const [selectedConfigId, setSelectedConfigId] = useState<string | null>(params.get('researchConfigId'));
+    const [createOpen, setCreateOpen] = useState(params.get('create') === 'true');
     const researchQuery = useResearchListQuery(submittedFilters.sourceStrategyId, searchVersion);
     const researchDetailQuery = useResearchDetailQuery(selectedConfigId);
     const createResearchMutation = useCreateResearchMutation();
@@ -138,11 +140,11 @@ export function ResearchPage() {
                 datasetSpec: normalizeOptionalText(values.datasetSpec),
             },
             {
-                onSuccess: () => {
+                onSuccess: (created) => {
                     message.success(t('pages:researchConfigurationCreated'));
                     setCreateOpen(false);
                     createForm.resetFields();
-                    setSearchVersion((value) => (value === 0 ? 1 : value + 1));
+                    setSelectedConfigId(created.researchConfigId);
                 },
                 onError: (error) => {
                     showApiError(error as AppApiError, message);
@@ -175,7 +177,7 @@ export function ResearchPage() {
                     )}
                 >
                     <Form
-                        form={queryForm}
+                        name="research-queryForm" form={queryForm}
                         layout="vertical"
                         initialValues={defaultResearchListFilters}
                         onFinish={handleSearch}
@@ -222,7 +224,7 @@ export function ResearchPage() {
                         <Typography.Text type="secondary">{t('pages:total')}{visibleItems.length} {t('pages:records')}</Typography.Text> : null}
                 >
                     {!hasSearched ? (
-                        <Empty description={t('pages:searchToLoadResearchConfigurations')}/>
+                        <Empty description={t('pages:workflowManualSearch')}/>
                     ) : researchQuery.error ? (
                         <Alert
                             type="error"
@@ -267,6 +269,9 @@ export function ResearchPage() {
                     />
                 ) : researchDetailQuery.data ? (
                     <Space direction="vertical" size={16} style={{display: 'flex'}}>
+                        <Link to={`/backtests?researchConfigId=${encodeURIComponent(researchDetailQuery.data.researchConfigId)}&create=true`}>
+                            {t('pages:workflowCreateBacktest')}
+                        </Link>
                         <Descriptions bordered column={2} size="small">
                             <Descriptions.Item
                                 label={t('pages:researchConfigurationId')}>{researchDetailQuery.data.researchConfigId}</Descriptions.Item>
@@ -313,7 +318,8 @@ export function ResearchPage() {
                 onClose={() => setCreateOpen(false)}
                 destroyOnClose
             >
-                <Form form={createForm} layout="vertical" onFinish={handleCreate}>
+                <Form name="research-createForm" form={createForm} layout="vertical" onFinish={handleCreate}
+                    initialValues={{sourceStrategyId: params.get('sourceStrategyId') ?? ''}}>
                     <Form.Item label={t('pages:sourceStrategyId')} name="sourceStrategyId"
                                rules={[{required: true, message: t('pages:enterSourcestrategyid')}]}>
                         <Input/>

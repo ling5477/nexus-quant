@@ -75,5 +75,15 @@
     "checkConnection": "Check your connection and the latest state. Confirm the outcome before deciding whether to retry."
   },
   "fieldInvalid": "{{field}}: check this value.",
-  "requestField": "Request"
+  "requestField": "Request",
+  "login": {
+    "credentials": "The username or password is incorrect. Check your credentials and try again.",
+    "expired": "Your session has expired. Sign in again to continue.",
+    "unavailableAccount": "This account cannot sign in right now. Contact your administrator.",
+    "rateLimited": "Too many attempts. Wait a moment and try again.",
+    "network": "Unable to connect. Check your connection and try again.",
+    "service": "The sign-in service is temporarily unavailable. Try again shortly.",
+    "failed": "Sign-in could not be completed. Try again or contact your administrator.",
+    "diagnostic": "Diagnostics"
+  }
 }

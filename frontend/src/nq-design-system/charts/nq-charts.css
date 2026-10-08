@@ -31,7 +31,12 @@
 .nq-chart__canvas {
   width: 100%;
   min-height: 120px;
+  flex: 0 0 auto;
 }
+
+.nq-chart__inspection { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 10px; font-size: 12px; color: var(--nq-text-secondary); }
+.nq-chart__inspection time { font-family: var(--nq-font-mono); }
+.nq-chart__inspection label { display: flex; gap: 8px; align-items: center; }
 
 .nq-chart__state {
   position: absolute;

@@ -1,0 +1,52 @@
+.runtime-readiness-page,
+.runtime-readiness-page .ant-space-item,
+.runtime-readiness-page .ant-tabs-content-holder,
+.runtime-readiness-page .ant-tabs-tabpane,
+.runtime-readiness-page .ant-card,
+.runtime-readiness-page .ant-card-body,
+.runtime-readiness-page .ant-col {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.runtime-readiness-page .ant-card-head-wrapper {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.runtime-readiness-page .ant-card-head-title,
+.runtime-readiness-page .ant-typography,
+.runtime-readiness-page .ant-tag {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.runtime-readiness-page .ant-table-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.runtime-readiness-page .ant-table-cell {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 575px) {
+    .runtime-readiness-page .ant-card-head {
+        padding-inline: 12px;
+    }
+
+    .runtime-readiness-page .ant-card-body {
+        padding: 12px;
+    }
+
+    .runtime-readiness-page .ant-card-extra {
+        margin-inline-start: 0;
+        max-width: 100%;
+    }
+}
+
+.runtime-readiness-page span[title] {
+    max-width: 100%;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+}

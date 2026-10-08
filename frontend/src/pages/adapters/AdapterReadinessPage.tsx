@@ -59,7 +59,7 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 function reasonLabel(reason: string): string {
-    return REASON_LABELS[reason] ?? reason;
+    return REASON_LABELS[reason] ?? t('pages:runtimeReasonUntranslated');
 }
 
 function buildColumns(): ColumnsType<AdapterReadinessItem> {
@@ -129,7 +129,10 @@ function buildColumns(): ColumnsType<AdapterReadinessItem> {
             title: t('pages:explanation'),
             dataIndex: 'message',
             key: 'message',
-            render: (message: string) => <Text type="secondary">{message}</Text>,
+            render: (message: string, row) => <Space direction="vertical" size={4}>
+                <Text type="secondary">{row.allowed ? t('pages:adapterReadOnlyCapability') : t('pages:adapterUnavailableExplanation')}</Text>
+                <details><summary>{t('pages:validationAdvancedDiagnostics')}</summary><Text type="secondary">{message}</Text></details>
+            </Space>,
         },
     ];
 }

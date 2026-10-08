@@ -147,9 +147,9 @@ export function ValidationReviewQueue(props: ValidationReviewQueueProps) {
                 onRow={(record) => ({onClick: () => props.onSelectCase(record.id)})}
             />
 
-            <Space style={{justifyContent: 'space-between', width: '100%'}}>
+            <Space wrap style={{justifyContent: 'space-between', width: '100%'}}>
                 <Text type="secondary">{t('pages:page')}{pageNumber} {t('pages:current2')}{props.data.length} {t('pages:itemsTotalUnavailableFromBackend')}</Text>
-                <Space>
+                <Space wrap>
                     <Button disabled={props.offset === 0 || props.isFetching}
                             onClick={() => props.onPageChange(Math.max(0, props.offset - props.limit))}>
                         {t('pages:previousPage')}</Button>

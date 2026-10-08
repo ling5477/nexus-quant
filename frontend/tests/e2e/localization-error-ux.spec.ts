@@ -187,11 +187,11 @@ test.describe('localization and error UX with isolated HTTP fixtures', () => {
         const notice = page.locator('[data-error-presentation="AUTH_REDIRECT_OR_PROMPT"]');
         await expect(notice).toContainText('FUTURE_BACKEND_CODE');
         await expect(notice).toContainText('trace-unknown-safe');
-        await expect(notice).toContainText('暂时无法完成请求');
+        await expect(notice).toContainText('登录未完成，请重试；若仍失败，请联系管理员。');
         await expect(notice).toContainText('username');
         await expect(notice).not.toContainText(rawDiagnostic);
         await changeLocale(page, 'en-US');
-        await expect(notice).toContainText('The request could not be completed.');
+        await expect(notice).toContainText('Sign-in could not be completed. Try again or contact your administrator.');
         await expect(notice).toContainText('username: check this value.');
         await expect(notice).toContainText('trace-unknown-safe');
         await expect(page.locator('body')).not.toContainText(rawDiagnostic);
@@ -244,10 +244,38 @@ test.describe('localization and error UX with isolated HTTP fixtures', () => {
             await drawer.getByRole('button', {name: copy.cancel}).click();
             await page.goto('/paper-trading/runs');
             await expect(page.getByText(locale === 'zh-CN' ? '查询区' : 'Query', {exact: true})).toBeVisible();
-            await page.getByRole('button', {name: /(?:创建|Create) Paper Run/i}).click();
+            await page.getByRole('button', {name: /创建历史 Research Paper|Create Legacy Research Paper/i}).click();
             const modal = page.locator('.ant-modal');
             await expect(modal.getByRole('button', {name: locale === 'zh-CN' ? /确\s*定/ : /^OK$/})).toBeVisible();
             await modal.getByRole('button', {name: copy.cancel}).click();
         }
     });
 });
+
+for (const kind of ['credentials', 'network', 'service', 'expired'] as const) {
+    test(`登录上下文区分 ${kind}，保留用户名且诊断默认折叠`, async ({page}) => {
+        await installFixtures(page);
+        if (kind === 'expired') {
+            await page.addInitScript(() => sessionStorage.setItem('nq.auth-error', JSON.stringify({code: 'UNAUTHORIZED', traceId: 'expired-trace'})));
+        } else {
+            await page.route('**/api/auth/login', route => kind === 'network' ? route.abort('failed')
+                : route.fulfill({status: kind === 'service' ? 503 : 401, json: {code: kind === 'service' ? 'SERVER_ERROR' : 'UNAUTHORIZED', message: rawDiagnostic, traceId: 'login-trace'}}));
+        }
+        await page.goto('/login');
+        if (kind !== 'expired') {
+            await page.getByLabel('账号', {exact: true}).fill('preserved-user');
+            await page.getByLabel('密码', {exact: true}).fill('fixture-password');
+            await page.getByRole('button', {name: /登\s*录/}).click();
+            await expect(page.getByLabel('账号', {exact: true})).toHaveValue('preserved-user');
+        }
+        const notice = page.locator('#console-login-error');
+        const expected = {credentials: '账号或密码不正确', network: '无法连接', service: '登录服务暂时不可用', expired: '登录已过期'};
+        await expect(notice).toContainText(expected[kind]);
+        await expect(page.locator('body')).not.toContainText(rawDiagnostic);
+        if (kind !== 'network') {
+            await expect(notice.locator('details')).not.toHaveAttribute('open', '');
+            await notice.locator('summary').click();
+            await expect(notice).toContainText(kind === 'expired' ? 'expired-trace' : 'login-trace');
+        }
+    });
+}

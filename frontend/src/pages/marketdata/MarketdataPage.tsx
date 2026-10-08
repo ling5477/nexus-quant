@@ -1,7 +1,7 @@
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
-import {Alert, Button, Card, DatePicker, Descriptions, Form, Input, Select, Space, Table, Tag, Typography, message} from 'antd';
+import {Alert, Button, Card, Collapse, DatePicker, Descriptions, Form, Input, Select, Space, Table, Tabs, Tag, Typography, message} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useEffect, useMemo, useState, type ReactNode} from 'react';
@@ -39,6 +39,7 @@ import type {
 import {formatDateTime, formatNumber} from '@/utils/formatters';
 import thirdPartyNotices from '../../../../THIRD_PARTY_NOTICES.md?raw';
 import financialDisclaimer from '../../../../DISCLAIMER.md?raw';
+import './MarketdataPage.css';
 
 const columns: ColumnsType<MarketdataBar> = [
     {get title() { return t('pages:exchange'); }, dataIndex: 'exchangeCode', key: 'exchangeCode', width: 120},
@@ -386,13 +387,13 @@ function summarizeBarsFreshness(
         return {state: 'disabled', detail: t('pages:notQueried'), stale: false};
     }
     if (loading) {
-        return {state: 'delayed', detail: 'loading', stale: false};
+        return {state: 'delayed', detail: t('pages:marketdataLoadingSource'), stale: false};
     }
     if (bars.length === 0) {
-        return {state: 'no_data', detail: '0 bars', stale: false};
+        return {state: 'no_data', detail: t('pages:marketdataNoBars'), stale: false};
     }
     if (quality.gapCount > 0) {
-        return {state: 'degraded', detail: `${quality.gapCount} gap bars`, stale: false};
+        return {state: 'degraded', detail: t('pages:marketdataGapBars', {count: quality.gapCount}), stale: false};
     }
 
     const lastBar = bars[bars.length - 1];
@@ -409,14 +410,14 @@ function summarizeBarsFreshness(
     if (isStale) {
         return {
             state: 'stale',
-            detail: `last ${formatDateTime(lastBar.closeTime ?? lastBar.openTime)}`,
+            detail: t('pages:marketdataLastBarAt', {time: formatDateTime(lastBar.closeTime ?? lastBar.openTime)}),
             stale: true,
         };
     }
 
     return {
         state: 'fresh',
-        detail: `last ${formatDateTime(lastBar.closeTime ?? lastBar.openTime)}`,
+        detail: t('pages:marketdataLastBarAt', {time: formatDateTime(lastBar.closeTime ?? lastBar.openTime)}),
         stale: false,
     };
 }
@@ -477,7 +478,7 @@ function summarizeDataQualityReadiness(
         return {
             status: 'GAP',
             title: 'GAP',
-            detail: `${quality.gapCount} gap signal(s) detected from qualityStatus or interval sequence`,
+            detail: t('pages:marketdataGapSignals', {count: quality.gapCount}),
             sourceHealth: 'UNAVAILABLE',
             sourceHealthDetail: t('pages:readinessApiUnavailableUsingBarDerivedFallback'),
         };
@@ -1124,115 +1125,115 @@ function MarketdataQualityCenterPanel({
                     size="small"
                     column={{xs: 1, sm: 2, md: 3}}
                     items={[
-                        {key: 'scopeExchange', label: 'scope.exchangeCode', children: <ScopeValue value={overview?.scope.exchangeCode ?? submittedQuery?.exchangeCode} />},
-                        {key: 'scopeMarket', label: 'scope.marketType', children: <ScopeValue value={overview?.scope.marketType ?? submittedQuery?.marketType} />},
-                        {key: 'scopeSymbol', label: 'scope.symbol', children: <ScopeValue value={overview?.scope.symbol ?? submittedQuery?.symbol} />},
-                        {key: 'scopeInterval', label: 'scope.interval', children: <ScopeValue value={overview?.scope.interval ?? submittedQuery?.interval} />},
-                        {key: 'scopeSourceType', label: 'scope.sourceType', children: <ScopeValue value={overview?.scope.sourceType} />},
-                        {key: 'scopeDataOrigin', label: 'scope.dataOrigin', children: <ScopeValue value={overview?.scope.dataOrigin} />},
-                        {key: 'scopeDatasetId', label: 'scope.datasetId', children: <ScopeValue value={overview?.scope.datasetId} />},
-                        {key: 'scopeFrom', label: 'scope.from', children: <MetricText>{overview?.scope.from ? formatDateTime(overview.scope.from) : (submittedQuery ? formatDateTime(submittedQuery.startTime) : stableFactPendingText())}</MetricText>},
-                        {key: 'scopeTo', label: 'scope.to', children: <MetricText>{overview?.scope.to ? formatDateTime(overview.scope.to) : (submittedQuery ? formatDateTime(submittedQuery.endTime) : stableFactPendingText())}</MetricText>},
-                        {key: 'generatedAt', label: 'generatedAt', children: <MetricText>{overview ? formatDateTime(overview.generatedAt) : stableFactPendingText()}</MetricText>},
+                        {key: 'scopeExchange', label: t('pages:exchange'), children: <ScopeValue value={overview?.scope.exchangeCode ?? submittedQuery?.exchangeCode} />},
+                        {key: 'scopeMarket', label: t('pages:market'), children: <ScopeValue value={overview?.scope.marketType ?? submittedQuery?.marketType} />},
+                        {key: 'scopeSymbol', label: t('pages:symbol'), children: <ScopeValue value={overview?.scope.symbol ?? submittedQuery?.symbol} />},
+                        {key: 'scopeInterval', label: t('pages:interval'), children: <ScopeValue value={overview?.scope.interval ?? submittedQuery?.interval} />},
+                        {key: 'scopeSourceType', label: t('pages:marketdataSourceType'), children: <ScopeValue value={overview?.scope.sourceType} />},
+                        {key: 'scopeDataOrigin', label: t('pages:dataOrigin'), children: <ScopeValue value={overview?.scope.dataOrigin} />},
+                        {key: 'scopeDatasetId', label: t('pages:datasetId'), children: <ScopeValue value={overview?.scope.datasetId} />},
+                        {key: 'scopeFrom', label: t('pages:startTime'), children: <MetricText>{overview?.scope.from ? formatDateTime(overview.scope.from) : (submittedQuery ? formatDateTime(submittedQuery.startTime) : stableFactPendingText())}</MetricText>},
+                        {key: 'scopeTo', label: t('pages:endTime'), children: <MetricText>{overview?.scope.to ? formatDateTime(overview.scope.to) : (submittedQuery ? formatDateTime(submittedQuery.endTime) : stableFactPendingText())}</MetricText>},
+                        {key: 'generatedAt', label: t('pages:generatedAt'), children: <MetricText>{overview ? formatDateTime(overview.generatedAt) : stableFactPendingText()}</MetricText>},
                     ]}
                 />
 
                 <div
                     style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(190px, 100%), 1fr))',
                         gap: 12,
                     }}
                 >
                     <MetricTile
-                        label="totalBars"
+                        label={t('pages:marketdataTotalBars')}
                         value={<MetricText>{overview?.totalBars ?? (loading || fetching ? 'LOADING' : stableFactPendingText())}</MetricText>}
                         detail={t('pages:localBarAggregateCountZeroAppearsOnlyWhenExplicitlyReturnedByTheBackend')}
                     />
                     <MetricTile
-                        label="expectedBars"
+                        label={t('pages:marketdataExpectedBars')}
                         value={<MetricText>{overviewCountText(overview?.expectedBars)}</MetricText>}
                         detail={t('pages:nullMeansNoStableExpectedCountFactIsAvailable')}
                     />
                     <MetricTile
-                        label="gapCount"
+                        label={t('pages:gapCount')}
                         value={<MetricText>{overviewCountText(overview?.gapCount)}</MetricText>}
                         detail={t('pages:nullDoesNotMeanNoGapsMissingFactsRemainUnknown')}
                     />
-                    <QualityMetricTile label="duplicateCount" metric={overview?.duplicateCount} />
-                    <QualityMetricTile label="outOfOrderCount" metric={overview?.outOfOrderCount} />
-                    <QualityMetricTile label="staleCount" metric={overview?.staleCount} />
+                    <QualityMetricTile label={t('pages:marketdataDuplicateCount')} metric={overview?.duplicateCount} />
+                    <QualityMetricTile label={t('pages:marketdataOutOfOrderCount')} metric={overview?.outOfOrderCount} />
+                    <QualityMetricTile label={t('pages:marketdataStaleCount')} metric={overview?.staleCount} />
                     <MetricTile
-                        label="latestBarTime"
+                        label={t('pages:marketdataLatestBarTime')}
                         value={<MetricText>{overview ? dateText(overview.latestBarTime) : stableFactPendingText()}</MetricText>}
                         detail={overview?.latestBarTime ?? t('pages:noDataUnknownRemainEmptyStates')}
                     />
                     <MetricTile
-                        label="earliestBarTime"
+                        label={t('pages:marketdataEarliestBarTime')}
                         value={<MetricText>{overview ? dateText(overview.earliestBarTime) : stableFactPendingText()}</MetricText>}
                         detail={overview?.earliestBarTime ?? t('pages:noDataUnknownRemainEmptyStates')}
                     />
                     <MetricTile
-                        label="lastSuccessAt"
+                        label={t('pages:marketdataLastSuccessAt')}
                         value={<MetricText>{overview ? dateText(overview.lastSuccessAt) : stableFactPendingText()}</MetricText>}
                         detail={overview?.lastSuccessAt ?? t('pages:noIngestionSuccessFacts')}
                     />
                     <MetricTile
-                        label="lastFailureAt"
+                        label={t('pages:marketdataLastFailureAt')}
                         value={<MetricText>{overview ? dateText(overview.lastFailureAt) : stableFactPendingText()}</MetricText>}
                         detail={overview?.lastFailureAt ?? t('pages:noIngestionFailureFacts')}
                     />
                     <MetricTile
-                        label="lastIngestionRunId"
+                        label={t('pages:marketdataLastIngestionRunId')}
                         value={<MetricText>{overview?.lastIngestionRunId ?? stableFactPendingText()}</MetricText>}
                         detail={t('pages:onlyRunIdsAreDisplayedNeverRawRequestsHeadersOrCredentials')}
                     />
                     <MetricTile
-                        label="sourceHealth"
+                        label={t('pages:sourceHealth')}
                         value={<MarketDataStatusBadge status={overview?.sourceHealth ?? (submittedQuery ? 'UNKNOWN' : 'NO_DATA')} />}
                         detail={t('pages:sourcehealthDiagnosesDataSourceHealthNotProviderTradingPermissions')}
                     />
                     <MetricTile
-                        label="freshnessStatus"
+                        label={t('pages:marketdataFreshnessStatus')}
                         value={<MarketDataStatusBadge status={overview?.freshnessStatus ?? (submittedQuery ? 'UNKNOWN' : 'NO_DATA')} />}
                         detail={t('pages:noDataUnknownExplicitlyDoNotIndicateAPass')}
                     />
                     <MetricTile
-                        label="qualityStatus"
+                        label={t('pages:qualityStatus')}
                         value={<MarketDataStatusBadge status={overview?.qualityStatus ?? (submittedQuery ? 'UNKNOWN' : 'NO_DATA')} />}
                         detail={t('pages:incompleteInvalidGapDetectedRemainVisible')}
                     />
                 </div>
 
                 <Descriptions
-                    title="dataOriginSummary"
+                    title={t('pages:marketdataOriginSummary')}
                     size="small"
                     column={{xs: 1, sm: 2, md: 3}}
                     items={[
-                        {key: 'requestedDataOrigin', label: 'requestedDataOrigin', children: <ScopeValue value={overview?.dataOriginSummary.requestedDataOrigin} />},
-                        {key: 'effectiveDataOrigin', label: 'effectiveDataOrigin', children: <MarketDataOriginBadge origin={overview?.dataOriginSummary.effectiveDataOrigin ?? 'UNKNOWN'} />},
-                        {key: 'localDbBars', label: 'localDbBars', children: <MetricText>{overview?.dataOriginSummary.localDbBars ?? stableFactPendingText()}</MetricText>},
-                        {key: 'fixtureBars', label: 'fixtureBars', children: <MetricText>{overview?.dataOriginSummary.fixtureBars ?? stableFactPendingText()}</MetricText>},
-                        {key: 'unknownOriginBars', label: 'unknownOriginBars', children: <MetricText>{overview?.dataOriginSummary.unknownOriginBars ?? stableFactPendingText()}</MetricText>},
-                        {key: 'supportLevel', label: 'supportLevel', children: <MetricText>{overview?.dataOriginSummary.supportLevel ?? stableFactPendingText()}</MetricText>},
+                        {key: 'requestedDataOrigin', label: t('pages:marketdataRequestedDataOrigin'), children: <ScopeValue value={overview?.dataOriginSummary.requestedDataOrigin} />},
+                        {key: 'effectiveDataOrigin', label: t('pages:marketdataEffectiveDataOrigin'), children: <MarketDataOriginBadge origin={overview?.dataOriginSummary.effectiveDataOrigin ?? 'UNKNOWN'} />},
+                        {key: 'localDbBars', label: t('pages:marketdataLocalDbBars'), children: <MetricText>{overview?.dataOriginSummary.localDbBars ?? stableFactPendingText()}</MetricText>},
+                        {key: 'fixtureBars', label: t('pages:marketdataFixtureBars'), children: <MetricText>{overview?.dataOriginSummary.fixtureBars ?? stableFactPendingText()}</MetricText>},
+                        {key: 'unknownOriginBars', label: t('pages:marketdataUnknownOriginBars'), children: <MetricText>{overview?.dataOriginSummary.unknownOriginBars ?? stableFactPendingText()}</MetricText>},
+                        {key: 'supportLevel', label: t('pages:marketdataSupportLevel'), children: <MetricText>{overview?.dataOriginSummary.supportLevel ?? stableFactPendingText()}</MetricText>},
                     ]}
                 />
                 <Typography.Text type="secondary">
                     {t('pages:effectivedataoriginLocalDbMeansLocalFactsAreAggregatedReadOnlyPublicOutboundInARequestOrHistoricalDe')}</Typography.Text>
 
                 <Descriptions
-                    title="datasetCoverageSummary"
+                    title={t('pages:marketdataDatasetCoverage')}
                     size="small"
                     column={{xs: 1, sm: 2, md: 4}}
                     items={[
-                        {key: 'datasetCount', label: 'datasetCount', children: <MetricText>{overview?.datasetCoverageSummary.datasetCount ?? stableFactPendingText()}</MetricText>},
-                        {key: 'coverageExpected', label: 'expectedBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.expectedBars)}</MetricText>},
-                        {key: 'actualBars', label: 'actualBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.actualBars)}</MetricText>},
-                        {key: 'missingBars', label: 'missingBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.missingBars)}</MetricText>},
-                        {key: 'duplicateBars', label: 'duplicateBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.duplicateBars)}</MetricText>},
-                        {key: 'invalidBars', label: 'invalidBars', children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.invalidBars)}</MetricText>},
-                        {key: 'latestDatasetId', label: 'latestDatasetId', children: <ScopeValue value={overview?.datasetCoverageSummary.latestDatasetId} />},
-                        {key: 'latestCoverageAt', label: 'latestCoverageAt', children: <MetricText>{overview ? dateText(overview.datasetCoverageSummary.latestCoverageAt) : stableFactPendingText()}</MetricText>},
+                        {key: 'datasetCount', label: t('pages:marketdataDatasetCount'), children: <MetricText>{overview?.datasetCoverageSummary.datasetCount ?? stableFactPendingText()}</MetricText>},
+                        {key: 'coverageExpected', label: t('pages:marketdataExpectedBars'), children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.expectedBars)}</MetricText>},
+                        {key: 'actualBars', label: t('pages:marketdataActualBars'), children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.actualBars)}</MetricText>},
+                        {key: 'missingBars', label: t('pages:marketdataMissingBars'), children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.missingBars)}</MetricText>},
+                        {key: 'duplicateBars', label: t('pages:marketdataDuplicateBars'), children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.duplicateBars)}</MetricText>},
+                        {key: 'invalidBars', label: t('pages:marketdataInvalidBars'), children: <MetricText>{overviewCountText(overview?.datasetCoverageSummary.invalidBars)}</MetricText>},
+                        {key: 'latestDatasetId', label: t('pages:marketdataLatestDatasetId'), children: <ScopeValue value={overview?.datasetCoverageSummary.latestDatasetId} />},
+                        {key: 'latestCoverageAt', label: t('pages:marketdataLatestCoverageAt'), children: <MetricText>{overview ? dateText(overview.datasetCoverageSummary.latestCoverageAt) : stableFactPendingText()}</MetricText>},
                     ]}
                 />
 
@@ -1331,6 +1332,7 @@ export function MarketdataPage() {
     const queryClient = useQueryClient();
     const contextExchangeCode = useAccountContextStore((state) => state.exchangeCode);
     const [submittedQuery, setSubmittedQuery] = useState<MarketdataBarsQuery | null>(null);
+    const [activeSection, setActiveSection] = useState('market');
     const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
     const [pendingJobId, setPendingJobId] = useState<string | null>(null);
     const [pendingDatasetId, setPendingDatasetId] = useState<string | null>(null);
@@ -1429,7 +1431,7 @@ export function MarketdataPage() {
         onMutate: (jobId) => setPendingJobId(jobId),
         onSuccess: async (run) => {
             setSelectedJobId(run.jobId);
-            messageApi.info(`Run finished: ${run.status}`);
+            messageApi.info(t('pages:marketdataRunFinished', {status: run.status}));
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.ingestionJobs()});
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.ingestionRuns(run.jobId)});
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.barsAll()});
@@ -1442,7 +1444,7 @@ export function MarketdataPage() {
     const createDatasetMutation = useMutation({
         mutationFn: marketdataApi.createDataset,
         onSuccess: async (dataset) => {
-            messageApi.success(`Dataset created: ${dataset.qualityStatus}`);
+            messageApi.success(t('pages:marketdataDatasetCreated', {status: dataset.qualityStatus}));
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.datasets()});
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.qualityOverviewAll()});
         },
@@ -1452,7 +1454,7 @@ export function MarketdataPage() {
         mutationFn: marketdataApi.refreshDatasetQuality,
         onMutate: (datasetId) => setPendingDatasetId(datasetId),
         onSuccess: async (dataset) => {
-            messageApi.info(`Dataset quality: ${dataset.qualityStatus}`);
+            messageApi.info(t('pages:marketdataDatasetQuality', {status: dataset.qualityStatus}));
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.datasets()});
             await queryClient.invalidateQueries({queryKey: marketdataQueryKeys.qualityOverviewAll()});
         },
@@ -1515,644 +1517,664 @@ export function MarketdataPage() {
         : t('pages:marketDataBars');
 
     return (
-        <NqPageScaffold>
+        <NqPageScaffold className="marketdata-workspace">
             {contextHolder}
             <Card className="page-card" bordered={false}>
                 <NqPageHeader
                     title={t('pages:marketData')}
-                    description={t('pages:queryHistoricalSpotOhlcvManageIngestionJobsAndDatasetsWithinTheExchangesSymbolsAndIntervalsAcceptedF')}
+                    description={t('pages:marketdataWorkspaceIntro')}
                     badge={t('pages:marketData')}
                 />
             </Card>
-            <Card
-                className="page-section"
-                bordered={false}
-                title={t('pages:queryFilters')}
-                extra={<Button type="primary" onClick={() => form.submit()}>{t('pages:search')}</Button>}
-            >
-                <Form<MarketdataBarsFormValues>
-                    form={form}
-                    layout="vertical"
-                    initialValues={{
-                        exchangeCode: contextExchangeCode ?? 'BINANCE',
-                        marketType: 'SPOT',
-                        symbol: 'BTC-USDT',
-                        interval: '1m',
-                        page: 0,
-                        size: 100,
-                    }}
-                    onFinish={(values) => setSubmittedQuery(normalizeBarsQuery(values))}
-                >
-                    <Space align="start" size={16} wrap>
-                        <Form.Item label={t('pages:exchange')} name="exchangeCode">
-                            <Select style={{width: 140}} options={EXCHANGE_OPTIONS} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:market')} name="marketType">
-                            <Select style={{width: 120}} options={MARKET_TYPE_OPTIONS} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:tradingPair')} name="symbol">
-                            <Select showSearch style={{width: 160}} options={SYMBOL_OPTIONS} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:interval')} name="interval">
-                            <Select style={{width: 120}} options={INTERVAL_OPTIONS} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:startTime')} name="startTime" rules={[{required: true, message: t('pages:selectAStartTime')}]}>
-                            <DatePicker showTime style={{width: 220}} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:endTime')} name="endTime" rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
-                            <DatePicker showTime style={{width: 220}} />
-                        </Form.Item>
-                    </Space>
-                </Form>
-                <Typography.Text type="secondary">{t('pages:defaultExchangeFromTheCurrentAccountContext')}{contextExchangeCode ?? t('pages:notSelected')}</Typography.Text>
-                {hasRuntimeDeepLink ? (
-                    <Alert
-                        data-testid="marketdata-runtime-deep-link"
-                        type="info"
-                        showIcon
-                        style={{marginTop: 12}}
-                        message={t('pages:runtimeReadinessContextApplied')}
-                        description={t('pages:exchangecodeMarkettypeSymbolIntervalArePrefilledFromRuntimeReadinessNoIngestionOrWriteEndpointIsTrig')}
-                    />
-                ) : null}
-            </Card>
-            <Card className="page-section" bordered={false} title={t('pages:candlestickReadinessView')}>
-                <div data-testid="marketdata-kline-readiness-view" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
-                    <Descriptions
-                        size="small"
-                        column={{xs: 1, sm: 2, md: 3}}
-                        items={[
-                            {key: 'exchange', label: t('pages:exchange'), children: <ExchangeBadge code={submittedQuery?.exchangeCode}/>},
-                            {key: 'symbol', label: t('pages:instrument2'), children: <MetricText>{submittedQuery?.symbol ?? '-'}</MetricText>},
-                            {key: 'interval', label: t('pages:timeframe'), children: <MetricText>{submittedQuery?.interval ?? '-'}</MetricText>},
-                            {key: 'barCount', label: t('pages:barCount2'), children: <MetricText>{bars.length}</MetricText>},
-                            {key: 'lastBar', label: t('pages:lastBarTime'), children: <MetricText>{lastBar ? formatDateTime(lastBar.closeTime ?? lastBar.openTime) : '-'}</MetricText>},
-                            {key: 'quality', label: t('pages:dataQuality'), children: <QualityTags quality={barsQuality}/>},
-                        ]}
-                    />
-                    <Space size={12} wrap>
-                        <DataFreshness
-                            source={chartSourceLabel}
-                            state={barsFreshness.state}
-                            detail={barsFreshness.detail}
-                            inline
-                        />
-                        {barsQuality.gapCount > 0 ? (
-                            <Tag color="orange">{t('pages:gapQualitystatus')}{barsQuality.gapCount}</Tag>
-                        ) : null}
-                        {!barsQuality.hasQualityStatus && bars.length > 0 ? (
-                            <Tag>{t('pages:qualitystatusMissingNonBlocking')}</Tag>
-                        ) : null}
-                    </Space>
-                    {barsFreshness.state === 'stale' ? (
-                        <Alert
-                            type="warning"
-                            showIcon
-                            message={t('pages:marketDataBarsAreStale')}
-                            description={t('pages:theLastBarDoesNotCoverTheEndOfTheQueryThisViewShowsHistoricalBarsWithoutLiveRefreshOrWebsocketBackfi')}
-                        />
-                    ) : null}
-                    {barsQuality.gapCount > 0 ? (
-                        <Alert
-                            type="warning"
-                            showIcon
-                            message={t('pages:marketDataQualityDegraded')}
-                            description={t('pages:theBackendReturnedANonOkQualitystatusExistingBarsRemainVisibleIngestionAndDatasetQualityWorkflowsHan')}
-                        />
-                    ) : null}
-                    {!barsQuality.hasQualityStatus && bars.length > 0 ? (
-                        <Alert
-                            type="info"
-                            showIcon
-                            message={t('pages:qualitystatusUnavailable')}
-                            description={t('pages:theBarsResponseHasNoQualitystatusThisAdvisoryDoesNotFabricateAGapStatus')}
-                        />
-                    ) : null}
-                    <div
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'minmax(0, 1fr)',
-                            gap: 16,
-                        }}
-                    >
-                        <NqKlineChart
-                            bars={chartBars}
-                            loading={barsQuery.isLoading}
-                            error={chartError}
-                            stale={barsFreshness.stale}
-                            staleDetail={barsFreshness.detail}
-                            sourceLabel={chartSourceLabel}
-                            title={t('pages:ohlcvCandlesticks')}
-                            emptyText={chartEmptyText}
-                            height={320}
-                        />
-                        <NqVolumeChart
-                            bars={chartBars}
-                            loading={barsQuery.isLoading}
-                            error={chartError}
-                            sourceLabel={chartSourceLabel}
-                            title={t('pages:volume')}
-                            emptyText={submittedQuery ? t('pages:noVolumeBarsReturnedForThisQuery') : t('pages:searchToViewVolume')}
-                            height={180}
-                        />
-                    </div>
-                    <Typography.Text type="secondary">
-                        {t('pages:thisViewUsesApiMarketdataBarsAndMarketdataapiListbarsItHasNoWebsocketPrivateExchangeFeedTradingSigna')}</Typography.Text>
-                    <details data-testid="financial-risk-disclaimer">
-                        <summary>Financial Risk Disclaimer / 金融风险声明</summary>
-                        {/* 与发行包共享完整中英文原文；不依赖行情请求或外部网络。 */}
-                        <pre style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontFamily: 'inherit'}}>{financialDisclaimer}</pre>
-                    </details>
-                    <details data-testid="third-party-notices">
-                        <summary>Third-Party Notices / 第三方声明</summary>
-                        {/* 页面和发布包共享同一原文，避免上游声明在两处维护时漂移。 */}
-                        <pre style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontFamily: 'inherit'}}>{thirdPartyNotices}</pre>
-                    </details>
-                </div>
-            </Card>
-            <MarketdataQualityCenterPanel
-                overview={qualityOverview}
-                submittedQuery={submittedQuery}
-                loading={qualityOverviewLoading}
-                fetching={qualityOverviewQuery.isFetching}
-                error={qualityOverviewQuery.error}
-                unavailable={qualityOverviewUnavailable}
-            />
-            <Card className="page-section" bordered={false} title={t('pages:dataQualityAndReadiness')}>
-                <div data-testid="marketdata-quality-readiness-view" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
-                    <MarketDataQualityNotice />
-                    <Descriptions
-                        size="small"
-                        column={{xs: 1, sm: 2, md: 3}}
-                        items={[
-                            {key: 'queryExchange', label: t('pages:exchange'), children: <MetricText>{submittedQuery?.exchangeCode ?? '-'}</MetricText>},
-                            {key: 'queryInstrument', label: t('pages:instrumentSymbol'), children: <MetricText>{submittedQuery?.symbol ?? '-'}</MetricText>},
-                            {key: 'queryInterval', label: t('pages:intervalTimeframe'), children: <MetricText>{submittedQuery?.interval ?? '-'}</MetricText>},
-                            {key: 'queryStart', label: t('pages:queryStart'), children: <MetricText>{submittedQuery ? formatDateTime(submittedQuery.startTime) : '-'}</MetricText>},
-                            {key: 'queryEnd', label: t('pages:queryEnd'), children: <MetricText>{submittedQuery ? formatDateTime(submittedQuery.endTime) : '-'}</MetricText>},
-                            {
-                                key: 'readinessStatus',
-                                label: t('pages:readinessStatus'),
-                                children: (
-                                    <Tag color={readinessStatusColor(backendReadiness?.status ?? dataQualityReadiness.status)}>
-                                        {backendReadiness?.status ?? dataQualityReadiness.title}
-                                    </Tag>
-                                ),
-                            },
-                            {
-                                key: 'sourceHealthStatus',
-                                label: t('pages:sourceHealthStatus'),
-                                children: (
-                                    <MarketDataStatusBadge status={backendReadiness ? readinessSourceHealth(backendReadiness) : (readinessLoading ? 'LOADING' : 'UNAVAILABLE')} />
-                                ),
-                            },
-                            {
-                                key: 'sourceStatus',
-                                label: t('pages:sourceStatus2'),
-                                children: (
-                                    <MarketDataStatusBadge status={backendReadiness?.sourceStatus ?? (readinessLoading ? 'LOADING' : 'UNKNOWN')} />
-                                ),
-                            },
-                            {
-                                key: 'dataOrigin',
-                                label: t('pages:dataOrigin'),
-                                children: (
-                                    <MarketDataOriginBadge origin={backendReadiness?.dataOrigin ?? 'UNKNOWN'} />
-                                ),
-                            },
-                            {
-                                key: 'gapStatus',
-                                label: t('pages:gapStatus'),
-                                children: (
-                                    <MarketDataStatusBadge status={backendReadiness?.gapStatus ?? 'UNKNOWN'} />
-                                ),
-                            },
-                            {
-                                key: 'backendSupportLevel',
-                                label: t('pages:backendSupport'),
-                                children: <MetricText>{backendReadiness?.backendSupportLevel ?? (submittedQuery ? 'UNAVAILABLE' : '-')}</MetricText>,
-                            },
-                        ]}
-                    />
-                    <SandboxSourceDisplay summary={sandboxSourceDisplay} />
-                    <MarketDataSourceHealthTable
-                        readiness={backendReadiness}
-                        submittedQuery={submittedQuery}
-                        loading={readinessLoading}
-                    />
-                    <div
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                            gap: 12,
-                        }}
-                    >
-                        <MetricTile
-                            label={t('pages:barsLoaded')}
-                            value={<MetricText>{backendReadiness?.barCount ?? bars.length}</MetricText>}
-                            detail={backendReadiness ? t('pages:fromApiMarketdataReadiness') : (submittedQuery ? t('pages:fromApiMarketdataBarsFallback') : t('pages:pendingQuery'))}
-                        />
-                        <MetricTile
-                            label={t('pages:firstBarTime')}
-                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.firstBarTime) : (firstBar ? formatDateTime(firstBar.openTime) : '-')}</MetricText>}
-                            detail={backendReadiness ? (backendReadiness.firstBarTime ?? t('pages:noData2')) : (firstBar ? firstBar.openTime : t('pages:noData2'))}
-                        />
-                        <MetricTile
-                            label={t('pages:lastBarTime')}
-                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastBarTime) : (lastBar ? formatDateTime(lastBar.closeTime ?? lastBar.openTime) : '-')}</MetricText>}
-                            detail={backendReadiness ? (backendReadiness.lastBarTime ?? t('pages:noData2')) : (lastBar ? (lastBar.closeTime ?? lastBar.openTime) : t('pages:noData2'))}
-                        />
-                        <MetricTile
-                            label={t('pages:latestClose')}
-                            value={<MetricText>{lastBar ? formatNumber(lastBar.closePrice, 8) : '-'}</MetricText>}
-                            detail={lastBar ? t('pages:lastReturnedBar') : t('pages:noData2')}
-                        />
-                        <MetricTile
-                            label={t('pages:latestVolume')}
-                            value={<MetricText>{lastBar ? formatNumber(lastBar.volume, 8) : '-'}</MetricText>}
-                            detail={lastBar ? t('pages:lastReturnedBar') : t('pages:noData2')}
-                        />
-                        <MetricTile
-                            label={t('pages:freshness2')}
-                            value={(
-                                <DataFreshness
-                                    source={backendReadiness ? t('pages:backendReadiness') : 'bars'}
-                                    state={backendReadiness ? readinessFreshnessState(backendReadiness.freshnessStatus) : barsFreshness.state}
-                                    detail={backendReadiness?.freshnessStatus ?? barsFreshness.detail}
-                                    inline
+            <Tabs activeKey={activeSection} onChange={setActiveSection} items={[
+                {key: 'market', label: t('pages:marketdataQueryAndCharts'), children: <Space direction="vertical" size={16} style={{display: 'flex'}}>
+                        <Card
+                            className="page-section"
+                            bordered={false}
+                            title={t('pages:queryFilters')}
+                            extra={<Button type="primary" loading={barsQuery.isFetching} onClick={() => form.submit()}>{t('pages:search')}</Button>}
+                        >
+                            <Form<MarketdataBarsFormValues>
+                                name="marketdata-query"
+                                form={form}
+                                layout="vertical"
+                                initialValues={{
+                                    exchangeCode: contextExchangeCode ?? 'BINANCE',
+                                    marketType: 'SPOT',
+                                    symbol: 'BTC-USDT',
+                                    interval: '1m',
+                                    page: 0,
+                                    size: 100,
+                                }}
+                                onFinish={(values) => { setActiveSection('market'); setSubmittedQuery(normalizeBarsQuery(values)); }}
+                            >
+                                <Space align="start" size={16} wrap>
+                                    <Form.Item label={t('pages:exchange')} name="exchangeCode">
+                                        <Select style={{width: 140}} options={EXCHANGE_OPTIONS} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:market')} name="marketType">
+                                        <Select style={{width: 120}} options={MARKET_TYPE_OPTIONS} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:tradingPair')} name="symbol">
+                                        <Select showSearch style={{width: 160}} options={SYMBOL_OPTIONS} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:interval')} name="interval">
+                                        <Select style={{width: 120}} options={INTERVAL_OPTIONS} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:startTime')} name="startTime" rules={[{required: true, message: t('pages:selectAStartTime')}]}>
+                                        <DatePicker showTime style={{width: 220}} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:endTime')} name="endTime" rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
+                                        <DatePicker showTime style={{width: 220}} />
+                                    </Form.Item>
+                                </Space>
+                            </Form>
+                            <Typography.Text type="secondary">{t('pages:defaultExchangeFromTheCurrentAccountContext')}{contextExchangeCode ?? t('pages:notSelected')}</Typography.Text>
+                            {hasRuntimeDeepLink ? (
+                                <Alert
+                                    data-testid="marketdata-runtime-deep-link"
+                                    type="info"
+                                    showIcon
+                                    style={{marginTop: 12}}
+                                    message={t('pages:runtimeReadinessContextApplied')}
+                                    description={t('pages:exchangecodeMarkettypeSymbolIntervalArePrefilledFromRuntimeReadinessNoIngestionOrWriteEndpointIsTrig')}
+                                />
+                            ) : null}
+                        </Card>
+                        <Card className="page-section" bordered={false} title={t('pages:candlestickReadinessView')}>
+                            <div data-testid="marketdata-kline-readiness-view" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                                <Descriptions
+                                    size="small"
+                                    column={{xs: 1, sm: 2, md: 3}}
+                                    items={[
+                                        {key: 'exchange', label: t('pages:exchange'), children: <ExchangeBadge code={submittedQuery?.exchangeCode}/>},
+                                        {key: 'symbol', label: t('pages:instrument2'), children: <MetricText>{submittedQuery?.symbol ?? '-'}</MetricText>},
+                                        {key: 'interval', label: t('pages:timeframe'), children: <MetricText>{submittedQuery?.interval ?? '-'}</MetricText>},
+                                        {key: 'barCount', label: t('pages:barCount2'), children: <MetricText>{bars.length}</MetricText>},
+                                        {key: 'lastBar', label: t('pages:lastBarTime'), children: <MetricText>{lastBar ? formatDateTime(lastBar.closeTime ?? lastBar.openTime) : '-'}</MetricText>},
+                                        {key: 'quality', label: t('pages:dataQuality'), children: <QualityTags quality={barsQuality}/>},
+                                    ]}
+                                />
+                                <Space size={12} wrap>
+                                    <DataFreshness
+                                        source={chartSourceLabel}
+                                        state={barsFreshness.state}
+                                        detail={barsFreshness.detail}
+                                        inline
+                                    />
+                                    {barsQuality.gapCount > 0 ? (
+                                        <Tag color="orange">{t('pages:gapQualitystatus')}{barsQuality.gapCount}</Tag>
+                                    ) : null}
+                                    {!barsQuality.hasQualityStatus && bars.length > 0 ? (
+                                        <Tag>{t('pages:qualitystatusMissingNonBlocking')}</Tag>
+                                    ) : null}
+                                </Space>
+                                {barsFreshness.state === 'stale' ? (
+                                    <Alert
+                                        type="warning"
+                                        showIcon
+                                        message={t('pages:marketDataBarsAreStale')}
+                                        description={t('pages:theLastBarDoesNotCoverTheEndOfTheQueryThisViewShowsHistoricalBarsWithoutLiveRefreshOrWebsocketBackfi')}
+                                    />
+                                ) : null}
+                                {barsQuality.gapCount > 0 ? (
+                                    <Alert
+                                        type="warning"
+                                        showIcon
+                                        message={t('pages:marketDataQualityDegraded')}
+                                        description={t('pages:theBackendReturnedANonOkQualitystatusExistingBarsRemainVisibleIngestionAndDatasetQualityWorkflowsHan')}
+                                    />
+                                ) : null}
+                                {!barsQuality.hasQualityStatus && bars.length > 0 ? (
+                                    <Alert
+                                        type="info"
+                                        showIcon
+                                        message={t('pages:qualitystatusUnavailable')}
+                                        description={t('pages:theBarsResponseHasNoQualitystatusThisAdvisoryDoesNotFabricateAGapStatus')}
+                                    />
+                                ) : null}
+                                <div
+                                    style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'minmax(0, 1fr)',
+                                        gap: 16,
+                                    }}
+                                >
+                                    <NqKlineChart
+                                        bars={chartBars}
+                                        loading={barsQuery.isLoading}
+                                        error={chartError}
+                                        stale={barsFreshness.stale}
+                                        staleDetail={barsFreshness.detail}
+                                        sourceLabel={chartSourceLabel}
+                                        title={t('pages:ohlcvCandlesticks')}
+                                        emptyText={chartEmptyText}
+                                        height={320}
+                                    />
+                                    <NqVolumeChart
+                                        bars={chartBars}
+                                        loading={barsQuery.isLoading}
+                                        error={chartError}
+                                        sourceLabel={chartSourceLabel}
+                                        title={t('pages:volume')}
+                                        emptyText={submittedQuery ? t('pages:noVolumeBarsReturnedForThisQuery') : t('pages:searchToViewVolume')}
+                                        height={180}
+                                    />
+                                </div>
+                                <Typography.Text type="secondary">{t('pages:marketdataHistoricalViewBoundary')}</Typography.Text>
+                                <details data-testid="financial-risk-disclaimer">
+                                    <summary>{t('pages:marketdataFinancialDisclaimer')}</summary>
+                                    {/* 与发行包共享完整中英文原文；不依赖行情请求或外部网络。 */}
+                                    <pre style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontFamily: 'inherit'}}>{financialDisclaimer}</pre>
+                                </details>
+                                <details data-testid="third-party-notices">
+                                    <summary>{t('pages:marketdataThirdPartyNotices')}</summary>
+                                    {/* 页面和发布包共享同一原文，避免上游声明在两处维护时漂移。 */}
+                                    <pre style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontFamily: 'inherit'}}>{thirdPartyNotices}</pre>
+                                </details>
+                            </div>
+                        </Card>
+                    <Collapse items={[{key: 'bars', label: t('pages:barResults'), children: (
+                        <Card className="page-section" bordered={false} title={t('pages:barResults')}>
+                            {barsQuery.error ? (
+                                <Alert type="error" showIcon message={t('pages:failedToQueryMarketDataBars')} description={formatApiError(barsQuery.error as AppApiError)} />
+                            ) : (
+                                <Table
+                                    rowKey={(record) => `${record.exchangeCode}-${record.marketType}-${record.symbol}-${record.interval}-${record.openTime}`}
+                                    columns={columns}
+                                    dataSource={barsQuery.data ?? []}
+                                    loading={barsQuery.isLoading || barsQuery.isFetching}
+                                    pagination={{pageSize: 10, showSizeChanger: false}}
+                                    scroll={{x: 1400}}
                                 />
                             )}
-                            detail={backendReadiness ? t('pages:fromApiMarketdataReadiness') : (barsFreshness.stale ? t('pages:staleByQueryIntervalEstimate') : t('pages:frontendEstimate'))}
-                        />
-                        <MetricTile
-                            label={t('pages:qualityStatus')}
-                            value={backendReadiness ? <ReadinessQualityTags readiness={backendReadiness}/> : <QualityTags quality={barsQuality}/>}
-                            detail={backendReadiness ? `ok=${backendReadiness.qualityStatusSummary.okCount}, gap=${backendReadiness.qualityStatusSummary.gapSignalCount}, invalid=${backendReadiness.qualityStatusSummary.invalidCount}` : (barsQuality.hasQualityStatus ? t('pages:aggregatedFromBarData') : t('pages:unavailableReadinessUnavailable'))}
-                        />
-                        <MetricTile
-                            label={t('pages:gapCount')}
-                            value={<MetricText>{backendReadiness ? countText(backendReadiness.gapCount) : (barsQuality.gapDetectionUnavailable ? '-' : barsQuality.gapCount)}</MetricText>}
-                            detail={backendReadiness ? `expected=${countText(backendReadiness.expectedBarCount)}` : (barsQuality.gapDetectionUnavailable ? t('pages:gapDetectionUnavailable') : `quality=${barsQuality.qualityGapCount}, sequence=${barsQuality.sequenceGapCount ?? '-'}`)}
-                        />
-                        <MetricTile
-                            label={t('pages:gapStatus')}
-                            value={<MarketDataStatusBadge status={backendReadiness?.gapStatus ?? 'UNKNOWN'} />}
-                            detail={backendReadiness ? `missingFrom=${dateText(backendReadiness.missingFrom)}, missingTo=${dateText(backendReadiness.missingTo)}` : stableFactPendingText()}
-                        />
-                        <MetricTile
-                            label={t('pages:unknownQualityCount')}
-                            value={<MetricText>{backendReadiness?.unknownQualityCount ?? barsQuality.unknownQualityCount}</MetricText>}
-                            detail={backendReadiness ? t('pages:fromBackendQualitystatussummary') : (barsQuality.unknownQualityCount > 0 ? t('pages:qualitystatusMissingOnReturnedBars') : 'none')}
-                        />
-                        <MetricTile
-                            label={t('pages:sourceHealth')}
-                            value={(
-                                <MarketDataStatusBadge status={backendReadiness ? readinessSourceHealth(backendReadiness) : (readinessLoading ? 'LOADING' : 'UNAVAILABLE')} />
+                        </Card>
+                    )}]}/>
+                </Space>},
+                {key: 'preparation', label: t('pages:marketdataPreparation'), children: <Tabs items={[
+                    {key: 'jobs', label: t('pages:ingestionJobs'), children: <Space direction="vertical" size={16} style={{display: 'flex'}}>
+                        <Card
+                            className="page-section"
+                            bordered={false}
+                            title={t('pages:ingestionJobs')}
+                            extra={<Button type="primary" loading={createJobMutation.isPending} onClick={() => jobForm.submit()}>{t('pages:createJob')}</Button>}
+                        >
+                            <Form<CreateMarketdataIngestionJobFormValues>
+                                name="marketdata-ingestion"
+                                form={jobForm}
+                                layout="vertical"
+                                initialValues={{
+                                    exchangeCode: 'BINANCE',
+                                    marketType: 'SPOT',
+                                    symbol: 'BTC-USDT',
+                                    interval: '1m',
+                                }}
+                                onFinish={(values) => createJobMutation.mutate(normalizeIngestionJob(values))}
+                            >
+                                <Space align="start" size={16} wrap>
+                                    <Form.Item label={t('pages:exchange')} name="exchangeCode">
+                                        <Select style={{width: 140}} options={EXCHANGE_OPTIONS} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:market')} name="marketType">
+                                        <Select style={{width: 120}} options={MARKET_TYPE_OPTIONS} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:tradingPair')} name="symbol">
+                                        <Select showSearch style={{width: 160}} options={SYMBOL_OPTIONS} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:interval')} name="interval">
+                                        <Select style={{width: 120}} options={INTERVAL_OPTIONS} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:startTime')} name="startTime" rules={[{required: true, message: t('pages:selectAStartTime')}]}>
+                                        <DatePicker showTime style={{width: 220}} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:endTime')} name="endTime" rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
+                                        <DatePicker showTime style={{width: 220}} />
+                                    </Form.Item>
+                                </Space>
+                            </Form>
+                            {jobsQuery.error ? (
+                                <Alert type="error" showIcon message={t('pages:failedToQueryIngestionJobs')} description={formatApiError(jobsQuery.error as AppApiError)} />
+                            ) : (
+                                <Table
+                                    rowKey="jobId"
+                                    columns={jobColumns((jobId) => runOnceMutation.mutate(jobId), pendingJobId)}
+                                    dataSource={jobsQuery.data ?? []}
+                                    loading={jobsQuery.isLoading || jobsQuery.isFetching}
+                                    pagination={{pageSize: 10, showSizeChanger: false}}
+                                    scroll={{x: 1600}}
+                                    onRow={(record) => ({
+                                        onClick: () => setSelectedJobId(record.jobId),
+                                    })}
+                                />
                             )}
-                            detail={backendReadiness?.sourceHealthReason ?? (readinessLoading ? t('pages:loadingApiMarketdataReadiness') : dataQualityReadiness.sourceHealthDetail)}
+                        </Card>
+                        <Card className="page-section" bordered={false} title={t('pages:runResults')}>
+                            {selectedJobId ? (
+                                runsQuery.error ? (
+                                    <Alert type="error" showIcon message={t('pages:failedToQueryIngestionRuns')} description={formatApiError(runsQuery.error as AppApiError)} />
+                                ) : (
+                                    <Table
+                                        rowKey="runId"
+                                        columns={runColumns}
+                                        dataSource={runsQuery.data ?? []}
+                                        loading={runsQuery.isLoading || runsQuery.isFetching}
+                                        pagination={{pageSize: 5, showSizeChanger: false}}
+                                        scroll={{x: 1500}}
+                                    />
+                                )
+                            ) : (
+                                <Alert type="info" showIcon message={t('pages:selectOrCreateAnIngestionJobToViewRunResults')} />
+                            )}
+                        </Card>
+                    </Space>},
+                    {key: 'capture', label: t('pages:publicCaptureTitle'), children: (
+                        <Card className="page-section" bordered={false} title={t('pages:publicCaptureTitle')}
+                              data-testid="public-market-capture">
+                            <Typography.Paragraph>{t('pages:publicCaptureDescription')}</Typography.Paragraph>
+                            <Form<PublicCaptureFormValues> name="marketdata-public-capture" form={publicCaptureForm} layout="vertical"
+                                onFinish={submitPublicCapture}>
+                                <Space align="start" size={16} wrap>
+                                    <Form.Item label={t('pages:exchange')}><Select value="OKX" disabled style={{width: 130}} options={[{value: 'OKX', label: 'OKX'}]} /></Form.Item>
+                                    <Form.Item label={t('pages:tradingPair')}><Select value="BTC-USDT" disabled style={{width: 150}} options={[{value: 'BTC-USDT', label: 'BTC-USDT'}]} /></Form.Item>
+                                    <Form.Item label={t('pages:interval')}><Select value="1h" disabled style={{width: 100}} options={[{value: '1h', label: '1h'}]} /></Form.Item>
+                                    <Form.Item label={t('pages:startTime')} name="start" rules={[{required: true, message: t('pages:selectAStartTime')}]}>
+                                        <DatePicker showTime style={{width: 220}} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:endTime')} name="end" rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
+                                        <DatePicker showTime style={{width: 220}} />
+                                    </Form.Item>
+                                    <Button type="primary" loading={publicCaptureMutation.isPending}
+                                        onClick={() => publicCaptureForm.submit()}>{t('pages:publicCaptureAction')}</Button>
+                                </Space>
+                            </Form>
+                            {publicCaptureMutation.error && <Alert type="error" showIcon
+                                message={t('pages:publicCaptureFailed')}
+                                description={formatApiError(publicCaptureMutation.error as AppApiError)} />}
+                            {publicCapture && <Descriptions size="small" column={{xs: 1, sm: 2}} items={[
+                                {key: 'datasetId', label: t('pages:datasetId'), children: publicCapture.datasetId},
+                                {key: 'barCount', label: t('pages:barCount'), children: publicCapture.barCount},
+                                {key: 'observedAt', label: t('pages:marketdataObservedAt'), children: publicCapture.observedAt},
+                                {key: 'consumedSha256', label: t('pages:marketdataDataDigest'), children: publicCapture.consumedSha256},
+                                {key: 'ruleSha256', label: t('pages:marketdataRuleDigest'), children: publicCapture.ruleSha256},
+                            ]} />}
+                        </Card>
+                    )},
+                    {key: 'datasets', label: t('pages:datasets'), children: (
+                        <Card
+                            className="page-section"
+                            bordered={false}
+                            title={t('pages:datasets')}
+                            extra={(
+                                <Button
+                                    type="primary"
+                                    loading={createDatasetMutation.isPending}
+                                    onClick={() => datasetForm.submit()}
+                                >
+                                    {t('pages:createDataset')}</Button>
+                            )}
+                        >
+                            <Form<CreateMarketdataDatasetFormValues>
+                                name="marketdata-dataset"
+                                form={datasetForm}
+                                layout="vertical"
+                                initialValues={{
+                                    datasetName: `BINANCE-BTC-USDT-1m-${Date.now()}`,
+                                    exchangeCode: 'BINANCE',
+                                    marketType: 'SPOT',
+                                    symbol: 'BTC-USDT',
+                                    interval: '1m',
+                                }}
+                                onFinish={(values) => createDatasetMutation.mutate({
+                                    ...normalizeDataset(values),
+                                    datasetName: values.datasetName || `BINANCE-BTC-USDT-1m-${Date.now()}`,
+                                })}
+                            >
+                                <Space align="start" size={16} wrap>
+                                    <Form.Item label={t('pages:datasetName')} name="datasetName">
+                                        <Input style={{width: 260}} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:exchange')} name="exchangeCode">
+                                        <Select style={{width: 140}} options={EXCHANGE_OPTIONS} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:market')} name="marketType">
+                                        <Select style={{width: 120}} options={MARKET_TYPE_OPTIONS} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:tradingPair')} name="symbol">
+                                        <Select showSearch style={{width: 160}} options={SYMBOL_OPTIONS} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:interval')} name="interval">
+                                        <Select style={{width: 120}} options={INTERVAL_OPTIONS} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:startTime')} name="startTime" rules={[{required: true, message: t('pages:selectAStartTime')}]}>
+                                        <DatePicker showTime style={{width: 220}} />
+                                    </Form.Item>
+                                    <Form.Item label={t('pages:endTime')} name="endTime" rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
+                                        <DatePicker showTime style={{width: 220}} />
+                                    </Form.Item>
+                                </Space>
+                            </Form>
+                            {datasetsQuery.error ? (
+                                <Alert type="error" showIcon message={t('pages:failedToQueryMarketDataDatasets')} description={formatApiError(datasetsQuery.error as AppApiError)} />
+                            ) : (
+                                <Table
+                                    rowKey="datasetId"
+                                    columns={datasetColumns((datasetId) => refreshDatasetMutation.mutate(datasetId), pendingDatasetId)}
+                                    dataSource={datasetsQuery.data ?? []}
+                                    loading={datasetsQuery.isLoading || datasetsQuery.isFetching}
+                                    pagination={{pageSize: 10, showSizeChanger: false}}
+                                    scroll={{x: 1900}}
+                                    locale={{emptyText: t('pages:noMarketDataDatasetsCreateOneFirst')}}
+                                />
+                            )}
+                        </Card>
+                    )},
+                ]}/>},
+                {key: 'quality', label: t('pages:marketdataQualityDiagnostics'), children: <Space direction="vertical" size={16} style={{display: 'flex'}}>
+                        <MarketdataQualityCenterPanel
+                            overview={qualityOverview}
+                            submittedQuery={submittedQuery}
+                            loading={qualityOverviewLoading}
+                            fetching={qualityOverviewQuery.isFetching}
+                            error={qualityOverviewQuery.error}
+                            unavailable={qualityOverviewUnavailable}
                         />
-                        <MetricTile
-                            label={t('pages:sourceStatus2')}
-                            value={<MarketDataStatusBadge status={backendReadiness?.sourceStatus ?? 'UNKNOWN'} />}
-                            detail={t('pages:sourcestatusDescribesDiagnosticsOnlyNotProviderOrTradingAuthorization')}
-                        />
-                        <MetricTile
-                            label={t('pages:dataOrigin')}
-                            value={<MarketDataOriginBadge origin={backendReadiness?.dataOrigin ?? 'UNKNOWN'} />}
-                            detail={t('pages:localDbFixtureFakeServerPublicCandidateAreDiagnosticOriginsNotProofOfRealExternalConnections')}
-                        />
-                        <MetricTile
-                            label={t('pages:errorCategory')}
-                            value={<MarketDataStatusBadge status={backendReadiness?.errorCategory ?? 'UNKNOWN'} />}
-                            detail={backendReadiness ? optionalText(backendReadiness.degradedReason ?? backendReadiness.disabledReason) : stableFactPendingText()}
-                        />
-                        <MetricTile
-                            label={t('pages:errorRate')}
-                            value={<MetricText>{backendReadiness ? percentText(backendReadiness.errorRate) : stableFactPendingText()}</MetricText>}
-                            detail={t('pages:nullMeansNoStableFactItIsNotDisplayedAs0')}
-                        />
-                        <MetricTile
-                            label={t('pages:latency')}
-                            value={<MetricText>{backendReadiness ? numberText(backendReadiness.latencyMs, ' ms') : stableFactPendingText()}</MetricText>}
-                            detail={t('pages:nullMeansNoStableFactLatencyThresholdsAreNotHardcoded')}
-                        />
-                        <MetricTile
-                            label={t('pages:missingFrom')}
-                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.missingFrom) : stableFactPendingText()}</MetricText>}
-                            detail={t('pages:gapStartNullDoesNotMeanNoGap')}
-                        />
-                        <MetricTile
-                            label={t('pages:missingTo')}
-                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.missingTo) : stableFactPendingText()}</MetricText>}
-                            detail={t('pages:gapEndNullDoesNotMeanNoGap')}
-                        />
-                        <MetricTile
-                            label={t('pages:lastObserved')}
-                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastObservedAt) : stableFactPendingText()}</MetricText>}
-                            detail={t('pages:latestObservedLocalMarketDataOrIngestionFact')}
-                        />
-                        <MetricTile
-                            label={t('pages:updatedAt')}
-                            value={<MetricText>{backendReadiness ? dateText(readinessUpdatedAt(backendReadiness)) : stableFactPendingText()}</MetricText>}
-                            detail={backendReadiness ? t('pages:usesUpdatedatWithGeneratedatAsACompatibleFallback') : stableFactPendingText()}
-                        />
-                        <MetricTile
-                            label={t('pages:staleThreshold')}
-                            value={<MetricText>{backendReadiness ? numberText(backendReadiness.staleAfterSeconds, ' s') : stableFactPendingText()}</MetricText>}
-                            detail={t('pages:theStaleThresholdComesFromBackendReadOnlyFactsTheFrontendDoesNotDeriveBusinessThresholds')}
-                        />
-                        <MetricTile
-                            label={t('pages:degradedReason')}
-                            value={<MetricText>{backendReadiness ? optionalText(backendReadiness.degradedReason) : stableFactPendingText()}</MetricText>}
-                            detail={t('pages:onlySanitizedDiagnosticReasonsAreShown')}
-                        />
-                        <MetricTile
-                            label={t('pages:disabledReason')}
-                            value={<MetricText>{backendReadiness ? optionalText(backendReadiness.disabledReason) : stableFactPendingText()}</MetricText>}
-                            detail={t('pages:onlySanitizedDisabledReasonsAreShown')}
-                        />
-                        <MetricTile
-                            label={t('pages:traceRequest')}
-                            value={<MetricText>{backendReadiness ? `${optionalText(backendReadiness.traceId)} / ${optionalText(backendReadiness.requestId)}` : stableFactPendingText()}</MetricText>}
-                            detail={t('pages:traceidRequestidMayBeEmptyCredentialsHeadersAndRawPayloadsMustNotBeDisplayed')}
-                        />
-                        <MetricTile
-                            label={t('pages:backendSupport')}
-                            value={<MetricText>{backendReadiness?.backendSupportLevel ?? (submittedQuery ? 'UNAVAILABLE' : '-')}</MetricText>}
-                            detail={backendReadiness ? `generated ${formatDateTime(backendReadiness.generatedAt)}` : t('pages:readinessApiFallback')}
-                        />
-                        <MetricTile
-                            label={t('pages:lastSuccess')}
-                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastSuccessAt) : '-'}</MetricText>}
-                            detail={backendReadiness?.lastSuccessAt ?? stableFactPendingText()}
-                        />
-                        <MetricTile
-                            label={t('pages:lastFailure')}
-                            value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastFailureAt) : '-'}</MetricText>}
-                            detail={backendReadiness?.lastFailureAt ?? stableFactPendingText()}
-                        />
-                    </div>
-                    <Space size={8} wrap>
-                        <Tag color={readinessStatusColor(backendReadiness?.status ?? dataQualityReadiness.status)}>
-                            {backendReadiness?.status ?? dataQualityReadiness.status}
-                        </Tag>
-                        {backendReadiness ? (
-                            <>
-                                <Tag color={readinessStatusColor(backendReadiness.freshnessStatus)}>
-                                    {t('pages:freshness')}{backendReadiness.freshnessStatus}
-                                </Tag>
-                                <Tag color={readinessStatusColor(readinessSourceHealth(backendReadiness))}>
-                                    {t('pages:sourceHealth2')}{readinessSourceHealth(backendReadiness)}
-                                </Tag>
-                                <Tag color={readinessStatusColor(backendReadiness.gapStatus)}>
-                                    {t('pages:gap')}{backendReadiness.gapStatus ?? 'UNKNOWN'}
-                                </Tag>
-                                <Tag color={readinessStatusColor(backendReadiness.sourceStatus)}>
-                                    {t('pages:sourceStatus3')}{backendReadiness.sourceStatus ?? 'UNKNOWN'}
-                                </Tag>
-                                <Tag>{t('pages:dataOrigin2')}{backendReadiness.dataOrigin ?? 'UNKNOWN'}</Tag>
-                                <Tag>{t('pages:backendSupport2')}{backendReadiness.backendSupportLevel}</Tag>
-                            </>
-                        ) : (
-                            <Tag>{t('pages:sourceHealth2')}{readinessLoading ? 'LOADING' : 'UNAVAILABLE'}</Tag>
-                        )}
-                        {barsQuality.gapDetectionUnavailable ? (
-                            <Tag>{t('pages:gapDetectionUnavailable')}</Tag>
-                        ) : null}
-                    </Space>
-                    {chartError ? (
-                        <Alert
-                            type="error"
-                            showIcon
-                            message={t('pages:dataQualityUnavailable')}
-                            description={t('pages:theBarsQueryFailedDataReadinessCannotBeInferredFromAFailedResponse')}
-                        />
-                    ) : null}
-                    {!chartError && submittedQuery && bars.length === 0 ? (
-                        <Alert
-                            type="info"
-                            showIcon
-                            message={t('pages:noBarsReturned')}
-                            description={t('pages:noBarsWereReturnedForThisWindowFreshnessGapsAndQualityRemainNoDataUnavailable')}
-                        />
-                    ) : null}
-                    {barsQuality.gapDetectionUnavailable ? (
-                        <Alert
-                            type="info"
-                            showIcon
-                            message={t('pages:gapDetectionUnavailable')}
-                            description={t('pages:qualitystatusAndSufficientIntervalOrTimeDataAreMissingThePageDoesNotFabricateGap0OrSourceHealthOk')}
-                        />
-                    ) : null}
-                    {readinessUnavailable ? (
-                        <Alert
-                            type="warning"
-                            showIcon
-                            message={t('pages:marketDataSourceHealthUnavailable')}
-                            description={readinessError
-                                ? `readiness API failed: ${readinessError}; using bars-derived fallback only.`
-                                : t('pages:readinessApiReturnedNoUsableSummaryOnlyBarDerivedFallbackIsAvailable')}
-                        />
-                    ) : null}
-                    {backendReadiness ? (
-                        <Alert
-                            type={backendReadiness.status === 'FRESH' ? 'success' : backendReadiness.status === 'ERROR' ? 'error' : 'warning'}
-                            showIcon
-                            message={`MarketData readiness: ${backendReadiness.status}`}
-                            description={t('pages:value1BackendSupportValue2ThisIsMarketDataDiagnosticsOnlyNotTradingAuthorization', {value1: backendReadiness.sourceHealthReason, value2: backendReadiness.backendSupportLevel})}
-                        />
-                    ) : (
-                        <Alert
-                            type={dataQualityReadiness.status === 'GOOD' ? 'success' : dataQualityReadiness.status === 'ERROR' ? 'error' : 'warning'}
-                            showIcon
-                            message={`MarketData readiness: ${dataQualityReadiness.title}`}
-                            description={`${dataQualityReadiness.detail}. Source health is ${readinessLoading ? 'loading' : dataQualityReadiness.sourceHealthDetail}.`}
-                        />
-                    )}
-                </div>
-            </Card>
-            <Card className="page-section" bordered={false} title={t('pages:barResults')}>
-                {barsQuery.error ? (
-                    <Alert type="error" showIcon message={t('pages:failedToQueryMarketDataBars')} description={formatApiError(barsQuery.error as AppApiError)} />
-                ) : (
-                    <Table
-                        rowKey={(record) => `${record.exchangeCode}-${record.marketType}-${record.symbol}-${record.interval}-${record.openTime}`}
-                        columns={columns}
-                        dataSource={barsQuery.data ?? []}
-                        loading={barsQuery.isLoading || barsQuery.isFetching}
-                        pagination={{pageSize: 10, showSizeChanger: false}}
-                        scroll={{x: 1400}}
-                    />
-                )}
-            </Card>
-            <Card
-                className="page-section"
-                bordered={false}
-                title={t('pages:ingestionJobs')}
-                extra={<Button type="primary" loading={createJobMutation.isPending} onClick={() => jobForm.submit()}>{t('pages:createJob')}</Button>}
-            >
-                <Form<CreateMarketdataIngestionJobFormValues>
-                    form={jobForm}
-                    layout="vertical"
-                    initialValues={{
-                        exchangeCode: 'BINANCE',
-                        marketType: 'SPOT',
-                        symbol: 'BTC-USDT',
-                        interval: '1m',
-                    }}
-                    onFinish={(values) => createJobMutation.mutate(normalizeIngestionJob(values))}
-                >
-                    <Space align="start" size={16} wrap>
-                        <Form.Item label={t('pages:exchange')} name="exchangeCode">
-                            <Select style={{width: 140}} options={EXCHANGE_OPTIONS} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:market')} name="marketType">
-                            <Select style={{width: 120}} options={MARKET_TYPE_OPTIONS} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:tradingPair')} name="symbol">
-                            <Select showSearch style={{width: 160}} options={SYMBOL_OPTIONS} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:interval')} name="interval">
-                            <Select style={{width: 120}} options={INTERVAL_OPTIONS} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:startTime')} name="startTime" rules={[{required: true, message: t('pages:selectAStartTime')}]}>
-                            <DatePicker showTime style={{width: 220}} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:endTime')} name="endTime" rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
-                            <DatePicker showTime style={{width: 220}} />
-                        </Form.Item>
-                    </Space>
-                </Form>
-                {jobsQuery.error ? (
-                    <Alert type="error" showIcon message={t('pages:failedToQueryIngestionJobs')} description={formatApiError(jobsQuery.error as AppApiError)} />
-                ) : (
-                    <Table
-                        rowKey="jobId"
-                        columns={jobColumns((jobId) => runOnceMutation.mutate(jobId), pendingJobId)}
-                        dataSource={jobsQuery.data ?? []}
-                        loading={jobsQuery.isLoading || jobsQuery.isFetching}
-                        pagination={{pageSize: 10, showSizeChanger: false}}
-                        scroll={{x: 1600}}
-                        onRow={(record) => ({
-                            onClick: () => setSelectedJobId(record.jobId),
-                        })}
-                    />
-                )}
-            </Card>
-            <Card className="page-section" bordered={false} title={t('pages:runResults')}>
-                {selectedJobId ? (
-                    runsQuery.error ? (
-                        <Alert type="error" showIcon message={t('pages:failedToQueryIngestionRuns')} description={formatApiError(runsQuery.error as AppApiError)} />
-                    ) : (
-                        <Table
-                            rowKey="runId"
-                            columns={runColumns}
-                            dataSource={runsQuery.data ?? []}
-                            loading={runsQuery.isLoading || runsQuery.isFetching}
-                            pagination={{pageSize: 5, showSizeChanger: false}}
-                            scroll={{x: 1500}}
-                        />
-                    )
-                ) : (
-                    <Alert type="info" showIcon message={t('pages:selectOrCreateAnIngestionJobToViewRunResults')} />
-                )}
-            </Card>
-            <Card className="page-section" bordered={false} title={t('pages:publicCaptureTitle')}
-                  data-testid="public-market-capture">
-                <Typography.Paragraph>{t('pages:publicCaptureDescription')}</Typography.Paragraph>
-                <Form<PublicCaptureFormValues> form={publicCaptureForm} layout="vertical"
-                    onFinish={submitPublicCapture}>
-                    <Space align="start" size={16} wrap>
-                        <Form.Item label={t('pages:exchange')}><Select value="OKX" disabled style={{width: 130}} options={[{value: 'OKX', label: 'OKX'}]} /></Form.Item>
-                        <Form.Item label={t('pages:tradingPair')}><Select value="BTC-USDT" disabled style={{width: 150}} options={[{value: 'BTC-USDT', label: 'BTC-USDT'}]} /></Form.Item>
-                        <Form.Item label={t('pages:interval')}><Select value="1h" disabled style={{width: 100}} options={[{value: '1h', label: '1h'}]} /></Form.Item>
-                        <Form.Item label={t('pages:startTime')} name="start" rules={[{required: true, message: t('pages:selectAStartTime')}]}>
-                            <DatePicker showTime style={{width: 220}} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:endTime')} name="end" rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
-                            <DatePicker showTime style={{width: 220}} />
-                        </Form.Item>
-                        <Button type="primary" loading={publicCaptureMutation.isPending}
-                            onClick={() => publicCaptureForm.submit()}>{t('pages:publicCaptureAction')}</Button>
-                    </Space>
-                </Form>
-                {publicCaptureMutation.error && <Alert type="error" showIcon
-                    message={t('pages:publicCaptureFailed')}
-                    description={formatApiError(publicCaptureMutation.error as AppApiError)} />}
-                {publicCapture && <Descriptions size="small" column={{xs: 1, sm: 2}} items={[
-                    {key: 'datasetId', label: 'datasetId', children: publicCapture.datasetId},
-                    {key: 'barCount', label: 'barCount', children: publicCapture.barCount},
-                    {key: 'observedAt', label: 'observedAt', children: publicCapture.observedAt},
-                    {key: 'consumedSha256', label: 'consumedSha256', children: publicCapture.consumedSha256},
-                    {key: 'ruleSha256', label: 'ruleSha256', children: publicCapture.ruleSha256},
-                ]} />}
-            </Card>
-            <Card
-                className="page-section"
-                bordered={false}
-                title={t('pages:datasets')}
-                extra={(
-                    <Button
-                        type="primary"
-                        loading={createDatasetMutation.isPending}
-                        onClick={() => datasetForm.submit()}
-                    >
-                        {t('pages:createDataset')}</Button>
-                )}
-            >
-                <Form<CreateMarketdataDatasetFormValues>
-                    form={datasetForm}
-                    layout="vertical"
-                    initialValues={{
-                        datasetName: `BINANCE-BTC-USDT-1m-${Date.now()}`,
-                        exchangeCode: 'BINANCE',
-                        marketType: 'SPOT',
-                        symbol: 'BTC-USDT',
-                        interval: '1m',
-                    }}
-                    onFinish={(values) => createDatasetMutation.mutate({
-                        ...normalizeDataset(values),
-                        datasetName: values.datasetName || `BINANCE-BTC-USDT-1m-${Date.now()}`,
-                    })}
-                >
-                    <Space align="start" size={16} wrap>
-                        <Form.Item label={t('pages:datasetName')} name="datasetName">
-                            <Input style={{width: 260}} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:exchange')} name="exchangeCode">
-                            <Select style={{width: 140}} options={EXCHANGE_OPTIONS} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:market')} name="marketType">
-                            <Select style={{width: 120}} options={MARKET_TYPE_OPTIONS} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:tradingPair')} name="symbol">
-                            <Select showSearch style={{width: 160}} options={SYMBOL_OPTIONS} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:interval')} name="interval">
-                            <Select style={{width: 120}} options={INTERVAL_OPTIONS} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:startTime')} name="startTime" rules={[{required: true, message: t('pages:selectAStartTime')}]}>
-                            <DatePicker showTime style={{width: 220}} />
-                        </Form.Item>
-                        <Form.Item label={t('pages:endTime')} name="endTime" rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
-                            <DatePicker showTime style={{width: 220}} />
-                        </Form.Item>
-                    </Space>
-                </Form>
-                {datasetsQuery.error ? (
-                    <Alert type="error" showIcon message={t('pages:failedToQueryMarketDataDatasets')} description={formatApiError(datasetsQuery.error as AppApiError)} />
-                ) : (
-                    <Table
-                        rowKey="datasetId"
-                        columns={datasetColumns((datasetId) => refreshDatasetMutation.mutate(datasetId), pendingDatasetId)}
-                        dataSource={datasetsQuery.data ?? []}
-                        loading={datasetsQuery.isLoading || datasetsQuery.isFetching}
-                        pagination={{pageSize: 10, showSizeChanger: false}}
-                        scroll={{x: 1900}}
-                        locale={{emptyText: t('pages:noMarketDataDatasetsCreateOneFirst')}}
-                    />
-                )}
-            </Card>
+                    <Collapse items={[{key: 'readiness', label: t('pages:marketdataAdvancedReadiness'), children: (
+                        <Card className="page-section" bordered={false} title={t('pages:dataQualityAndReadiness')}>
+                            <div data-testid="marketdata-quality-readiness-view" style={{display: 'flex', flexDirection: 'column', gap: 16}}>
+                                <MarketDataQualityNotice />
+                                <Descriptions
+                                    size="small"
+                                    column={{xs: 1, sm: 2, md: 3}}
+                                    items={[
+                                        {key: 'queryExchange', label: t('pages:exchange'), children: <MetricText>{submittedQuery?.exchangeCode ?? '-'}</MetricText>},
+                                        {key: 'queryInstrument', label: t('pages:instrumentSymbol'), children: <MetricText>{submittedQuery?.symbol ?? '-'}</MetricText>},
+                                        {key: 'queryInterval', label: t('pages:intervalTimeframe'), children: <MetricText>{submittedQuery?.interval ?? '-'}</MetricText>},
+                                        {key: 'queryStart', label: t('pages:queryStart'), children: <MetricText>{submittedQuery ? formatDateTime(submittedQuery.startTime) : '-'}</MetricText>},
+                                        {key: 'queryEnd', label: t('pages:queryEnd'), children: <MetricText>{submittedQuery ? formatDateTime(submittedQuery.endTime) : '-'}</MetricText>},
+                                        {
+                                            key: 'readinessStatus',
+                                            label: t('pages:readinessStatus'),
+                                            children: (
+                                                <Tag color={readinessStatusColor(backendReadiness?.status ?? dataQualityReadiness.status)}>
+                                                    {backendReadiness?.status ?? dataQualityReadiness.title}
+                                                </Tag>
+                                            ),
+                                        },
+                                        {
+                                            key: 'sourceHealthStatus',
+                                            label: t('pages:sourceHealthStatus'),
+                                            children: (
+                                                <MarketDataStatusBadge status={backendReadiness ? readinessSourceHealth(backendReadiness) : (readinessLoading ? 'LOADING' : 'UNAVAILABLE')} />
+                                            ),
+                                        },
+                                        {
+                                            key: 'sourceStatus',
+                                            label: t('pages:sourceStatus2'),
+                                            children: (
+                                                <MarketDataStatusBadge status={backendReadiness?.sourceStatus ?? (readinessLoading ? 'LOADING' : 'UNKNOWN')} />
+                                            ),
+                                        },
+                                        {
+                                            key: 'dataOrigin',
+                                            label: t('pages:dataOrigin'),
+                                            children: (
+                                                <MarketDataOriginBadge origin={backendReadiness?.dataOrigin ?? 'UNKNOWN'} />
+                                            ),
+                                        },
+                                        {
+                                            key: 'gapStatus',
+                                            label: t('pages:gapStatus'),
+                                            children: (
+                                                <MarketDataStatusBadge status={backendReadiness?.gapStatus ?? 'UNKNOWN'} />
+                                            ),
+                                        },
+                                        {
+                                            key: 'backendSupportLevel',
+                                            label: t('pages:backendSupport'),
+                                            children: <MetricText>{backendReadiness?.backendSupportLevel ?? (submittedQuery ? 'UNAVAILABLE' : '-')}</MetricText>,
+                                        },
+                                    ]}
+                                />
+                                <SandboxSourceDisplay summary={sandboxSourceDisplay} />
+                                <MarketDataSourceHealthTable
+                                    readiness={backendReadiness}
+                                    submittedQuery={submittedQuery}
+                                    loading={readinessLoading}
+                                />
+                                <div
+                                    style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))',
+                                        gap: 12,
+                                    }}
+                                >
+                                    <MetricTile
+                                        label={t('pages:barsLoaded')}
+                                        value={<MetricText>{backendReadiness?.barCount ?? bars.length}</MetricText>}
+                                        detail={backendReadiness ? t('pages:fromApiMarketdataReadiness') : (submittedQuery ? t('pages:fromApiMarketdataBarsFallback') : t('pages:pendingQuery'))}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:firstBarTime')}
+                                        value={<MetricText>{backendReadiness ? dateText(backendReadiness.firstBarTime) : (firstBar ? formatDateTime(firstBar.openTime) : '-')}</MetricText>}
+                                        detail={backendReadiness ? (backendReadiness.firstBarTime ?? t('pages:noData2')) : (firstBar ? firstBar.openTime : t('pages:noData2'))}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:lastBarTime')}
+                                        value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastBarTime) : (lastBar ? formatDateTime(lastBar.closeTime ?? lastBar.openTime) : '-')}</MetricText>}
+                                        detail={backendReadiness ? (backendReadiness.lastBarTime ?? t('pages:noData2')) : (lastBar ? (lastBar.closeTime ?? lastBar.openTime) : t('pages:noData2'))}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:latestClose')}
+                                        value={<MetricText>{lastBar ? formatNumber(lastBar.closePrice, 8) : '-'}</MetricText>}
+                                        detail={lastBar ? t('pages:lastReturnedBar') : t('pages:noData2')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:latestVolume')}
+                                        value={<MetricText>{lastBar ? formatNumber(lastBar.volume, 8) : '-'}</MetricText>}
+                                        detail={lastBar ? t('pages:lastReturnedBar') : t('pages:noData2')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:freshness2')}
+                                        value={(
+                                            <DataFreshness
+                                                source={backendReadiness ? t('pages:backendReadiness') : 'bars'}
+                                                state={backendReadiness ? readinessFreshnessState(backendReadiness.freshnessStatus) : barsFreshness.state}
+                                                detail={backendReadiness?.freshnessStatus ?? barsFreshness.detail}
+                                                inline
+                                            />
+                                        )}
+                                        detail={backendReadiness ? t('pages:fromApiMarketdataReadiness') : (barsFreshness.stale ? t('pages:staleByQueryIntervalEstimate') : t('pages:frontendEstimate'))}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:qualityStatus')}
+                                        value={backendReadiness ? <ReadinessQualityTags readiness={backendReadiness}/> : <QualityTags quality={barsQuality}/>}
+                                        detail={backendReadiness ? `ok=${backendReadiness.qualityStatusSummary.okCount}, gap=${backendReadiness.qualityStatusSummary.gapSignalCount}, invalid=${backendReadiness.qualityStatusSummary.invalidCount}` : (barsQuality.hasQualityStatus ? t('pages:aggregatedFromBarData') : t('pages:unavailableReadinessUnavailable'))}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:gapCount')}
+                                        value={<MetricText>{backendReadiness ? countText(backendReadiness.gapCount) : (barsQuality.gapDetectionUnavailable ? '-' : barsQuality.gapCount)}</MetricText>}
+                                        detail={backendReadiness ? `expected=${countText(backendReadiness.expectedBarCount)}` : (barsQuality.gapDetectionUnavailable ? t('pages:gapDetectionUnavailable') : `quality=${barsQuality.qualityGapCount}, sequence=${barsQuality.sequenceGapCount ?? '-'}`)}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:gapStatus')}
+                                        value={<MarketDataStatusBadge status={backendReadiness?.gapStatus ?? 'UNKNOWN'} />}
+                                        detail={backendReadiness ? `missingFrom=${dateText(backendReadiness.missingFrom)}, missingTo=${dateText(backendReadiness.missingTo)}` : stableFactPendingText()}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:unknownQualityCount')}
+                                        value={<MetricText>{backendReadiness?.unknownQualityCount ?? barsQuality.unknownQualityCount}</MetricText>}
+                                        detail={backendReadiness ? t('pages:fromBackendQualitystatussummary') : (barsQuality.unknownQualityCount > 0 ? t('pages:qualitystatusMissingOnReturnedBars') : 'none')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:sourceHealth')}
+                                        value={(
+                                            <MarketDataStatusBadge status={backendReadiness ? readinessSourceHealth(backendReadiness) : (readinessLoading ? 'LOADING' : 'UNAVAILABLE')} />
+                                        )}
+                                        detail={backendReadiness?.sourceHealthReason ?? (readinessLoading ? t('pages:loadingApiMarketdataReadiness') : dataQualityReadiness.sourceHealthDetail)}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:sourceStatus2')}
+                                        value={<MarketDataStatusBadge status={backendReadiness?.sourceStatus ?? 'UNKNOWN'} />}
+                                        detail={t('pages:sourcestatusDescribesDiagnosticsOnlyNotProviderOrTradingAuthorization')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:dataOrigin')}
+                                        value={<MarketDataOriginBadge origin={backendReadiness?.dataOrigin ?? 'UNKNOWN'} />}
+                                        detail={t('pages:localDbFixtureFakeServerPublicCandidateAreDiagnosticOriginsNotProofOfRealExternalConnections')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:errorCategory')}
+                                        value={<MarketDataStatusBadge status={backendReadiness?.errorCategory ?? 'UNKNOWN'} />}
+                                        detail={backendReadiness ? optionalText(backendReadiness.degradedReason ?? backendReadiness.disabledReason) : stableFactPendingText()}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:errorRate')}
+                                        value={<MetricText>{backendReadiness ? percentText(backendReadiness.errorRate) : stableFactPendingText()}</MetricText>}
+                                        detail={t('pages:nullMeansNoStableFactItIsNotDisplayedAs0')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:latency')}
+                                        value={<MetricText>{backendReadiness ? numberText(backendReadiness.latencyMs, ' ms') : stableFactPendingText()}</MetricText>}
+                                        detail={t('pages:nullMeansNoStableFactLatencyThresholdsAreNotHardcoded')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:missingFrom')}
+                                        value={<MetricText>{backendReadiness ? dateText(backendReadiness.missingFrom) : stableFactPendingText()}</MetricText>}
+                                        detail={t('pages:gapStartNullDoesNotMeanNoGap')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:missingTo')}
+                                        value={<MetricText>{backendReadiness ? dateText(backendReadiness.missingTo) : stableFactPendingText()}</MetricText>}
+                                        detail={t('pages:gapEndNullDoesNotMeanNoGap')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:lastObserved')}
+                                        value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastObservedAt) : stableFactPendingText()}</MetricText>}
+                                        detail={t('pages:latestObservedLocalMarketDataOrIngestionFact')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:updatedAt')}
+                                        value={<MetricText>{backendReadiness ? dateText(readinessUpdatedAt(backendReadiness)) : stableFactPendingText()}</MetricText>}
+                                        detail={backendReadiness ? t('pages:usesUpdatedatWithGeneratedatAsACompatibleFallback') : stableFactPendingText()}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:staleThreshold')}
+                                        value={<MetricText>{backendReadiness ? numberText(backendReadiness.staleAfterSeconds, ' s') : stableFactPendingText()}</MetricText>}
+                                        detail={t('pages:theStaleThresholdComesFromBackendReadOnlyFactsTheFrontendDoesNotDeriveBusinessThresholds')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:degradedReason')}
+                                        value={<MetricText>{backendReadiness ? optionalText(backendReadiness.degradedReason) : stableFactPendingText()}</MetricText>}
+                                        detail={t('pages:onlySanitizedDiagnosticReasonsAreShown')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:disabledReason')}
+                                        value={<MetricText>{backendReadiness ? optionalText(backendReadiness.disabledReason) : stableFactPendingText()}</MetricText>}
+                                        detail={t('pages:onlySanitizedDisabledReasonsAreShown')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:traceRequest')}
+                                        value={<MetricText>{backendReadiness ? `${optionalText(backendReadiness.traceId)} / ${optionalText(backendReadiness.requestId)}` : stableFactPendingText()}</MetricText>}
+                                        detail={t('pages:traceidRequestidMayBeEmptyCredentialsHeadersAndRawPayloadsMustNotBeDisplayed')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:backendSupport')}
+                                        value={<MetricText>{backendReadiness?.backendSupportLevel ?? (submittedQuery ? 'UNAVAILABLE' : '-')}</MetricText>}
+                                        detail={backendReadiness ? `generated ${formatDateTime(backendReadiness.generatedAt)}` : t('pages:readinessApiFallback')}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:lastSuccess')}
+                                        value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastSuccessAt) : '-'}</MetricText>}
+                                        detail={backendReadiness?.lastSuccessAt ?? stableFactPendingText()}
+                                    />
+                                    <MetricTile
+                                        label={t('pages:lastFailure')}
+                                        value={<MetricText>{backendReadiness ? dateText(backendReadiness.lastFailureAt) : '-'}</MetricText>}
+                                        detail={backendReadiness?.lastFailureAt ?? stableFactPendingText()}
+                                    />
+                                </div>
+                                <Space size={8} wrap>
+                                    <Tag color={readinessStatusColor(backendReadiness?.status ?? dataQualityReadiness.status)}>
+                                        {backendReadiness?.status ?? dataQualityReadiness.status}
+                                    </Tag>
+                                    {backendReadiness ? (
+                                        <>
+                                            <Tag color={readinessStatusColor(backendReadiness.freshnessStatus)}>
+                                                {t('pages:freshness')}{backendReadiness.freshnessStatus}
+                                            </Tag>
+                                            <Tag color={readinessStatusColor(readinessSourceHealth(backendReadiness))}>
+                                                {t('pages:sourceHealth2')}{readinessSourceHealth(backendReadiness)}
+                                            </Tag>
+                                            <Tag color={readinessStatusColor(backendReadiness.gapStatus)}>
+                                                {t('pages:gap')}{backendReadiness.gapStatus ?? 'UNKNOWN'}
+                                            </Tag>
+                                            <Tag color={readinessStatusColor(backendReadiness.sourceStatus)}>
+                                                {t('pages:sourceStatus3')}{backendReadiness.sourceStatus ?? 'UNKNOWN'}
+                                            </Tag>
+                                            <Tag>{t('pages:dataOrigin2')}{backendReadiness.dataOrigin ?? 'UNKNOWN'}</Tag>
+                                            <Tag>{t('pages:backendSupport2')}{backendReadiness.backendSupportLevel}</Tag>
+                                        </>
+                                    ) : (
+                                        <Tag>{t('pages:sourceHealth2')}{readinessLoading ? 'LOADING' : 'UNAVAILABLE'}</Tag>
+                                    )}
+                                    {barsQuality.gapDetectionUnavailable ? (
+                                        <Tag>{t('pages:gapDetectionUnavailable')}</Tag>
+                                    ) : null}
+                                </Space>
+                                {chartError ? (
+                                    <Alert
+                                        type="error"
+                                        showIcon
+                                        message={t('pages:dataQualityUnavailable')}
+                                        description={t('pages:theBarsQueryFailedDataReadinessCannotBeInferredFromAFailedResponse')}
+                                    />
+                                ) : null}
+                                {!chartError && submittedQuery && bars.length === 0 ? (
+                                    <Alert
+                                        type="info"
+                                        showIcon
+                                        message={t('pages:noBarsReturned')}
+                                        description={t('pages:noBarsWereReturnedForThisWindowFreshnessGapsAndQualityRemainNoDataUnavailable')}
+                                    />
+                                ) : null}
+                                {barsQuality.gapDetectionUnavailable ? (
+                                    <Alert
+                                        type="info"
+                                        showIcon
+                                        message={t('pages:gapDetectionUnavailable')}
+                                        description={t('pages:qualitystatusAndSufficientIntervalOrTimeDataAreMissingThePageDoesNotFabricateGap0OrSourceHealthOk')}
+                                    />
+                                ) : null}
+                                {readinessUnavailable ? (
+                                    <Alert
+                                        type="warning"
+                                        showIcon
+                                        message={t('pages:marketDataSourceHealthUnavailable')}
+                                        description={readinessError
+                                            ? t('pages:marketdataReadinessFailedFallback', {error: readinessError})
+                                            : t('pages:readinessApiReturnedNoUsableSummaryOnlyBarDerivedFallbackIsAvailable')}
+                                    />
+                                ) : null}
+                                {backendReadiness ? (
+                                    <Alert
+                                        type={backendReadiness.status === 'FRESH' ? 'success' : backendReadiness.status === 'ERROR' ? 'error' : 'warning'}
+                                        showIcon
+                                        message={t('pages:marketdataReadinessStatus', {status: backendReadiness.status})}
+                                        description={t('pages:value1BackendSupportValue2ThisIsMarketDataDiagnosticsOnlyNotTradingAuthorization', {value1: backendReadiness.sourceHealthReason, value2: backendReadiness.backendSupportLevel})}
+                                    />
+                                ) : (
+                                    <Alert
+                                        type={dataQualityReadiness.status === 'GOOD' ? 'success' : dataQualityReadiness.status === 'ERROR' ? 'error' : 'warning'}
+                                        showIcon
+                                        message={t('pages:marketdataReadinessStatus', {status: dataQualityReadiness.title})}
+                                        description={t('pages:marketdataReadinessFallbackDetail', {detail: dataQualityReadiness.detail, source: readinessLoading ? t('pages:marketdataLoadingSource') : dataQualityReadiness.sourceHealthDetail})}
+                                    />
+                                )}
+                            </div>
+                        </Card>
+                    )}]}/>
+                </Space>},
+            ]}/>
         </NqPageScaffold>
     );
 }

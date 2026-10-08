@@ -1,4 +1,4 @@
-import {Alert, Descriptions, List, Space, Table, Typography} from 'antd';
+import {Alert, Collapse, Descriptions, List, Space, Table, Tabs, Typography} from 'antd';
 import {useQuery} from '@tanstack/react-query';
 import {Link} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
@@ -36,7 +36,6 @@ export function CanonicalSimFacts({paperRunId, details = false}: {paperRunId: st
         {facts && <>
             <Descriptions size="small" bordered column={1}>
                 <Descriptions.Item label={t('pages:runStatus')}>{run.isError ? t('pages:simFactsUnavailable') : run.data?.status ?? '—'}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:simDataset')}><Typography.Text copyable style={{overflowWrap: 'anywhere'}}>{run.isError ? '—' : run.data?.datasetSnapshotJson ?? '—'}</Typography.Text></Descriptions.Item>
                 <Descriptions.Item label={t('pages:accountId')}><Typography.Text copyable>{String(facts.canonicalAccountId)}</Typography.Text></Descriptions.Item>
                 <Descriptions.Item label={t('pages:strategySimVersion')}><Typography.Text copyable>{facts.strategyVersionId}</Typography.Text></Descriptions.Item>
                 <Descriptions.Item label={t('pages:publishId')}><Typography.Text copyable>{facts.publishId}</Typography.Text></Descriptions.Item>
@@ -56,6 +55,11 @@ export function CanonicalSimFacts({paperRunId, details = false}: {paperRunId: st
                 <Typography.Text>{t('pages:simNavigationIdentity')}</Typography.Text>
             </Space>
         </>}
+        {facts && details && <Tabs items={(['orders', 'trades', 'ledgerEntries', 'riskEvents', 'positions'] as const).map(kind => ({
+            key: kind, label: t(`pages:simTable_${kind}`), children: <CanonicalFactTable kind={kind} facts={facts}/>,
+        }))}/>}
+        <Collapse items={[{key: 'diagnostics', label: t('pages:validationAdvancedDiagnostics'), children: <Space direction="vertical" style={{width: '100%'}}>
+        <Typography.Paragraph copyable style={{overflowWrap: 'anywhere'}}>{run.isError ? '—' : run.data?.datasetSnapshotJson ?? '—'}</Typography.Paragraph>
         {!continuous.isError && continuous.data && <Descriptions size="small" bordered column={{xs: 1, md: 2}}>
             <Descriptions.Item label={t('pages:continuousSimStatus')}>{continuous.data.status}</Descriptions.Item>
             <Descriptions.Item label={t('pages:simContinuousIdentity')}><Typography.Text copyable>{continuous.data.paperRunId}</Typography.Text></Descriptions.Item>
@@ -84,8 +88,7 @@ export function CanonicalSimFacts({paperRunId, details = false}: {paperRunId: st
                         <Typography.Text key={String(order.order_id)}>{t('pages:simRiskOrderResult')}: {String(order.status)} · {String(order.reason ?? '—')}</Typography.Text>)}
                 </Space>
             </List.Item>}/>
-        {details && facts && (['orders', 'trades', 'ledgerEntries', 'riskEvents', 'positions'] as const).map(kind =>
-            <CanonicalFactTable key={kind} kind={kind} facts={facts}/>)}
+        </Space>}]} />
     </Space>;
 }
 

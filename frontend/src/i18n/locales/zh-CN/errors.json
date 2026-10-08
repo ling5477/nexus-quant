@@ -75,5 +75,15 @@
     "checkConnection": "检查网络并查询最新状态，确认结果后再决定是否重试。"
   },
   "fieldInvalid": "{{field}}：请检查此字段。",
-  "requestField": "请求"
+  "requestField": "请求",
+  "login": {
+    "credentials": "账号或密码不正确，请检查后重试。",
+    "expired": "登录已过期，请重新登录后继续。",
+    "unavailableAccount": "当前无法使用此账号登录，请联系管理员。",
+    "rateLimited": "尝试次数过多，请稍后再试。",
+    "network": "无法连接服务，请检查网络后重试。",
+    "service": "登录服务暂时不可用，请稍后重试。",
+    "failed": "登录未完成，请重试；若仍失败，请联系管理员。",
+    "diagnostic": "诊断信息"
+  }
 }

@@ -1,23 +1,6 @@
-import {usePaperExecutionDiagnosticsQuery} from '@/features/paper-trading/hooks/usePaperTradingQuery';
+import {PaperAnalysisBoundary} from './components/PaperAnalysisBoundary';
 
-import {PaperExecutionDiagnosticsDashboard} from './components/PaperExecutionDiagnosticsDashboard';
-
-/**
- * PaperDiagnosticsPage 是 现有的 `/paper-trading/diagnostics` 真实子路由。
- *
- * Why:
- * 本页只迁移 Execution Diagnostics 只读诊断视图。页面级唯一职责是实例化一次
- * `usePaperExecutionDiagnosticsQuery()`，再把同一个 query 实例传给 dashboard 处理 loading / error / empty /
- * fallback / cause filter / severity filter。这样可以让 diagnostics 请求只在本路由挂载时触发，不影响
- * `/paper-trading/portfolio` 的 portfolio summary 单请求，也不触发 `/paper-trading/runs` 的执行查询。
- *
- * 边界：
- * - 不新增 API client、query key、hook 或 global store。
- * - 不迁移 Strategy Evaluation / Auto Review / Risk / Ranking。
- * - 仅展示 Paper-only、rules-based 诊断结果，不接 AI / DH runtime / LIVE / 真实交易所。
- */
+/** 历史诊断未读取 canonical 事实，不能据此归因为无订单或无成交。 */
 export function PaperDiagnosticsPage() {
-    const diagnosticsQuery = usePaperExecutionDiagnosticsQuery();
-
-    return <PaperExecutionDiagnosticsDashboard query={diagnosticsQuery}/>;
+    return <PaperAnalysisBoundary kind="diagnostics"/>;
 }

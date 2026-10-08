@@ -10,6 +10,7 @@ import {
     Alert,
     Button,
     Card,
+    Collapse,
     Descriptions,
     Empty,
     Form,
@@ -17,12 +18,13 @@ import {
     Skeleton,
     Space,
     Table,
+    Tabs,
     Tag,
     Tooltip,
     Typography
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import {useEffect, useMemo, type ReactNode} from 'react';
+import {useEffect, useMemo, useState, type ReactNode} from 'react';
 import {Link} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
@@ -30,7 +32,8 @@ import {DataFreshness, type FreshnessState} from '@/nq-design-system/status/Data
 import {StatusTag as CanonicalStatusTag} from '@/nq-design-system/status/StatusTag';
 import {useStrategyValidationWorkspaceQueries} from '@/features/validation/hooks/useStrategyValidationWorkspaceQueries';
 import {StrategyReleaseAdmissionPreviewPanel} from '@/features/validation/StrategyReleaseAdmissionPreviewPanel';
-import {ValidationReviewSection} from '@/features/validation/review/ValidationReviewSection';
+import {ValidationReviewWorkbench} from '@/features/validation/components/ValidationReviewWorkbench';
+import './StrategyValidationWorkspace.css';
 import type {AppApiError} from '@/types/api';
 import type {ReadModelEvidenceMetadata} from '@/features/validation/types/read-model-evidence';
 import type {
@@ -335,6 +338,10 @@ const STATUS_PRESENTATION: Record<string, StatusPresentation> = {
     NOT_EXECUTED: {get label() { return t('pages:notExecuted'); }, tone: 'neutral'},
     NOT_IMPLEMENTED: {get label() { return t('pages:capabilityNotImplemented'); }, tone: 'warning'},
     UNKNOWN: {get label() { return t('pages:unknown'); }, tone: 'neutral'},
+    UNAVAILABLE: {get label() { return t('pages:unavailable'); }, tone: 'neutral'},
+    AVAILABLE: {get label() { return t('pages:validationEvidenceAvailable'); }, tone: 'info'},
+    FRESH: {get label() { return t('pages:validationEvidenceFresh'); }, tone: 'info'},
+    STALE: {get label() { return t('pages:validationEvidenceStale'); }, tone: 'warning'},
     NOT_AVAILABLE: {get label() { return t('pages:unavailable'); }, tone: 'neutral'},
     PARTIAL: {get label() { return t('pages:partiallyAvailable'); }, tone: 'warning'},
     BLOCKED_SHADOW_NOT_IMPLEMENTED: {get label() { return t('pages:blockedShadowNotImplemented'); }, tone: 'danger'},
@@ -426,13 +433,13 @@ const QUERY_FIELDS: Array<keyof StrategyValidationQuery> = [
 ];
 
 const FIELD_LABELS: Record<keyof StrategyValidationQuery, string> = {
-    strategyId: 'strategyId',
-    strategyVersionId: 'strategyVersionId',
-    datasetId: 'datasetId',
-    evaluationId: 'evaluationId',
-    publishId: 'publishId',
-    paperRunId: 'paperRunId',
-    shadowRunId: 'shadowRunId',
+    get strategyId() { return t('pages:strategyId'); },
+    get strategyVersionId() { return t('pages:strategyVersionId'); },
+    get datasetId() { return t('pages:datasetId'); },
+    get evaluationId() { return t('pages:evaluationId'); },
+    get publishId() { return t('pages:publishId'); },
+    get paperRunId() { return t('pages:paperRunId'); },
+    get shadowRunId() { return t('pages:shadowRunId'); },
 };
 
 const evidenceColumns: ColumnsType<StrategyValidationEvidence> = [
@@ -2542,7 +2549,7 @@ function validationOperationsSummaryRows(
         },
         {
             key: 'shadow-validation-workflow',
-            lane: t('pages:shadowValidationWorkflow'),
+            lane: t('pages:shadowValidationWorkflowOverview'),
             status: shadowWorkflow?.latestOperatorItem?.workflowState ?? (shadowWorkflow ? 'NO_OPERATOR_ITEMS' : 'UNKNOWN'),
             primaryMetric: `operatorItems ${numberValue(shadowWorkflow?.totalOperatorItems)} · readyForOperatorReview ${numberValue(shadowWorkflow?.readyForOperatorReviewCount)}`,
             blockers: shadowWorkflow?.blockers.length ?? 0,
@@ -2572,7 +2579,7 @@ function validationOperationsSummaryRows(
         },
         {
             key: 'evaluation-artifact-preview',
-            lane: t('pages:evaluationArtifactPreview'),
+            lane: t('pages:pythonEvaluationArtifactPreviewNoFileBaseline'),
             status: artifactPreview
                 ? evaluationArtifactPreviewIsNoFileBaseline(artifactPreview)
                     ? 'NO_ARTIFACT_SOURCE_CONFIGURED'
@@ -2975,7 +2982,7 @@ function QueryForm({
                 initialValues={initialValues}
                 onFinish={(values) => onSubmit(normalizeQuery(values))}
             >
-                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12}}>
+                <div className="validation-query-fields">
                     {QUERY_FIELDS.map((field) => (
                         <Form.Item key={field} label={FIELD_LABELS[field]} name={field}>
                             <Input allowClear placeholder={t('pages:enterValue1', {value1: FIELD_LABELS[field]})}/>
@@ -5973,17 +5980,17 @@ function EvaluationGatePanel({
             boundaryDescription={t('pages:theEvaluationGateDoesNotGrantTradingAuthorizationEnableLiveOrPermitRealStrategyExecution')}
         >
             <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
-                <Descriptions.Item label="strategyVersionId">{optionalCode(data?.strategyVersionId)}</Descriptions.Item>
-                <Descriptions.Item label="gateDecision">{optionalText(data?.gateDecision)}</Descriptions.Item>
-                <Descriptions.Item label="evaluationStatus"><StatusTag
+                <Descriptions.Item label={t('pages:strategyVersionId')}>{optionalCode(data?.strategyVersionId)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:gateDecision')}>{optionalText(data?.gateDecision)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:evaluationStatus')}><StatusTag
                     status={data?.evaluationStatus}/></Descriptions.Item>
-                <Descriptions.Item label="datasetQualityStatus"><StatusTag
+                <Descriptions.Item label={t('pages:datasetQualityStatus')}><StatusTag
                     status={data?.datasetQualityStatus}/></Descriptions.Item>
-                <Descriptions.Item label="publishTraceStatus"><StatusTag
+                <Descriptions.Item label={t('pages:publishTraceStatus')}><StatusTag
                     status={data?.publishTraceStatus}/></Descriptions.Item>
-                <Descriptions.Item label="paperEvidenceStatus"><StatusTag
+                <Descriptions.Item label={t('pages:paperEvidenceStatus')}><StatusTag
                     status={data?.paperEvidenceStatus}/></Descriptions.Item>
-                <Descriptions.Item label="generatedAt">{generatedAtText(data?.generatedAt)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:generatedAt')}>{generatedAtText(data?.generatedAt)}</Descriptions.Item>
             </Descriptions>
         </ResultPanel>
     );
@@ -6013,24 +6020,24 @@ function PaperShadowPanel({
             boundaryDescription={t('pages:paperVersusShadowComparisonDoesNotGrantTradingAuthorizationEnableShadowLiveExecutionOrCreateOrStartA')}
         >
             <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
-                <Descriptions.Item label="paperRunId">{optionalCode(data?.paperRunId)}</Descriptions.Item>
-                <Descriptions.Item label="shadowRunId">{optionalCode(data?.shadowRunId)}</Descriptions.Item>
-                <Descriptions.Item label="paperRunStatus"><StatusTag status={data?.paperRunStatus}/></Descriptions.Item>
-                <Descriptions.Item label="shadowRunStatus"><StatusTag
+                <Descriptions.Item label={t('pages:paperRunId')}>{optionalCode(data?.paperRunId)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:shadowRunId')}>{optionalCode(data?.shadowRunId)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:paperRunStatus')}><StatusTag status={data?.paperRunStatus}/></Descriptions.Item>
+                <Descriptions.Item label={t('pages:shadowRunStatus')}><StatusTag
                     status={data?.shadowRunStatus}/></Descriptions.Item>
-                <Descriptions.Item label="evaluationGateStatus"><StatusTag
+                <Descriptions.Item label={t('pages:evaluationGateStatus')}><StatusTag
                     status={data?.evaluationGateStatus}/></Descriptions.Item>
-                <Descriptions.Item label="paperEvidenceStatus"><StatusTag
+                <Descriptions.Item label={t('pages:paperEvidenceStatus')}><StatusTag
                     status={data?.paperEvidenceStatus}/></Descriptions.Item>
-                <Descriptions.Item label="shadowEvidenceStatus"><StatusTag
+                <Descriptions.Item label={t('pages:shadowEvidenceStatus')}><StatusTag
                     status={data?.shadowEvidenceStatus}/></Descriptions.Item>
-                <Descriptions.Item label="dataQualityStatus"><StatusTag
+                <Descriptions.Item label={t('pages:dataQualityStatus')}><StatusTag
                     status={data?.dataQualityStatus}/></Descriptions.Item>
-                <Descriptions.Item label="comparable">
+                <Descriptions.Item label={t('pages:comparable')}>
                     {data?.comparable ? <Tag color="processing">{t('pages:trueReadOnlyComparisonAvailable')}</Tag> :
                         <Tag color="default">{t('pages:falseNotComparable')}</Tag>}
                 </Descriptions.Item>
-                <Descriptions.Item label="generatedAt">{generatedAtText(data?.generatedAt)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:generatedAt')}>{generatedAtText(data?.generatedAt)}</Descriptions.Item>
             </Descriptions>
         </ResultPanel>
     );
@@ -6060,18 +6067,18 @@ function ShadowLivePreviewPanel({
             boundaryDescription={t('pages:shadowLivePreviewHasNoSideEffectsNoDatabaseWritesExternalConnectionsRealCredentialReadsOrRealOrderSu')}
         >
             <Descriptions size="small" bordered column={{xs: 1, sm: 1, md: 2}}>
-                <Descriptions.Item label="runnerStatus"><StatusTag status={data?.runnerStatus}/></Descriptions.Item>
-                <Descriptions.Item label="evaluationGateStatus"><StatusTag
+                <Descriptions.Item label={t('pages:runnerStatus')}><StatusTag status={data?.runnerStatus}/></Descriptions.Item>
+                <Descriptions.Item label={t('pages:evaluationGateStatus')}><StatusTag
                     status={data?.evaluationGateStatus}/></Descriptions.Item>
-                <Descriptions.Item label="paperShadowComparisonStatus"><StatusTag
+                <Descriptions.Item label={t('pages:paperShadowComparisonStatus')}><StatusTag
                     status={data?.paperShadowComparisonStatus}/></Descriptions.Item>
-                <Descriptions.Item label="inputFactStatus"><StatusTag
+                <Descriptions.Item label={t('pages:inputFactStatus')}><StatusTag
                     status={data?.inputFactStatus}/></Descriptions.Item>
-                <Descriptions.Item label="traceStatus"><StatusTag status={data?.traceStatus}/></Descriptions.Item>
-                <Descriptions.Item label="orderIntentPreviewStatus"><StatusTag status={data?.orderIntentPreviewStatus}/></Descriptions.Item>
-                <Descriptions.Item label="riskPreflightPreviewStatus"><StatusTag
+                <Descriptions.Item label={t('pages:traceStatus')}><StatusTag status={data?.traceStatus}/></Descriptions.Item>
+                <Descriptions.Item label={t('pages:orderIntentPreviewStatus')}><StatusTag status={data?.orderIntentPreviewStatus}/></Descriptions.Item>
+                <Descriptions.Item label={t('pages:riskPreflightPreviewStatus')}><StatusTag
                     status={data?.riskPreflightPreviewStatus}/></Descriptions.Item>
-                <Descriptions.Item label="generatedAt">{generatedAtText(data?.generatedAt)}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:generatedAt')}>{generatedAtText(data?.generatedAt)}</Descriptions.Item>
             </Descriptions>
             <SideEffectPolicyTable policies={data?.sideEffectPolicy ?? []}/>
         </ResultPanel>
@@ -6339,59 +6346,91 @@ export function StrategyValidationWorkspace({
         loading,
     } = useStrategyValidationWorkspaceQueries(submittedQuery);
 
+    const [activeSection, setActiveSection] = useState(submittedQuery ? 'results' : 'reviews');
+
+    useEffect(() => {
+        if (submittedQuery) setActiveSection('results');
+    }, [submittedQuery]);
+
+    const evidenceQueries = {
+        strategyOverview: overviewQuery,
+        shadowWorkflow: shadowValidationWorkflowQuery,
+        consistencyEvidence: consistencyEvidenceQuery,
+        incidentReplayReview: incidentReplayReviewQuery,
+        artifactPreview: evaluationArtifactPreviewQuery,
+    };
+
     return (
-        <Space data-testid="strategy-validation-page" direction="vertical" size={16} style={{display: 'flex'}}>
-            <ValidationReviewSection/>
-            <ValidationOperationsRuntimeEvidenceOverviewPanel query={runtimeEvidenceQuery}/>
-            <ValidationOperationsWorkbench
-                queries={{
-                    strategyOverview: overviewQuery,
-                    shadowWorkflow: shadowValidationWorkflowQuery,
-                    consistencyEvidence: consistencyEvidenceQuery,
-                    incidentReplayReview: incidentReplayReviewQuery,
-                    artifactPreview: evaluationArtifactPreviewQuery,
-                }}
+        <Space className="strategy-validation-workspace" data-testid="strategy-validation-page" direction="vertical" size={16} style={{display: 'flex'}}>
+            <Card className="page-card" variant="borderless">
+                <Typography.Title level={3}>{t('pages:validationWorkspaceTitle')}</Typography.Title>
+                <Paragraph type="secondary">{t('pages:validationWorkspaceIntro')}</Paragraph>
+                <Alert type="info" showIcon message={t('pages:validationWorkspaceBoundary')}/>
+                {overviewQuery.isError || runtimeEvidenceQuery.isError ? <Alert style={{marginTop: 12}} type="error" showIcon message={t('pages:validationSummaryUnavailable')}/> : null}
+                <Space size={[8, 8]} wrap style={{marginTop: 12}}>
+                    <Text>{t('pages:validationLatestDecision')}</Text>
+                    <StatusTag status={overviewQuery.isError ? 'UNAVAILABLE' : overviewQuery.data?.latestDecision?.decision ?? 'UNKNOWN'}/>
+                    <Text>{t('pages:validationEvidenceAvailability')}</Text>
+                    <StatusTag status={runtimeEvidenceQuery.isError ? 'UNAVAILABLE' : runtimeEvidenceQuery.data?.evidenceMetadata?.availability ?? 'UNKNOWN'}/>
+                    <Text>{t('pages:freshness')}</Text>
+                    <StatusTag status={runtimeEvidenceQuery.isError ? 'UNKNOWN' : runtimeEvidenceQuery.data?.evidenceMetadata?.freshnessStatus ?? 'UNKNOWN'}/>
+                    <Button size="small" icon={<ReloadOutlined/>} loading={overviewQuery.isFetching || runtimeEvidenceQuery.isFetching} onClick={() => { overviewQuery.refetch(); runtimeEvidenceQuery.refetch(); }}>{t('pages:refreshOverview2')}</Button>
+                </Space>
+            </Card>
+            <QueryForm
+                initialValues={initialQuery}
+                onSubmit={(query) => { setActiveSection('results'); onSubmit(query); }}
+                onReset={onReset}
+                loading={loading}
             />
-            <BoundarySummary/>
-            <ValidationOperationsDetailSections>
-                <StrategyValidationOverviewPanel query={overviewQuery}/>
-                <ShadowValidationWorkflowPanel query={shadowValidationWorkflowQuery}/>
-                <ConsistencyEvidenceOverviewPanel query={consistencyEvidenceQuery}/>
-                <EvaluationArtifactPreviewOverviewPanel query={evaluationArtifactPreviewQuery}/>
-                <IncidentReplayReviewOverviewPanel query={incidentReplayReviewQuery}/>
-                <IncidentReplayOverviewPanel query={incidentReplayQuery}/>
-                <StrategyValidationShadowWorkbench
-                    queries={{
-                        strategyOverview: overviewQuery,
-                        shadowOverview: shadowOverviewQuery,
-                        drilldown: consistencyDrilldownQuery,
-                        shadowRunId: selectedShadowRunId,
-                    }}
-                />
-            </ValidationOperationsDetailSections>
-            <QueryForm initialValues={initialQuery} onSubmit={onSubmit} onReset={onReset} loading={loading}/>
-            <StatusSemantics/>
-            <StrategyReleaseAdmissionPreviewPanel
-                publishRecordId={submittedQuery?.publishId?.trim() || null}
-                query={releaseAdmissionPreviewQuery}
+            <Tabs
+                activeKey={activeSection}
+                onChange={setActiveSection}
+                items={[
+                    {
+                        key: 'reviews',
+                        label: t('pages:validationManualReviews'),
+                        forceRender: true,
+                        children: <ValidationReviewWorkbench/>,
+                    },
+                    {
+                        key: 'results',
+                        label: t('pages:validationQueryResults'),
+                        children: <Tabs items={[
+                            {key: 'evaluation', label: t('pages:validationEvaluationResult'), children: <EvaluationGatePanel submitted={Boolean(submittedQuery)} query={evaluationGateQuery}/>},
+                            {key: 'comparison', label: t('pages:validationComparisonResult'), children: <PaperShadowPanel submitted={Boolean(submittedQuery)} query={paperShadowQuery}/>},
+                            {key: 'preview', label: t('pages:validationPreviewResult'), children: <ShadowLivePreviewPanel submitted={Boolean(submittedQuery)} query={shadowLivePreviewQuery}/>},
+                            {key: 'release', label: t('pages:validationReleaseResult'), children: <StrategyReleaseAdmissionPreviewPanel publishRecordId={submittedQuery?.publishId?.trim() || null} query={releaseAdmissionPreviewQuery}/>},
+                        ]}/>,
+                    },
+                    {
+                        key: 'evidence',
+                        label: t('pages:validationEvidenceSummary'),
+                        children: <Space direction="vertical" size={16} style={{display: 'flex'}}>
+                            <ValidationOperationsRuntimeEvidenceOverviewPanel query={runtimeEvidenceQuery}/>
+                            <ValidationOperationsWorkbench queries={evidenceQueries}/>
+                        </Space>,
+                    },
+                    {
+                        key: 'diagnostics',
+                        label: t('pages:validationAdvancedDiagnostics'),
+                        children: <ValidationOperationsDetailSections>
+                            <Collapse items={[
+                                {key: 'strategy', label: t('pages:strategyValidationOverview'), children: <StrategyValidationOverviewPanel query={overviewQuery}/>},
+                                {key: 'shadow', label: t('pages:shadowValidationWorkflowOverview'), children: <ShadowValidationWorkflowPanel query={shadowValidationWorkflowQuery}/>},
+                                {key: 'consistency', label: t('pages:consistencyEvidenceOverview'), children: <ConsistencyEvidenceOverviewPanel query={consistencyEvidenceQuery}/>},
+                                {key: 'artifacts', label: t('pages:pythonEvaluationArtifactPreviewNoFileBaseline'), children: <EvaluationArtifactPreviewOverviewPanel query={evaluationArtifactPreviewQuery}/>},
+                                {key: 'replay-review', label: t('pages:incidentReplayReviewOverview'), children: <IncidentReplayReviewOverviewPanel query={incidentReplayReviewQuery}/>},
+                                {key: 'replay', label: t('pages:incidentReplayOverview'), children: <IncidentReplayOverviewPanel query={incidentReplayQuery}/>},
+                                {key: 'shadow-comparison', label: t('pages:strategyValidationShadowWorkbench'), children: <StrategyValidationShadowWorkbench queries={{strategyOverview: overviewQuery, shadowOverview: shadowOverviewQuery, drilldown: consistencyDrilldownQuery, shadowRunId: selectedShadowRunId}}/>},
+                                {key: 'trace', label: t('pages:lifecycleTraceChain'), children: <TraceabilityChain submittedQuery={submittedQuery} gate={evaluationGateQuery.data} comparison={paperShadowQuery.data} preview={shadowLivePreviewQuery.data} artifactPreview={evaluationArtifactPreviewQuery.data}/>},
+                                {key: 'matrix', label: t('pages:evidenceMatrix2'), children: <EvidenceMatrix submittedQuery={submittedQuery} gate={evaluationGateQuery.data} comparison={paperShadowQuery.data} preview={shadowLivePreviewQuery.data} artifactPreview={evaluationArtifactPreviewQuery.data}/>},
+                                {key: 'boundaries', label: t('pages:statusMeanings'), children: <><StatusSemantics/><BoundarySummary/></>},
+                            ]}/>
+                        </ValidationOperationsDetailSections>,
+                    },
+                ]}
             />
-            <TraceabilityChain
-                submittedQuery={submittedQuery}
-                gate={evaluationGateQuery.data}
-                comparison={paperShadowQuery.data}
-                preview={shadowLivePreviewQuery.data}
-                artifactPreview={evaluationArtifactPreviewQuery.data}
-            />
-            <EvidenceMatrix
-                submittedQuery={submittedQuery}
-                gate={evaluationGateQuery.data}
-                comparison={paperShadowQuery.data}
-                preview={shadowLivePreviewQuery.data}
-                artifactPreview={evaluationArtifactPreviewQuery.data}
-            />
-            <EvaluationGatePanel submitted={Boolean(submittedQuery)} query={evaluationGateQuery}/>
-            <PaperShadowPanel submitted={Boolean(submittedQuery)} query={paperShadowQuery}/>
-            <ShadowLivePreviewPanel submitted={Boolean(submittedQuery)} query={shadowLivePreviewQuery}/>
         </Space>
     );
 }

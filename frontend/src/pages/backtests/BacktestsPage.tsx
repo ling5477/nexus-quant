@@ -23,7 +23,8 @@ import {
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate, useSearchParams} from 'react-router-dom';
+import {BacktestRunActions} from '@/features/backtests/BacktestRunActions';
 
 import {formatApiError, showApiError} from '@/api/errors';
 import {marketdataApi} from '@/api/marketdata';
@@ -81,24 +82,30 @@ export function BacktestsPage() {
     useTranslation('pages');
     const {message} = App.useApp();
     const navigate = useNavigate();
+    const [params, setParams] = useSearchParams();
     const [queryForm] = useLocalizedForm<BacktestsListFilters>();
     const [createForm] = useLocalizedForm<BacktestConfigCreateFormValues>();
     const [bindDatasetForm] = useLocalizedForm<{datasetId: string}>();
     const [bindStrategyVersionForm] = useLocalizedForm<{strategyVersionId: string}>();
     const [submittedFilters, setSubmittedFilters] = useState<BacktestsListFilters>(defaultBacktestsListFilters);
     const [searchVersion, setSearchVersion] = useState(0);
-    const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null);
-    const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
-    const [createOpen, setCreateOpen] = useState(false);
+    const [selectedConfigId, setSelectedConfigId] = useState<string | null>(params.get('backtestConfigId'));
+    const [selectedRunId, setSelectedRunId] = useState<string | null>(params.get('backtestRunId'));
+    const [createOpen, setCreateOpen] = useState(params.get('create') === 'true');
     const backtestsQuery = useBacktestsListQuery(submittedFilters.researchConfigId, searchVersion);
     const backtestDetailQuery = useBacktestDetailQuery(selectedConfigId);
     const createBacktestMutation = useCreateBacktestMutation();
     const createBacktestRunMutation = useCreateBacktestRunMutation();
     const backtestRunDetailQuery = useBacktestRunDetailQuery(selectedRunId);
+    // URL 与缓存各自可携带有效 ID，但只有归属当前配置的运行能展示或执行。
+    const loadedRun = backtestRunDetailQuery.data;
+    const selectedRun = !backtestRunDetailQuery.isError && loadedRun?.backtestConfigId === selectedConfigId
+        && loadedRun?.backtestRunId === selectedRunId ? loadedRun : null;
+    const runIdentityMismatch = Boolean(loadedRun && !backtestRunDetailQuery.isError && !selectedRun);
     const runEvaluationQuery = useQuery({
         queryKey: evaluationsQueryKeys.forRun(selectedRunId ?? ''),
         queryFn: () => evaluationsApi.forRun(selectedRunId!),
-        enabled: Boolean(selectedRunId) && backtestRunDetailQuery.data?.status === 'SUCCEEDED',
+        enabled: Boolean(selectedRunId) && selectedRun?.evaluationStatus === 'SUCCEEDED',
         retry: false,
     });
     const bindDatasetMutation = useBindBacktestDatasetMutation(selectedConfigId);
@@ -192,7 +199,13 @@ export function BacktestsPage() {
             width: 180,
             render: (_, record) => (
                 <Space size={0}>
-                    <Button type="link" onClick={() => setSelectedConfigId(record.backtestConfigId)}>
+                    <Button type="link" onClick={() => {
+                        const runId = params.get('backtestConfigId') === record.backtestConfigId ? params.get('backtestRunId') : null;
+                        setSelectedRunId(runId);
+                        setSelectedConfigId(record.backtestConfigId);
+                        setParams(runId ? {backtestConfigId: record.backtestConfigId, backtestRunId: runId}
+                            : {backtestConfigId: record.backtestConfigId}, {replace: true});
+                    }}>
                         {t('pages:viewDetails')}</Button>
                     <Button type="link" onClick={() => navigate(`/backtests/${record.backtestConfigId}`)}>
                         {t('pages:visualization')}</Button>
@@ -234,11 +247,13 @@ export function BacktestsPage() {
                 evaluationSpec: normalizeOptionalText(values.evaluationSpec),
             },
             {
-                onSuccess: () => {
+                onSuccess: (created) => {
                     message.success(t('pages:backtestConfigurationCreated'));
                     setCreateOpen(false);
                     createForm.resetFields();
-                    setSearchVersion((value) => (value === 0 ? 1 : value + 1));
+                    setSelectedRunId(null);
+                    setSelectedConfigId(created.backtestConfigId);
+                    setParams({backtestConfigId: created.backtestConfigId}, {replace: true});
                 },
                 onError: (error) => {
                     showApiError(error as AppApiError, message);
@@ -288,6 +303,7 @@ export function BacktestsPage() {
             onSuccess: (run) => {
                 message.success(t('pages:backtestRunCreatedWithTheCurrentConfigurationSnapshotFrozen'));
                 setSelectedRunId(run.backtestRunId);
+                setParams({backtestConfigId: selectedConfigId, backtestRunId: run.backtestRunId}, {replace: true});
             },
             onError: (error) => {
                 showApiError(error as AppApiError, message);
@@ -319,7 +335,7 @@ export function BacktestsPage() {
                     )}
                 >
                     <Form
-                        form={queryForm}
+                        name="backtest-queryForm" form={queryForm}
                         layout="vertical"
                         initialValues={defaultBacktestsListFilters}
                         onFinish={handleSearch}
@@ -366,7 +382,7 @@ export function BacktestsPage() {
                         <Typography.Text type="secondary">{t('pages:total')}{visibleItems.length} {t('pages:records')}</Typography.Text> : null}
                 >
                     {!hasSearched ? (
-                        <Empty description={t('pages:searchToLoadBacktestConfigurations')}/>
+                        <Empty description={t('pages:workflowManualSearch')}/>
                     ) : backtestsQuery.error ? (
                         <Alert
                             type="error"
@@ -399,7 +415,6 @@ export function BacktestsPage() {
                 title={t('pages:backtestConfigurationDetails')}
                 onClose={() => {
                     setSelectedConfigId(null);
-                    setSelectedRunId(null);
                 }}
                 destroyOnClose
             >
@@ -414,6 +429,9 @@ export function BacktestsPage() {
                     />
                 ) : backtestDetailQuery.data ? (
                     <Space direction="vertical" size={16} style={{display: 'flex'}}>
+                        {runIdentityMismatch && <Alert type="warning" showIcon message={t('pages:workflowRunConfigMismatch')}/>}
+                        {selectedRun && <BacktestRunActions key={selectedRun.backtestRunId}
+                            run={selectedRun} onChanged={() => {void backtestRunDetailQuery.refetch();}}/>}
                         <Descriptions bordered column={2} size="small">
                             <Descriptions.Item
                                 label={t('pages:backtestConfigurationId')}>{backtestDetailQuery.data.backtestConfigId}</Descriptions.Item>
@@ -483,7 +501,7 @@ export function BacktestsPage() {
                                 <Alert type="info" showIcon
                                        message={t('pages:bindingAStrategyVersionOrMarketDataDatasetDoesNotStartABacktestOrChangeStrategyLogic')}/>
                                 <Form
-                                    form={bindStrategyVersionForm}
+                                    name="backtest-bindStrategyVersionForm" form={bindStrategyVersionForm}
                                     layout="inline"
                                     onFinish={handleBindStrategyVersion}
                                 >
@@ -501,7 +519,7 @@ export function BacktestsPage() {
                                     >
                                         {t('pages:bindStrategyVersion')}</Button>
                                 </Form>
-                                <Form form={bindDatasetForm} layout="inline" onFinish={handleBindDataset}>
+                                <Form name="backtest-bindDatasetForm" form={bindDatasetForm} layout="inline" onFinish={handleBindDataset}>
                                     <Form.Item
                                         label={t('pages:dataset')}
                                         name="datasetId"
@@ -555,40 +573,40 @@ export function BacktestsPage() {
                                     message={t('pages:failedToLoadBacktestRunDetails')}
                                     description={formatApiError(backtestRunDetailQuery.error as AppApiError)}
                                 />
-                            ) : backtestRunDetailQuery.data ? (
+                            ) : selectedRun ? (
                                 <Descriptions bordered column={2} size="small">
                                     <Descriptions.Item label={t('pages:backtestRunId')} span={2}>
                                         <Typography.Text copyable>
-                                            {backtestRunDetailQuery.data.backtestRunId}
+                                            {selectedRun.backtestRunId}
                                         </Typography.Text>
                                     </Descriptions.Item>
-                                    <Descriptions.Item label={t('pages:runStatus')}>{backtestRunDetailQuery.data.status}</Descriptions.Item>
+                                    <Descriptions.Item label={t('pages:runStatus')}>{selectedRun.status}</Descriptions.Item>
                                     <Descriptions.Item
-                                        label={t('pages:requestedAt')}>{formatDateTime(backtestRunDetailQuery.data.requestedAt)}</Descriptions.Item>
+                                        label={t('pages:requestedAt')}>{formatDateTime(selectedRun.requestedAt)}</Descriptions.Item>
                                     <Descriptions.Item label={t('pages:strategyVersionSnapshot')} span={2}>
                                         <Typography.Paragraph style={{marginBottom: 0}}>
-                                            {backtestRunDetailQuery.data.strategyVersionSnapshotJson || '{}'}
+                                            {selectedRun.strategyVersionSnapshotJson || '{}'}
                                         </Typography.Paragraph>
                                     </Descriptions.Item>
                                     <Descriptions.Item label={t('pages:datasetSnapshot')} span={2}>
                                         <Typography.Paragraph style={{marginBottom: 0}}>
-                                            {backtestRunDetailQuery.data.datasetSnapshotJson || '{}'}
+                                            {selectedRun.datasetSnapshotJson || '{}'}
                                         </Typography.Paragraph>
                                     </Descriptions.Item>
                                     <Descriptions.Item label={t('pages:parameterSnapshot')} span={2}>
                                         <Typography.Paragraph style={{marginBottom: 0}}>
-                                            {backtestRunDetailQuery.data.paramSnapshotJson || '{}'}
+                                            {selectedRun.paramSnapshotJson || '{}'}
                                         </Typography.Paragraph>
                                     </Descriptions.Item>
                                     <Descriptions.Item label={t('pages:configurationSnapshot')} span={2}>
                                         <Typography.Paragraph style={{marginBottom: 0}}>
-                                            {backtestRunDetailQuery.data.configSnapshotJson || '{}'}
+                                            {selectedRun.configSnapshotJson || '{}'}
                                         </Typography.Paragraph>
                                     </Descriptions.Item>
                                 </Descriptions>
                             ) : null}
                         </Card>
-                        {selectedRunId && (runEvaluationQuery.isFetching
+                        {selectedRun && (runEvaluationQuery.isFetching
                             ? <Alert type="info" message={t('pages:loadingEvaluationDetails')}/>
                             : runEvaluationQuery.error
                                 ? <Alert type="warning" message={t('pages:researchNotAvailable')}
@@ -604,7 +622,8 @@ export function BacktestsPage() {
                 onClose={() => setCreateOpen(false)}
                 destroyOnClose
             >
-                <Form form={createForm} layout="vertical" onFinish={handleCreate}>
+                <Form name="backtest-createForm" form={createForm} layout="vertical" onFinish={handleCreate}
+                    initialValues={{researchConfigId: params.get('researchConfigId') ?? ''}}>
                     <Form.Item label={t('pages:researchConfigurationId')} name="researchConfigId"
                                rules={[{required: true, message: t('pages:enterResearchconfigid')}]}>
                         <Input/>
@@ -617,11 +636,11 @@ export function BacktestsPage() {
                     </Form.Item>
                     <Form.Item label={t('pages:startTime')} name="startTime"
                                rules={[{required: true, message: t('pages:selectAStartTime')}]}>
-                        <DatePicker showTime style={{width: '100%'}}/>
+                        <DatePicker showTime format="YYYY-MM-DD HH:mm:ss.SSS" style={{width: '100%'}}/>
                     </Form.Item>
                     <Form.Item label={t('pages:endTime')} name="endTime"
                                rules={[{required: true, message: t('pages:selectAnEndTime')}]}>
-                        <DatePicker showTime style={{width: '100%'}}/>
+                        <DatePicker showTime format="YYYY-MM-DD HH:mm:ss.SSS" style={{width: '100%'}}/>
                     </Form.Item>
                     <Form.Item label={t('pages:initialCapital')} name="initialCapital"
                                rules={[{required: true, message: t('pages:enterInitialCapital')}]}>

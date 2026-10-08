@@ -37,12 +37,12 @@ import {
     defaultEvaluationsListFilters,
     type EvaluationsListFilters,
 } from '@/types/evaluations';
-import {containsIgnoreCase, formatDateTime, formatNumber, normalizeOptionalText} from '@/utils/formatters';
+import {containsIgnoreCase, formatDateTime, formatNumber, formatRatioPercent, normalizeOptionalText} from '@/utils/formatters';
 
 type EvaluationRow = BacktestEvaluationListItem;
 
 export function researchPercent(value: number | null | undefined): string {
-    return value == null || !Number.isFinite(value) ? '—' : `${formatNumber(value * 100, 4)}%`;
+    return formatRatioPercent(value);
 }
 
 // 两个正式页面消费同一只读契约；这里只格式化数值，不计算基准或划分区间。
@@ -150,7 +150,7 @@ export function EvaluationsPage() {
             dataIndex: 'netPnl',
             key: 'netPnl',
             width: 120,
-            render: (value: number | null) => formatNumber(value, 2),
+            render: (value: number | null) => `${formatNumber(value, 2)} USDT`,
         },
         {
             title: t('pages:evaluatedAt'),
@@ -164,21 +164,21 @@ export function EvaluationsPage() {
             dataIndex: 'totalReturn',
             key: 'totalReturn',
             width: 120,
-            render: (value: number | null, record) => formatNumber(value ?? record.totalReturnRate),
+            render: (value: number | null, record) => formatRatioPercent(record.totalReturnRate ?? value),
         },
         {
             title: t('pages:maximumDrawdown'),
             dataIndex: 'maxDrawdownRate',
             key: 'maxDrawdownRate',
             width: 120,
-            render: (value: number | null) => formatNumber(value),
+            render: (value: number | null) => formatRatioPercent(value),
         },
         {
             title: t('pages:winRate'),
             dataIndex: 'winRate',
             key: 'winRate',
             width: 120,
-            render: (value: number | null) => formatNumber(value),
+            render: (value: number | null) => formatRatioPercent(value),
         },
         {
             title: t('pages:profitLossRatio'),
@@ -235,9 +235,9 @@ export function EvaluationsPage() {
         }
 
         evaluateMutation.mutate(selectedRow.backtestRunId, {
-            onSuccess: () => {
+            onSuccess: (evaluation) => {
                 message.success(t('pages:evaluationCompletedWithTheLatestResult'));
-                evaluationDetailQuery.refetch();
+                setSelectedRow(evaluation);
                 setSearchVersion((value) => value + 1);
             },
             onError: (error) => {
@@ -307,7 +307,7 @@ export function EvaluationsPage() {
                         <Typography.Text type="secondary">{t('pages:total')}{visibleItems.length} {t('pages:records')}</Typography.Text> : null}
                 >
                     {!hasSearched ? (
-                        <Empty description={t('pages:searchToLoadEvaluationResults')}/>
+                        <Empty description={t('pages:workflowManualSearch')}/>
                     ) : evaluationsQuery.error ? (
                         <Alert
                             type="error"
@@ -349,10 +349,10 @@ export function EvaluationsPage() {
                             <Descriptions.Item label={t('pages:evaluationStatus')}>{selectedRow.evaluationStatus || '-'}</Descriptions.Item>
                             <Descriptions.Item
                                 label={t('pages:evaluatedAt')}>{formatDateTime(selectedRow.evaluatedAt)}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:totalReturn')}>{formatNumber(selectedRow.totalReturn ?? selectedRow.totalReturnRate)}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:annualizedReturn')}>{formatNumber(selectedRow.annualizedReturn)}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:maximumDrawdown')}>{formatNumber(selectedRow.maxDrawdownRate)}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:winRate')}>{formatNumber(selectedRow.winRate)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:totalReturn')}>{formatRatioPercent(selectedRow.totalReturnRate ?? selectedRow.totalReturn)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:annualizedReturn')}>{formatRatioPercent(selectedRow.annualizedReturn)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:maximumDrawdown')}>{formatRatioPercent(selectedRow.maxDrawdownRate)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:winRate')}>{formatRatioPercent(selectedRow.winRate)}</Descriptions.Item>
                             <Descriptions.Item label={t('pages:profitLossRatio')}>{formatNumber(selectedRow.profitLossRatio)}</Descriptions.Item>
                             <Descriptions.Item label={t('pages:tradeCount2')}>{selectedRow.tradeCount ?? '-'}</Descriptions.Item>
                             <Descriptions.Item label="Sharpe">{formatNumber(selectedRow.sharpeRatio)}</Descriptions.Item>
@@ -378,21 +378,21 @@ export function EvaluationsPage() {
                                 <Descriptions.Item
                                     label={t('pages:evaluationStatus')}>{evaluationDetailQuery.data.evaluationStatus}</Descriptions.Item>
                                 <Descriptions.Item
-                                    label={t('pages:initialCapital')}>{formatNumber(evaluationDetailQuery.data.initialCapital, 2)}</Descriptions.Item>
+                                    label={t('pages:initialCapital')}>{formatNumber(evaluationDetailQuery.data.initialCapital, 2)} USDT</Descriptions.Item>
                                 <Descriptions.Item
-                                    label={t('pages:finalEquity')}>{formatNumber(evaluationDetailQuery.data.finalEquity, 2)}</Descriptions.Item>
+                                    label={t('pages:finalEquity')}>{formatNumber(evaluationDetailQuery.data.finalEquity, 2)} USDT</Descriptions.Item>
                                 <Descriptions.Item
-                                    label={t('pages:netReturn')}>{formatNumber(evaluationDetailQuery.data.netPnl, 2)}</Descriptions.Item>
+                                    label={t('pages:netReturn')}>{formatNumber(evaluationDetailQuery.data.netPnl, 2)} USDT</Descriptions.Item>
                                 <Descriptions.Item
-                                    label={t('pages:totalReturnRate')}>{formatNumber(evaluationDetailQuery.data.totalReturnRate)}</Descriptions.Item>
+                                    label={t('pages:totalReturnRate')}>{formatRatioPercent(evaluationDetailQuery.data.totalReturnRate)}</Descriptions.Item>
                                 <Descriptions.Item
-                                    label={t('pages:totalReturn')}>{formatNumber(evaluationDetailQuery.data.totalReturn)}</Descriptions.Item>
+                                    label={t('pages:totalReturn')}>{formatRatioPercent(evaluationDetailQuery.data.totalReturn)}</Descriptions.Item>
                                 <Descriptions.Item
-                                    label={t('pages:annualizedReturn')}>{formatNumber(evaluationDetailQuery.data.annualizedReturn)}</Descriptions.Item>
+                                    label={t('pages:annualizedReturn')}>{formatRatioPercent(evaluationDetailQuery.data.annualizedReturn)}</Descriptions.Item>
                                 <Descriptions.Item
-                                    label={t('pages:maximumDrawdownRate')}>{formatNumber(evaluationDetailQuery.data.maxDrawdownRate)}</Descriptions.Item>
+                                    label={t('pages:maximumDrawdownRate')}>{formatRatioPercent(evaluationDetailQuery.data.maxDrawdownRate)}</Descriptions.Item>
                                 <Descriptions.Item
-                                    label={t('pages:winRate')}>{formatNumber(evaluationDetailQuery.data.winRate)}</Descriptions.Item>
+                                    label={t('pages:winRate')}>{formatRatioPercent(evaluationDetailQuery.data.winRate)}</Descriptions.Item>
                                 <Descriptions.Item
                                     label={t('pages:profitLossRatio')}>{formatNumber(evaluationDetailQuery.data.profitLossRatio)}</Descriptions.Item>
                                 <Descriptions.Item

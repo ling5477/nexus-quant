@@ -56,3 +56,13 @@ export interface StrategyVersionCreateRequest {
     configSnapshotJson?: string;
     sourceSnapshotJson?: string;
 }
+
+export interface StrategyDefinitionCreateRequest {
+    strategyCode: string;
+    strategyName: string;
+    strategyType: string;
+    exchangeCode: string;
+    accountId: number;
+    tradeEnv: 'SIM' | 'LIVE';
+    configSnapshot: string;
+}

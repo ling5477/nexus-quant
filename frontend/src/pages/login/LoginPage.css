@@ -1,5 +1,7 @@
 /* 登录页使用已确认的背景；表单与文字独立渲染，装饰行情不代表实时数据。 */
 .nq-login {
+    position: relative;
+    isolation: isolate;
     min-height: 100svh;
     display: flex;
     flex-direction: column;
@@ -7,10 +9,23 @@
     justify-content: flex-start;
     padding: 28px 4.5vw 20px;
     background-color: var(--nq-color-bg-page);
-    background-image: linear-gradient(90deg, color-mix(in srgb, var(--nq-color-bg-page) 16%, transparent), transparent 60%),
-        url('../../assets/brand/login-earth-kline-realistic-approved.webp');
-    background-size: cover;
-    background-position: center;
+}
+
+/* 装饰画保持原生显示上限；渐隐仅消除画布边缘，不对原图模糊或插值放大。 */
+.nq-login::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    width: min(1670px, 100%);
+    aspect-ratio: 1670 / 942;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: url('../../assets/brand/login-earth-kline-realistic-approved.png') center / contain no-repeat;
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent),
+        linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
+    mask-composite: intersect;
 }
 
 .nq-login__masthead,
@@ -19,6 +34,9 @@
     justify-content: space-between;
     align-items: center;
     gap: 20px;
+    width: 100%;
+    max-width: 1670px;
+    margin-inline: auto;
 }
 
 .nq-login__product-title { margin: 0; }
@@ -33,11 +51,13 @@
     align-items: center;
     flex: 1;
     width: 100%;
+    max-width: 1670px;
+    margin-inline: auto;
     padding: 40px 0;
 }
 
 .nq-login__narrative {
-    align-self: start;
+    align-self: center;
     min-width: 0;
     max-width: 600px;
     padding-top: clamp(16px, 5vh, 64px);

@@ -21,6 +21,11 @@ import {
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
 import {useState} from 'react';
+import {useMutation, useQueryClient} from '@tanstack/react-query';
+import {Link, useSearchParams} from 'react-router-dom';
+import {strategiesApi} from '@/features/strategies/api/strategies';
+import {strategyQueryKeys} from '@/api/query-keys';
+import {useAccountContextStore} from '@/store/account-context-store';
 
 import {formatApiError, showApiError} from '@/api/errors';
 import {NqPageHeader} from '@/components/nq/NqPageHeader';
@@ -45,6 +50,7 @@ import {
     type StrategyListFilters,
     type StrategyVersionCreateRequest,
     type StrategyVersionItem,
+    type StrategyDefinitionCreateRequest,
 } from '@/features/strategies/types/strategies';
 import {containsIgnoreCase, formatDateTime, matchesBooleanFilter, normalizeOptionalText} from '@/utils/formatters';
 
@@ -55,9 +61,28 @@ export function StrategiesPage() {
     const {message} = App.useApp();
     const [form] = useLocalizedForm<StrategyListFilters>();
     const [versionForm] = useLocalizedForm<StrategyVersionCreateRequest>();
+    const [createForm] = useLocalizedForm<StrategyDefinitionCreateRequest>();
+    const [createOpen, setCreateOpen] = useState(false);
+    const [params] = useSearchParams();
+    const context = useAccountContextStore();
+    const cache = useQueryClient();
+    const canCreate = context.tradeEnv === 'SIM' && Boolean(context.legacyAccountId) && Boolean(context.exchangeCode);
+    const createMutation = useMutation({
+        mutationFn: (values: StrategyDefinitionCreateRequest) => {
+            if (!canCreate) throw new Error(t('pages:workflowAccountRequired'));
+            return strategiesApi.create({...values, accountId: context.legacyAccountId!, exchangeCode: context.exchangeCode!, tradeEnv: 'SIM'});
+        },
+        onSuccess: async (created) => {
+            await cache.invalidateQueries({queryKey: strategyQueryKeys.all});
+            setSelectedStrategyCode(created.strategyCode);
+            setCreateOpen(false); createForm.resetFields();
+            message.success(t('pages:workflowStrategyCreated'));
+        },
+        onError: error => showApiError(error as AppApiError, message),
+    });
     const [submittedFilters, setSubmittedFilters] = useState<StrategyListFilters>(defaultStrategyListFilters);
     const [searchVersion, setSearchVersion] = useState(0);
-    const [selectedStrategyCode, setSelectedStrategyCode] = useState<string | null>(null);
+    const [selectedStrategyCode, setSelectedStrategyCode] = useState<string | null>(params.get('strategyCode'));
     const strategiesQuery = useStrategyListQuery(searchVersion);
     const strategyDetailQuery = useStrategyDetailQuery(selectedStrategyCode);
     const strategyVersionsQuery = useStrategyVersionsQuery(selectedStrategyCode);
@@ -172,7 +197,7 @@ export function StrategiesPage() {
             render: (value: string) => <Tag color={value === 'ACTIVE' ? 'success' : 'blue'}>{value}</Tag>,
         },
         {
-            title: 'Checksum',
+            title: t('pages:checksum'),
             dataIndex: 'checksum',
             key: 'checksum',
             width: 220,
@@ -263,6 +288,10 @@ export function StrategiesPage() {
                         description={t('pages:searchInspectEnableAndDisableStrategyDefinitionsStrategyStatusAccountEnvironmentAndVersionSnapshotsR')}
                         badge="Strategies"
                     />
+                    <Space direction="vertical">
+                        <Button type="primary" onClick={() => setCreateOpen(true)}>{t('pages:workflowCreateStrategy')}</Button>
+                        <Typography.Text type="secondary">{t('pages:workflowManualSearch')}</Typography.Text>
+                    </Space>
                 </Card>
                 <Card
                     className="page-section"
@@ -278,7 +307,7 @@ export function StrategiesPage() {
                     )}
                 >
                     <Form
-                        form={form}
+                        name="strategy-form" form={form}
                         layout="vertical"
                         initialValues={defaultStrategyListFilters}
                         onFinish={handleSearch}
@@ -367,6 +396,9 @@ export function StrategiesPage() {
                     />
                 ) : strategyDetailQuery.data ? (
                     <Space direction="vertical" size={16} style={{display: 'flex'}}>
+                        <Link to={`/research?sourceStrategyId=${encodeURIComponent(strategyDetailQuery.data.strategyId)}&create=true`}>
+                            {t('pages:workflowCreateResearch')}
+                        </Link>
                         <Descriptions bordered column={2} size="small">
                             <Descriptions.Item
                                 label={t('pages:strategyCode')}>{strategyDetailQuery.data.strategyCode}</Descriptions.Item>
@@ -446,7 +478,7 @@ export function StrategiesPage() {
                         </Card>
                         <Card title={t('pages:createStrategyVersion')} size="small">
                             <Form
-                                form={versionForm}
+                                name="strategy-versionForm" form={versionForm}
                                 layout="vertical"
                                 initialValues={{
                                     status: 'DRAFT',
@@ -506,6 +538,22 @@ export function StrategiesPage() {
                         </Card>
                     </Space>
                 ) : null}
+            </Drawer>
+            <Drawer open={createOpen} width={640} title={t('pages:workflowCreateStrategy')}
+                onClose={() => setCreateOpen(false)} destroyOnClose>
+                {!canCreate && <Alert type="warning" showIcon message={t('pages:workflowAccountRequired')}/>}
+                <Form name="strategy-create" form={createForm} layout="vertical" initialValues={{configSnapshot: '{}'}}
+                    onFinish={values => createMutation.mutate(values)}>
+                    <Form.Item name="strategyCode" label={t('pages:strategyCode')} rules={[{required: true}]}><Input/></Form.Item>
+                    <Form.Item name="strategyName" label={t('pages:strategyName')} rules={[{required: true}]}><Input/></Form.Item>
+                    <Form.Item name="strategyType" label={t('pages:strategyType')} rules={[{required: true}]}><Select options={[{label: 'SPOT_SMA_TARGET_V1', value: 'SPOT_SMA_TARGET_V1'}, ...STRATEGY_TYPE_OPTIONS]}/></Form.Item>
+                    <Form.Item name="configSnapshot" label={t('pages:workflowStrategyConfig')} rules={[{required: true}, {validator: async (_, value) => {
+                        try { const parsed: unknown = JSON.parse(value); if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error(); }
+                        catch { throw new Error(t('pages:workflowJsonObject')); }
+                    }}]}><Input.TextArea rows={5}/></Form.Item>
+                    <Typography.Paragraph>{context.exchangeCode ?? '—'} / SIM / {t('pages:account')}: {context.legacyAccountId ?? '—'}</Typography.Paragraph>
+                    <Button htmlType="submit" type="primary" disabled={!canCreate} loading={createMutation.isPending}>{t('pages:workflowCreateStrategy')}</Button>
+                </Form>
             </Drawer>
         </>
     );

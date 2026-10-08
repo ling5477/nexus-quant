@@ -3,7 +3,7 @@ import {t} from '@/i18n';
 import {Card, Segmented, Space, Tag} from 'antd';
 import {Outlet, useLocation, useNavigate} from 'react-router-dom';
 
-import {NqPageHeader, RuntimeGuardBanner} from '@/components/nq';
+import {NqPageHeader} from '@/components/nq';
 
 const PAPER_TRADING_ROUTE_OPTIONS = [
     {get label() { return t('pages:runs'); }, value: '/paper-trading/runs'},
@@ -52,11 +52,10 @@ export function PaperTradingRouteShell() {
                 <Space direction="vertical" size={10} style={{display: 'flex'}}>
                     <Segmented
                         aria-label={t('pages:paperTradingNavigation')}
-                        options={PAPER_TRADING_ROUTE_OPTIONS}
+                        options={PAPER_TRADING_ROUTE_OPTIONS.map(({label, value}) => ({label, value}))}
                         value={activeRoute}
                         onChange={(value) => navigate(value)}
                     />
-                    <RuntimeGuardBanner variant="paper-boundary"/>
                 </Space>
             </Card>
 

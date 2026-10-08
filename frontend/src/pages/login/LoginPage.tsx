@@ -1,5 +1,5 @@
 import {AuditOutlined, ExperimentOutlined, LineChartOutlined, LockOutlined, LoginOutlined, SafetyCertificateOutlined, UserOutlined} from '@ant-design/icons';
-import {Alert, Button, Form, Input} from 'antd';
+import {Alert, Button, Form, Input, Typography} from 'antd';
 import {useMutation} from '@tanstack/react-query';
 import {startTransition, useState} from 'react';
 import {Navigate, useNavigate, useSearchParams} from 'react-router-dom';
@@ -11,9 +11,10 @@ import {selectIsAuthenticated, useAuthStore} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
 import {useTranslation} from 'react-i18next';
 import {LanguageSelect} from '@/i18n/LanguageSelect';
-import {ApiErrorNotice} from '@/errors/ApiErrorNotice';
 import {readAuthError, clearAuthError} from '@/errors/auth-error';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {loginErrorMessageKey} from './loginErrorPresentation';
+import {describeApiError} from '@/api/errors';
 import {BrandLockup} from '@/nq-design-system/brand/BrandLockup';
 
 import './LoginPage.css';
@@ -93,6 +94,7 @@ export function LoginPage() {
                 <LoginCard
                     loading={loginMutation.isPending}
                     error={loginMutation.error ?? redirectError}
+                    credentialRequest={Boolean(loginMutation.error)}
                     onSubmit={(values) => {
                         clearAuthError();
                         setRedirectError(null);
@@ -147,13 +149,14 @@ function ProductNarrative() {
 interface LoginCardProps {
     loading: boolean;
     error: unknown;
+    credentialRequest: boolean;
     onSubmit: (values: LoginFormValues) => void;
 }
 
 /**
  * LoginCard — 右区认证卡片。只收集账号/密码并交给既有登录接口,不承载任何环境/权限开关。
  */
-function LoginCard({loading, error, onSubmit}: LoginCardProps) {
+function LoginCard({loading, error, credentialRequest, onSubmit}: LoginCardProps) {
     const {t} = useTranslation();
     const [form] = useLocalizedForm<LoginFormValues>();
     return (
@@ -163,9 +166,9 @@ function LoginCard({loading, error, onSubmit}: LoginCardProps) {
                 <h2 className="nq-login__card-title">{t('auth.title')}</h2>
                 <p className="nq-login__card-caption">{t('auth.caption')}</p>
 
-                {error ? <LoginErrorNotice error={error}/> : null}
+                {error ? <LoginErrorNotice error={error} credentialRequest={credentialRequest}/> : null}
 
-                <Form<LoginFormValues> form={form} layout="vertical" requiredMark={false} onFinish={onSubmit}>
+                <Form<LoginFormValues> name="console-login" form={form} layout="vertical" requiredMark={false} onFinish={onSubmit}>
                     <Form.Item
                         label={t('auth.username')}
                         name="username"
@@ -175,6 +178,7 @@ function LoginCard({loading, error, onSubmit}: LoginCardProps) {
                             size="large"
                             prefix={<UserOutlined/>}
                             autoComplete="username"
+                            aria-describedby={error ? 'console-login-error' : undefined}
                             placeholder={t('auth.usernameRequired')}
                         />
                     </Form.Item>
@@ -187,6 +191,7 @@ function LoginCard({loading, error, onSubmit}: LoginCardProps) {
                             size="large"
                             prefix={<LockOutlined/>}
                             autoComplete="current-password"
+                            aria-describedby={error ? 'console-login-error' : undefined}
                             placeholder={t('auth.passwordRequired')}
                         />
                     </Form.Item>
@@ -220,7 +225,19 @@ function LoginCard({loading, error, onSubmit}: LoginCardProps) {
  * LoginErrorNotice — 登录错误脱敏展示。
  * 使用统一 catalog，不泄露内部 path 或后端消息；traceId 保留用于支持定位。
  */
-function LoginErrorNotice({error}: {error: unknown}) {
-    return <ApiErrorNotice className="nq-login__error" error={error as Partial<AppApiError>}
-        presentation="AUTH_REDIRECT_OR_PROMPT"/>;
+function LoginErrorNotice({error, credentialRequest}: {error: unknown; credentialRequest: boolean}) {
+    const {t} = useTranslation();
+    const safeError = error as Partial<AppApiError>;
+    const diagnostic = [safeError.code, safeError.traceId].filter(Boolean).join(' · ');
+    const fields = describeApiError(safeError).fields;
+    return <Alert id="console-login-error" className="nq-login__error" type="error" showIcon
+        data-error-presentation="AUTH_REDIRECT_OR_PROMPT"
+        message={t(loginErrorMessageKey(safeError, credentialRequest))}
+        description={<>
+            {fields.map((field, index) => <Typography.Paragraph key={index}>{field.message}</Typography.Paragraph>)}
+            {diagnostic ? <details className="nq-login__diagnostic">
+            <summary>{t('errors:login.diagnostic')}</summary>
+            <Typography.Text copyable>{diagnostic}</Typography.Text>
+        </details> : null}
+        </>}/>;
 }
