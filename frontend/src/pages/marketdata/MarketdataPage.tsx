@@ -38,6 +38,7 @@ import type {
 } from '@/types/marketdata';
 import {formatDateTime, formatNumber} from '@/utils/formatters';
 import thirdPartyNotices from '../../../../THIRD_PARTY_NOTICES.md?raw';
+import financialDisclaimer from '../../../../DISCLAIMER.md?raw';
 
 const columns: ColumnsType<MarketdataBar> = [
     {get title() { return t('pages:exchange'); }, dataIndex: 'exchangeCode', key: 'exchangeCode', width: 120},
@@ -1657,6 +1658,11 @@ export function MarketdataPage() {
                     </div>
                     <Typography.Text type="secondary">
                         {t('pages:thisViewUsesApiMarketdataBarsAndMarketdataapiListbarsItHasNoWebsocketPrivateExchangeFeedTradingSigna')}</Typography.Text>
+                    <details data-testid="financial-risk-disclaimer">
+                        <summary>Financial Risk Disclaimer / 金融风险声明</summary>
+                        {/* 与发行包共享完整中英文原文；不依赖行情请求或外部网络。 */}
+                        <pre style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', fontFamily: 'inherit'}}>{financialDisclaimer}</pre>
+                    </details>
                     <details data-testid="third-party-notices">
                         <summary>Third-Party Notices / 第三方声明</summary>
                         {/* 页面和发布包共享同一原文，避免上游声明在两处维护时漂移。 */}

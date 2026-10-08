@@ -151,7 +151,7 @@ $refs | ConvertTo-Json -Depth 9
         for name in ('runtime', 'installers', 'docker'):
             shutil.copytree(REPO / 'release' / name, self.export / 'release' / name)
         for name in ('README.md', 'INSTALL.md', 'CHANGELOG.md', 'LICENSE', 'DISCLAIMER.md', 'THIRD_PARTY_NOTICES.md'):
-            if name == 'THIRD_PARTY_NOTICES.md':
+            if name in ('THIRD_PARTY_NOTICES.md', 'DISCLAIMER.md'):
                 shutil.copyfile(REPO / name, self.export / name)
             else:
                 (self.export / name).write_text('SYNTHETIC BUILDER FIXTURE\n', encoding='utf-8', newline='\n')
@@ -236,6 +236,11 @@ public class FixtureDocker {
 
         for name in ('README.md', 'INSTALL.md', 'CHANGELOG.md', 'LICENSE', 'DISCLAIMER.md', 'THIRD_PARTY_NOTICES.md', 'VERSION'):
             self.assertEqual((self.export / name).read_bytes(), (self.output / name).read_bytes(), name)
+        # 正式包保留 canonical 双语风险声明；模拟镜像测试不能替代 Production UI 验证。
+        disclaimer = (self.output / 'DISCLAIMER.md').read_bytes()
+        self.assertEqual((REPO / 'DISCLAIMER.md').read_bytes(), disclaimer)
+        self.assertIn('## 中文'.encode('utf-8'), disclaimer)
+        self.assertIn(b'## English', disclaimer)
 
     def test_builder_local_context_priority_rejects_remote_before_daemon_access(self):
         self.complete_export()
