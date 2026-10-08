@@ -68,7 +68,8 @@ export function NqKlineChart({
       lastValueVisible: false,
     });
     candleSeries.setData(data);
-    chart.timeScale().fitContent();
+    let fittedVisibleContent = element.clientWidth > 0;
+    if (fittedVisibleContent) chart.timeScale().fitContent();
     setHovered(null);
     setInspectionIndex(null);
     const onCrosshair = (event: Parameters<IChartApi['subscribeCrosshairMove']>[0] extends (event: infer E) => void ? E : never) => {
@@ -79,7 +80,14 @@ export function NqKlineChart({
     chart.subscribeCrosshairMove(onCrosshair);
 
     const observer = new ResizeObserver(([entry]) => {
-      chart.resize(Math.max(Math.floor(entry.contentRect.width), 1), canvasHeight);
+      const width = Math.floor(entry.contentRect.width);
+      // 隐藏分区的零宽度不能改变时间轴；首次可见时再适配数据，后续保留用户缩放。
+      if (width <= 0) return;
+      chart.resize(width, canvasHeight);
+      if (!fittedVisibleContent) {
+        chart.timeScale().fitContent();
+        fittedVisibleContent = true;
+      }
     });
     observer.observe(element);
 
