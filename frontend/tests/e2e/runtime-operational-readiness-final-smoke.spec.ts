@@ -208,25 +208,61 @@ test.describe('runtime operational readiness final smoke', () => {
         await expect(overview).toBeVisible();
         await expect(overview.getByText('Operational readiness', {exact: true})).toBeVisible();
 
-        for (const text of [
-            'LIVE status',
-            'DISABLED',
-            'AI status',
-            'NOT_STARTED',
-            'DH runtime status',
-            'NOT_INTEGRATED',
-            'Real provider status',
-            'NOT_IMPLEMENTED',
-            'Credential exposure status',
-            'NOT_EXPOSED',
-            'Permission probe status',
-            'SKIPPED',
-            'Operational readiness summary is fail-closed',
-            'Actuator health is process health only, not LIVE authorization.',
-            'Runtime UI does not establish real provider readiness',
-            'Paper-only / SKIPPED / NoReal are not real-ready.',
+        // 默认摘要使用产品本地化文案；先按业务行验证，避免原始代码在隐藏区域造成空通过。
+        for (const [area, status] of [
+            ['LIVE status', 'Disabled'],
+            ['AI status', 'Not started'],
+            ['DH runtime status', 'Not integrated'],
+            ['Real provider status', 'Not implemented'],
+            ['Credential exposure status', 'Sensitive information omitted'],
+            ['Permission probe status', 'Disabled or skipped'],
         ]) {
-            await expect(overview).toContainText(text);
+            const row = overview.getByRole('row')
+                .filter({has: page.getByRole('cell', {name: area, exact: true})});
+            await expect(row).toHaveCount(1);
+            await expect(row.getByRole('cell', {name: status, exact: true})).toBeVisible();
+        }
+        await expect(overview).toContainText('Runtime status is diagnostic and does not authorize trading');
+        await expect(overview).toContainText('Process health and real trading authorization are separate. Runtime status does not establish provider, permission or LIVE readiness.');
+
+        for (const boundary of [
+            'Paper-only boundary, not real authorization',
+            'Skipped / disabled is not a pass state',
+            'No real trading capability',
+        ]) {
+            await expect(page.getByText(boundary, {exact: true})).toBeVisible();
+        }
+
+        // 原始状态和安全状态位于懒挂载的技术详情，必须通过可访问入口展开后验证。
+        const technicalDetails = overview.getByRole('button', {name: /Technical details and original reasons/});
+        await expect(technicalDetails).toHaveCount(1);
+        await expect(technicalDetails).toHaveAttribute('aria-expanded', 'false');
+        await technicalDetails.click();
+        await expect(technicalDetails).toHaveAttribute('aria-expanded', 'true');
+
+        const operationalAreas: Record<keyof Omit<OperationalReadinessResponse, 'generatedAt'>, string> = {
+            liveStatus: 'LIVE status',
+            aiStatus: 'AI status',
+            dhRuntimeStatus: 'DH runtime status',
+            realProviderStatus: 'Real provider status',
+            credentialExposureStatus: 'Credential exposure status',
+            externalExchangeCallStatus: 'External exchange call status',
+            permissionProbeStatus: 'Permission probe status',
+            startupBoundaryStatus: 'Startup boundary status',
+            profileBoundaryStatus: 'Profile boundary status',
+            configDiagnosticsStatus: 'Configuration diagnostics status',
+            logDiagnosticsStatus: 'Log diagnostics status',
+        };
+        // 同一业务行的原始代码、原因及 BLOCKED 必须对应真实响应，不能由另一行或摘要替代。
+        for (const field of OPERATIONAL_FIELDS) {
+            expect(pagePayload[field].status, field + ' UI response must preserve the direct API status').toBe(directPayload[field].status);
+            const row = overview.getByRole('row')
+                .filter({has: page.getByText(operationalAreas[field], {exact: true})})
+                .filter({has: page.getByRole('cell', {name: 'BLOCKED', exact: true})});
+            await expect(row).toHaveCount(1);
+            await expect(row.getByRole('cell', {name: pagePayload[field].status, exact: true})).toBeVisible();
+            await expect(row.getByRole('cell', {name: pagePayload[field].reasonCode, exact: true})).toBeVisible();
+            await expect(row.getByRole('cell', {name: pagePayload[field].reason, exact: true})).toBeVisible();
         }
 
         await expect(overview.getByText('BLOCKED')).toHaveCount(11);
