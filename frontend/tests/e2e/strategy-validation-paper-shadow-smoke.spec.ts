@@ -1331,6 +1331,30 @@ async function expectNoSuccessTagForStatuses(page: Page, statuses: string[]): Pr
     }
 }
 
+async function selectWorkspaceTab(page: Page, name: string): Promise<void> {
+    const tab = page.getByTestId('strategy-validation-page').getByRole('tab', {name, exact: true});
+    await tab.click();
+    await expect(tab).toHaveAttribute('aria-selected', 'true');
+}
+
+async function selectResultTab(page: Page, name: string): Promise<void> {
+    await selectWorkspaceTab(page, '查询结果');
+    await selectWorkspaceTab(page, name);
+}
+
+async function expandDiagnosticSection(page: Page, name: string): Promise<void> {
+    await selectWorkspaceTab(page, '高级诊断');
+    const section = page.getByTestId('validation-operations-detail-sections')
+        .getByRole('button', {name});
+    // 展开图标也参与可访问名称；匹配唯一的业务标题，避免绑定 collapsed/expanded 图标文案。
+    await expect(section).toHaveCount(1);
+    // 诊断区按需挂载；通过用户可见入口展开，不能直接断言旧页面默认存在的节点。
+    if (await section.getAttribute('aria-expanded') !== 'true') {
+        await section.click();
+    }
+    await expect(section).toHaveAttribute('aria-expanded', 'true');
+}
+
 test.describe('strategy validation Paper / Shadow comparison view', () => {
     test('展示 evaluation gate、comparison、preview、blockers、nextSteps 与 sideEffectPolicy', async ({page}) => {
         const requests = await seedAuthAndGateQStubs(page);
@@ -1339,8 +1363,11 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
 
         const view = page.getByTestId('strategy-validation-page');
         await expect(view).toBeVisible();
-        await expect(view.getByRole('heading', {name: '验证运营工作台', exact: true})).toBeVisible();
-        await expect(view).toContainText('只读运营复核 sections');
+        await expect(view.getByRole('heading', {name: '策略验证工作台', exact: true})).toBeVisible();
+        await selectWorkspaceTab(page, '证据总览');
+        await expect(view.getByText('验证运营工作台', {exact: true})).toBeVisible();
+        await expect(view).toContainText('只读诊断结果；用于人工复核排序、证据链路检查和边界确认，不新增 route、API、DB migration 或交易入口。');
+        await expandDiagnosticSection(page, '状态解释');
         await expect(view).toContainText('只读验证');
         await expect(view).toContainText('不代表交易授权');
         await expect(view).toContainText('不代表 LIVE 已启用');
@@ -1350,6 +1377,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('不写真实账户 / 资金 / ledger');
         await expect(view).toContainText('不接 AI / DH runtime 执行链路');
 
+        await selectWorkspaceTab(page, '证据总览');
         const operationsWorkbench = page.getByTestId('validation-operations-workbench');
         await expect(operationsWorkbench).toBeVisible();
 
@@ -1375,7 +1403,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         const operationsSummary = page.getByTestId('validation-operations-top-summary');
         await expect(operationsSummary).toBeVisible();
         await expect(operationsSummary).toContainText('影子验证工作流');
-        await expect(operationsSummary).toContainText('评估制品预览');
+        await expect(operationsSummary).toContainText('Python Evaluation Artifact Preview（No-file baseline）');
         await expect(operationsSummary).toContainText('READY_FOR_OPERATOR_REVIEW（可人工复核，非交易授权）');
         await expect(operationsSummary).toContainText('DIVERGED（证据偏离）');
         await expect(operationsSummary).toContainText('NO_ARTIFACT_SOURCE_CONFIGURED');
@@ -1399,12 +1427,14 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(operationsBoundary).toContainText('Python ML 未就绪');
         await expect(operationsBoundary).toContainText('AI / DH 运行时未集成');
 
+        await selectWorkspaceTab(page, '高级诊断');
         const detailSections = page.getByTestId('validation-operations-detail-sections');
         await expect(detailSections).toBeVisible();
         await expect(detailSections).toContainText('Detail sections / 只读详情区');
         await expect(view.getByRole('button', {name: /上传|导入|执行 Python|upload|import|start|stop|trade|approve|reject|acknowledge|escalate|closeout/i})).toHaveCount(0);
         await expect(view.locator('input[placeholder*="artifact"], input[placeholder*="path"], input[aria-label*="artifact"], input[aria-label*="path"]')).toHaveCount(0);
 
+        await expandDiagnosticSection(page, '策略验证 / 影子工作台');
         const workbench = page.getByTestId('strategy-validation-shadow-workbench');
         await expect(workbench).toBeVisible();
         await expect(view).toContainText('策略验证 / 影子工作台');
@@ -1438,6 +1468,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(workbench).toContainText('CHECK_DIVERGENCE');
         await expect(workbench).toContainText('fixture-checksum-drilldown');
 
+        await expandDiagnosticSection(page, '影子验证工作流总览（Shadow Validation Workflow Overview）');
         const workflow = page.getByTestId('shadow-validation-workflow-panel');
         await expect(workflow).toBeVisible();
         await expect(view).toContainText('Shadow Validation Workflow Overview');
@@ -1462,6 +1493,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(workflow).toContainText('Not trading authorization（非交易授权）');
         await expect(workflow).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
 
+        await expandDiagnosticSection(page, '一致性证据总览（Consistency Evidence Overview）');
         const consistencyEvidence = page.getByTestId('consistency-evidence-overview-panel');
         await expect(consistencyEvidence).toBeVisible();
         await expect(view).toContainText('Consistency Evidence Overview');
@@ -1495,6 +1527,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(consistencyEvidence).toContainText('Not trading authorization（非交易授权）');
         await expect(consistencyEvidence).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
 
+        await expandDiagnosticSection(page, '事件回放复核总览（Incident / Replay Review Overview）');
         const incidentReplayReview = page.getByTestId('incident-replay-review-overview-panel');
         await expect(incidentReplayReview).toBeVisible();
         await expect(view).toContainText('Incident / Replay Review Overview');
@@ -1528,6 +1561,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(incidentReplayReview).toContainText('Not trading authorization（非交易授权）');
         await expect(incidentReplayReview).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
 
+        await expandDiagnosticSection(page, 'Python Evaluation Artifact Preview（No-file baseline）');
         const artifactPreview = page.getByTestId('evaluation-artifact-preview-overview-panel');
         await expect(artifactPreview).toBeVisible();
         await expect(view).toContainText('Python Evaluation Artifact Preview');
@@ -1563,9 +1597,11 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(artifactPreview.getByRole('button', {name: /上传|导入|执行|upload|import/i})).toHaveCount(0);
         await expect(artifactPreview.locator('input')).toHaveCount(0);
 
+        await expandDiagnosticSection(page, '状态解释');
         await expect(view).toContainText('状态解释');
         await expect(view).toContainText('VALID_FOR_BINDING_PREVIEW');
         await expect(view).toContainText('UNKNOWN / NOT_AVAILABLE / NOT_IMPLEMENTED / BLOCKED_*');
+        await expandDiagnosticSection(page, '生命周期追溯链');
         await expect(view).toContainText('生命周期追溯链');
         await expect(view).toContainText('strategyVersion -> dataset -> evaluation -> publish -> paper -> shadow');
         await expect(view).toContainText('策略版本');
@@ -1579,6 +1615,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('NO_ARTIFACT_SOURCE_CONFIGURED（未配置 artifact source）');
         await expect(view).toContainText('trace-evaluation-artifact-preview-overview-smoke');
 
+        await expandDiagnosticSection(page, 'Evidence Matrix / 证据矩阵');
         await expect(view).toContainText('Evidence Matrix / 证据矩阵');
         await expect(view).toContainText('requiredEvidence');
         await expect(view).toContainText('missingEvidence');
@@ -1586,8 +1623,11 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('warnings');
         await expect(view).toContainText('nextSteps');
 
+        await selectResultTab(page, '评估准入');
         await expect(view).toContainText('READY_FOR_SHADOW_REVIEW（可进入 Shadow 评审）');
+        await selectResultTab(page, '模拟与影子对照');
         await expect(view).toContainText('READY_FOR_COMPARISON（可查看只读对照）');
+        await selectResultTab(page, '无副作用预览');
         await expect(view).toContainText('PREVIEW_BLOCKED_SHADOW_FACTS_NOT_AVAILABLE（Shadow facts 不可用）');
         await expect(view).toContainText('NOT_IMPLEMENTED（能力未实现）');
         await expect(view).toContainText('PREVIEW_BLOCKED_SHADOW_FACTS_NOT_AVAILABLE');
@@ -1605,6 +1645,12 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('paper');
         await expect(view).toContainText('shadow');
 
+        await expandDiagnosticSection(page, '策略验证总览');
+        await expandDiagnosticSection(page, '事件 / 回放总览');
+        await selectResultTab(page, '发布准入预览');
+        // 页面拆分后仍检查已挂载但隐藏的面板，保留原整页禁止入口与输入项的覆盖范围。
+        await expect(view.getByRole('button', {name: /上传|导入|执行 Python|upload|import|start|stop|trade|approve|reject|acknowledge|escalate|closeout/i, includeHidden: true})).toHaveCount(0);
+        await expect(view.locator('input[placeholder*="artifact"], input[placeholder*="path"], input[aria-label*="artifact"], input[aria-label*="path"]')).toHaveCount(0);
         await expectNoForbiddenCopy(page);
         await expectNoSuccessTagForStatuses(page, [
             'NOT_IMPLEMENTED',
@@ -1724,6 +1770,25 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
 
         await page.goto(validationUrl());
 
+        // 所有只读面板都需经过真实导航挂载，避免负向状态断言因未渲染内容而空通过。
+        for (const name of ['评估准入', '模拟与影子对照', '无副作用预览', '发布准入预览']) {
+            await selectResultTab(page, name);
+        }
+        await selectWorkspaceTab(page, '证据总览');
+        for (const name of [
+            '策略验证总览',
+            '影子验证工作流总览（Shadow Validation Workflow Overview）',
+            '一致性证据总览（Consistency Evidence Overview）',
+            'Python Evaluation Artifact Preview（No-file baseline）',
+            '事件回放复核总览（Incident / Replay Review Overview）',
+            '事件 / 回放总览',
+            '策略验证 / 影子工作台',
+            '生命周期追溯链',
+            'Evidence Matrix / 证据矩阵',
+            '状态解释',
+        ]) {
+            await expandDiagnosticSection(page, name);
+        }
         const view = page.getByTestId('strategy-validation-page');
         await expect(view).toContainText('UNKNOWN（未知）');
         await expect(view).toContainText('NOT_AVAILABLE（不可用）');
@@ -1731,14 +1796,17 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('Resolve missing dataset facts before review.');
         await expect(view).not.toContainText('READY_FOR_SHADOW_REVIEW（可进入 Shadow 评审）');
         await expect(view).not.toContainText('READY_FOR_NO_SIDE_EFFECT_PREVIEW（可生成无副作用预览）');
+        await expandDiagnosticSection(page, '一致性证据总览（Consistency Evidence Overview）');
         const consistencyEvidence = page.getByTestId('consistency-evidence-overview-panel');
         await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('可用性：UNAVAILABLE');
         await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
         await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('最近计算时间：未提供');
+        await expandDiagnosticSection(page, '事件回放复核总览（Incident / Replay Review Overview）');
         const incidentReplayReview = page.getByTestId('incident-replay-review-overview-panel');
         await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('可用性：PARTIAL');
         await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
         await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('最近计算时间：未提供');
+        await selectWorkspaceTab(page, '证据总览');
         const runtimeEvidence = page.getByTestId('validation-operations-runtime-evidence-panel');
         await expect(runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata')).toContainText('可用性：UNKNOWN');
         await expect(runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
@@ -1753,6 +1821,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await seedAuthAndGateQStubs(page, {releaseAdmissionDelayMs: 10_000});
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toBeVisible();
@@ -1765,6 +1834,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await seedAuthAndGateQStubs(page, {releaseAdmissionStatus: 404});
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('未找到记录');
@@ -1788,6 +1858,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         });
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('历史未绑定');
@@ -1807,6 +1878,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         });
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('制品验证');
@@ -1825,6 +1897,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         });
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('准入已阻断');
@@ -1837,6 +1910,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         const requests = await seedAuthAndGateQStubs(page);
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('可创建未启动的 Shadow Run');
@@ -1879,6 +1953,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         });
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
         const panel = page.getByTestId('strategy-release-admission-preview');
         await panel.getByRole('button', {name: '创建 Shadow Run'}).click();
         const createModal = page.getByRole('dialog', {name: '确认创建 Shadow Run'});
@@ -1921,6 +1996,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         });
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
         const panel = page.getByTestId('strategy-release-admission-preview');
         await panel.getByRole('button', {name: '创建 Shadow Run'}).click();
         await page.getByRole('dialog', {name: '确认创建 Shadow Run'})
@@ -1947,6 +2023,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         });
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('准入已阻断');
         await expect(panel.getByRole('button', {name: /创建 Shadow Run|创建新的 Shadow Run|重试同一创建命令/}))
@@ -1957,6 +2034,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await seedAuthAndGateQStubs(page, {roles: ['VIEWER']});
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('可创建未启动的 Shadow Run');
         await expect(panel.getByRole('button', {name: /创建 Shadow Run|创建新的 Shadow Run|重试同一创建命令/}))
@@ -1967,6 +2045,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await seedAuthAndGateQStubs(page, {releaseAdmissionStatus: 500});
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('服务异常');
