@@ -73,8 +73,7 @@ public interface ShadowRunFactRepository {
             String reasonCode,
             String message,
             String requestId,
-            String traceId
-    );
+            String traceId);
 
     /**
      * 将 run 置为 FAILED，保留失败 reason event；调用方需提供当前 expected version。
@@ -85,9 +84,15 @@ public interface ShadowRunFactRepository {
             String reasonCode,
             String message,
             String requestId,
-            String traceId
-    ) {
-        return updateStatus(shadowRunId, ShadowRunStatus.FAILED, expectedVersion, reasonCode, message, requestId, traceId);
+            String traceId) {
+        return updateStatus(
+                shadowRunId,
+                ShadowRunStatus.FAILED,
+                expectedVersion,
+                reasonCode,
+                message,
+                requestId,
+                traceId);
     }
 
     /**
@@ -99,15 +104,32 @@ public interface ShadowRunFactRepository {
             String reasonCode,
             String message,
             String requestId,
-            String traceId
-    ) {
-        return updateStatus(shadowRunId, ShadowRunStatus.BLOCKED, expectedVersion, reasonCode, message, requestId, traceId);
+            String traceId) {
+        return updateStatus(
+                shadowRunId,
+                ShadowRunStatus.BLOCKED,
+                expectedVersion,
+                reasonCode,
+                message,
+                requestId,
+                traceId);
     }
 
     /**
      * 查询 run 的审计事件，按创建时间返回；不读取外部系统。
      */
     List<ShadowRunEvent> listEvents(UUID shadowRunId);
+
+    /**
+     * 最多读取两条原始 CREATED 审计，以判定缺失或重复；不能以任取第一条掩盖不一致。
+     *
+     * <p>创建结果恢复不能扫描全部生命周期事件。未实现该能力的适配器必须明确失败，
+     * 不能回退为无界读取或将不支持伪装成没有创建结果。
+     */
+    default List<ShadowRunEvent> listCreationEvents(UUID shadowRunId) {
+        throw new UnsupportedOperationException(
+                "shadow run creation event query is not implemented");
+    }
 
     /**
      * 查询 run 的本地快照，按类型和 sequence 返回；不执行策略或 runner。

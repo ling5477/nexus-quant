@@ -21,6 +21,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -146,6 +147,33 @@ public class ValidationReviewOperationsService {
                         caseId,
                         EVENT_LIMIT
                 );
+    }
+
+    /**
+     * 只读确认本人原请求产生的事件；没有记录时仍然未知，不能用最新 case 状态冒充原结果。
+     *
+     * <p>沿用现有 tenant/owner 查询，并额外绑定原操作者；不返回幂等键或事件中的人工备注。
+     *
+     * @param actor 服务端认证主体
+     * @param caseId 原复核对象
+     * @param idempotencyKey 原请求头中的稳定身份
+     * @return 已持久化的原事件；空值不代表原请求失败
+     */
+    @Transactional(readOnly = true)
+    public Optional<ValidationReviewEvent> originalEvent(
+            ValidationReviewActor actor, UUID caseId, String idempotencyKey) {
+        requireReviewRole(actor);
+        Objects.requireNonNull(caseId, "caseId must not be null");
+        requireText(idempotencyKey, "idempotencyKey", 128);
+        findScopedCase(actor, caseId);
+        return (actor.admin()
+                ? repository.findTenantEventByIdempotencyKey(
+                        ValidationReviewCase.LOCAL_TENANT_KEY, caseId, idempotencyKey)
+                : repository.findOwnedEventByIdempotencyKey(
+                        ValidationReviewCase.LOCAL_TENANT_KEY, actor.userId(), caseId, idempotencyKey))
+                .filter(event -> event.actorId() == actor.userId()
+                        && event.reviewCaseId().equals(caseId)
+                        && event.tenantKey().equals(ValidationReviewCase.LOCAL_TENANT_KEY));
     }
 
     /**

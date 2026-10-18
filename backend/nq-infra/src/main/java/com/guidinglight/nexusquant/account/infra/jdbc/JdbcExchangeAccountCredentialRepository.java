@@ -4,6 +4,9 @@ import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialMater
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -11,15 +14,14 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-
 /**
  * JdbcExchangeAccountCredentialRepository 提供账户凭证版本链 JDBC 实现。
  */
-public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountCredentialRepository {
+public class JdbcExchangeAccountCredentialRepository
+        implements ExchangeAccountCredentialRepository {
 
-    private static final String SUMMARY_SELECT = """
+    private static final String SUMMARY_SELECT =
+            """
             SELECT credential_id,
                    exchange_account_id,
                    credential_type,
@@ -57,9 +59,11 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
     }
 
     @Override
-    public List<ExchangeAccountCredentialSummary> listActiveSummaries(Long ownerUserId, Long exchangeAccountId) {
+    public List<ExchangeAccountCredentialSummary> listActiveSummaries(
+            Long ownerUserId, Long exchangeAccountId) {
         return jdbcTemplate.query(
-                SUMMARY_SELECT + """
+                SUMMARY_SELECT
+                        + """
                          WHERE exchange_account_id = ?
                            AND is_active = TRUE
                            AND credential_status = 'ACTIVE'
@@ -73,18 +77,36 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                         """,
                 SUMMARY_ROW_MAPPER,
                 exchangeAccountId,
-                ownerUserId
-        );
+                ownerUserId);
+    }
+
+    @Override
+    public List<ExchangeAccountCredentialSummary> listHistory(
+            Long ownerUserId, Long accountId, Long beforeCredentialId, int limit) {
+        if (limit < 1 || limit > 51)
+            throw new IllegalArgumentException("invalid credential history limit");
+        return jdbcTemplate.query(
+                SUMMARY_SELECT
+                        + """
+                 WHERE exchange_account_id = ? AND credential_id < ?
+                   AND EXISTS (SELECT 1 FROM exchange_accounts ea
+                       WHERE ea.exchange_account_id=exchange_account_credentials.exchange_account_id AND ea.owner_user_id=?)
+                 ORDER BY credential_id DESC LIMIT ?
+                """,
+                SUMMARY_ROW_MAPPER,
+                accountId,
+                beforeCredentialId == null ? Long.MAX_VALUE : beforeCredentialId,
+                ownerUserId,
+                limit);
     }
 
     @Override
     public Optional<ExchangeAccountCredentialSummary> findActiveSummary(
-            Long ownerUserId,
-            Long exchangeAccountId,
-            String credentialType
-    ) {
-        List<ExchangeAccountCredentialSummary> rows = jdbcTemplate.query(
-                SUMMARY_SELECT + """
+            Long ownerUserId, Long exchangeAccountId, String credentialType) {
+        List<ExchangeAccountCredentialSummary> rows =
+                jdbcTemplate.query(
+                        SUMMARY_SELECT
+                                + """
                          WHERE exchange_account_id = ?
                            AND credential_type = ?
                            AND is_active = TRUE
@@ -96,38 +118,38 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                                  AND ea.owner_user_id = ?
                            )
                         """,
-                SUMMARY_ROW_MAPPER,
-                exchangeAccountId,
-                credentialType,
-                ownerUserId
-        );
+                        SUMMARY_ROW_MAPPER,
+                        exchangeAccountId,
+                        credentialType,
+                        ownerUserId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
     @Override
-    public Optional<ExchangeAccountCredentialSummary> findActiveByAccountAndType(Long exchangeAccountId, String credentialType) {
-        List<ExchangeAccountCredentialSummary> rows = jdbcTemplate.query(
-                SUMMARY_SELECT + """
+    public Optional<ExchangeAccountCredentialSummary> findActiveByAccountAndType(
+            Long exchangeAccountId, String credentialType) {
+        List<ExchangeAccountCredentialSummary> rows =
+                jdbcTemplate.query(
+                        SUMMARY_SELECT
+                                + """
                          WHERE exchange_account_id = ?
                            AND credential_type = ?
                            AND is_active = TRUE
                            AND credential_status = 'ACTIVE'
                         """,
-                SUMMARY_ROW_MAPPER,
-                exchangeAccountId,
-                credentialType
-        );
+                        SUMMARY_ROW_MAPPER,
+                        exchangeAccountId,
+                        credentialType);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
     @Override
     public Optional<ExchangeAccountCredentialSummary> findByCredentialIdForOwner(
-            Long ownerUserId,
-            Long exchangeAccountId,
-            Long credentialId
-    ) {
-        List<ExchangeAccountCredentialSummary> rows = jdbcTemplate.query(
-                SUMMARY_SELECT + """
+            Long ownerUserId, Long exchangeAccountId, Long credentialId) {
+        List<ExchangeAccountCredentialSummary> rows =
+                jdbcTemplate.query(
+                        SUMMARY_SELECT
+                                + """
                          WHERE credential_id = ?
                            AND exchange_account_id = ?
                            AND EXISTS (
@@ -138,22 +160,20 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                            )
                          LIMIT 1
                         """,
-                SUMMARY_ROW_MAPPER,
-                credentialId,
-                exchangeAccountId,
-                ownerUserId
-        );
+                        SUMMARY_ROW_MAPPER,
+                        credentialId,
+                        exchangeAccountId,
+                        ownerUserId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
     @Override
     public Optional<ExchangeAccountCredentialSummary> findActiveByCredentialIdForOwnerForUpdate(
-            Long ownerUserId,
-            Long exchangeAccountId,
-            Long credentialId
-    ) {
-        List<ExchangeAccountCredentialSummary> rows = jdbcTemplate.query(
-                SUMMARY_SELECT + """
+            Long ownerUserId, Long exchangeAccountId, Long credentialId) {
+        List<ExchangeAccountCredentialSummary> rows =
+                jdbcTemplate.query(
+                        SUMMARY_SELECT
+                                + """
                          WHERE credential_id = ?
                            AND exchange_account_id = ?
                            AND is_active = TRUE
@@ -167,22 +187,19 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                          LIMIT 1
                          FOR UPDATE
                         """,
-                SUMMARY_ROW_MAPPER,
-                credentialId,
-                exchangeAccountId,
-                ownerUserId
-        );
+                        SUMMARY_ROW_MAPPER,
+                        credentialId,
+                        exchangeAccountId,
+                        ownerUserId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
     @Override
     public Optional<ExchangeAccountCredentialMaterial> findByCredentialIdForOwnerForUpdate(
-            Long ownerUserId,
-            Long exchangeAccountId,
-            Long credentialId
-    ) {
-        List<ExchangeAccountCredentialMaterial> rows = jdbcTemplate.query(
-                """
+            Long ownerUserId, Long exchangeAccountId, Long credentialId) {
+        List<ExchangeAccountCredentialMaterial> rows =
+                jdbcTemplate.query(
+                        """
                         SELECT credential_id,
                                exchange_account_id,
                                credential_type,
@@ -216,23 +233,20 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                         LIMIT 1
                         FOR UPDATE
                         """,
-                MATERIAL_ROW_MAPPER,
-                masterKey,
-                credentialId,
-                exchangeAccountId,
-                ownerUserId
-        );
+                        MATERIAL_ROW_MAPPER,
+                        masterKey,
+                        credentialId,
+                        exchangeAccountId,
+                        ownerUserId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
     @Override
     public boolean existsOtherActiveCredential(
-            Long exchangeAccountId,
-            String credentialType,
-            Long excludedCredentialId
-    ) {
-        Integer count = jdbcTemplate.queryForObject(
-                """
+            Long exchangeAccountId, String credentialType, Long excludedCredentialId) {
+        Integer count =
+                jdbcTemplate.queryForObject(
+                        """
                         SELECT COUNT(1)
                         FROM exchange_account_credentials
                         WHERE exchange_account_id = ?
@@ -241,22 +255,19 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                           AND is_active = TRUE
                           AND credential_status = 'ACTIVE'
                         """,
-                Integer.class,
-                exchangeAccountId,
-                credentialType,
-                excludedCredentialId
-        );
+                        Integer.class,
+                        exchangeAccountId,
+                        credentialType,
+                        excludedCredentialId);
         return count != null && count > 0;
     }
 
     @Override
     public Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(
-            Long ownerUserId,
-            Long exchangeAccountId,
-            String credentialType
-    ) {
-        List<ExchangeAccountCredentialMaterial> rows = jdbcTemplate.query(
-                """
+            Long ownerUserId, Long exchangeAccountId, String credentialType) {
+        List<ExchangeAccountCredentialMaterial> rows =
+                jdbcTemplate.query(
+                        """
                         SELECT credential_id,
                                exchange_account_id,
                                credential_type,
@@ -290,17 +301,17 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                                 AND ea.owner_user_id = ?
                           )
                         """,
-                MATERIAL_ROW_MAPPER,
-                masterKey,
-                exchangeAccountId,
-                credentialType,
-                ownerUserId
-        );
+                        MATERIAL_ROW_MAPPER,
+                        masterKey,
+                        exchangeAccountId,
+                        credentialType,
+                        ownerUserId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
     @Override
-    public void deactivateActiveByAccountAndType(Long exchangeAccountId, String credentialType, Instant revokedAt) {
+    public void deactivateActiveByAccountAndType(
+            Long exchangeAccountId, String credentialType, Instant revokedAt) {
         jdbcTemplate.update(
                 """
                         UPDATE exchange_account_credentials
@@ -317,8 +328,7 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 Timestamp.from(revokedAt),
                 Timestamp.from(revokedAt),
                 exchangeAccountId,
-                credentialType
-        );
+                credentialType);
     }
 
     @Override
@@ -330,8 +340,7 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
             String cipherSuite,
             String maskedAccessKey,
             Long rotatedFromCredentialId,
-            Instant now
-    ) {
+            Instant now) {
         return jdbcTemplate.queryForObject(
                 """
                         INSERT INTO exchange_account_credentials (
@@ -398,8 +407,7 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 maskedAccessKey,
                 rotatedFromCredentialId,
                 Timestamp.from(now),
-                Timestamp.from(now)
-        );
+                Timestamp.from(now));
     }
 
     @Override
@@ -408,10 +416,9 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
             String verificationStatus,
             Instant verifiedAt,
             String lastVerificationError,
-            Instant updatedAt
-    ) {
+            Instant updatedAt) {
         return jdbcTemplate.update(
-                """
+                        """
                         UPDATE exchange_account_credentials
                         SET verification_status = ?,
                             last_verified_at = ?,
@@ -419,18 +426,19 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                             updated_at = ?
                         WHERE credential_id = ?
                         """,
-                verificationStatus,
-                Timestamp.from(verifiedAt),
-                lastVerificationError,
-                Timestamp.from(updatedAt),
-                credentialId
-        ) > 0;
+                        verificationStatus,
+                        Timestamp.from(verifiedAt),
+                        lastVerificationError,
+                        Timestamp.from(updatedAt),
+                        credentialId)
+                > 0;
     }
 
     @Override
-    public boolean markPermissionProbeInProgress(Long credentialId, Long exchangeAccountId, Instant updatedAt) {
+    public boolean markPermissionProbeInProgress(
+            Long credentialId, Long exchangeAccountId, Instant updatedAt) {
         return jdbcTemplate.update(
-                """
+                        """
                         UPDATE exchange_account_credentials
                         SET permission_probe_status = 'IN_PROGRESS',
                             last_permission_probe_error = NULL,
@@ -439,10 +447,10 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                           AND exchange_account_id = ?
                           AND permission_probe_status <> 'IN_PROGRESS'
                         """,
-                Timestamp.from(updatedAt),
-                credentialId,
-                exchangeAccountId
-        ) > 0;
+                        Timestamp.from(updatedAt),
+                        credentialId,
+                        exchangeAccountId)
+                > 0;
     }
 
     @Override
@@ -457,10 +465,9 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
             Instant lastPermissionProbeAt,
             String lastPermissionProbeError,
             boolean incrementFailedAuthCount,
-            Instant updatedAt
-    ) {
+            Instant updatedAt) {
         return jdbcTemplate.update(
-                """
+                        """
                         UPDATE exchange_account_credentials
                         SET permission_probe_status = ?,
                             permission_scope = ?,
@@ -475,18 +482,18 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                           AND exchange_account_id = ?
                           AND permission_probe_status = 'IN_PROGRESS'
                         """,
-                permissionProbeStatus,
-                permissionScope,
-                withdrawEnabled,
-                ipAllowlistRequired,
-                ipAllowlistProbeStatus,
-                Timestamp.from(lastPermissionProbeAt),
-                lastPermissionProbeError,
-                incrementFailedAuthCount,
-                Timestamp.from(updatedAt),
-                credentialId,
-                exchangeAccountId
-        ) > 0;
+                        permissionProbeStatus,
+                        permissionScope,
+                        withdrawEnabled,
+                        ipAllowlistRequired,
+                        ipAllowlistProbeStatus,
+                        Timestamp.from(lastPermissionProbeAt),
+                        lastPermissionProbeError,
+                        incrementFailedAuthCount,
+                        Timestamp.from(updatedAt),
+                        credentialId,
+                        exchangeAccountId)
+                > 0;
     }
 
     @Override
@@ -495,10 +502,9 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
             Long exchangeAccountId,
             String verificationStatus,
             Instant verifiedAt,
-            Instant updatedAt
-    ) {
+            Instant updatedAt) {
         return jdbcTemplate.update(
-                """
+                        """
                         UPDATE exchange_account_credentials
                         SET credential_status = 'ACTIVE',
                             is_active = TRUE,
@@ -511,12 +517,12 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                           AND credential_status = 'DISABLED'
                           AND is_active = FALSE
                         """,
-                verificationStatus,
-                Timestamp.from(verifiedAt),
-                Timestamp.from(updatedAt),
-                credentialId,
-                exchangeAccountId
-        ) > 0;
+                        verificationStatus,
+                        Timestamp.from(verifiedAt),
+                        Timestamp.from(updatedAt),
+                        credentialId,
+                        exchangeAccountId)
+                > 0;
     }
 
     @Override
@@ -528,10 +534,9 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
             Instant revokedAt,
             String revokedBy,
             String revokeReason,
-            Instant updatedAt
-    ) {
+            Instant updatedAt) {
         return jdbcTemplate.update(
-                """
+                        """
                         UPDATE exchange_account_credentials
                         SET credential_status = ?,
                             is_active = ?,
@@ -542,21 +547,22 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                         WHERE credential_id = ?
                           AND exchange_account_id = ?
                         """,
-                credentialStatus,
-                active,
-                toTimestamp(revokedAt),
-                revokedBy,
-                revokeReason,
-                Timestamp.from(updatedAt),
-                credentialId,
-                exchangeAccountId
-        ) > 0;
+                        credentialStatus,
+                        active,
+                        toTimestamp(revokedAt),
+                        revokedBy,
+                        revokeReason,
+                        Timestamp.from(updatedAt),
+                        credentialId,
+                        exchangeAccountId)
+                > 0;
     }
 
     @Override
-    public boolean markRotated(Long credentialId, Long exchangeAccountId, String rotatedBy, Instant rotatedAt) {
+    public boolean markRotated(
+            Long credentialId, Long exchangeAccountId, String rotatedBy, Instant rotatedAt) {
         return jdbcTemplate.update(
-                """
+                        """
                         UPDATE exchange_account_credentials
                         SET credential_status = 'ROTATED',
                             is_active = FALSE,
@@ -568,12 +574,12 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                           AND credential_status = 'ACTIVE'
                           AND is_active = TRUE
                         """,
-                Timestamp.from(rotatedAt),
-                rotatedBy,
-                Timestamp.from(rotatedAt),
-                credentialId,
-                exchangeAccountId
-        ) > 0;
+                        Timestamp.from(rotatedAt),
+                        rotatedBy,
+                        Timestamp.from(rotatedAt),
+                        credentialId,
+                        exchangeAccountId)
+                > 0;
     }
 
     @Override
@@ -584,8 +590,7 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
             String actor,
             String reason,
             String metadataJson,
-            Instant createdAt
-    ) {
+            Instant createdAt) {
         jdbcTemplate.update(
                 """
                         INSERT INTO credential_audit_logs (
@@ -612,11 +617,11 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 actor,
                 reason,
                 metadataJson,
-                Timestamp.from(createdAt)
-        );
+                Timestamp.from(createdAt));
     }
 
-    private static ExchangeAccountCredentialSummary mapSummary(ResultSet resultSet, int rowNum) throws SQLException {
+    private static ExchangeAccountCredentialSummary mapSummary(ResultSet resultSet, int rowNum)
+            throws SQLException {
         return new ExchangeAccountCredentialSummary(
                 resultSet.getLong("credential_id"),
                 resultSet.getLong("exchange_account_id"),
@@ -637,11 +642,11 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 resultSet.getString("ip_allowlist_probe_status"),
                 resultSet.getInt("failed_auth_count"),
                 toInstant(resultSet.getTimestamp("last_permission_probe_at")),
-                resultSet.getString("last_permission_probe_error")
-        );
+                resultSet.getString("last_permission_probe_error"));
     }
 
-    private static ExchangeAccountCredentialMaterial mapMaterial(ResultSet resultSet, int rowNum) throws SQLException {
+    private static ExchangeAccountCredentialMaterial mapMaterial(ResultSet resultSet, int rowNum)
+            throws SQLException {
         return new ExchangeAccountCredentialMaterial(
                 resultSet.getLong("credential_id"),
                 resultSet.getLong("exchange_account_id"),
@@ -663,8 +668,7 @@ public class JdbcExchangeAccountCredentialRepository implements ExchangeAccountC
                 resultSet.getString("ip_allowlist_probe_status"),
                 resultSet.getInt("failed_auth_count"),
                 toInstant(resultSet.getTimestamp("last_permission_probe_at")),
-                resultSet.getString("last_permission_probe_error")
-        );
+                resultSet.getString("last_permission_probe_error"));
     }
 
     private static Instant toInstant(Timestamp timestamp) {

@@ -5,26 +5,27 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.common.numeric.NumericPolicy;
 import com.guidinglight.nexusquant.common.numeric.NumericType;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
-import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.LedgerPostFailed;
 import com.guidinglight.nexusquant.contracts.event.LedgerPosted;
 import com.guidinglight.nexusquant.contracts.event.PositionUpdated;
 import com.guidinglight.nexusquant.contracts.event.RiskEventRaised;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.LedgerDirection;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
-import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
-import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
-import com.guidinglight.nexusquant.ledger.contracts.model.AccountSnapshotProjection;
 import com.guidinglight.nexusquant.ledger.contracts.model.AccountBalanceBasis;
+import com.guidinglight.nexusquant.ledger.contracts.model.AccountSnapshotProjection;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingEntry;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.contracts.model.PositionProjection;
-import com.guidinglight.nexusquant.ledger.service.port.TradeLedgerPort;
+import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerPostingRepository;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerRiskAuditRepository;
+import com.guidinglight.nexusquant.ledger.service.port.TradeLedgerPort;
+
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -35,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -65,17 +67,15 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
             LedgerPostingRepository ledgerPostingRepository,
             LedgerRiskAuditRepository ledgerRiskAuditRepository,
             EventPublisherPort eventPublisherPort,
-            ObjectMapper objectMapper
-    ) {
-        this.ledgerPostingRepository = Objects.requireNonNull(
-                ledgerPostingRepository,
-                "ledgerPostingRepository must not be null"
-        );
-        this.ledgerRiskAuditRepository = Objects.requireNonNull(
-                ledgerRiskAuditRepository,
-                "ledgerRiskAuditRepository must not be null"
-        );
-        this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
+            ObjectMapper objectMapper) {
+        this.ledgerPostingRepository =
+                Objects.requireNonNull(
+                        ledgerPostingRepository, "ledgerPostingRepository must not be null");
+        this.ledgerRiskAuditRepository =
+                Objects.requireNonNull(
+                        ledgerRiskAuditRepository, "ledgerRiskAuditRepository must not be null");
+        this.eventPublisherPort =
+                Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.clock = Clock.systemUTC();
     }
@@ -94,17 +94,26 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
         if (!isBalanced(entries)) {
             return handleImbalance(request, entries, "LEDGER_NOT_BALANCED");
         }
-        List<String> currencies = new ArrayList<>(List.of(resolveBaseCurrency(request.symbol()),
-                resolveQuoteCurrency(request.symbol())));
+        List<String> currencies =
+                new ArrayList<>(
+                        List.of(
+                                resolveBaseCurrency(request.symbol()),
+                                resolveQuoteCurrency(request.symbol())));
         if (request.feeCurrency() != null && !request.feeCurrency().isBlank()) {
             currencies.add(request.feeCurrency());
         }
         // 先锁账户及币种、再锁品种；所有读取、幂等判定和快照发布均在同一提交边界内。
         ledgerPostingRepository.lockSnapshotCurrencies(request.accountId(), currencies);
         ledgerPostingRepository.assertAccountEnvironment(request.accountId(), request.tradeEnv());
-        ledgerPostingRepository.lockPosition(request.accountId(), request.symbol(), request.traceId());
-        long postedEntries = entries.stream()
-                .filter(entry -> ledgerPostingRepository.existsByIdempotencyKey(entry.idempotencyKey())).count();
+        ledgerPostingRepository.lockPosition(
+                request.accountId(), request.symbol(), request.traceId());
+        long postedEntries =
+                entries.stream()
+                        .filter(
+                                entry ->
+                                        ledgerPostingRepository.existsByIdempotencyKey(
+                                                entry.idempotencyKey()))
+                        .count();
         if (postedEntries == entries.size()) {
             return new LedgerPostingResult(true, true, "IDEMPOTENT_HIT");
         }
@@ -114,28 +123,34 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
         }
 
         for (LedgerPostingEntry entry : entries) {
-            BigDecimal balanceAfter = ledgerPostingRepository.currentBalance(entry.accountId(), entry.currency(), request.tradeEnv())
-                    .add(entry.delta());
-            LedgerPostingEntry persistedEntry = new LedgerPostingEntry(
-                    entry.entryId(),
-                    entry.accountId(),
-                    entry.currency(),
-                    entry.delta(),
-                    balanceAfter,
-                    entry.direction(),
-                    entry.refType(),
-                    entry.refId(),
-                    entry.idempotencyKey(),
-                    entry.traceId(),
-                    entry.ts()
-            );
+            BigDecimal balanceAfter =
+                    ledgerPostingRepository
+                            .currentBalance(entry.accountId(), entry.currency(), request.tradeEnv())
+                            .add(entry.delta());
+            LedgerPostingEntry persistedEntry =
+                    new LedgerPostingEntry(
+                            entry.entryId(),
+                            entry.accountId(),
+                            entry.currency(),
+                            entry.delta(),
+                            balanceAfter,
+                            entry.direction(),
+                            entry.refType(),
+                            entry.refId(),
+                            entry.idempotencyKey(),
+                            entry.traceId(),
+                            entry.ts());
             ledgerPostingRepository.insertEntry(persistedEntry);
             ledgerPostingRepository.insertLedgerEvent(
                     persistedEntry.entryId(),
                     "POSTED",
-                    toJson(detail("entry_id", persistedEntry.entryId(), "delta", persistedEntry.delta())),
-                    persistedEntry.traceId()
-            );
+                    toJson(
+                            detail(
+                                    "entry_id",
+                                    persistedEntry.entryId(),
+                                    "delta",
+                                    persistedEntry.delta())),
+                    persistedEntry.traceId());
         }
 
         PositionProjection positionProjection = updatePositionProjection(request);
@@ -144,8 +159,12 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
                 TopicNames.LEDGER_EVENT_V1,
                 request.tradeId(),
                 request.traceId(),
-                new LedgerPosted(request.tradeId(), request.accountId(), "POSTED", "BALANCE_CHECK_PASS", Instant.now(clock))
-        );
+                new LedgerPosted(
+                        request.tradeId(),
+                        request.accountId(),
+                        "POSTED",
+                        "BALANCE_CHECK_PASS",
+                        Instant.now(clock)));
         publishEvent(
                 TopicNames.POSITION_EVENT_V1,
                 request.orderId(),
@@ -157,16 +176,13 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
                         positionProjection.availableQty(),
                         positionProjection.avgPrice(),
                         "TRADE",
-                        Instant.now(clock)
-                )
-        );
+                        Instant.now(clock)));
         ledgerRiskAuditRepository.appendAudit(
                 "LEDGER",
                 "LEDGER_POSTED",
                 request.tradeId(),
                 request.traceId(),
-                detail("trade_id", request.tradeId(), "entry_count", entries.size())
-        );
+                detail("trade_id", request.tradeId(), "entry_count", entries.size()));
         return new LedgerPostingResult(true, false, "POSTED");
     }
 
@@ -180,47 +196,52 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
      * @return true 表示平衡
      */
     boolean isBalanced(List<LedgerPostingEntry> entries) {
-        BigDecimal sum = entries.stream().map(LedgerPostingEntry::delta).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal sum =
+                entries.stream()
+                        .map(LedgerPostingEntry::delta)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
         return sum.compareTo(BigDecimal.ZERO) == 0;
     }
 
     private LedgerPostingResult handleImbalance(
-            TradeLedgerRequest request,
-            List<LedgerPostingEntry> entries,
-            String reason
-    ) {
+            TradeLedgerRequest request, List<LedgerPostingEntry> entries, String reason) {
         ledgerRiskAuditRepository.appendRiskEvent(
-                "LEDGER",
-                request.tradeId(),
-                "REJECT",
-                reason,
-                "HIGH",
-                request.traceId()
-        );
+                "LEDGER", request.tradeId(), "REJECT", reason, "HIGH", request.traceId());
         ledgerRiskAuditRepository.appendAudit(
                 "LEDGER",
                 "LEDGER_POST_FAILED",
                 request.tradeId(),
                 request.traceId(),
-                detail("trade_id", request.tradeId(), "reason", reason, "entry_count", entries.size())
-        );
+                detail(
+                        "trade_id",
+                        request.tradeId(),
+                        "reason",
+                        reason,
+                        "entry_count",
+                        entries.size()));
         publishEvent(
                 TopicNames.LEDGER_EVENT_V1,
                 request.tradeId(),
                 request.traceId(),
-                new LedgerPostFailed(request.tradeId(), request.accountId(), "FAILED", reason, Instant.now(clock))
-        );
+                new LedgerPostFailed(
+                        request.tradeId(),
+                        request.accountId(),
+                        "FAILED",
+                        reason,
+                        Instant.now(clock)));
         publishEvent(
                 TopicNames.RISK_EVENT_V1,
                 request.tradeId(),
                 request.traceId(),
-                new RiskEventRaised("LEDGER", request.tradeId(), "REJECT", reason, "HIGH", Instant.now(clock))
-        );
+                new RiskEventRaised(
+                        "LEDGER", request.tradeId(), "REJECT", reason, "HIGH", Instant.now(clock)));
         return new LedgerPostingResult(false, false, reason);
     }
 
     private List<LedgerPostingEntry> buildEntries(TradeLedgerRequest request) {
-        BigDecimal amount = NumericPolicy.normalize(NumericType.AMOUNT, request.price().multiply(request.qty()));
+        BigDecimal amount =
+                NumericPolicy.normalize(
+                        NumericType.AMOUNT, request.price().multiply(request.qty()));
         String currency = resolveQuoteCurrency(request.symbol());
         BigDecimal leftDelta = request.side() == OrderSide.BUY ? amount.negate() : amount;
         BigDecimal rightDelta = leftDelta.negate();
@@ -228,23 +249,24 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
         List<LedgerPostingEntry> entries = new ArrayList<>();
         entries.add(createEntry(request, currency, leftDelta, "1", ts));
         entries.add(createEntry(request, currency, rightDelta, "2", ts));
-        if (request.fee() != null && request.fee().compareTo(BigDecimal.ZERO) > 0) {
-            // Why: 交易所适配契约接入真实交易所后，fee 已经是稳定事实，不能再沿用订单状态契约的“故意不平衡”占位逻辑。
-            // 这里先用成对分录保证账本平衡与幂等，后续再按真实会计科目细化。
-            entries.add(createEntry(
-                    request,
-                    request.feeCurrency() == null ? currency : request.feeCurrency(),
-                    NumericPolicy.normalize(NumericType.FEE, request.fee()).negate(),
-                    "FEE_1",
-                    ts
-            ));
-            entries.add(createEntry(
-                    request,
-                    request.feeCurrency() == null ? currency : request.feeCurrency(),
-                    NumericPolicy.normalize(NumericType.FEE, request.fee()),
-                    "FEE_2",
-                    ts
-            ));
+        BigDecimal fee = signedFee(request);
+        if (fee.signum() != 0) {
+            // FEE_1始终属于账户、FEE_2为对手分录；收费为借方，返佣反向入账，幂等身份不变。
+            // 先按正式八位精度归一化，零费用不额外造分录；不得取绝对值或换币种掩盖返佣。
+            entries.add(
+                    createEntry(
+                            request,
+                            request.feeCurrency() == null ? currency : request.feeCurrency(),
+                            fee.negate(),
+                            "FEE_1",
+                            ts));
+            entries.add(
+                    createEntry(
+                            request,
+                            request.feeCurrency() == null ? currency : request.feeCurrency(),
+                            fee,
+                            "FEE_2",
+                            ts));
         }
         return entries;
     }
@@ -254,52 +276,54 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
             String currency,
             BigDecimal delta,
             String suffix,
-            Instant ts
-    ) {
+            Instant ts) {
         return new LedgerPostingEntry(
                 "le-" + UUID.randomUUID(),
                 request.accountId(),
                 currency,
                 delta,
                 BigDecimal.ZERO,
-                delta.compareTo(BigDecimal.ZERO) >= 0 ? LedgerDirection.CREDIT : LedgerDirection.DEBIT,
+                delta.compareTo(BigDecimal.ZERO) >= 0
+                        ? LedgerDirection.CREDIT
+                        : LedgerDirection.DEBIT,
                 "TRADE",
                 request.tradeId(),
                 request.tradeId() + ":LEDGER:" + suffix,
                 request.traceId(),
-                ts
-        );
+                ts);
     }
 
     private PositionProjection updatePositionProjection(TradeLedgerRequest request) {
-        PositionProjection current = ledgerPostingRepository.findPosition(request.accountId(), request.symbol())
-                .orElse(new PositionProjection(
-                        request.accountId(),
-                        request.symbol(),
-                        BigDecimal.ZERO,
-                        BigDecimal.ZERO,
-                        BigDecimal.ZERO,
-                        request.traceId()
-                ));
-        BigDecimal qtyChange = request.side() == OrderSide.BUY ? request.qty() : request.qty().negate();
+        PositionProjection current =
+                ledgerPostingRepository
+                        .findPosition(request.accountId(), request.symbol())
+                        .orElse(
+                                new PositionProjection(
+                                        request.accountId(),
+                                        request.symbol(),
+                                        BigDecimal.ZERO,
+                                        BigDecimal.ZERO,
+                                        BigDecimal.ZERO,
+                                        request.traceId()));
+        BigDecimal qtyChange =
+                request.side() == OrderSide.BUY ? request.qty() : request.qty().negate();
         String baseCurrency = resolveBaseCurrency(request.symbol());
-        if (request.fee() != null
-                && request.fee().compareTo(BigDecimal.ZERO) > 0
+        if (signedFee(request).signum() != 0
                 && request.feeCurrency() != null
                 && request.feeCurrency().equalsIgnoreCase(baseCurrency)) {
-            // Why: 若手续费以 base 资产收取，实际持仓应扣减 fee，避免 positions 高估。
-            qtyChange = qtyChange.subtract(request.fee());
+            // base币种收费减持仓、返佣加持仓；与分录使用同一舍入值，避免精度差造成资产不守恒。
+            qtyChange = qtyChange.subtract(signedFee(request));
         }
         BigDecimal nextQty = NumericPolicy.normalize(NumericType.QTY, current.qty().add(qtyChange));
         BigDecimal nextAvgPrice = calculateNextAvgPrice(current, request, nextQty);
-        PositionProjection projection = new PositionProjection(
-                request.accountId(),
-                request.symbol(),
-                nextQty,
-                nextQty,
-                nextAvgPrice,
-                request.traceId()
-        );
+        PositionProjection projection =
+                new PositionProjection(
+                        request.accountId(),
+                        request.symbol(),
+                        nextQty,
+                        nextQty,
+                        nextAvgPrice,
+                        request.traceId());
         ledgerPostingRepository.upsertPosition(projection, Instant.now(clock));
         return projection;
     }
@@ -324,13 +348,28 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
             var position = ledgerPostingRepository.findAssetPosition(request.accountId(), currency);
             if (position.isPresent()) {
                 PositionProjection asset = position.orElseThrow();
-                snapshots.put(currency, new AccountSnapshotProjection(request.accountId(), currency,
-                        NumericPolicy.normalize(NumericType.QTY, asset.qty()),
-                        NumericPolicy.normalize(NumericType.QTY, asset.availableQty()),
-                        NumericPolicy.normalize(NumericType.QTY, asset.qty().subtract(asset.availableQty())),
-                        snapshotTs, request.traceId(), request.tradeEnv(), AccountBalanceBasis.POSITION_PROJECTION));
+                snapshots.put(
+                        currency,
+                        new AccountSnapshotProjection(
+                                request.accountId(),
+                                currency,
+                                NumericPolicy.normalize(NumericType.QTY, asset.qty()),
+                                NumericPolicy.normalize(NumericType.QTY, asset.availableQty()),
+                                NumericPolicy.normalize(
+                                        NumericType.QTY,
+                                        asset.qty().subtract(asset.availableQty())),
+                                snapshotTs,
+                                request.traceId(),
+                                request.tradeEnv(),
+                                AccountBalanceBasis.POSITION_PROJECTION));
             } else {
-                appendLedgerBackedSnapshot(snapshots, request.accountId(), currency, snapshotTs, request.traceId(), request.tradeEnv());
+                appendLedgerBackedSnapshot(
+                        snapshots,
+                        request.accountId(),
+                        currency,
+                        snapshotTs,
+                        request.traceId(),
+                        request.tradeEnv());
             }
         }
 
@@ -345,15 +384,14 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
             String currency,
             Instant snapshotTs,
             String traceId,
-            String tradeEnv
-    ) {
+            String tradeEnv) {
         if (currency == null || currency.isBlank() || snapshots.containsKey(currency)) {
             return;
         }
-        BigDecimal balance = NumericPolicy.normalize(
-                NumericType.AMOUNT,
-                ledgerPostingRepository.currentBalance(accountId, currency, tradeEnv)
-        );
+        BigDecimal balance =
+                NumericPolicy.normalize(
+                        NumericType.AMOUNT,
+                        ledgerPostingRepository.currentBalance(accountId, currency, tradeEnv));
         snapshots.put(
                 currency,
                 new AccountSnapshotProjection(
@@ -365,12 +403,11 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
                         snapshotTs,
                         traceId,
                         tradeEnv,
-                        AccountBalanceBasis.LEDGER_CASH_PROJECTION
-                )
-        );
+                        AccountBalanceBasis.LEDGER_CASH_PROJECTION));
     }
 
-    private BigDecimal calculateNextAvgPrice(PositionProjection current, TradeLedgerRequest request, BigDecimal nextQty) {
+    private BigDecimal calculateNextAvgPrice(
+            PositionProjection current, TradeLedgerRequest request, BigDecimal nextQty) {
         if (request.side() == OrderSide.SELL) {
             if (nextQty.compareTo(BigDecimal.ZERO) <= 0) {
                 return BigDecimal.ZERO.setScale(8);
@@ -379,23 +416,33 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
         }
         BigDecimal currentQty = current.qty();
         if (currentQty.compareTo(BigDecimal.ZERO) <= 0) {
-            return NumericPolicy.normalize(NumericType.PRICE, request.price());
+            // 首次买入也必须按扣费或返佣后的实际base数量分摊本金，否则返佣会虚增持仓成本。
+            if (nextQty.signum() <= 0) return BigDecimal.ZERO.setScale(8);
+            return NumericPolicy.normalize(
+                    NumericType.PRICE,
+                    request.price()
+                            .multiply(request.qty())
+                            .divide(nextQty, 8, RoundingMode.HALF_UP));
         }
-        BigDecimal weightedAmount = current.avgPrice().multiply(currentQty).add(request.price().multiply(request.qty()));
-        return NumericPolicy.normalize(NumericType.PRICE, weightedAmount.divide(nextQty, 8, RoundingMode.HALF_UP));
+        BigDecimal weightedAmount =
+                current.avgPrice()
+                        .multiply(currentQty)
+                        .add(request.price().multiply(request.qty()));
+        return NumericPolicy.normalize(
+                NumericType.PRICE, weightedAmount.divide(nextQty, 8, RoundingMode.HALF_UP));
     }
 
     private void publishEvent(String topic, String key, String traceId, Object payload) {
-        EventEnvelope<Object> envelope = new EventEnvelope<>(
-                "evt-" + UUID.randomUUID(),
-                payload.getClass().getSimpleName(),
-                1,
-                Instant.now(clock),
-                SOURCE,
-                traceId,
-                key,
-                payload
-        );
+        EventEnvelope<Object> envelope =
+                new EventEnvelope<>(
+                        "evt-" + UUID.randomUUID(),
+                        payload.getClass().getSimpleName(),
+                        1,
+                        Instant.now(clock),
+                        SOURCE,
+                        traceId,
+                        key,
+                        payload);
         eventPublisherPort.append(topic, envelope);
     }
 
@@ -455,15 +502,18 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
         if (request.qty() == null || request.qty().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("qty must be positive");
         }
-        if (request.fee() != null && request.fee().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("fee must not be negative");
-        }
         if (request.traceId() == null || request.traceId().isBlank()) {
             throw new IllegalArgumentException("traceId must not be blank");
         }
-        if (request.tradeEnv() == null || !java.util.Set.of("SIM", "LIVE").contains(request.tradeEnv())) {
+        if (request.tradeEnv() == null || !Set.of("SIM", "LIVE").contains(request.tradeEnv())) {
             throw new IllegalArgumentException("trade environment must be explicit");
         }
+    }
+
+    /** null沿用历史无费用语义；收费为正、返佣为负，所有投影与分录共用正式舍入策略。 */
+    private BigDecimal signedFee(TradeLedgerRequest request) {
+        return NumericPolicy.normalize(
+                NumericType.FEE, request.fee() == null ? BigDecimal.ZERO : request.fee());
     }
 
     private Map<String, Object> detail(Object... fields) {

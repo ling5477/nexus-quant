@@ -8,15 +8,15 @@
  * 2) 图表与 UI 不允许出现两套割裂配色：图表系列色必须从 `nqColor` 取值。
  */
 export const nqColor = {
-    bgPage: '#040d17',
-    bgPanel: '#071827',
+    bgPage: '#050f1b',
+    bgPanel: '#081a2a',
     bgElevated: '#0d2134',
-    bgSunken: '#05121f',
+    bgSunken: '#061727',
     bgHover: '#102b42',
     bgSelected: 'rgba(8, 120, 250, 0.18)',
 
     border: '#254863',
-    borderSubtle: '#173247',
+    borderSubtle: '#19354c',
 
     text: '#edf4fc',
     textSecondary: '#a6bfd7',

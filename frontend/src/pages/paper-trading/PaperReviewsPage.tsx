@@ -1,6 +1,6 @@
-import {PaperAnalysisBoundary} from './components/PaperAnalysisBoundary';
+import {PaperAnalysisWorkspace} from './components/PaperAnalysisWorkspace';
 
-/** 复盘依赖旧诊断与评估，来源未分离前不能生成整改建议或评级。 */
+/** 按明确来源保留独立SIM与历史Paper业务，避免混合账户和事实口径。 */
 export function PaperReviewsPage() {
-    return <PaperAnalysisBoundary kind="reviews"/>;
+    return <PaperAnalysisWorkspace kind="reviews" />;
 }

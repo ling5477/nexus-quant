@@ -2,6 +2,7 @@ import {defineConfig, devices} from 'playwright/test';
 
 const baseURL = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:51888';
 const useExternalDevServer = process.env.E2E_EXTERNAL_DEV_SERVER === 'true';
+const browserChannel = process.env.E2E_BROWSER_CHANNEL;
 
 /**
  * Playwright 只负责启动前端并验证关键导航。
@@ -18,9 +19,10 @@ export default defineConfig({
     // 串行 worker 更符合当前项目的“关键链路可重复验收”目标。
     workers: 1,
     retries: 0,
-    reporter: process.env.NQ_CRITICAL_E2E_REQUIRED === 'true'
-        ? [['line'], ['./tests/e2e/no-skip-reporter.mjs']]
-        : [['line']],
+    reporter:
+        process.env.NQ_CRITICAL_E2E_REQUIRED === 'true'
+            ? [['line'], ['./tests/e2e/no-skip-reporter.mjs']]
+            : [['line']],
     use: {
         baseURL,
         actionTimeout: 30_000,
@@ -30,15 +32,18 @@ export default defineConfig({
     webServer: useExternalDevServer
         ? undefined
         : {
-            command: 'node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 51888',
-            url: baseURL,
-            reuseExistingServer: true,
-            timeout: 120000,
-        },
+              command: 'node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 51888',
+              url: baseURL,
+              reuseExistingServer: true,
+              timeout: 120000,
+          },
     projects: [
         {
             name: 'chromium',
-            use: {...devices['Desktop Chrome']},
+            use: {
+                ...devices['Desktop Chrome'],
+                ...(browserChannel ? {channel: browserChannel} : {}),
+            },
         },
     ],
 });

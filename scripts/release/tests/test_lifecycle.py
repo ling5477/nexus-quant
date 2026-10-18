@@ -1,5 +1,7 @@
 """PowerShell 正式函数的 AST 隔离测试；不代表 Windows 安装资格证据。"""
 import os
+import json
+import uuid
 from pathlib import Path
 import shutil
 import socket
@@ -365,6 +367,86 @@ foreach($case in @(
                 self.assertNotEqual(0, result.returncode, result.stderr[-1200:])
                 self.assertIn('Unsafe installation', result.stderr)
                 self.assertNotIn('Split-Path', result.stderr)
+
+
+    def test_canonical_handoff_original_check_and_installation_binding(self):
+        """正式PS函数隔离验证；未调用Docker或真正安装，不能作为Windows更新资格。"""
+        from test_installer import metadata
+        target=metadata(self.manifest)
+        request={'format':'NQ_UPDATE_HANDOFF_V1','action':'CHECK','requestId':str(uuid.uuid4()),
+            'checkRequestId':'NONE','checkReceiptSha256':'NONE','installationId':'UNCONFIRMED',
+            'environmentId':'nexusquant','sourceVersion':'0.9.0','sourceManifestSha256':'c'*64,
+            'sourceCommit':'a'*40,'targetVersion':target['VERSION'],
+            'targetManifestSha256':digest(self.manifest),'targetArtifactSha256':target['ARCHIVE_SHA256'],
+            'targetArchitecture':'amd64','targetSourceCommit':target['SOURCE_SHA']}
+        path=self.root/'check.json';path.write_text(json.dumps(request,indent=2)+'\n','utf8',newline='\n')
+        self.evaluate('''$InstallRoot=$env:NQ_PS_PACKAGE
+$Action='check-update'; $UpdateRequestFile=$env:NQ_PS_HANDOFF; $TrustedManifestSha256=$env:NQ_PS_TRUST
+$script:FixtureConfig=@{PROJECT_NAME='nexusquant';NQ_VERSION='0.9.0';PACKAGE_MANIFEST_SHA256=('c'*64);SOURCE_SHA=('a'*40)}
+function Read-Config { return $script:FixtureConfig }
+[void][IO.Directory]::CreateDirectory((Join-Path $InstallRoot 'runtime'))
+Begin-Handoff $script:FixtureConfig
+Assert-HandoffTarget (Read-Package $env:NQ_PS_PACKAGE $env:NQ_PS_TRUST 'amd64')
+$script:Handoff.Available='true'; Write-HandoffReceipt 'CHECKED' 'UPDATE_ELIGIBLE' 'NOT_CHECKED'
+$receiptPath=Join-Path $script:Handoff.Directory 'receipt.json'; $check=Read-Handoff $receiptPath -Receipt
+if($check.status -cne 'CHECKED' -or $check.installationId -ceq 'UNCONFIRMED'){throw 'Original check identity missing'}
+$prior=File-Hash $receiptPath; $rejected=$false
+try { Begin-Handoff $script:FixtureConfig } catch { $rejected=$true }
+if(-not $rejected -or (File-Hash $receiptPath) -cne $prior){throw 'Duplicate CHECK overwritten'}
+$update=@{};foreach($key in (Handoff-Fields)){ $update[$key]=$check[$key] }
+$update.action='UPDATE';$update.requestId=[Guid]::NewGuid().ToString();$update.checkRequestId=$check.requestId
+$update.checkReceiptSha256=$prior;$update.installationId=$check.installationId
+$updatePath=Join-Path $InstallRoot 'update.json'; $fields=@(Handoff-Fields)
+$lines=for($i=0;$i -lt $fields.Count;$i++){'  "'+$fields[$i]+'": "'+$update[$fields[$i]]+'"'+$(if($i -lt $fields.Count-1){','}else{''})}
+Write-Text $updatePath ("{`n"+($lines -join "`n")+"`n}`n")
+$UpdateRequestFile=$updatePath;$Action='update';Begin-Handoff $script:FixtureConfig
+$registered=Read-Handoff (Join-Path $script:Handoff.Directory 'receipt.json') -Receipt
+if($registered.status -cne 'UNKNOWN' -or $registered.installationId -cne $check.installationId){throw 'UPDATE correlation changed'}
+$rejected=$false;try{ Begin-Handoff $script:FixtureConfig }catch{$rejected=$true}
+if(-not $rejected){throw 'Unknown UPDATE was re-consumed'}
+$raw=[IO.File]::ReadAllText($updatePath);Write-Text $updatePath ($raw.Replace($check.installationId,[Guid]::NewGuid().ToString()))
+$rejected=$false;try{ Begin-Handoff $script:FixtureConfig }catch{$rejected=$true}
+if(-not $rejected){throw 'Different installation accepted'}
+''',NQ_PS_HANDOFF=str(path))
+
+    def test_handoff_parser_rejects_duplicate_fields_bom_and_reordered_input(self):
+        path=self.root/'bad-handoff.json'
+        for raw in ('{\n  "format": "NQ_UPDATE_HANDOFF_V1",\n  "format": "NQ_UPDATE_HANDOFF_V1"\n}\n',
+                    '\ufeff{\n}\n','{}\n'):
+            path.write_text(raw,'utf8',newline='\n')
+            self.evaluate('Read-Handoff $env:NQ_PS_HANDOFF',success=False,NQ_PS_HANDOFF=str(path))
+
+
+    def test_terminal_handoff_write_failure_preserves_canonical_success_and_unknown_receipt(self):
+        """对正式更新AST注入纯回执IO失败；所有宿主、Docker和DB操作均为隔离替身。"""
+        self.evaluate('''$ast=[Management.Automation.Language.Parser]::ParseFile($env:NQ_PS_SOURCE,[ref]$null,[ref]$null)
+$transactions=@($ast.FindAll({param($n) $n -is [Management.Automation.Language.TryStatementAst] -and $n.Body.Statements.Count -gt 0 -and $n.Body.Statements[0].Extent.Text -eq 'Load-PackageImages $target'},$true))
+if($transactions.Count -ne 1){throw 'Production update transaction identity changed'}
+$script:pending=$false;$script:targetStarted=$false;$script:failures=@();$script:handoff='UNKNOWN';$script:receiptAttempts=0
+$InstallRoot=Join-Path $env:NQ_PS_PACKAGE 'virtual-not-installed';$pendingPath=Join-Path $InstallRoot 'runtime/pending-update';$directory=Join-Path $InstallRoot 'runtime/transactions/virtual'
+$target=@{ResolvedImages=@{BACKEND_IMAGE='b';FRONTEND_IMAGE='f';POSTGRES_IMAGE='p'};Manifest=@{VERSION='1.1.0'}}
+$config=@{SCHEMA_VERSION='30'};$record=@{SCHEMA_AFTER='31';ROLLBACK_RESULT='NOT_REQUIRED'};$id='virtual';$quiesced=$false
+function Load-PackageImages($unused){}
+function Compose($unused){}
+function New-Backup {return (Join-Path $InstallRoot 'backups/virtual')}
+function Validate-Backup($unused){}
+function File-Hash($unused){return ('a'*64)}
+function Save-Phase($unused,$data,$phase){$data.PHASE=$phase}
+function Write-Text($path,$text){if($path -eq $pendingPath){$script:pending=$true}}
+function Install-Assets($unused){}
+function Set-PackageConfig($config,$target){$config.SCHEMA_VERSION='31'}
+function Write-Metadata($path,$data){if($path -like '*failure*'){$script:failures+=$data.RESULT}}
+function Start-Runtime {[CmdletBinding()]param([switch]$ForceRecreate);if($ForceRecreate){$script:targetStarted=$true}}
+function Remove-Item {param($LiteralPath,[switch]$Force);if($LiteralPath -ne $pendingPath){throw 'Unexpected deletion'};$script:pending=$false}
+function Test-Path {param($LiteralPath);if($LiteralPath -ne $pendingPath){throw 'Unexpected file probe'};return $script:pending}
+function Get-Transaction($unused){throw 'Completed update must not enter rollback'}
+function Write-HandoffReceipt($status,$code,$health){$script:receiptAttempts++;if($status -ne 'SUCCEEDED'){throw 'Canonical success was reclassified'};throw 'SIMULATED_HANDOFF_WRITE_FAILURE'}
+. ([scriptblock]::Create($transactions[0].Extent.Text))
+$warnings=@(Publish-HandoffSuccess 3>&1)
+if(-not $script:targetStarted -or $config.SCHEMA_VERSION -cne '31' -or $record.PHASE -cne 'SUCCESS' -or $record.RESULT -cne 'UPDATE_SUCCESS' -or $script:pending){throw 'Canonical success changed after handoff failure'}
+if($script:failures.Count -ne 0 -or $script:receiptAttempts -ne 1 -or $script:handoff -cne 'UNKNOWN'){throw 'Failure receipt overwrote original identity or fact'}
+if(($warnings -join ' ') -notmatch 'handoff receipt unavailable' -or ($warnings -join ' ') -match 'database untouched'){throw 'Handoff evidence limitation missing or misleading'}
+''')
 
 
 if __name__ == '__main__':

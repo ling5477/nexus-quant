@@ -16,7 +16,7 @@ import java.time.Instant;
  * @param side 买卖方向
  * @param price 成交价
  * @param qty 成交量
- * @param fee 手续费
+ * @param fee OKX原费用金额：负数扣费、正数返佣；仅在canonical消费入口反转并舍入一次
  * @param feeCurrency 手续费币种
  * @param ts 成交时间
  */
@@ -29,6 +29,4 @@ public record OkxFillRecord(
         BigDecimal qty,
         BigDecimal fee,
         String feeCurrency,
-        Instant ts
-) {
-}
+        Instant ts) {}

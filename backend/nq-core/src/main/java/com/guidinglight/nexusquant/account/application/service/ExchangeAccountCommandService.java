@@ -1,21 +1,20 @@
 package com.guidinglight.nexusquant.account.application.service;
 
-import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountNotFoundException;
-
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCreateCommand;
 import com.guidinglight.nexusquant.account.application.command.ExchangeAccountUpdateCommand;
+import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountNotFoundException;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 import com.guidinglight.nexusquant.account.domain.port.SimAccountIdentityBridge;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
-
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * ExchangeAccountCommandService 提供账户写侧最小闭环。
@@ -30,18 +29,21 @@ public class ExchangeAccountCommandService {
     private final SimAccountIdentityBridge simIdentityBridge;
     private final Clock clock;
 
-    public ExchangeAccountCommandService(ExchangeAccountRepository exchangeAccountRepository,
+    public ExchangeAccountCommandService(
+            ExchangeAccountRepository exchangeAccountRepository,
             SimAccountIdentityBridge simIdentityBridge) {
         this(exchangeAccountRepository, simIdentityBridge, Clock.systemUTC());
     }
 
-    ExchangeAccountCommandService(ExchangeAccountRepository exchangeAccountRepository,
-            SimAccountIdentityBridge simIdentityBridge, Clock clock) {
-        this.exchangeAccountRepository = Objects.requireNonNull(
-                exchangeAccountRepository,
-                "exchangeAccountRepository must not be null"
-        );
-        this.simIdentityBridge = Objects.requireNonNull(simIdentityBridge, "simIdentityBridge must not be null");
+    ExchangeAccountCommandService(
+            ExchangeAccountRepository exchangeAccountRepository,
+            SimAccountIdentityBridge simIdentityBridge,
+            Clock clock) {
+        this.exchangeAccountRepository =
+                Objects.requireNonNull(
+                        exchangeAccountRepository, "exchangeAccountRepository must not be null");
+        this.simIdentityBridge =
+                Objects.requireNonNull(simIdentityBridge, "simIdentityBridge must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
@@ -50,14 +52,15 @@ public class ExchangeAccountCommandService {
         Instant now = Instant.now(clock);
         ExchangeAccountSummary created;
         try {
-            created = exchangeAccountRepository.create(
-                    requirePositive(ownerUserId, "ownerUserId"),
-                    normalizeText(command.exchangeCode(), "exchangeCode").toUpperCase(Locale.ROOT),
-                    normalizeTradeEnv(command.tradeEnv()),
-                    normalizeText(command.accountAlias(), "accountAlias"),
-                    normalizeNullableText(command.externalAccountRef()),
-                    now
-            );
+            created =
+                    exchangeAccountRepository.create(
+                            requirePositive(ownerUserId, "ownerUserId"),
+                            normalizeText(command.exchangeCode(), "exchangeCode")
+                                    .toUpperCase(Locale.ROOT),
+                            normalizeTradeEnv(command.tradeEnv()),
+                            normalizeText(command.accountAlias(), "accountAlias"),
+                            normalizeNullableText(command.externalAccountRef()),
+                            now);
         } catch (DataIntegrityViolationException ex) {
             throw conflict(ex);
         }
@@ -73,22 +76,24 @@ public class ExchangeAccountCommandService {
     @Transactional
     public ExchangeAccountSummary resolveSimIdentity(Long ownerUserId, Long exchangeAccountId) {
         ExchangeAccountSummary account = requireOwnedAccount(ownerUserId, exchangeAccountId);
-        simIdentityBridge.resolveOrCreateSim(account, TraceIdContext.getOrCreate(), Instant.now(clock));
+        simIdentityBridge.resolveOrCreateSim(
+                account, TraceIdContext.getOrCreate(), Instant.now(clock));
         return requireOwnedAccount(ownerUserId, exchangeAccountId);
     }
 
     @Transactional
-    public ExchangeAccountSummary updateProfile(Long ownerUserId, Long exchangeAccountId, ExchangeAccountUpdateCommand command) {
+    public ExchangeAccountSummary updateProfile(
+            Long ownerUserId, Long exchangeAccountId, ExchangeAccountUpdateCommand command) {
         requireOwnedAccount(ownerUserId, exchangeAccountId);
         Instant now = Instant.now(clock);
         try {
-            boolean updated = exchangeAccountRepository.updateProfile(
-                    ownerUserId,
-                    exchangeAccountId,
-                    normalizeText(command.accountAlias(), "accountAlias"),
-                    normalizeNullableText(command.externalAccountRef()),
-                    now
-            );
+            boolean updated =
+                    exchangeAccountRepository.updateProfile(
+                            ownerUserId,
+                            exchangeAccountId,
+                            normalizeText(command.accountAlias(), "accountAlias"),
+                            normalizeNullableText(command.externalAccountRef()),
+                            now);
             if (!updated) {
                 throw new ExchangeAccountNotFoundException(exchangeAccountId);
             }
@@ -101,7 +106,9 @@ public class ExchangeAccountCommandService {
     @Transactional
     public ExchangeAccountSummary enable(Long ownerUserId, Long exchangeAccountId) {
         requireOwnedAccount(ownerUserId, exchangeAccountId);
-        boolean updated = exchangeAccountRepository.enable(ownerUserId, exchangeAccountId, Instant.now(clock));
+        boolean updated =
+                exchangeAccountRepository.enable(
+                        ownerUserId, exchangeAccountId, Instant.now(clock));
         if (!updated) {
             throw new ExchangeAccountNotFoundException(exchangeAccountId);
         }
@@ -111,7 +118,9 @@ public class ExchangeAccountCommandService {
     @Transactional
     public ExchangeAccountSummary disable(Long ownerUserId, Long exchangeAccountId) {
         requireOwnedAccount(ownerUserId, exchangeAccountId);
-        boolean updated = exchangeAccountRepository.disable(ownerUserId, exchangeAccountId, Instant.now(clock));
+        boolean updated =
+                exchangeAccountRepository.disable(
+                        ownerUserId, exchangeAccountId, Instant.now(clock));
         if (!updated) {
             throw new ExchangeAccountNotFoundException(exchangeAccountId);
         }
@@ -124,12 +133,10 @@ public class ExchangeAccountCommandService {
         if (!"ACTIVE".equalsIgnoreCase(target.status())) {
             throw new IllegalStateException("disabled account cannot be set as default");
         }
-        if (target.isDefault()) {
-            return target;
-        }
         Instant now = Instant.now(clock);
-        exchangeAccountRepository.clearDefaultByScope(ownerUserId, target.exchangeCode(), target.tradeEnv(), now);
-        boolean updated = exchangeAccountRepository.markDefault(ownerUserId, exchangeAccountId, now);
+        boolean updated =
+                exchangeAccountRepository.switchDefaultForOwner(
+                        ownerUserId, exchangeAccountId, now);
         if (!updated) {
             throw new ExchangeAccountNotFoundException(exchangeAccountId);
         }
@@ -137,18 +144,25 @@ public class ExchangeAccountCommandService {
     }
 
     private ExchangeAccountSummary requireOwnedAccount(Long ownerUserId, Long exchangeAccountId) {
-        return exchangeAccountRepository.findByIdForOwner(
-                requirePositive(ownerUserId, "ownerUserId"),
-                requirePositive(exchangeAccountId, "exchangeAccountId")
-        ).orElseThrow(() -> new ExchangeAccountNotFoundException(exchangeAccountId));
+        return exchangeAccountRepository
+                .findByIdForOwner(
+                        requirePositive(ownerUserId, "ownerUserId"),
+                        requirePositive(exchangeAccountId, "exchangeAccountId"))
+                .orElseThrow(() -> new ExchangeAccountNotFoundException(exchangeAccountId));
     }
 
     private IllegalStateException conflict(DataIntegrityViolationException ex) {
-        String message = ex.getMostSpecificCause() == null ? ex.getMessage() : ex.getMostSpecificCause().getMessage();
-        if (message != null && message.contains("uq_exchange_accounts_exchange_env_external_ref_not_null")) {
-            return new IllegalStateException("external account ref already exists for exchange/env");
+        String message =
+                ex.getMostSpecificCause() == null
+                        ? ex.getMessage()
+                        : ex.getMostSpecificCause().getMessage();
+        if (message != null
+                && message.contains("uq_exchange_accounts_exchange_env_external_ref_not_null")) {
+            return new IllegalStateException(
+                    "external account ref already exists for exchange/env");
         }
-        return new IllegalStateException("exchange account alias already exists for owner/exchange/env");
+        return new IllegalStateException(
+                "exchange account alias already exists for owner/exchange/env");
     }
 
     private Long requirePositive(Long value, String fieldName) {

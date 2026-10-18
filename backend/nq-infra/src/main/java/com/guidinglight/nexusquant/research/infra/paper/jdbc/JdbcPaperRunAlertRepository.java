@@ -5,6 +5,14 @@ import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlertSeverity;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlertStatus;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunAlertRepository;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Repository;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -17,19 +25,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Repository;
-
 @Repository
 public class JdbcPaperRunAlertRepository implements PaperRunAlertRepository {
 
     private static final RowMapper<PaperRunAlert> ROW_MAPPER = JdbcPaperRunAlertRepository::mapRow;
-    private static final String BASE_SELECT = """
+    private static final String BASE_SELECT =
+            """
             SELECT alert_id, paper_run_id, alert_type, severity, status, title, message, source,
                    event_snapshot_json::text AS event_snapshot_json, acknowledged_by,
                    acknowledged_at, resolved_at, created_at, updated_at
@@ -44,32 +45,43 @@ public class JdbcPaperRunAlertRepository implements PaperRunAlertRepository {
         this(jdbcTemplate, new NamedParameterJdbcTemplate(jdbcTemplate));
     }
 
-    JdbcPaperRunAlertRepository(JdbcTemplate jdbcTemplate, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+    JdbcPaperRunAlertRepository(
+            JdbcTemplate jdbcTemplate, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
         this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
     }
 
     @Override
     public void insert(PaperRunAlert alert) {
-        jdbcTemplate.update("""
+        jdbcTemplate.update(
+                """
                 INSERT INTO paper_run_alerts (
                     alert_id, paper_run_id, alert_type, severity, status, title, message, source,
                     event_snapshot_json, acknowledged_by, acknowledged_at, resolved_at, created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSONB), ?, ?, ?, ?, ?)
                 """,
-                alert.alertId(), alert.paperRunId(), alert.alertType(),
-                alert.severity().name(), alert.status().name(), alert.title(),
-                alert.message(), alert.source(), alert.eventSnapshotJson(),
-                alert.acknowledgedBy(), toTimestamp(alert.acknowledgedAt()),
-                toTimestamp(alert.resolvedAt()), Timestamp.from(alert.createdAt()),
+                alert.alertId(),
+                alert.paperRunId(),
+                alert.alertType(),
+                alert.severity().name(),
+                alert.status().name(),
+                alert.title(),
+                alert.message(),
+                alert.source(),
+                alert.eventSnapshotJson(),
+                alert.acknowledgedBy(),
+                toTimestamp(alert.acknowledgedAt()),
+                toTimestamp(alert.resolvedAt()),
+                Timestamp.from(alert.createdAt()),
                 Timestamp.from(alert.updatedAt()));
     }
 
     @Override
     public Optional<PaperRunAlert> findById(String alertId) {
         try {
-            return Optional.ofNullable(jdbcTemplate.queryForObject(
-                    BASE_SELECT + " WHERE alert_id = ?", ROW_MAPPER, alertId));
+            return Optional.ofNullable(
+                    jdbcTemplate.queryForObject(
+                            BASE_SELECT + " WHERE alert_id = ?", ROW_MAPPER, alertId));
         } catch (EmptyResultDataAccessException ex) {
             return Optional.empty();
         }
@@ -93,41 +105,78 @@ public class JdbcPaperRunAlertRepository implements PaperRunAlertRepository {
     }
 
     @Override
-    public boolean updateStatus(String alertId, PaperRunAlertStatus status, String acknowledgedBy, Instant acknowledgedAt, Instant resolvedAt, Instant updatedAt) {
-        int updated = jdbcTemplate.update("""
+    public boolean updateStatus(
+            String alertId,
+            PaperRunAlertStatus status,
+            String acknowledgedBy,
+            Instant acknowledgedAt,
+            Instant resolvedAt,
+            Instant updatedAt) {
+        int updated =
+                jdbcTemplate.update(
+                        """
                 UPDATE paper_run_alerts SET status = ?, acknowledged_by = COALESCE(?, acknowledged_by),
                     acknowledged_at = COALESCE(?, acknowledged_at), resolved_at = COALESCE(?, resolved_at),
                     updated_at = ?
-                WHERE alert_id = ?
-                """, status.name(), acknowledgedBy, toTimestamp(acknowledgedAt),
-                toTimestamp(resolvedAt), Timestamp.from(updatedAt), alertId);
+                WHERE alert_id = ? AND (
+                    (?='ACKED' AND status='OPEN')
+                    OR (?='RESOLVED' AND status IN ('OPEN','ACKED')))
+                """,
+                        status.name(),
+                        acknowledgedBy,
+                        toTimestamp(acknowledgedAt),
+                        toTimestamp(resolvedAt),
+                        Timestamp.from(updatedAt),
+                        alertId,
+                        status.name(),
+                        status.name());
         return updated > 0;
     }
 
     @Override
     public int countByRunIdAndDateRange(String paperRunId, Instant start, Instant end) {
-        Integer count = jdbcTemplate.queryForObject("""
+        Integer count =
+                jdbcTemplate.queryForObject(
+                        """
                 SELECT COUNT(*) FROM paper_run_alerts WHERE paper_run_id = ? AND created_at >= ? AND created_at < ?
-                """, Integer.class, paperRunId, Timestamp.from(start), Timestamp.from(end));
+                """,
+                        Integer.class,
+                        paperRunId,
+                        Timestamp.from(start),
+                        Timestamp.from(end));
         return count != null ? count : 0;
     }
 
     @Override
     public int countCriticalOpenByRunIdAndDateRange(String paperRunId, Instant start, Instant end) {
-        Integer count = jdbcTemplate.queryForObject("""
+        Integer count =
+                jdbcTemplate.queryForObject(
+                        """
                 SELECT COUNT(*) FROM paper_run_alerts
                 WHERE paper_run_id = ? AND severity = 'CRITICAL' AND status = 'OPEN'
                     AND created_at >= ? AND created_at < ?
-                """, Integer.class, paperRunId, Timestamp.from(start), Timestamp.from(end));
+                """,
+                        Integer.class,
+                        paperRunId,
+                        Timestamp.from(start),
+                        Timestamp.from(end));
         return count != null ? count : 0;
     }
 
     @Override
-    public int countByRunIdAndTypeAndDateRange(String paperRunId, String alertType, Instant start, Instant end) {
-        Integer count = jdbcTemplate.queryForObject("""
+    public int countByRunIdAndTypeAndDateRange(
+            String paperRunId, String alertType, Instant start, Instant end) {
+        Integer count =
+                jdbcTemplate.queryForObject(
+                        """
                 SELECT COUNT(*) FROM paper_run_alerts
                 WHERE paper_run_id = ? AND alert_type = ? AND created_at >= ? AND created_at < ?
-                """, Integer.class, paperRunId, alertType, Timestamp.from(start), Timestamp.from(end));
+                """,
+                        Integer.class,
+                        paperRunId,
+                        alertType,
+                        Timestamp.from(start),
+                        Timestamp.from(end));
         return count != null ? count : 0;
     }
 
@@ -138,14 +187,19 @@ public class JdbcPaperRunAlertRepository implements PaperRunAlertRepository {
         }
         // 去重后以命名参数绑定 IN 列表（参数化，杜绝 SQL 拼接注入）；单次 GROUP BY 聚合 OPEN 计数，
         // 只回传计数而非完整告警行，无 OPEN 告警的 run 不出现在结果中（调用方缺省 0）。
-        MapSqlParameterSource params = new MapSqlParameterSource(
-                "runIds", new ArrayList<>(new LinkedHashSet<>(runIds)));
-        List<Map.Entry<String, Long>> rows = namedParameterJdbcTemplate.query("""
+        MapSqlParameterSource params =
+                new MapSqlParameterSource("runIds", new ArrayList<>(new LinkedHashSet<>(runIds)));
+        List<Map.Entry<String, Long>> rows =
+                namedParameterJdbcTemplate.query(
+                        """
                 SELECT paper_run_id, COUNT(*) AS open_count
                 FROM paper_run_alerts
                 WHERE paper_run_id IN (:runIds) AND status = 'OPEN'
                 GROUP BY paper_run_id
-                """, params, (rs, rowNum) -> Map.entry(rs.getString("paper_run_id"), rs.getLong("open_count")));
+                """,
+                        params,
+                        (rs, rowNum) ->
+                                Map.entry(rs.getString("paper_run_id"), rs.getLong("open_count")));
         return rows.stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
@@ -153,12 +207,16 @@ public class JdbcPaperRunAlertRepository implements PaperRunAlertRepository {
         Timestamp acknowledgedAt = rs.getTimestamp("acknowledged_at");
         Timestamp resolvedAt = rs.getTimestamp("resolved_at");
         return new PaperRunAlert(
-                rs.getString("alert_id"), rs.getString("paper_run_id"),
+                rs.getString("alert_id"),
+                rs.getString("paper_run_id"),
                 rs.getString("alert_type"),
                 PaperRunAlertSeverity.valueOf(rs.getString("severity")),
                 PaperRunAlertStatus.valueOf(rs.getString("status")),
-                rs.getString("title"), rs.getString("message"), rs.getString("source"),
-                rs.getString("event_snapshot_json"), rs.getString("acknowledged_by"),
+                rs.getString("title"),
+                rs.getString("message"),
+                rs.getString("source"),
+                rs.getString("event_snapshot_json"),
+                rs.getString("acknowledged_by"),
                 acknowledgedAt == null ? null : acknowledgedAt.toInstant(),
                 resolvedAt == null ? null : resolvedAt.toInstant(),
                 rs.getTimestamp("created_at").toInstant(),

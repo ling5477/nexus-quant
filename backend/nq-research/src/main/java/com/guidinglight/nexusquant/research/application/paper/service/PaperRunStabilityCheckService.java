@@ -1,16 +1,18 @@
 package com.guidinglight.nexusquant.research.application.paper.service;
 
 import com.guidinglight.nexusquant.research.application.paper.command.PaperRunStabilityCheckGenerateCommand;
-
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunScheduleFireStatus;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunStabilityCheck;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunStabilityCheckStatus;
-import com.guidinglight.nexusquant.research.domain.paper.PaperRunScheduleFireStatus;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunAlertRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunDailyReportRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunHeartbeatRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunRecoveryEventRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunScheduleFireRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperRunStabilityCheckRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -20,9 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
+/** 稳定性子记录按实际父运行隔离，HTTP父路径与记录归属不一致时拒绝详情读取。 */
 @Service
 public class PaperRunStabilityCheckService {
 
@@ -43,10 +43,16 @@ public class PaperRunStabilityCheckService {
             PaperRunAlertRepository alertRepository,
             PaperRunScheduleFireRepository scheduleFireRepository,
             PaperRunRecoveryEventRepository recoveryEventRepository,
-            PaperRunDailyReportRepository dailyReportRepository
-    ) {
-        this(runService, stabilityCheckRepository, heartbeatRepository, alertRepository,
-                scheduleFireRepository, recoveryEventRepository, dailyReportRepository, Clock.systemUTC());
+            PaperRunDailyReportRepository dailyReportRepository) {
+        this(
+                runService,
+                stabilityCheckRepository,
+                heartbeatRepository,
+                alertRepository,
+                scheduleFireRepository,
+                recoveryEventRepository,
+                dailyReportRepository,
+                Clock.systemUTC());
     }
 
     public PaperRunStabilityCheckService(
@@ -57,8 +63,7 @@ public class PaperRunStabilityCheckService {
             PaperRunScheduleFireRepository scheduleFireRepository,
             PaperRunRecoveryEventRepository recoveryEventRepository,
             PaperRunDailyReportRepository dailyReportRepository,
-            Clock clock
-    ) {
+            Clock clock) {
         this.runService = Objects.requireNonNull(runService);
         this.stabilityCheckRepository = Objects.requireNonNull(stabilityCheckRepository);
         this.heartbeatRepository = Objects.requireNonNull(heartbeatRepository);
@@ -75,18 +80,25 @@ public class PaperRunStabilityCheckService {
             throw new IllegalArgumentException("checkWindowStart and checkWindowEnd are required");
         }
         if (!command.checkWindowEnd().isAfter(command.checkWindowStart())) {
-            throw new IllegalArgumentException("invalid stability window: checkWindowEnd must be after checkWindowStart");
+            throw new IllegalArgumentException(
+                    "invalid stability window: checkWindowEnd must be after checkWindowStart");
         }
 
         Instant start = command.checkWindowStart();
         Instant end = command.checkWindowEnd();
-        int heartbeatCount = heartbeatRepository.countByRunIdAndDateRange(command.paperRunId(), start, end);
+        int heartbeatCount =
+                heartbeatRepository.countByRunIdAndDateRange(command.paperRunId(), start, end);
         int alertCount = alertRepository.countByRunIdAndDateRange(command.paperRunId(), start, end);
-        int criticalOpenCount = alertRepository.countCriticalOpenByRunIdAndDateRange(command.paperRunId(), start, end);
-        int failedFireCount = scheduleFireRepository.countByRunIdAndStatusAndDateRange(
-                command.paperRunId(), PaperRunScheduleFireStatus.FAILED.name(), start, end);
-        int recoveryCount = recoveryEventRepository.countByRunIdAndDateRange(command.paperRunId(), start, end);
-        int reportCount = dailyReportRepository.countByRunIdAndDateRange(command.paperRunId(), start, end);
+        int criticalOpenCount =
+                alertRepository.countCriticalOpenByRunIdAndDateRange(
+                        command.paperRunId(), start, end);
+        int failedFireCount =
+                scheduleFireRepository.countByRunIdAndStatusAndDateRange(
+                        command.paperRunId(), PaperRunScheduleFireStatus.FAILED.name(), start, end);
+        int recoveryCount =
+                recoveryEventRepository.countByRunIdAndDateRange(command.paperRunId(), start, end);
+        int reportCount =
+                dailyReportRepository.countByRunIdAndDateRange(command.paperRunId(), start, end);
 
         PaperRunStabilityCheckStatus status;
         BigDecimal uptimeRatio;
@@ -94,7 +106,10 @@ public class PaperRunStabilityCheckService {
         if (heartbeatCount <= 0 || criticalOpenCount > 0 || failedFireCount > 0) {
             status = PaperRunStabilityCheckStatus.FAILED;
             uptimeRatio = heartbeatCount > 0 ? BigDecimal.valueOf(0.5) : BigDecimal.ZERO;
-            judgement = "FAILED: " + buildJudgementReason(heartbeatCount, criticalOpenCount, failedFireCount);
+            judgement =
+                    "FAILED: "
+                            + buildJudgementReason(
+                                    heartbeatCount, criticalOpenCount, failedFireCount);
         } else if (alertCount > 0 || recoveryCount > 0) {
             status = PaperRunStabilityCheckStatus.PARTIAL;
             uptimeRatio = BigDecimal.valueOf(0.9);
@@ -106,34 +121,58 @@ public class PaperRunStabilityCheckService {
         }
         uptimeRatio = uptimeRatio.setScale(4, RoundingMode.HALF_UP);
 
-        String summary = String.format(
-                "{\"version\":\"v1\",\"heartbeatCount\":%d,\"alertCount\":%d,\"criticalOpenAlertCount\":%d,"
-                        + "\"failedFireCount\":%d,\"recoveryCount\":%d,\"reportCount\":%d,\"judgement\":\"%s\"}",
-                heartbeatCount, alertCount, criticalOpenCount, failedFireCount, recoveryCount, reportCount, judgement);
+        String summary =
+                String.format(
+                        "{\"version\":\"v1\",\"heartbeatCount\":%d,\"alertCount\":%d,\"criticalOpenAlertCount\":%d,"
+                                + "\"failedFireCount\":%d,\"recoveryCount\":%d,\"reportCount\":%d,\"judgement\":\"%s\"}",
+                        heartbeatCount,
+                        alertCount,
+                        criticalOpenCount,
+                        failedFireCount,
+                        recoveryCount,
+                        reportCount,
+                        judgement);
 
         Instant now = clock.instant();
-        PaperRunStabilityCheck check = new PaperRunStabilityCheck(
-                "stb-" + UUID.randomUUID(),
-                command.paperRunId(),
-                start,
-                end,
-                status,
-                uptimeRatio,
-                heartbeatCount,
-                alertCount,
-                failedFireCount,
-                recoveryCount,
-                reportCount,
-                summary,
-                now
-        );
+        PaperRunStabilityCheck check =
+                new PaperRunStabilityCheck(
+                        "stb-" + UUID.randomUUID(),
+                        command.paperRunId(),
+                        start,
+                        end,
+                        status,
+                        uptimeRatio,
+                        heartbeatCount,
+                        alertCount,
+                        failedFireCount,
+                        recoveryCount,
+                        reportCount,
+                        summary,
+                        now);
         stabilityCheckRepository.upsert(check);
-        return stabilityCheckRepository.findByRunIdAndWindow(command.paperRunId(), start, end).orElse(check);
+        return stabilityCheckRepository
+                .findByRunIdAndWindow(command.paperRunId(), start, end)
+                .orElse(check);
     }
 
     public PaperRunStabilityCheck getById(String stabilityCheckId) {
-        return stabilityCheckRepository.findById(stabilityCheckId)
-                .orElseThrow(() -> new IllegalArgumentException("stability check not found: " + stabilityCheckId));
+        return getById(null, stabilityCheckId);
+    }
+
+    /** 原按ID合同仍校验实际运行权限，不能因内部调用或错误路径放宽HTTP隔离。 */
+    public PaperRunStabilityCheck getById(String paperRunId, String stabilityCheckId) {
+        PaperRunStabilityCheck check =
+                stabilityCheckRepository
+                        .findById(stabilityCheckId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "stability check not found: " + stabilityCheckId));
+        runService.getById(check.paperRunId());
+        if (paperRunId != null && !paperRunId.equals(check.paperRunId())) {
+            throw new IllegalArgumentException("stability check not found in requested run");
+        }
+        return check;
     }
 
     public List<PaperRunStabilityCheck> list(String paperRunId, String status) {
@@ -148,7 +187,8 @@ public class PaperRunStabilityCheckService {
         return stabilityCheckRepository.listByRunId(paperRunId, status);
     }
 
-    private String buildJudgementReason(int heartbeatCount, int criticalOpenCount, int failedFireCount) {
+    private String buildJudgementReason(
+            int heartbeatCount, int criticalOpenCount, int failedFireCount) {
         StringBuilder sb = new StringBuilder();
         if (heartbeatCount <= 0) {
             sb.append("no heartbeat;");

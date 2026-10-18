@@ -3,6 +3,9 @@ import {useTranslation} from 'react-i18next';
 import {useMemo} from 'react';
 
 import {useEChart} from '@/nq-design-system/charts/useEChart';
+import {echarts} from '@/nq-design-system/charts/echarts-core';
+import {decimalDisplay} from '@/utils/decimal-display';
+import {legacyDecimalAvailable} from '@/features/paper-trading/legacy-portfolio';
 import {formatNqNumber} from '@/components/nq/NqNumericText';
 import {buildNqLineChartBaseOption} from '@/nq-design-system/theme/nqChartTheme';
 import {nqColor} from '@/theme/tokens';
@@ -34,8 +37,17 @@ function toChartNumber(value: string | number | null): number | null {
 
 /** 比例值（如 -0.2353）→ 带符号百分比文案（如 -23.53%）；缺数据显示「数据不足」。 */
 function ratioToPercentText(value: string | number | null): string {
-    const numeric = toChartNumber(value);
-    return numeric === null ? t('chart.insufficient') : `${formatNqNumber(numeric * 100, {precision: 2, signed: true})}%`;
+    return !legacyDecimalAvailable(value)
+        ? t('chart.insufficient')
+        : decimalDisplay(String(value), 2, 2, true) + '%';
+}
+
+/** 鼠标离开只清除临时悬停；不改变样本、时间窗口或任何运行状态。 */
+function hideChartTooltip(element: HTMLDivElement | null) {
+    if (!element) return;
+    const chart = echarts.getInstanceByDom(element);
+    chart?.dispatchAction({type: 'hideTip'});
+    chart?.dispatchAction({type: 'updateAxisPointer', currTrigger: 'leave'});
 }
 
 function sortByTime(points: PaperPortfolioCurvePoint[]): PaperPortfolioCurvePoint[] {
@@ -45,8 +57,11 @@ function sortByTime(points: PaperPortfolioCurvePoint[]): PaperPortfolioCurvePoin
 }
 
 /** axis 触发的 tooltip 中取当前 hover 点（params 为该 x 轴位置的系列点数组）。 */
-function tooltipPoint(params: unknown, sorted: PaperPortfolioCurvePoint[]): PaperPortfolioCurvePoint | null {
-    const list = Array.isArray(params) ? params as Array<{dataIndex: number}> : [];
+function tooltipPoint(
+    params: unknown,
+    sorted: PaperPortfolioCurvePoint[],
+): PaperPortfolioCurvePoint | null {
+    const list = Array.isArray(params) ? (params as Array<{dataIndex: number}>) : [];
     const index = list[0]?.dataIndex ?? -1;
     return sorted[index] ?? null;
 }
@@ -68,6 +83,9 @@ export function NqPortfolioEquityChart({points, height = 260}: PortfolioCurveCha
             ...base,
             tooltip: {
                 ...base.tooltip,
+                enterable: false,
+                hideDelay: 0,
+                confine: true,
                 formatter: (params: unknown) => {
                     const point = tooltipPoint(params, sorted);
                     if (!point) {
@@ -75,11 +93,20 @@ export function NqPortfolioEquityChart({points, height = 260}: PortfolioCurveCha
                     }
                     return [
                         formatDateTime(point.timestamp),
-                        t('chart.equityValue', {value: formatNqNumber(point.totalEquity, {precision: 2})}),
-                        t('chart.initialValue', {value: formatNqNumber(point.totalInitialEquity, {precision: 2})}),
-                        t('chart.pnlValue', {value: formatNqNumber(point.totalPnl, {precision: 2, signed: true})}),
+                        t('chart.equityValue', {
+                            value: formatNqNumber(point.totalEquity, {precision: 2}),
+                        }),
+                        t('chart.initialValue', {
+                            value: formatNqNumber(point.totalInitialEquity, {precision: 2}),
+                        }),
+                        t('chart.pnlValue', {
+                            value: formatNqNumber(point.totalPnl, {precision: 2, signed: true}),
+                        }),
                         t('chart.returnValue', {value: ratioToPercentText(point.totalReturn)}),
-                        t('chart.runCounts', {source: point.sourceRunCount, missing: point.missingRunCount}),
+                        t('chart.runCounts', {
+                            source: point.sourceRunCount,
+                            missing: point.missingRunCount,
+                        }),
                     ].join('<br/>');
                 },
             },
@@ -110,7 +137,16 @@ export function NqPortfolioEquityChart({points, height = 260}: PortfolioCurveCha
     }, [points, i18n.resolvedLanguage]);
 
     const containerRef = useEChart(option);
-    return <div ref={containerRef} className="nq-chart" style={{height}}/>;
+    return (
+        <div
+            role="img"
+            aria-label={t('chart.portfolioEquity')}
+            ref={containerRef}
+            className="nq-chart"
+            style={{height}}
+            onMouseLeave={() => hideChartTooltip(containerRef.current)}
+        />
+    );
 }
 
 /**
@@ -130,6 +166,9 @@ export function NqPortfolioDrawdownChart({points, height = 180}: PortfolioCurveC
             ...base,
             tooltip: {
                 ...base.tooltip,
+                enterable: false,
+                hideDelay: 0,
+                confine: true,
                 formatter: (params: unknown) => {
                     const point = tooltipPoint(params, sorted);
                     if (!point) {
@@ -138,8 +177,12 @@ export function NqPortfolioDrawdownChart({points, height = 180}: PortfolioCurveC
                     return [
                         formatDateTime(point.timestamp),
                         t('chart.drawdownValue', {value: ratioToPercentText(point.drawdown)}),
-                        t('chart.peakValue', {value: formatNqNumber(point.peakEquity, {precision: 2})}),
-                        t('chart.equityValue', {value: formatNqNumber(point.totalEquity, {precision: 2})}),
+                        t('chart.peakValue', {
+                            value: formatNqNumber(point.peakEquity, {precision: 2}),
+                        }),
+                        t('chart.equityValue', {
+                            value: formatNqNumber(point.totalEquity, {precision: 2}),
+                        }),
                     ].join('<br/>');
                 },
             },
@@ -174,5 +217,14 @@ export function NqPortfolioDrawdownChart({points, height = 180}: PortfolioCurveC
     }, [points, i18n.resolvedLanguage]);
 
     const containerRef = useEChart(option);
-    return <div ref={containerRef} className="nq-chart" style={{height}}/>;
+    return (
+        <div
+            role="img"
+            aria-label={t('chart.portfolioDrawdown')}
+            ref={containerRef}
+            className="nq-chart"
+            style={{height}}
+            onMouseLeave={() => hideChartTooltip(containerRef.current)}
+        />
+    );
 }

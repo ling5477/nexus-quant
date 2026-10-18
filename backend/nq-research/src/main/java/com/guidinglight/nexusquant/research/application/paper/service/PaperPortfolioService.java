@@ -1,9 +1,7 @@
 package com.guidinglight.nexusquant.research.application.paper.service;
 
-import com.guidinglight.nexusquant.research.application.paper.model.PaperPortfolioSummary;
-
 import com.guidinglight.nexusquant.research.application.paper.assembler.PaperPortfolioAssembler;
-
+import com.guidinglight.nexusquant.research.application.paper.model.PaperPortfolioSummary;
 import com.guidinglight.nexusquant.research.domain.BacktestPublishRecord;
 import com.guidinglight.nexusquant.research.domain.paper.EquityCurveSnapshot;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRiskCheckResult;
@@ -18,6 +16,8 @@ import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingRunRep
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingTradeRepository;
 import com.guidinglight.nexusquant.research.domain.port.BacktestPublishRecordRepository;
 
+import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,8 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
 
 /**
  * PaperPortfolioService —— Paper 组合看板只读聚合编排。
@@ -68,16 +66,27 @@ public class PaperPortfolioService {
             PaperRunAlertRepository alertRepository,
             PaperTradingOrderRepository orderRepository,
             PaperTradingTradeRepository tradeRepository,
-            BacktestPublishRecordRepository publishRecordRepository
-    ) {
-        this.runRepository = Objects.requireNonNull(runRepository, "runRepository must not be null");
-        this.equityCurveRepository = Objects.requireNonNull(equityCurveRepository, "equityCurveRepository must not be null");
-        this.dailyReportRepository = Objects.requireNonNull(dailyReportRepository, "dailyReportRepository must not be null");
-        this.riskCheckResultRepository = Objects.requireNonNull(riskCheckResultRepository, "riskCheckResultRepository must not be null");
-        this.alertRepository = Objects.requireNonNull(alertRepository, "alertRepository must not be null");
-        this.orderRepository = Objects.requireNonNull(orderRepository, "orderRepository must not be null");
-        this.tradeRepository = Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
-        this.publishRecordRepository = Objects.requireNonNull(publishRecordRepository, "publishRecordRepository must not be null");
+            BacktestPublishRecordRepository publishRecordRepository) {
+        this.runRepository =
+                Objects.requireNonNull(runRepository, "runRepository must not be null");
+        this.equityCurveRepository =
+                Objects.requireNonNull(
+                        equityCurveRepository, "equityCurveRepository must not be null");
+        this.dailyReportRepository =
+                Objects.requireNonNull(
+                        dailyReportRepository, "dailyReportRepository must not be null");
+        this.riskCheckResultRepository =
+                Objects.requireNonNull(
+                        riskCheckResultRepository, "riskCheckResultRepository must not be null");
+        this.alertRepository =
+                Objects.requireNonNull(alertRepository, "alertRepository must not be null");
+        this.orderRepository =
+                Objects.requireNonNull(orderRepository, "orderRepository must not be null");
+        this.tradeRepository =
+                Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
+        this.publishRecordRepository =
+                Objects.requireNonNull(
+                        publishRecordRepository, "publishRecordRepository must not be null");
     }
 
     /**
@@ -97,6 +106,50 @@ public class PaperPortfolioService {
         return PaperPortfolioAssembler.deriveRunRefs(loadRunInputs());
     }
 
+    /** 历史源独立成窗；只使用真实legacy经济表，不能把canonical表未被读取解释成零成交。 */
+    public ScopedRunRefs listLegacyRunRefs(long owner) {
+        var snapshot = readLegacyPortfolio(owner);
+        return new ScopedRunRefs(snapshot.runs(), snapshot.hasMore());
+    }
+
+    /** 同一窗口只读取一次经济输入；组合统计与完整运行引用都由既有装配器派生，不另建资金事实源。 */
+    public LegacyPortfolio readLegacyPortfolio(long owner) {
+        if (owner <= 0) throw new IllegalArgumentException("INVALID_LEGACY_ANALYSIS_OWNER");
+        List<PaperTradingRun> rows =
+                runRepository.listLegacyForAnalysis(owner, MAX_PORTFOLIO_RUNS + 1);
+        if (rows.size() > MAX_PORTFOLIO_RUNS + 1
+                || rows.stream()
+                        .anyMatch(
+                                run ->
+                                        run.canonicalAccountId() != null
+                                                || !"SIM".equals(run.tradeEnv())))
+            throw new IllegalStateException("LEGACY_ANALYSIS_SOURCE_MISMATCH");
+        var window = rows.stream().limit(MAX_PORTFOLIO_RUNS).toList();
+        var inputs = loadRunInputs(window, owner);
+        return new LegacyPortfolio(
+                PaperPortfolioAssembler.assembleWithoutCommonValuationUnit(inputs),
+                PaperPortfolioAssembler.deriveRunRefs(inputs),
+                rows.size() > MAX_PORTFOLIO_RUNS);
+    }
+
+    /** 组合值是历史样本统计，不代表账户可用资金；运行引用保持完整窗口，不能从截断重点清单倒算总数。 */
+    public record LegacyPortfolio(
+            PaperPortfolioSummary portfolio,
+            List<PaperPortfolioSummary.RunRef> runs,
+            boolean hasMore) {
+        public LegacyPortfolio {
+            Objects.requireNonNull(portfolio);
+            runs = List.copyOf(runs);
+        }
+    }
+
+    /** hasMore只声明200条窗口以外仍有可见记录，不把截断总数伪装成全局总数。 */
+    public record ScopedRunRefs(List<PaperPortfolioSummary.RunRef> runs, boolean hasMore) {
+        public ScopedRunRefs {
+            runs = List.copyOf(runs);
+        }
+    }
+
     /**
      * 装配 bounded run 的批量只读事实为 {@link PaperPortfolioAssembler.RunInput} 列表。
      * run 清单一次 list()，publish 来源一次 listAll() 建索引，equity / dailyReport / risk 一次 listByRunIds() 批量取，
@@ -105,26 +158,50 @@ public class PaperPortfolioService {
     private List<PaperPortfolioAssembler.RunInput> loadRunInputs() {
         List<PaperTradingRun> runs = new ArrayList<>(runRepository.list(null, null));
         // 按更新时间倒序截断到上限，保证「最近活跃」优先纳入聚合，并保护查询规模。
-        runs.sort(Comparator.comparing(
-                PaperTradingRun::updatedAt, Comparator.nullsLast(Comparator.reverseOrder())));
+        runs.sort(
+                Comparator.comparing(
+                        PaperTradingRun::updatedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())));
         if (runs.size() > MAX_PORTFOLIO_RUNS) {
             runs = runs.subList(0, MAX_PORTFOLIO_RUNS);
         }
+
+        return loadRunInputs(runs, null);
+    }
+
+    /** 新历史窗口显式传入owner；旧入口沿原读取合同，不改变既有默认接口语义。 */
+    private List<PaperPortfolioAssembler.RunInput> loadRunInputs(
+            List<PaperTradingRun> runs, Long owner) {
 
         // 提取 bounded run 的 runIds，作为各类事实批量读取的统一键集合（空集合时各仓储返回空 Map）。
         List<String> runIds = runs.stream().map(PaperTradingRun::paperRunId).toList();
 
         // 一次 listAll() 建立 publishId -> record 索引，循环内只做内存查找，避免逐 run 查询 publish。
-        Map<String, BacktestPublishRecord> publishById = publishRecordRepository.listAll().stream()
-                .collect(Collectors.toMap(
-                        BacktestPublishRecord::publishRecordId,
-                        Function.identity(),
-                        (left, right) -> left));
+        var publishIds =
+                runs.stream()
+                        .map(PaperTradingRun::publishId)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .toList();
+        var publishes =
+                owner == null
+                        ? publishRecordRepository.listAll()
+                        : publishRecordRepository.listVisibleByIds(owner, publishIds);
+        Map<String, BacktestPublishRecord> publishById =
+                publishes.stream()
+                        .collect(
+                                Collectors.toMap(
+                                        BacktestPublishRecord::publishRecordId,
+                                        Function.identity(),
+                                        (left, right) -> left));
 
         // 各类 run 事实改为单次批量读取，返回 runId -> 事实；run 循环内只做 Map 查找，缺省取空列表 / 0 计数。
-        Map<String, List<EquityCurveSnapshot>> equityByRun = equityCurveRepository.listByRunIds(runIds);
-        Map<String, List<PaperRunDailyReport>> reportsByRun = dailyReportRepository.listByRunIds(runIds);
-        Map<String, List<PaperRiskCheckResult>> riskByRun = riskCheckResultRepository.listByRunIds(runIds);
+        Map<String, List<EquityCurveSnapshot>> equityByRun =
+                equityCurveRepository.listByRunIds(runIds);
+        Map<String, List<PaperRunDailyReport>> reportsByRun =
+                dailyReportRepository.listByRunIds(runIds);
+        Map<String, List<PaperRiskCheckResult>> riskByRun =
+                riskCheckResultRepository.listByRunIds(runIds);
         Map<String, Long> openAlertCountByRun = alertRepository.countOpenByRunIds(runIds);
         Map<String, Long> orderCountByRun = orderRepository.countByRunIds(runIds);
         Map<String, Long> tradeCountByRun = tradeRepository.countByRunIds(runIds);
@@ -135,19 +212,22 @@ public class PaperPortfolioService {
             String publishId = run.publishId();
             BacktestPublishRecord publish = publishId != null ? publishById.get(publishId) : null;
             boolean hasPublishSource = publishId != null && !publishId.isBlank() && publish != null;
-            boolean hasBacktestSource = publish != null
-                    && publish.backtestRunId() != null && !publish.backtestRunId().isBlank();
+            boolean hasBacktestSource =
+                    publish != null
+                            && publish.backtestRunId() != null
+                            && !publish.backtestRunId().isBlank();
 
-            inputs.add(new PaperPortfolioAssembler.RunInput(
-                    run,
-                    equityByRun.getOrDefault(runId, List.of()),
-                    reportsByRun.getOrDefault(runId, List.of()),
-                    riskByRun.getOrDefault(runId, List.of()),
-                    Math.toIntExact(openAlertCountByRun.getOrDefault(runId, 0L)),
-                    Math.toIntExact(orderCountByRun.getOrDefault(runId, 0L)),
-                    Math.toIntExact(tradeCountByRun.getOrDefault(runId, 0L)),
-                    hasPublishSource,
-                    hasBacktestSource));
+            inputs.add(
+                    new PaperPortfolioAssembler.RunInput(
+                            run,
+                            equityByRun.getOrDefault(runId, List.of()),
+                            reportsByRun.getOrDefault(runId, List.of()),
+                            riskByRun.getOrDefault(runId, List.of()),
+                            Math.toIntExact(openAlertCountByRun.getOrDefault(runId, 0L)),
+                            Math.toIntExact(orderCountByRun.getOrDefault(runId, 0L)),
+                            Math.toIntExact(tradeCountByRun.getOrDefault(runId, 0L)),
+                            hasPublishSource,
+                            hasBacktestSource));
         }
 
         return inputs;

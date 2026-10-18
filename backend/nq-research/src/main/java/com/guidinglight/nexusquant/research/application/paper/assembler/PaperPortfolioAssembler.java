@@ -1,8 +1,7 @@
 package com.guidinglight.nexusquant.research.application.paper.assembler;
 
-import com.guidinglight.nexusquant.research.application.paper.service.PaperPortfolioService;
 import com.guidinglight.nexusquant.research.application.paper.model.PaperPortfolioSummary;
-
+import com.guidinglight.nexusquant.research.application.paper.service.PaperPortfolioService;
 import com.guidinglight.nexusquant.research.domain.paper.EquityCurveSnapshot;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRiskCheckResult;
 import com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport;
@@ -40,8 +39,7 @@ public final class PaperPortfolioAssembler {
     /** 组合曲线响应点上限；超出时只回传最近 N 个点（指标仍基于完整曲线计算），避免响应体无界膨胀。 */
     static final int MAX_CURVE_POINTS = 500;
 
-    private PaperPortfolioAssembler() {
-    }
+    private PaperPortfolioAssembler() {}
 
     /**
      * 单个 Paper run 的聚合输入；全部为已查询出的只读事实，由 {@code PaperPortfolioService} 装配。
@@ -58,8 +56,7 @@ public final class PaperPortfolioAssembler {
             int orderCount,
             int tradeCount,
             boolean hasPublishSource,
-            boolean hasBacktestSource
-    ) {}
+            boolean hasBacktestSource) {}
 
     /** 单 run 派生后的中间结果，承载组合层聚合所需的全部口径。 */
     private record RunMetrics(
@@ -70,8 +67,7 @@ public final class PaperPortfolioAssembler {
             // Loop-18：执行进度三态（互斥穷尽），用于组合 / 分组级精确计数。noTrade == noOrder || orderNoFill。
             boolean noOrder,
             boolean orderNoFill,
-            boolean hasFill
-    ) {}
+            boolean hasFill) {}
 
     /**
      * 仅派生单 run 的 {@link PaperPortfolioSummary.RunRef} 列表（顺序与输入一致），不做组合 / 分组 / 曲线聚合。
@@ -88,20 +84,39 @@ public final class PaperPortfolioAssembler {
     }
 
     public static PaperPortfolioSummary assemble(List<RunInput> inputs) {
+        return assemble(inputs, true);
+    }
+
+    /** 旧权益未记录币种；保留单运行比例和状态，不能从交易对文字推断统一计价单位。 */
+    public static PaperPortfolioSummary assembleWithoutCommonValuationUnit(List<RunInput> inputs) {
+        return assemble(inputs, false);
+    }
+
+    private static PaperPortfolioSummary assemble(
+            List<RunInput> inputs, boolean commonValuationUnit) {
         List<RunInput> safeInputs = inputs != null ? inputs : List.of();
         List<RunMetrics> metrics = new ArrayList<>(safeInputs.size());
         for (RunInput input : safeInputs) {
             metrics.add(deriveRun(input));
         }
 
-        var overview = buildOverview(metrics);
-        var strategyGroups = buildGroups(metrics, ref -> normalizeKey(ref.strategyVersionId(), "(未绑定策略版本)"));
-        var publishGroups = buildGroups(metrics, ref -> normalizeKey(ref.publishId(), "(未知发布)"));
-        var highlights = buildHighlights(metrics);
+        var overview = buildOverview(metrics, commonValuationUnit);
+        var strategyGroups =
+                buildGroups(
+                        metrics,
+                        ref -> normalizeKey(ref.strategyVersionId(), "(未绑定策略版本)"),
+                        commonValuationUnit);
+        var publishGroups =
+                buildGroups(
+                        metrics,
+                        ref -> normalizeKey(ref.publishId(), "(未知发布)"),
+                        commonValuationUnit);
+        var highlights = buildHighlights(metrics, commonValuationUnit);
         var dataQuality = buildDataQuality(safeInputs, metrics);
-        var portfolioCurve = buildPortfolioCurve(safeInputs);
+        var portfolioCurve = buildPortfolioCurve(commonValuationUnit ? safeInputs : List.of());
 
-        return new PaperPortfolioSummary(overview, strategyGroups, publishGroups, highlights, dataQuality, portfolioCurve);
+        return new PaperPortfolioSummary(
+                overview, strategyGroups, publishGroups, highlights, dataQuality, portfolioCurve);
     }
 
     // ---- 单 run 派生 ----
@@ -112,14 +127,16 @@ public final class PaperPortfolioAssembler {
         // 仅保留有合法时间与数值权益的快照，按时间升序，作为资产与回撤的唯一派生源（与前端 Loop-12 同口径）。
         List<EquityPoint> points = sortedEquityPoints(input.equityCurve());
 
-        PaperRunDailyReport latestReport = nonNull(input.dailyReports()).stream()
-                .max(Comparator.comparing(PaperRunDailyReport::reportDate))
-                .orElse(null);
+        PaperRunDailyReport latestReport =
+                nonNull(input.dailyReports()).stream()
+                        .max(Comparator.comparing(PaperRunDailyReport::reportDate))
+                        .orElse(null);
 
         EquityPoint latest = points.isEmpty() ? null : points.get(points.size() - 1);
-        BigDecimal currentEquity = latest != null
-                ? latest.equity()
-                : (latestReport != null ? latestReport.totalEquity() : null);
+        BigDecimal currentEquity =
+                latest != null
+                        ? latest.equity()
+                        : (latestReport != null ? latestReport.totalEquity() : null);
         BigDecimal realizedPnl = latest != null ? latest.realizedPnl() : null;
         BigDecimal unrealizedPnl = latest != null ? latest.unrealizedPnl() : null;
 
@@ -139,11 +156,15 @@ public final class PaperPortfolioAssembler {
         } else {
             totalPnl = sum(realizedPnl, unrealizedPnl);
         }
-        BigDecimal totalReturn = ratio(
-                currentEquity != null && initialEquity != null ? currentEquity.subtract(initialEquity) : null,
-                initialEquity);
+        BigDecimal totalReturn =
+                ratio(
+                        currentEquity != null && initialEquity != null
+                                ? currentEquity.subtract(initialEquity)
+                                : null,
+                        initialEquity);
 
-        boolean riskBlocked = PaperRunSummaryAssembler.isRiskBlocked(latestRisk(input.riskResults()));
+        boolean riskBlocked =
+                PaperRunSummaryAssembler.isRiskBlocked(latestRisk(input.riskResults()));
         int openAlertCount = Math.max(0, input.openAlertCount());
         int orderCount = Math.max(0, input.orderCount());
         int tradeCount = Math.max(0, input.tradeCount());
@@ -153,31 +174,33 @@ public final class PaperPortfolioAssembler {
         boolean orderNoFill = !hasFill && orderCount > 0;
         boolean noOrder = !hasFill && orderCount == 0;
 
-        var ref = new PaperPortfolioSummary.RunRef(
-                run.paperRunId(),
-                run.status() != null ? run.status().name() : "UNKNOWN",
-                run.symbol(),
-                run.strategyVersionId(),
-                run.publishId(),
-                currentEquity,
-                initialEquity,
-                totalPnl,
-                totalReturn,
-                maxDrawdown,
-                riskBlocked,
-                openAlertCount,
-                orderCount,
-                tradeCount,
-                noOrder,
-                orderNoFill,
-                hasFill,
-                lastActivityAt(run));
+        var ref =
+                new PaperPortfolioSummary.RunRef(
+                        run.paperRunId(),
+                        run.status() != null ? run.status().name() : "UNKNOWN",
+                        run.symbol(),
+                        run.strategyVersionId(),
+                        run.publishId(),
+                        currentEquity,
+                        initialEquity,
+                        totalPnl,
+                        totalReturn,
+                        maxDrawdown,
+                        riskBlocked,
+                        openAlertCount,
+                        orderCount,
+                        tradeCount,
+                        noOrder,
+                        orderNoFill,
+                        hasFill,
+                        lastActivityAt(run));
 
         boolean hasEquity = !points.isEmpty();
         boolean dataInsufficient = currentEquity == null || initialEquity == null;
         // noTrade 旧口径不变（tradeCount==0），等价于 noOrder || orderNoFill。
         boolean noTrade = tradeCount == 0;
-        return new RunMetrics(ref, hasEquity, dataInsufficient, noTrade, noOrder, orderNoFill, hasFill);
+        return new RunMetrics(
+                ref, hasEquity, dataInsufficient, noTrade, noOrder, orderNoFill, hasFill);
     }
 
     private static BigDecimal computeMaxDrawdown(List<EquityPoint> points) {
@@ -203,7 +226,8 @@ public final class PaperPortfolioAssembler {
 
     // ---- 组合总览 ----
 
-    private static PaperPortfolioSummary.Overview buildOverview(List<RunMetrics> metrics) {
+    private static PaperPortfolioSummary.Overview buildOverview(
+            List<RunMetrics> metrics, boolean commonValuationUnit) {
         int running = 0;
         int stopped = 0;
         int failed = 0;
@@ -229,7 +253,9 @@ public final class PaperPortfolioAssembler {
                 case "FAILED" -> failed++;
                 case "CANCELLED" -> cancelled++;
                 case "CREATED" -> created++;
-                default -> { /* 未知状态不计入分桶，仅计入 totalRuns。 */ }
+                default -> {
+                    /* 未知状态不计入分桶，仅计入 totalRuns。 */
+                }
             }
             openAlerts += ref.openAlertCount();
             if (ref.riskBlocked()) {
@@ -254,32 +280,54 @@ public final class PaperPortfolioAssembler {
             // 仅可比 run（同时具备当前权益与初始资金）计入组合资产与收益，避免口径错配。
             if (ref.currentEquity() != null && ref.initialEquity() != null) {
                 returnEligible++;
-                totalCurrent = totalCurrent.add(ref.currentEquity());
-                totalInitial = totalInitial.add(ref.initialEquity());
+                if (commonValuationUnit) {
+                    totalCurrent = totalCurrent.add(ref.currentEquity());
+                    totalInitial = totalInitial.add(ref.initialEquity());
+                }
             }
-            if (ref.maxDrawdown() != null && (worstDrawdown == null || ref.maxDrawdown().compareTo(worstDrawdown) < 0)) {
+            if (ref.maxDrawdown() != null
+                    && (worstDrawdown == null || ref.maxDrawdown().compareTo(worstDrawdown) < 0)) {
                 worstDrawdown = ref.maxDrawdown();
             }
         }
 
-        BigDecimal totalPnl = returnEligible > 0 ? totalCurrent.subtract(totalInitial) : null;
-        BigDecimal totalReturn = returnEligible > 0 ? ratio(totalCurrent.subtract(totalInitial), totalInitial) : null;
+        BigDecimal totalPnl =
+                commonValuationUnit && returnEligible > 0
+                        ? totalCurrent.subtract(totalInitial)
+                        : null;
+        BigDecimal totalReturn =
+                commonValuationUnit && returnEligible > 0
+                        ? ratio(totalCurrent.subtract(totalInitial), totalInitial)
+                        : null;
 
         return new PaperPortfolioSummary.Overview(
-                metrics.size(), running, stopped, failed, cancelled, created,
-                returnEligible > 0 ? totalInitial : null,
-                returnEligible > 0 ? totalCurrent : null,
-                totalPnl, totalReturn, returnEligible,
-                worstDrawdown, openAlerts, riskBlocked, noTrade, dataInsufficient,
-                noOrder, orderNoFill, filled);
+                metrics.size(),
+                running,
+                stopped,
+                failed,
+                cancelled,
+                created,
+                commonValuationUnit && returnEligible > 0 ? totalInitial : null,
+                commonValuationUnit && returnEligible > 0 ? totalCurrent : null,
+                totalPnl,
+                totalReturn,
+                returnEligible,
+                worstDrawdown,
+                openAlerts,
+                riskBlocked,
+                noTrade,
+                dataInsufficient,
+                noOrder,
+                orderNoFill,
+                filled);
     }
 
     // ---- 分组排行 ----
 
     private static List<PaperPortfolioSummary.Group> buildGroups(
             List<RunMetrics> metrics,
-            Function<PaperPortfolioSummary.RunRef, String> keyFn
-    ) {
+            Function<PaperPortfolioSummary.RunRef, String> keyFn,
+            boolean commonValuationUnit) {
         // 用 LinkedHashMap 保持首次出现顺序，便于排序前的稳定性。
         Map<String, List<RunMetrics>> grouped = new LinkedHashMap<>();
         for (RunMetrics m : metrics) {
@@ -313,8 +361,10 @@ public final class PaperPortfolioAssembler {
                 PaperPortfolioSummary.RunRef ref = m.ref();
                 if (ref.currentEquity() != null && ref.initialEquity() != null) {
                     eligible++;
-                    current = current.add(ref.currentEquity());
-                    initial = initial.add(ref.initialEquity());
+                    if (commonValuationUnit) {
+                        current = current.add(ref.currentEquity());
+                        initial = initial.add(ref.initialEquity());
+                    }
                 }
                 if (ref.riskBlocked()) {
                     riskBlocked++;
@@ -345,10 +395,13 @@ public final class PaperPortfolioAssembler {
                     case "FAILED" -> failed++;
                     case "CANCELLED" -> cancelled++;
                     case "CREATED" -> created++;
-                    default -> { /* 未知状态不计入分桶，仅计入 runCount。 */ }
+                    default -> {
+                        /* 未知状态不计入分桶，仅计入 runCount。 */
+                    }
                 }
                 if (ref.maxDrawdown() != null
-                        && (worstDrawdown == null || ref.maxDrawdown().compareTo(worstDrawdown) < 0)) {
+                        && (worstDrawdown == null
+                                || ref.maxDrawdown().compareTo(worstDrawdown) < 0)) {
                     worstDrawdown = ref.maxDrawdown();
                 }
                 if (ref.lastActivityAt() != null
@@ -357,42 +410,52 @@ public final class PaperPortfolioAssembler {
                 }
             }
 
-            groups.add(new PaperPortfolioSummary.Group(
-                    entry.getKey(),
-                    members.size(),
-                    eligible > 0 ? current : null,
-                    eligible > 0 ? current.subtract(initial) : null,
-                    eligible > 0 ? ratio(current.subtract(initial), initial) : null,
-                    worstDrawdown,
-                    riskBlocked,
-                    openAlerts,
-                    lastRunTime,
-                    noTrade,
-                    dataInsufficient,
-                    eligible,
-                    running,
-                    stopped,
-                    failed,
-                    cancelled,
-                    created,
-                    orderCountSum,
-                    tradeCountSum,
-                    noOrder,
-                    orderNoFill,
-                    filled));
+            groups.add(
+                    new PaperPortfolioSummary.Group(
+                            entry.getKey(),
+                            members.size(),
+                            commonValuationUnit && eligible > 0 ? current : null,
+                            commonValuationUnit && eligible > 0 ? current.subtract(initial) : null,
+                            commonValuationUnit && eligible > 0
+                                    ? ratio(current.subtract(initial), initial)
+                                    : null,
+                            worstDrawdown,
+                            riskBlocked,
+                            openAlerts,
+                            lastRunTime,
+                            noTrade,
+                            dataInsufficient,
+                            eligible,
+                            running,
+                            stopped,
+                            failed,
+                            cancelled,
+                            created,
+                            orderCountSum,
+                            tradeCountSum,
+                            noOrder,
+                            orderNoFill,
+                            filled));
         }
 
         // 排序：先按总 PnL 降序（null 收益排末尾），再按 run 数降序，保证盈利组靠前、稳定可读。
-        groups.sort(Comparator
-                .comparing((PaperPortfolioSummary.Group g) -> g.totalPnl() == null ? BigDecimal.valueOf(Long.MIN_VALUE) : g.totalPnl())
-                .reversed()
-                .thenComparing(Comparator.comparingInt(PaperPortfolioSummary.Group::runCount).reversed()));
+        groups.sort(
+                Comparator.comparing(
+                                (PaperPortfolioSummary.Group g) ->
+                                        g.totalPnl() == null
+                                                ? BigDecimal.valueOf(Long.MIN_VALUE)
+                                                : g.totalPnl())
+                        .reversed()
+                        .thenComparing(
+                                Comparator.comparingInt(PaperPortfolioSummary.Group::runCount)
+                                        .reversed()));
         return groups;
     }
 
     // ---- Run 排行 ----
 
-    private static PaperPortfolioSummary.Highlights buildHighlights(List<RunMetrics> metrics) {
+    private static PaperPortfolioSummary.Highlights buildHighlights(
+            List<RunMetrics> metrics, boolean commonValuationUnit) {
         PaperPortfolioSummary.RunRef topWinner = null;
         PaperPortfolioSummary.RunRef worstDrawdown = null;
         PaperPortfolioSummary.RunRef highestRisk = null;
@@ -403,11 +466,14 @@ public final class PaperPortfolioAssembler {
         for (RunMetrics m : metrics) {
             PaperPortfolioSummary.RunRef ref = m.ref();
 
-            if (ref.totalPnl() != null && (topWinner == null || ref.totalPnl().compareTo(topWinner.totalPnl()) > 0)) {
+            if (commonValuationUnit
+                    && ref.totalPnl() != null
+                    && (topWinner == null || ref.totalPnl().compareTo(topWinner.totalPnl()) > 0)) {
                 topWinner = ref;
             }
             if (ref.maxDrawdown() != null
-                    && (worstDrawdown == null || ref.maxDrawdown().compareTo(worstDrawdown.maxDrawdown()) < 0)) {
+                    && (worstDrawdown == null
+                            || ref.maxDrawdown().compareTo(worstDrawdown.maxDrawdown()) < 0)) {
                 worstDrawdown = ref;
             }
             // 风险最高：优先风控拦截 run；其次未处理告警最多；同级别按更近活动时间。
@@ -415,8 +481,9 @@ public final class PaperPortfolioAssembler {
                 highestRisk = ref;
             }
             if (ref.lastActivityAt() != null
-                    && (mostRecent == null || mostRecent.lastActivityAt() == null
-                    || ref.lastActivityAt().isAfter(mostRecent.lastActivityAt()))) {
+                    && (mostRecent == null
+                            || mostRecent.lastActivityAt() == null
+                            || ref.lastActivityAt().isAfter(mostRecent.lastActivityAt()))) {
                 mostRecent = ref;
             }
             if (m.noTrade()) {
@@ -428,11 +495,16 @@ public final class PaperPortfolioAssembler {
         }
 
         return new PaperPortfolioSummary.Highlights(
-                topWinner, worstDrawdown, highestRisk, mostRecent,
-                cap(noTradeRuns), cap(riskBlockedRuns));
+                topWinner,
+                worstDrawdown,
+                highestRisk,
+                mostRecent,
+                cap(noTradeRuns),
+                cap(riskBlockedRuns));
     }
 
-    private static boolean isHigherRisk(PaperPortfolioSummary.RunRef candidate, PaperPortfolioSummary.RunRef current) {
+    private static boolean isHigherRisk(
+            PaperPortfolioSummary.RunRef candidate, PaperPortfolioSummary.RunRef current) {
         // 只把「风控拦截」或「存在未处理告警」的 run 视为风险候选。
         boolean candidateRisky = candidate.riskBlocked() || candidate.openAlertCount() > 0;
         if (!candidateRisky) {
@@ -450,14 +522,14 @@ public final class PaperPortfolioAssembler {
         if (candidate.lastActivityAt() == null) {
             return false;
         }
-        return current.lastActivityAt() == null || candidate.lastActivityAt().isAfter(current.lastActivityAt());
+        return current.lastActivityAt() == null
+                || candidate.lastActivityAt().isAfter(current.lastActivityAt());
     }
 
     // ---- 数据质量 ----
 
     private static PaperPortfolioSummary.DataQuality buildDataQuality(
-            List<RunInput> inputs, List<RunMetrics> metrics
-    ) {
+            List<RunInput> inputs, List<RunMetrics> metrics) {
         List<PaperPortfolioSummary.RunRef> missingEquity = new ArrayList<>();
         List<PaperPortfolioSummary.RunRef> dataInsufficient = new ArrayList<>();
         List<PaperPortfolioSummary.RunRef> missingBacktest = new ArrayList<>();
@@ -481,7 +553,10 @@ public final class PaperPortfolioAssembler {
         }
 
         return new PaperPortfolioSummary.DataQuality(
-                cap(missingEquity), cap(dataInsufficient), cap(missingBacktest), cap(missingPublish));
+                cap(missingEquity),
+                cap(dataInsufficient),
+                cap(missingBacktest),
+                cap(missingPublish));
     }
 
     // ---- 组合 equity / drawdown 曲线 ----
@@ -519,7 +594,12 @@ public final class PaperPortfolioAssembler {
         if (curveRuns.isEmpty()) {
             // 无可比 run：稳定空结构，指标全 null（前端展示「数据不足」并回退单 run 口径）。
             return new PaperPortfolioSummary.PortfolioCurve(
-                    List.of(), null, null, null, null, 0,
+                    List.of(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    0,
                     new PaperPortfolioSummary.PortfolioCurve.Coverage(0, missingEquityRunCount, 0));
         }
 
@@ -549,7 +629,8 @@ public final class PaperPortfolioAssembler {
                 CurveEvent e = events.get(idx);
                 BigDecimal old = runEquity[e.runIndex()];
                 if (old == null) {
-                    availableInitialSum = availableInitialSum.add(curveRuns.get(e.runIndex()).initialEquity());
+                    availableInitialSum =
+                            availableInitialSum.add(curveRuns.get(e.runIndex()).initialEquity());
                     availableCount++;
                     totalEquity = totalEquity.add(e.equity());
                 } else {
@@ -564,26 +645,39 @@ public final class PaperPortfolioAssembler {
                 incompletePointCount++;
             }
             BigDecimal pointInitial = availableInitialSum;
-            BigDecimal pointPnl = pointInitial.signum() > 0 ? totalEquity.subtract(pointInitial) : null;
+            BigDecimal pointPnl =
+                    pointInitial.signum() > 0 ? totalEquity.subtract(pointInitial) : null;
             BigDecimal pointReturn = ratio(pointPnl, pointInitial);
             if (runningPeak == null || totalEquity.compareTo(runningPeak) > 0) {
                 runningPeak = totalEquity;
             }
-            BigDecimal drawdown = runningPeak.signum() > 0 ? ratio(totalEquity.subtract(runningPeak), runningPeak) : null;
+            BigDecimal drawdown =
+                    runningPeak.signum() > 0
+                            ? ratio(totalEquity.subtract(runningPeak), runningPeak)
+                            : null;
             if (drawdown != null && (maxDrawdown == null || drawdown.compareTo(maxDrawdown) < 0)) {
                 maxDrawdown = drawdown;
             }
-            allPoints.add(new PaperPortfolioSummary.PortfolioCurve.CurvePoint(
-                    t, totalEquity, pointInitial, pointPnl, pointReturn,
-                    runningPeak, drawdown, availableCount, missingRunCount));
+            allPoints.add(
+                    new PaperPortfolioSummary.PortfolioCurve.CurvePoint(
+                            t,
+                            totalEquity,
+                            pointInitial,
+                            pointPnl,
+                            pointReturn,
+                            runningPeak,
+                            drawdown,
+                            availableCount,
+                            missingRunCount));
         }
 
         PaperPortfolioSummary.PortfolioCurve.CurvePoint last = allPoints.get(allPoints.size() - 1);
         int fullPointCount = allPoints.size();
         // 响应点上限保护：超限只回传最近 N 个点；指标（峰值 / maxDrawdown / currentDrawdown）已基于完整历史。
-        List<PaperPortfolioSummary.PortfolioCurve.CurvePoint> emitted = fullPointCount <= MAX_CURVE_POINTS
-                ? allPoints
-                : allPoints.subList(fullPointCount - MAX_CURVE_POINTS, fullPointCount);
+        List<PaperPortfolioSummary.PortfolioCurve.CurvePoint> emitted =
+                fullPointCount <= MAX_CURVE_POINTS
+                        ? allPoints
+                        : allPoints.subList(fullPointCount - MAX_CURVE_POINTS, fullPointCount);
 
         return new PaperPortfolioSummary.PortfolioCurve(
                 List.copyOf(emitted),
@@ -598,15 +692,20 @@ public final class PaperPortfolioAssembler {
 
     // ---- helpers ----
 
-    private record EquityPoint(Instant time, BigDecimal equity, BigDecimal realizedPnl, BigDecimal unrealizedPnl) {}
+    private record EquityPoint(
+            Instant time, BigDecimal equity, BigDecimal realizedPnl, BigDecimal unrealizedPnl) {}
 
     /** 提取并升序排序单 run 的有效权益点（过滤缺时间 / 缺权益的快照）。 */
     private static List<EquityPoint> sortedEquityPoints(List<EquityCurveSnapshot> snapshots) {
         List<EquityPoint> points = new ArrayList<>();
         for (EquityCurveSnapshot snapshot : nonNull(snapshots)) {
             if (snapshot.snapshotTime() != null && snapshot.totalEquity() != null) {
-                points.add(new EquityPoint(snapshot.snapshotTime(), snapshot.totalEquity(),
-                        snapshot.realizedPnl(), snapshot.unrealizedPnl()));
+                points.add(
+                        new EquityPoint(
+                                snapshot.snapshotTime(),
+                                snapshot.totalEquity(),
+                                snapshot.realizedPnl(),
+                                snapshot.unrealizedPnl()));
             }
         }
         points.sort(Comparator.comparing(EquityPoint::time));
@@ -622,8 +721,11 @@ public final class PaperPortfolioAssembler {
             return null;
         }
         EquityPoint latest = points.get(points.size() - 1);
-        if (latest.equity() != null && latest.realizedPnl() != null && latest.unrealizedPnl() != null) {
-            BigDecimal inferred = latest.equity().subtract(latest.realizedPnl()).subtract(latest.unrealizedPnl());
+        if (latest.equity() != null
+                && latest.realizedPnl() != null
+                && latest.unrealizedPnl() != null) {
+            BigDecimal inferred =
+                    latest.equity().subtract(latest.realizedPnl()).subtract(latest.unrealizedPnl());
             if (inferred.signum() > 0) {
                 return inferred;
             }
@@ -644,7 +746,10 @@ public final class PaperPortfolioAssembler {
 
     private static Instant lastActivityAt(PaperTradingRun run) {
         Instant latest = null;
-        for (Instant candidate : new Instant[]{run.stoppedAt(), run.startedAt(), run.updatedAt(), run.createdAt()}) {
+        for (Instant candidate :
+                new Instant[] {
+                    run.stoppedAt(), run.startedAt(), run.updatedAt(), run.createdAt()
+                }) {
             if (candidate != null && (latest == null || candidate.isAfter(latest))) {
                 latest = candidate;
             }
@@ -657,7 +762,9 @@ public final class PaperPortfolioAssembler {
     }
 
     private static <T> List<T> cap(List<T> list) {
-        return list.size() <= MAX_LIST_SIZE ? List.copyOf(list) : List.copyOf(list.subList(0, MAX_LIST_SIZE));
+        return list.size() <= MAX_LIST_SIZE
+                ? List.copyOf(list)
+                : List.copyOf(list.subList(0, MAX_LIST_SIZE));
     }
 
     private static <T> List<T> nonNull(List<T> list) {

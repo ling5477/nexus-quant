@@ -48,3 +48,17 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+/* 窄屏将新增可信运行入口放到说明下方，避免按钮挤占历史来源说明的阅读宽度。 */
+@media (max-width: 600px) {
+    .paper-runs-legacy-trust {
+        flex-wrap: wrap;
+    }
+
+    .paper-runs-legacy-trust .ant-alert-content {
+        flex: 1 1 calc(100% - 36px);
+    }
+
+    .paper-runs-legacy-trust .ant-alert-action {
+        margin: 8px 0 0 24px;
+    }
+}

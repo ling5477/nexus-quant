@@ -22,8 +22,9 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    background: url('../../assets/brand/login-earth-kline-realistic-approved.png') center / contain no-repeat;
-    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent),
+    background: url('../../assets/brand/login-earth-kline-hd.png') center / contain no-repeat;
+    mask-image:
+        linear-gradient(to right, transparent, black 10%, black 90%, transparent),
         linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
     mask-composite: intersect;
 }
@@ -39,10 +40,19 @@
     margin-inline: auto;
 }
 
-.nq-login__product-title { margin: 0; }
-.nq-login__masthead .nq-brand__name { font-size: clamp(16px, 1.6vw, 26px); }
-.nq-login__masthead .nq-brand__monogram { height: 46px; flex-basis: 46px; }
-.nq-login__masthead .nq-brand__caption { font-size: 12px; }
+.nq-login__product-title {
+    margin: 0;
+}
+.nq-login__masthead .nq-brand__name {
+    font-size: clamp(16px, 1.6vw, 26px);
+}
+.nq-login__masthead .nq-brand__monogram {
+    height: 46px;
+    flex-basis: 46px;
+}
+.nq-login__masthead .nq-brand__caption {
+    font-size: 12px;
+}
 
 .nq-login__inner {
     display: grid;
@@ -80,7 +90,9 @@
     letter-spacing: -0.035em;
 }
 
-.nq-login__headline span { color: var(--nq-color-accent); }
+.nq-login__headline span {
+    color: var(--nq-color-accent);
+}
 
 .nq-login__lede {
     max-width: 500px;
@@ -132,9 +144,14 @@
     line-height: 1.8;
 }
 
-.nq-login__promise .anticon { margin-top: 4px; color: var(--nq-color-accent); }
+.nq-login__promise .anticon {
+    margin-top: 4px;
+    color: var(--nq-color-accent);
+}
 
-.nq-login__auth { min-width: 0; }
+.nq-login__auth {
+    min-width: 0;
+}
 
 .nq-login__card {
     padding: clamp(24px, 2.4vw, 40px);
@@ -144,8 +161,12 @@
     box-shadow: var(--nq-shadow-overlay);
 }
 
-.nq-login__card-brand { margin-bottom: 32px; }
-.nq-login__card-brand .nq-brand__name { font-size: 18px; }
+.nq-login__card-brand {
+    margin-bottom: 32px;
+}
+.nq-login__card-brand .nq-brand__name {
+    font-size: 18px;
+}
 
 .nq-login__card-title {
     margin: 0 0 8px;
@@ -161,17 +182,30 @@
     line-height: 1.7;
 }
 
-.nq-login__card .ant-form-item { margin-bottom: 20px; }
-.nq-login__card .ant-input-affix-wrapper { min-height: 46px; background: var(--nq-color-bg-elevated); }
-.nq-login__card .ant-input-prefix { color: var(--nq-color-text-secondary); margin-right: 12px; }
+.nq-login__card .ant-form-item {
+    margin-bottom: 20px;
+}
+.nq-login__card .ant-input-affix-wrapper {
+    min-height: 46px;
+    background: var(--nq-color-bg-elevated);
+}
+.nq-login__card .ant-input-prefix {
+    color: var(--nq-color-text-secondary);
+    margin-right: 12px;
+}
 .nq-login__card .ant-btn-primary {
     min-height: 48px;
     font-weight: 600;
     background: linear-gradient(110deg, var(--nq-color-primary), var(--nq-color-primary-active));
 }
 
-.nq-login__security { margin-top: 24px; }
-.nq-login__error { margin-bottom: 20px; overflow-wrap: anywhere; }
+.nq-login__security {
+    margin-top: 24px;
+}
+.nq-login__error {
+    margin-bottom: 20px;
+    overflow-wrap: anywhere;
+}
 
 .nq-login__page-footer {
     color: var(--nq-color-text-secondary);
@@ -181,18 +215,45 @@
 
 /* 窄屏优先表单；背景只是装饰，裁切不能导致凭证输入不可见。 */
 @media (max-width: 1100px) {
-    .nq-login__inner { grid-template-columns: minmax(0, 1fr) 350px; }
-    .nq-login__capabilities { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 350px; }
-    .nq-login__capability { flex-direction: row; align-items: center; }
-    .nq-login__lede { font-size: 14px; }
+    .nq-login__inner {
+        grid-template-columns: minmax(0, 1fr) 350px;
+    }
+    .nq-login__capabilities {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        max-width: 350px;
+    }
+    .nq-login__capability {
+        flex-direction: row;
+        align-items: center;
+    }
+    .nq-login__lede {
+        font-size: 14px;
+    }
 }
 
 @media (max-width: 760px) {
-    .nq-login { padding: 20px; background-position: 58% center; background-attachment: fixed; }
-    .nq-login__masthead .nq-brand__caption { display: none; }
-    .nq-login__masthead .nq-brand__monogram { display: none; }
-    .nq-login__inner { display: flex; flex-direction: column; gap: 32px; padding: 32px 0; }
-    .nq-login__auth { order: 0; width: 100%; max-width: 440px; }
+    .nq-login {
+        padding: 20px;
+        background-position: 58% center;
+        background-attachment: fixed;
+    }
+    .nq-login__masthead .nq-brand__caption {
+        display: none;
+    }
+    .nq-login__masthead .nq-brand__monogram {
+        display: none;
+    }
+    .nq-login__inner {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+        padding: 32px 0;
+    }
+    .nq-login__auth {
+        order: 0;
+        width: 100%;
+        max-width: 440px;
+    }
     .nq-login__narrative {
         order: 1;
         align-self: center;
@@ -201,9 +262,21 @@
         background: color-mix(in srgb, var(--nq-color-bg-sunken) 94%, transparent);
         border-radius: var(--nq-radius-lg);
     }
-    .nq-login__headline { font-size: 32px; }
-    .nq-login__capabilities { gap: 16px; }
-    .nq-login__capability { flex-direction: column; align-items: flex-start; }
-    .nq-login__card { padding: 24px; }
-    .nq-login__page-footer { flex-wrap: wrap; gap: 8px; }
+    .nq-login__headline {
+        font-size: 32px;
+    }
+    .nq-login__capabilities {
+        gap: 16px;
+    }
+    .nq-login__capability {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .nq-login__card {
+        padding: 24px;
+    }
+    .nq-login__page-footer {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
 }

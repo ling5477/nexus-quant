@@ -1,9 +1,8 @@
 package com.guidinglight.nexusquant.adapter.binance.marketdata;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.guidinglight.nexusquant.adapter.binance.error.BinanceApiException;
 import com.guidinglight.nexusquant.adapter.binance.http.BinanceHttpClient;
-
-import com.fasterxml.jackson.databind.JsonNode;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceSymbolFilters;
 
 import java.math.BigDecimal;
@@ -25,7 +24,8 @@ public class BinanceExchangeInfoClient {
     private final BinanceHttpClient publicHttpClient;
 
     public BinanceExchangeInfoClient(BinanceHttpClient publicHttpClient) {
-        this.publicHttpClient = Objects.requireNonNull(publicHttpClient, "publicHttpClient must not be null");
+        this.publicHttpClient =
+                Objects.requireNonNull(publicHttpClient, "publicHttpClient must not be null");
     }
 
     /**
@@ -35,7 +35,13 @@ public class BinanceExchangeInfoClient {
      * @return 以 Binance 原生 symbol 为 key 的 filters 快照
      */
     public Map<String, BinanceSymbolFilters> fetchSpotExchangeInfo(String traceId) {
-        JsonNode payload = publicHttpClient.get(EXCHANGE_INFO_ENDPOINT, Map.of(), false, traceId);
+        // 权限集合不参与现货精度和过滤器计算；省略它仍保留全部交易对、状态与完整filters。
+        JsonNode payload =
+                publicHttpClient.get(
+                        EXCHANGE_INFO_ENDPOINT,
+                        Map.of("showPermissionSets", false),
+                        false,
+                        traceId);
         Map<String, BinanceSymbolFilters> filtersBySymbol = new LinkedHashMap<>();
         for (JsonNode symbolNode : payload.path("symbols")) {
             BinanceSymbolFilters filters = toSymbolFilters(symbolNode);
@@ -45,13 +51,15 @@ public class BinanceExchangeInfoClient {
         }
         if (filtersBySymbol.isEmpty()) {
             throw new BinanceApiException(
-                    "Binance exchangeInfo returned zero symbol filters, endpoint=" + EXCHANGE_INFO_ENDPOINT + ", trace_id=" + traceId,
+                    "Binance exchangeInfo returned zero symbol filters, endpoint="
+                            + EXCHANGE_INFO_ENDPOINT
+                            + ", trace_id="
+                            + traceId,
                     200,
                     EXCHANGE_INFO_ENDPOINT,
                     "BINANCE_EXCHANGE_INFO_EMPTY",
                     "exchangeInfo returned zero symbols",
-                    traceId
-            );
+                    traceId);
         }
         return filtersBySymbol;
     }
@@ -69,7 +77,9 @@ public class BinanceExchangeInfoClient {
             accumulator.accept(filterNode);
         }
 
-        if (accumulator.tickSize == null || accumulator.stepSize == null || accumulator.minQty == null) {
+        if (accumulator.tickSize == null
+                || accumulator.stepSize == null
+                || accumulator.minQty == null) {
             return null;
         }
 
@@ -89,8 +99,7 @@ public class BinanceExchangeInfoClient {
                 accumulator.minNotional,
                 accumulator.maxNotional,
                 accumulator.minNotionalAppliesToMarket,
-                accumulator.maxNotionalAppliesToMarket
-        );
+                accumulator.maxNotionalAppliesToMarket);
     }
 
     private boolean isBlank(String value) {

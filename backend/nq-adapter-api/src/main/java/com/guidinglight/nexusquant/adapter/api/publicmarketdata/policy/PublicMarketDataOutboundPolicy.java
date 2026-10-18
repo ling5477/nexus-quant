@@ -22,31 +22,32 @@ import java.util.Set;
  */
 public final class PublicMarketDataOutboundPolicy {
 
-    private static final Set<String> PRIVATE_ENDPOINT_TOKENS = Set.of(
-            "account",
-            "balance",
-            "order",
-            "orders",
-            "cancel",
-            "amend",
-            "position",
-            "positions",
-            "wallet",
-            "transfer",
-            "withdraw",
-            "deposit",
-            "subaccount",
-            "private",
-            "listenkey",
-            "api_key",
-            "apikey",
-            "secret",
-            "passphrase",
-            "signature",
-            "sign"
-    );
+    private static final Set<String> PRIVATE_ENDPOINT_TOKENS =
+            Set.of(
+                    "account",
+                    "balance",
+                    "order",
+                    "orders",
+                    "cancel",
+                    "amend",
+                    "position",
+                    "positions",
+                    "wallet",
+                    "transfer",
+                    "withdraw",
+                    "deposit",
+                    "subaccount",
+                    "private",
+                    "listenkey",
+                    "api_key",
+                    "apikey",
+                    "secret",
+                    "passphrase",
+                    "signature",
+                    "sign");
 
     private final Clock clock;
+    private final boolean spotOrderBookEnabled;
 
     /**
      * 生产默认使用 UTC 系统时钟。
@@ -61,7 +62,13 @@ public final class PublicMarketDataOutboundPolicy {
      * @param clock 决策时间来源；不可为空
      */
     public PublicMarketDataOutboundPolicy(Clock clock) {
+        this(clock, false);
+    }
+
+    /** 显式盘口能力只允许固定OKX现货路径；默认策略和私有拒绝规则不变。 */
+    public PublicMarketDataOutboundPolicy(Clock clock, boolean spotOrderBookEnabled) {
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
+        this.spotOrderBookEnabled = spotOrderBookEnabled;
     }
 
     /**
@@ -80,13 +87,21 @@ public final class PublicMarketDataOutboundPolicy {
                     "endpoint category missing; fail-closed",
                     checkedAt);
         }
-        if (category.privateOrSigned() || request.requiresAuthentication() || request.signedRequest()) {
+        if (category.privateOrSigned()
+                || request.requiresAuthentication()
+                || request.signedRequest()) {
             return PublicMarketDataOutboundDecision.deny(
                     category,
                     "private, authenticated, signed, credential, or permission-probe endpoint is forbidden",
                     checkedAt);
         }
-        if (!category.allowedByDefault()) {
+        boolean spotBook =
+                spotOrderBookEnabled
+                        && category == PublicMarketDataEndpointCategory.ORDER_BOOK
+                        && "OKX".equals(request.exchange())
+                        && request.endpointPath()
+                                .matches("/api/v5/market/books\\?instId=(BTC|ETH|SOL)-USDT&sz=20");
+        if (!category.allowedByDefault() && !spotBook) {
             return PublicMarketDataOutboundDecision.deny(
                     category,
                     "endpoint category is not in the public market data REST allowlist",
@@ -100,9 +115,7 @@ public final class PublicMarketDataOutboundPolicy {
         }
         if (containsPrivateEndpointToken(request.endpointPath())) {
             return PublicMarketDataOutboundDecision.deny(
-                    category,
-                    "endpoint path contains private or credential-like token",
-                    checkedAt);
+                    category, "endpoint path contains private or credential-like token", checkedAt);
         }
         return PublicMarketDataOutboundDecision.allow(category, checkedAt);
     }

@@ -76,14 +76,88 @@
   },
   "fieldInvalid": "{{field}}：请检查此字段。",
   "requestField": "请求",
+  "networkReadMessage": "读取失败，未能连接服务。",
+  "networkReadAction": "检查网络与服务状态后重新读取。",
   "login": {
     "credentials": "账号或密码不正确，请检查后重试。",
-    "expired": "登录已过期，请重新登录后继续。",
+    "expired": "身份验证未通过或登录状态已失效，请重新登录后继续。",
     "unavailableAccount": "当前无法使用此账号登录，请联系管理员。",
     "rateLimited": "尝试次数过多，请稍后再试。",
     "network": "无法连接服务，请检查网络后重试。",
     "service": "登录服务暂时不可用，请稍后重试。",
     "failed": "登录未完成，请重试；若仍失败，请联系管理员。",
     "diagnostic": "诊断信息"
+  },
+  "accountCommandPending": {
+    "title": "有账户操作尚未确认",
+    "message": "请到账户管理查询原操作结果，确认后再执行新的账户操作。"
+  },
+  "accountCommandStorage": {
+    "title": "无法保留操作身份",
+    "message": "浏览器未能保存稳定操作身份，本次请求尚未提交。请恢复会话存储后操作。"
+  },
+  "accountCommandUnknown": {
+    "title": "账户操作结果未知",
+    "message": "返回结果未能匹配原操作身份。请在账户管理查询正式回执。"
+  },
+  "accountCommandScope": {
+    "title": "登录账户已变化",
+    "message": "请恢复原用户登录后查询对应操作，不能把另一用户的操作当作当前结果。"
+  },
+  "credentialOperationUnknown": {
+    "title": "凭据操作待确认",
+    "message": "请先查询原操作结果，保留原身份；不要重复创建或轮换凭据。"
+  },
+  "credentialOperationIdentity": {
+    "title": "凭据操作身份冲突",
+    "message": "原操作身份已成功绑定其他输入，或指纹密钥已变化。请查询原成功结果，不要生成新身份重试。"
+  },
+  "feeSyncUnknown": {
+    "title": "费率同步结果待确认",
+    "message": "原同步身份仍待确认，请先查询原结果，不新增身份或自动重发。"
+  },
+  "feeSyncStorage": {
+    "title": "无法保存费率同步身份",
+    "message": "同步尚未发送。请保留当前会话并检查浏览器存储，确保原操作可以恢复。"
+  },
+  "schedulerOperationPending": {
+    "title": "有调度操作待确认",
+    "message": "请先查询原操作，结果确认前不能提交新运行。"
+  },
+  "schedulerOperationIdentity": {
+    "title": "原调度编号的输入不一致",
+    "message": "保留原编号并核对任务与参数，不自动更换编号重试。"
+  },
+  "schedulerOperationStorage": {
+    "title": "无法保存原调度操作编号",
+    "message": "本次请求尚未发送，请恢复会话存储后再确认操作。"
+  },
+  "schedulerOperationUnknown": {
+    "title": "调度操作结果待确认",
+    "message": "不能确认原操作是否完成，请查询原编号，暂不重复提交。"
+  },
+  "schedulerOperationScope": {
+    "title": "登录用户已变化",
+    "message": "不能在另一用户下恢复这个调度操作，请重新登录原用户后查询。"
+  },
+  "schedulerOperationVersion": {
+    "title": "任务配置已被更新",
+    "message": "其他操作已更新该任务，原版本请求未改变配置。请重新读取任务后再确认。"
+  },
+  "schedulerOperationCapability": {
+    "title": "当前环境不具备该任务的运行条件",
+    "message": "该任务需要的能力尚未装配或启用。请查看运行边界，调度开关不能替代这些前提。"
+  },
+  "researchCreationUnknown": {
+    "title": "创建结果待确认",
+    "message": "原请求身份已保留，请在页面恢复区读取原结果，勿另建替代对象。"
+  },
+  "researchCreationStorage": {
+    "title": "创建身份存储不可用",
+    "message": "请求未发送。恢复浏览器存储后再试。"
+  },
+  "researchCreationScopeChanged": {
+    "title": "账户已切换",
+    "message": "本次创建未发送，请在当前账户重新检查原创建记录与输入。"
   }
 }

@@ -9,6 +9,7 @@ install_root=${NQ_INSTALL_ROOT:-$HOME/.nexusquant}
 project=${NQ_PROJECT_NAME:-nexusquant}
 frontend_port=${NQ_FRONTEND_PORT:-18080}
 backend_port=${NQ_BACKEND_PORT:-18888}
+handoff_file= handoff_snapshot= handoff_dir= handoff_started=false handoff_terminal=false handoff_available=UNKNOWN handoff_transaction=NONE handoff_identity=
 target_package= trusted_hash= confirm=false purge=false confirm_purge=false backup_path=
 docker_group=false lock_owned=false transaction_active=false transaction_dir= update_app_stopped=false
 recovery_lock_owned=false bootstrap_dir= bootstrap_mounted=false
@@ -50,6 +51,7 @@ port_valid "$frontend_port" && port_valid "$backend_port" || fail 'Ports must be
 [ "$frontend_port" != "$backend_port" ] || fail 'Frontend and backend ports must differ'
 while [ "$#" -gt 0 ]; do
     case "$1" in
+        --handoff-request) [ "$#" -ge 2 ] || fail 'Handoff request path required'; handoff_file=$2; shift 2;;
         --package) [ "$#" -ge 2 ] || fail 'Package directory required'; target_package=$2; shift 2;;
         --manifest-sha256) [ "$#" -ge 2 ] || fail 'Independent trusted manifest SHA256 required'; trusted_hash=$2; shift 2;;
         --yes) confirm=true; shift;;
@@ -59,6 +61,7 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 case "$action" in install|start|stop|restart|status|doctor|backup|restore|uninstall|check-update|update|rollback) ;; *) fail 'Unknown action';; esac
+[ -z "$handoff_file" ] || { case "$action" in check-update|update) ;; *) fail 'Handoff is only supported for check-update or update';; esac; }
 [ "$confirm_purge" = false ] || [ "$purge" = true ] || fail '--confirm-purge requires --purge-data'
 [ "$purge" = false ] || [ "$action" = uninstall ] || fail 'Purge is only supported by uninstall'
 if [ -n "$target_package$trusted_hash" ]; then
@@ -633,6 +636,11 @@ cleanup() {
         recovery_result=0; wait "$recovery_pid" || recovery_result=$?
         [ "$recovery_result" -eq 0 ] || printf '%s\n' 'Pre-migration update failed; previous DB/config unchanged, but previous application restart requires attention.' >&2
     fi
+    if [ -n "$handoff_dir" ] && [ "$handoff_terminal" = false ] && [ "$result" -ne 0 ]; then
+        if [ "$handoff_started" = false ]; then handoff_receipt REJECTED HANDOFF_VALIDATION_REJECTED NOT_CHECKED
+        elif [ -n "$transaction_dir" ] && [ -f "$transaction_dir/receipt.env" ] && [ "$(meta "$transaction_dir/receipt.env" RESULT)" = UPDATE_FAILED ] && [ "$(meta "$transaction_dir/receipt.env" ROLLBACK_RESULT)" = ROLLBACK_SUCCESS ]; then handoff_receipt FAILED UPDATE_FAILED_ROLLED_BACK VERIFIED
+        else handoff_receipt UNKNOWN EXECUTION_UNCONFIRMED UNKNOWN; fi
+    fi
     if [ "$lock_owned" = true ]; then rm -f "$install_root/runtime/.operation-lock/pid"; rmdir "$install_root/runtime/.operation-lock" 2>/dev/null || :; fi
     if [ "$recovery_lock_owned" = true ]; then rmdir "$install_root/runtime/.lock-recovery" 2>/dev/null || :; fi
     if [ "$bootstrap_mounted" = true ]; then
@@ -641,6 +649,7 @@ cleanup() {
     if [ -n "$bootstrap_dir" ] && [ "$bootstrap_mounted" = false ]; then
         case "$bootstrap_dir" in "${TMPDIR:-/tmp}"/nq-docker.*) rm -rf -- "$bootstrap_dir";; esac
     fi
+    if [ -n "$handoff_snapshot" ]; then case "$handoff_snapshot" in "$install_root/runtime"/.handoff.*) rm -f "$handoff_snapshot";; esac; fi
     if [ -n "$manifest_workdir" ]; then case "$manifest_workdir" in "${TMPDIR:-/tmp}"/nq-release.*) rm -rf -- "$manifest_workdir";; esac; fi
     if [ -n "$package_stage" ]; then case "$package_stage" in "$install_root/runtime"/.package-stage.*) rm -rf -- "$package_stage";; esac; fi
     exit "$result"
@@ -663,6 +672,110 @@ lock_acquire() {
     fi
     lock_owned=true; printf '%s\n' "$$" > "$install_root/runtime/.operation-lock/pid"
     if [ "$recovery_lock_owned" = true ]; then rmdir "$install_root/runtime/.lock-recovery"; recovery_lock_owned=false; fi
+}
+
+
+# 规范JSON仅传固定身份，无宿主路径、命令或凭据；不依赖宿主额外安装jq/Python。
+handoff_fields='format action requestId checkRequestId checkReceiptSha256 installationId environmentId sourceVersion sourceManifestSha256 sourceCommit targetVersion targetManifestSha256 targetArtifactSha256 targetArchitecture targetSourceCommit'
+handoff_receipt_fields="$handoff_fields status updateAvailable transactionId resultCode completedAt installedVersion installedManifestSha256 healthStatus"
+handoff_value() { sed -n 's/^  "'"$2"'": "\([A-Za-z0-9_.:+-]*\)"[,]\{0,1\}$/\1/p' "$1"; }
+handoff_parse() {
+    safe_path "$1"; [ -f "$1" ] && [ ! -L "$1" ] && [ "$(wc -c < "$1")" -le 8192 ] || fail 'Invalid handoff file'
+    strict_lf "$1"
+    handoff_expected=$handoff_fields; [ "$2" != receipt ] || handoff_expected=$handoff_receipt_fields
+    LC_ALL=C awk -v fields="$handoff_expected" '
+      BEGIN{n=split(fields,k," ")}
+      NR==1{if($0!="{")exit 1;next}
+      NR>=2 && NR<=n+1 {
+        if($0 !~ /^  "[A-Za-z][A-Za-z0-9]*": "[A-Za-z0-9_.:+-]+",?$/)exit 1
+        split($0,a,"\"");if(a[2]!=k[NR-1]||length(a[4])>128)exit 1
+        suffix=(NR<n+1?",":"");if($0!="  \""a[2]"\": \""a[4]"\""suffix)exit 1;next
+      }
+      NR==n+2{if($0!="}")exit 1;next}
+      NR>n+2{exit 1} END{if(NR!=n+2)exit 1}' "$1" || fail 'Invalid canonical handoff JSON'
+    [ "$(handoff_value "$1" format)" = NQ_UPDATE_HANDOFF_V1 ] || fail 'Unsupported handoff format'
+    handoff_action=$(handoff_value "$1" action); case "$handoff_action" in CHECK|UPDATE) ;; *) fail 'Invalid handoff action';; esac
+    handoff_uuid='^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$'
+    printf '%s' "$(handoff_value "$1" requestId)" | grep -Eq "$handoff_uuid" || fail 'Invalid handoff UUID'
+    printf '%s' "$(handoff_value "$1" environmentId)" | grep -Eq '^[a-z0-9][a-z0-9-]{0,48}$' || fail 'Invalid handoff environment'
+    for handoff_key in sourceVersion targetVersion; do
+        printf '%s' "$(handoff_value "$1" "$handoff_key")" | grep -Eq '^(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})$' || fail 'Invalid handoff version'
+    done
+    for handoff_key in sourceManifestSha256 targetManifestSha256 targetArtifactSha256; do hex_hash "$(handoff_value "$1" "$handoff_key")" || fail 'Invalid handoff digest'; done
+    for handoff_key in sourceCommit targetSourceCommit; do printf '%s' "$(handoff_value "$1" "$handoff_key")" | grep -Eq '^[a-f0-9]{40}$' || fail 'Invalid handoff commit'; done
+    case "$(handoff_value "$1" targetArchitecture)" in amd64|arm64) ;; *) fail 'Invalid handoff architecture';; esac
+    if [ "$handoff_action" = CHECK ]; then
+        [ "$(handoff_value "$1" checkRequestId)" = NONE ] && [ "$(handoff_value "$1" checkReceiptSha256)" = NONE ] || fail 'Invalid CHECK correlation'
+        [ "$2" = receipt ] || [ "$(handoff_value "$1" installationId)" = UNCONFIRMED ] || fail 'CHECK installation must be unconfirmed'
+    else
+        printf '%s' "$(handoff_value "$1" checkRequestId)" | grep -Eq "$handoff_uuid" || fail 'Invalid check UUID'
+        [ "$(handoff_value "$1" checkRequestId)" != "$(handoff_value "$1" requestId)" ] && hex_hash "$(handoff_value "$1" checkReceiptSha256)" || fail 'Invalid UPDATE correlation'
+    fi
+    if [ "$2" = receipt ] || [ "$handoff_action" = UPDATE ]; then printf '%s' "$(handoff_value "$1" installationId)" | grep -Eq "$handoff_uuid" || fail 'Invalid installation UUID'; fi
+}
+handoff_receipt() {
+    [ -n "$handoff_dir" ] || return 0
+    handoff_status=$1 handoff_code=$2 handoff_health=$3
+    handoff_version=$(value NQ_VERSION); handoff_manifest=$(value PACKAGE_MANIFEST_SHA256)
+    version_valid "$handoff_version" || handoff_version=UNKNOWN
+    hex_hash "$handoff_manifest" || handoff_manifest=UNKNOWN
+    {
+        printf '{\n'
+        for handoff_key in $handoff_fields; do
+            handoff_val=$(handoff_value "$handoff_dir/request.json" "$handoff_key")
+            [ "$handoff_key" != installationId ] || handoff_val=$handoff_identity
+            printf '  "%s": "%s",\n' "$handoff_key" "$handoff_val"
+        done
+        printf '  "status": "%s",\n  "updateAvailable": "%s",\n  "transactionId": "%s",\n  "resultCode": "%s",\n  "completedAt": "%s",\n  "installedVersion": "%s",\n  "installedManifestSha256": "%s",\n  "healthStatus": "%s"\n}\n' "$handoff_status" "$handoff_available" "$handoff_transaction" "$handoff_code" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$handoff_version" "$handoff_manifest" "$handoff_health"
+    } > "$handoff_dir/receipt.json.tmp"
+    chmod 600 "$handoff_dir/receipt.json.tmp"; mv "$handoff_dir/receipt.json.tmp" "$handoff_dir/receipt.json"; sync
+    case "$handoff_status" in CHECKED|REJECTED|SUCCEEDED|FAILED) handoff_terminal=true;; esac
+}
+handoff_begin() {
+    [ -n "$handoff_file" ] || return 0
+    safe_path "$handoff_file"; [ -f "$handoff_file" ] && [ ! -L "$handoff_file" ] && [ "$(wc -c < "$handoff_file")" -le 8192 ] || fail 'Invalid handoff source'
+    # 先冻结本次文件字节，后续校验、持久消费和执行使用同一份输入。
+    handoff_snapshot=$(mktemp "$install_root/runtime/.handoff.XXXXXX")
+    cp "$handoff_file" "$handoff_snapshot"; chmod 600 "$handoff_snapshot"; handoff_file=$handoff_snapshot
+    handoff_parse "$handoff_file" request
+    handoff_request_action=$(handoff_value "$handoff_file" action)
+    case "$handoff_request_action:$action" in CHECK:check-update|UPDATE:update) ;; *) fail 'Handoff action mismatch';; esac
+    for handoff_mapping in environmentId:PROJECT_NAME sourceVersion:NQ_VERSION sourceManifestSha256:PACKAGE_MANIFEST_SHA256 sourceCommit:SOURCE_SHA; do
+        [ "$(handoff_value "$handoff_file" "${handoff_mapping%:*}")" = "$(value "${handoff_mapping#*:}")" ] || fail 'Handoff source/environment mismatch'
+    done
+    safe_path "$install_root/runtime/handoffs"; mkdir -p "$install_root/runtime/handoffs"; chmod 700 "$install_root/runtime/handoffs"
+    safe_path "$install_root/runtime/installation-id"
+    if [ ! -f "$install_root/runtime/installation-id" ]; then
+        [ "$handoff_request_action" = CHECK ] || fail 'Installation identity unavailable'
+        handoff_random=$(dd if=/dev/urandom bs=16 count=1 2>/dev/null | od -An -tx1 | tr -d ' \n')
+        handoff_identity=$(printf '%s' "$handoff_random" | sed 's/^\(........\)\(....\).\(...\).\(...\)\(............\)$/\1-\2-4\3-8\4-\5/')
+        atomic_text "$handoff_identity" "$install_root/runtime/installation-id"; sync
+    fi
+    handoff_identity=$(cat "$install_root/runtime/installation-id")
+    printf '%s' "$handoff_identity" | grep -Eq "$handoff_uuid" || fail 'Invalid persisted installation identity'
+    if [ "$handoff_request_action" = UPDATE ]; then
+        [ "$(handoff_value "$handoff_file" installationId)" = "$handoff_identity" ] || fail 'Handoff installation mismatch'
+        handoff_check=$install_root/runtime/handoffs/$(handoff_value "$handoff_file" checkRequestId)/receipt.json
+        safe_path "$handoff_check"; [ -f "$handoff_check" ] && [ "$(file_hash "$handoff_check")" = "$(handoff_value "$handoff_file" checkReceiptSha256)" ] || fail 'Original check digest mismatch'
+        handoff_parse "$handoff_check" receipt
+        [ "$(handoff_value "$handoff_check" requestId)" = "$(handoff_value "$handoff_file" checkRequestId)" ] && [ "$(handoff_value "$handoff_check" action)" = CHECK ] && [ "$(handoff_value "$handoff_check" status)" = CHECKED ] && [ "$(handoff_value "$handoff_check" resultCode)" = UPDATE_ELIGIBLE ] && [ "$(handoff_value "$handoff_check" updateAvailable)" = true ] || fail 'Original check does not permit update'
+        for handoff_key in installationId environmentId sourceVersion sourceManifestSha256 sourceCommit targetVersion targetManifestSha256 targetArtifactSha256 targetArchitecture targetSourceCommit; do
+            [ "$(handoff_value "$handoff_check" "$handoff_key")" = "$(handoff_value "$handoff_file" "$handoff_key")" ] || fail 'Original check identity mismatch'
+        done
+    fi
+    handoff_new_dir=$install_root/runtime/handoffs/$(handoff_value "$handoff_file" requestId); safe_path "$handoff_new_dir"
+    # 宿主全局锁及独占mkdir共同保护消费身份；未知或终态UUID均不能重新执行。
+    mkdir "$handoff_new_dir" || fail 'Handoff request already consumed; read original receipt'
+    cp "$handoff_file" "$handoff_new_dir/request.json"; chmod 600 "$handoff_new_dir/request.json"
+    handoff_dir=$handoff_new_dir
+    handoff_receipt UNKNOWN AWAITING_VERIFICATION NOT_CHECKED
+}
+handoff_target() {
+    [ -n "$handoff_dir" ] || return 0
+    for handoff_mapping in targetVersion:VERSION targetArtifactSha256:ARCHIVE_SHA256 targetArchitecture:ARCH targetSourceCommit:SOURCE_SHA; do
+        [ "$(handoff_value "$handoff_dir/request.json" "${handoff_mapping%:*}")" = "$(meta "$verified_manifest" "${handoff_mapping#*:}")" ] || fail 'Handoff target identity mismatch'
+    done
+    [ "$(handoff_value "$handoff_dir/request.json" targetManifestSha256)" = "$trusted_hash" ] && [ "$(file_hash "$verified_manifest")" = "$trusted_hash" ] || fail 'Handoff target trust mismatch'
 }
 
 host_identity
@@ -751,10 +864,18 @@ if [ -f "$install_root/runtime/pending-update" ]; then
     transaction_id=$(cat "$install_root/runtime/pending-update")
     transaction_verify "$transaction_id"
 else verify_installed; fi
+handoff_begin
 if [ "$action" = check-update ]; then
     [ -n "$target_package" ] && hex_hash "$trusted_hash" || fail 'Supply --package and independently trusted --manifest-sha256'
     verify_package "$target_package" "$trusted_hash"
+    handoff_target
     available=$(meta "$verified_manifest" VERSION)
+    handoff_available=false; handoff_check_code=NO_NEWER_VERSION
+    if version_greater "$available" "$(value NQ_VERSION)"; then
+        handoff_available=true; handoff_check_code=UPDATE_INELIGIBLE
+        if [ "$(meta "$verified_manifest" SCHEMA_VERSION)" -ge "$(value SCHEMA_VERSION)" ] && [ "$(meta "$verified_manifest" POSTGRES_CONFIG_DIGEST)" = "$(meta "$install_root/runtime/package.env" POSTGRES_CONFIG_DIGEST)" ]; then handoff_check_code=UPDATE_ELIGIBLE; fi
+    fi
+    handoff_receipt CHECKED "$handoff_check_code" NOT_CHECKED
     printf 'Current: %s\nAvailable: %s\nAUTO_UPDATE=OFF\n' "$(cat "$install_root/runtime/VERSION")" "$available"
     if version_greater "$available" "$(cat "$install_root/runtime/VERSION")"; then printf '%s\n' 'Update available; explicit update and user confirmation required.'; else printf '%s\n' 'No newer version available.'; fi
     exit 0
@@ -831,6 +952,7 @@ EOF
     update)
         [ -n "$target_package" ] && hex_hash "$trusted_hash" || fail 'Supply --package and independently trusted --manifest-sha256'
         verify_package "$target_package" "$trusted_hash"
+        handoff_target
         target_manifest=$verified_manifest
         version_greater "$(meta "$target_manifest" VERSION)" "$(cat "$install_root/runtime/VERSION")" || fail 'Update target must have a newer version'
         [ "$(meta "$target_manifest" SCHEMA_VERSION)" -ge "$(value SCHEMA_VERSION)" ] || fail 'Schema downgrade is not an update'
@@ -838,6 +960,8 @@ EOF
         preflight
         printf 'Verified update: %s -> %s (manifest %s).\n' "$(value NQ_VERSION)" "$(meta "$target_manifest" VERSION)" "$trusted_hash"
         confirm_action 'Update changes installed application and may migrate its isolated database.'
+        handoff_started=true; handoff_available=true
+        handoff_receipt UNKNOWN EXECUTION_PENDING UNKNOWN
         update_started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
         attempt_from_version=$(value NQ_VERSION); attempt_source_manifest=$(value PACKAGE_MANIFEST_SHA256)
         attempt_source_backend=$(value BACKEND_IMAGE); attempt_source_frontend=$(value FRONTEND_IMAGE); attempt_source_postgres=$(value POSTGRES_IMAGE)
@@ -852,6 +976,7 @@ EOF
         make_backup
         transaction_id=$(date -u +%Y%m%dT%H%M%SZ)-$$
         transaction_dir=$install_root/runtime/transactions/$transaction_id; mkdir "$transaction_dir"
+        handoff_transaction=$transaction_id; handoff_receipt UNKNOWN EXECUTION_PENDING UNKNOWN
         atomic_copy "$target_manifest" "$transaction_dir/target.env"
         cat > "$transaction_dir/identity.env.tmp" <<EOF
 FORMAT=1
@@ -889,6 +1014,7 @@ EOF
         transaction_active=false
         update_app_stopped=false
         update_attempt_active=false
+        handoff_receipt SUCCEEDED UPDATE_SUCCESS VERIFIED
         printf '%s\n' 'UPDATE_SUCCESS; known pre-update backup and receipt retained.';;
     rollback)
         if [ ! -f "$install_root/runtime/pending-update" ]; then

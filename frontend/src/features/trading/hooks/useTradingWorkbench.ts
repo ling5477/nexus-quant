@@ -7,8 +7,6 @@ import type {
     OperationTriggerResponse,
     OrderCancelRequestBody,
     OrderSubmitRequest,
-    ReconcileRunOnceRequest,
-    RecoveryRunOnceRequest,
     TradingOrderListRequest,
     TradingOrderListResponse,
     TradingWorkbenchLookupRequest,
@@ -29,7 +27,10 @@ async function swallowNotFound<T>(promise: Promise<T>): Promise<T | null> {
     }
 }
 
-export function useTradingWorkbenchLookupQuery(request: TradingWorkbenchLookupRequest | null, searchVersion: number) {
+export function useTradingWorkbenchLookupQuery(
+    request: TradingWorkbenchLookupRequest | null,
+    searchVersion: number,
+) {
     return useQuery<TradingWorkbenchLookupResult>({
         queryKey: tradingWorkbenchQueryKeys.lookup(request ?? {orderId: ''}, searchVersion),
         queryFn: async () => {
@@ -37,9 +38,14 @@ export function useTradingWorkbenchLookupQuery(request: TradingWorkbenchLookupRe
             const order = await tradingWorkbenchApi.getOrder(lookupRequest.orderId);
             const [latestTrade, account, position] = await Promise.all([
                 swallowNotFound(tradingWorkbenchApi.getLatestTrade(lookupRequest.orderId)),
-                lookupRequest.accountId ? swallowNotFound(tradingWorkbenchApi.getAccount(lookupRequest.accountId)) : Promise.resolve(null),
-                lookupRequest.accountId && lookupRequest.symbol
-                    ? swallowNotFound(tradingWorkbenchApi.getPosition(lookupRequest.accountId, lookupRequest.symbol))
+                lookupRequest.accountId
+                    ? swallowNotFound(tradingWorkbenchApi.getAccount(lookupRequest.accountId))
+                    : Promise.resolve(null),
+                // 深链接只带订单身份时，持仓范围取已读取原订单的交易对，不要求用户另填内部字段。
+                lookupRequest.accountId && order.symbol
+                    ? swallowNotFound(
+                          tradingWorkbenchApi.getPosition(lookupRequest.accountId, order.symbol),
+                      )
                     : Promise.resolve(null),
             ]);
 
@@ -54,7 +60,10 @@ export function useTradingWorkbenchLookupQuery(request: TradingWorkbenchLookupRe
     });
 }
 
-export function useTradingOrderListQuery(request: TradingOrderListRequest | null, searchVersion: number) {
+export function useTradingOrderListQuery(
+    request: TradingOrderListRequest | null,
+    searchVersion: number,
+) {
     return useQuery<TradingOrderListResponse>({
         queryKey: tradingWorkbenchQueryKeys.orders(request ?? {}, searchVersion),
         queryFn: () => tradingWorkbenchApi.listOrders(request as TradingOrderListRequest),
@@ -71,17 +80,13 @@ function createOperationMutation<TRequest>(
 }
 
 export function usePlaceOrderMutation() {
-    return createOperationMutation<OrderSubmitRequest>((request) => tradingWorkbenchApi.placeOrder(request));
+    return createOperationMutation<OrderSubmitRequest>((request) =>
+        tradingWorkbenchApi.placeOrder(request),
+    );
 }
 
 export function useCancelOrderMutation() {
-    return createOperationMutation<OrderCancelRequestBody>((request) => tradingWorkbenchApi.cancelOrder(request));
-}
-
-export function useReconcileMutation() {
-    return createOperationMutation<ReconcileRunOnceRequest | undefined>((request) => tradingWorkbenchApi.runReconcile(request));
-}
-
-export function useRecoveryMutation() {
-    return createOperationMutation<RecoveryRunOnceRequest | undefined>((request) => tradingWorkbenchApi.runRecovery(request));
+    return createOperationMutation<OrderCancelRequestBody>((request) =>
+        tradingWorkbenchApi.cancelOrder(request),
+    );
 }

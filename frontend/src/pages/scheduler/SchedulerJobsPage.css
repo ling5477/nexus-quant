@@ -1,0 +1,72 @@
+/* 对象与行操作在同一视口保持关联；窄屏仍保留所有时间、错误和原始状态。 */
+.scheduler-jobs-page,
+.scheduler-jobs-page > .ant-space-item,
+.scheduler-jobs-page .ant-card,
+.scheduler-jobs-page .ant-card-body,
+.scheduler-job-object,
+.scheduler-job-object > .ant-space-item {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.scheduler-job-object {
+    width: 100%;
+}
+
+.scheduler-job-object .ant-typography,
+.scheduler-job-technical,
+.scheduler-job-technical .ant-typography,
+.scheduler-jobs-page .ant-table-cell {
+    overflow-wrap: anywhere;
+}
+
+.scheduler-job-technical {
+    font-size: 12px;
+    color: var(--nq-color-text-secondary);
+}
+
+.scheduler-job-technical summary {
+    cursor: pointer;
+}
+
+.scheduler-job-technical[open] .ant-typography {
+    display: block;
+    margin-top: 4px;
+}
+
+@media (max-width: 575px) {
+    .scheduler-jobs-page .ant-card-body {
+        padding: 12px;
+    }
+
+    .scheduler-jobs-page .ant-table-cell {
+        vertical-align: top;
+    }
+
+    .scheduler-job-summary .ant-descriptions-row > td {
+        padding-bottom: 6px;
+    }
+
+    .scheduler-job-summary .ant-descriptions-item-container {
+        display: block;
+    }
+
+    .scheduler-job-summary .ant-descriptions-item-label {
+        font-size: 11px;
+        color: var(--nq-color-text-secondary);
+    }
+
+    .scheduler-job-summary .ant-descriptions-item-content {
+        display: block;
+        font-size: 12px;
+    }
+
+    .scheduler-job-summary .ant-tag {
+        margin-inline-end: 0;
+        white-space: normal;
+    }
+
+    .scheduler-job-actions {
+        gap: 6px !important;
+    }
+}

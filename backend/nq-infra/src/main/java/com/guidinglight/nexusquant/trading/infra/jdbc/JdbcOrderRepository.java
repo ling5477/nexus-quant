@@ -5,18 +5,6 @@ import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.TradingVenue;
 import com.guidinglight.nexusquant.trading.domain.port.OrderRepository;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.math.BigDecimal;
-import java.sql.Types;
-import java.util.Objects;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -28,6 +16,18 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 /**
  * JdbcOrderRepository 是订单端口的 JDBC 实现。
  * <p>
@@ -38,16 +38,19 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Repository
 public class JdbcOrderRepository implements OrderRepository {
 
-    private static final String BASE_SELECT = """
+    private static final String BASE_SELECT =
+            """
             SELECT order_id, account_id, strategy_run_id, venue, symbol, client_order_id, side, type, price, qty,
                    external_order_id, status, reason, trace_id, trade_env, version
             FROM orders
             """;
 
-    private static final RowMapper<OrderRecord> ORDER_ROW_MAPPER = JdbcOrderRepository::mapOrderRecord;
+    private static final RowMapper<OrderRecord> ORDER_ROW_MAPPER =
+            JdbcOrderRepository::mapOrderRecord;
 
     // 不对 qty 做 DISTINCT：等量的不同 fill 必须分别累计；重复身份使证明失效。
-    private static final String EXECUTION_PROOF = """
+    private static final String EXECUTION_PROOF =
+            """
             SELECT o.order_id, o.qty AS original_qty, COALESCE(SUM(t.qty),0) AS executed_qty,
                    COUNT(t.trade_id) AS fill_count,
                    COUNT(DISTINCT (t.exchange,t.exchange_trade_id)) FILTER (WHERE t.trade_id IS NOT NULL) AS identity_count,
@@ -62,7 +65,8 @@ public class JdbcOrderRepository implements OrderRepository {
             WHERE o.order_id=? GROUP BY o.order_id
             """;
 
-    private static final String VALID_EXECUTION_PROOF = """
+    private static final String VALID_EXECUTION_PROOF =
+            """
             invalid_count=0 AND fill_count=identity_count AND original_qty>0
             AND external_order_id IS NOT NULL AND BTRIM(external_order_id)<>''
             """;
@@ -71,10 +75,14 @@ public class JdbcOrderRepository implements OrderRepository {
 
     @Override
     public Optional<OrderRecord> findByStrategyRunId(String strategyRunId) {
-        List<OrderRecord> rows = jdbcTemplate.query(BASE_SELECT + " WHERE strategy_run_id=?", ORDER_ROW_MAPPER, strategyRunId);
-        if (rows.size() > 1) throw new IllegalStateException("STRATEGY_RUN_TO_ORDER_IDENTITY_CONFLICT");
+        List<OrderRecord> rows =
+                jdbcTemplate.query(
+                        BASE_SELECT + " WHERE strategy_run_id=?", ORDER_ROW_MAPPER, strategyRunId);
+        if (rows.size() > 1)
+            throw new IllegalStateException("STRATEGY_RUN_TO_ORDER_IDENTITY_CONFLICT");
         return rows.stream().findFirst();
     }
+
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     @Autowired
@@ -82,19 +90,21 @@ public class JdbcOrderRepository implements OrderRepository {
         this(jdbcTemplate, new NamedParameterJdbcTemplate(jdbcTemplate));
     }
 
-    JdbcOrderRepository(JdbcTemplate jdbcTemplate, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+    JdbcOrderRepository(
+            JdbcTemplate jdbcTemplate, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
         this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
     }
 
     @Override
-    public Optional<OrderRecord> findByAccountAndClientOrderId(Long accountId, String clientOrderId) {
-        List<OrderRecord> results = jdbcTemplate.query(
-                BASE_SELECT + " WHERE account_id = ? AND client_order_id = ?",
-                ORDER_ROW_MAPPER,
-                accountId,
-                clientOrderId
-        );
+    public Optional<OrderRecord> findByAccountAndClientOrderId(
+            Long accountId, String clientOrderId) {
+        List<OrderRecord> results =
+                jdbcTemplate.query(
+                        BASE_SELECT + " WHERE account_id = ? AND client_order_id = ?",
+                        ORDER_ROW_MAPPER,
+                        accountId,
+                        clientOrderId);
         if (results.isEmpty()) {
             return Optional.empty();
         }
@@ -103,11 +113,8 @@ public class JdbcOrderRepository implements OrderRepository {
 
     @Override
     public Optional<OrderRecord> findByOrderId(String orderId) {
-        List<OrderRecord> results = jdbcTemplate.query(
-                BASE_SELECT + " WHERE order_id = ?",
-                ORDER_ROW_MAPPER,
-                orderId
-        );
+        List<OrderRecord> results =
+                jdbcTemplate.query(BASE_SELECT + " WHERE order_id = ?", ORDER_ROW_MAPPER, orderId);
         if (results.isEmpty()) {
             return Optional.empty();
         }
@@ -137,19 +144,23 @@ public class JdbcOrderRepository implements OrderRepository {
                 order.price(),
                 order.qty(),
                 order.externalOrderId(),
-                 order.status().name(),
-                 order.reason(),
-                 order.traceId(),
-                 order.canonicalVenue().name(),
-                 order.tradeEnv(),
-                 Timestamp.from(now),
-                Timestamp.from(now)
-        );
+                order.status().name(),
+                order.reason(),
+                order.traceId(),
+                order.canonicalVenue().name(),
+                order.tradeEnv(),
+                Timestamp.from(now),
+                Timestamp.from(now));
     }
 
     @Override
-    public int compareAndSetStatus(String orderId, OrderStatus expectedStatus, long expectedVersion,
-            OrderStatus status, String reason, Instant now) {
+    public int compareAndSetStatus(
+            String orderId,
+            OrderStatus expectedStatus,
+            long expectedVersion,
+            OrderStatus status,
+            String reason,
+            Instant now) {
         if (expectedVersion < 0 || expectedVersion == Long.MAX_VALUE) {
             throw new IllegalArgumentException("order version cannot advance");
         }
@@ -161,8 +172,7 @@ public class JdbcOrderRepository implements OrderRepository {
                 Timestamp.from(now),
                 orderId,
                 expectedStatus.name(),
-                expectedVersion
-        );
+                expectedVersion);
     }
 
     @Override
@@ -175,8 +185,7 @@ public class JdbcOrderRepository implements OrderRepository {
                         + " AND (external_order_id IS NULL OR BTRIM(external_order_id) = '')",
                 externalOrderId,
                 Timestamp.from(now),
-                orderId
-        );
+                orderId);
     }
 
     @Override
@@ -185,14 +194,14 @@ public class JdbcOrderRepository implements OrderRepository {
             return List.of();
         }
         List<String> statusValues = statuses.stream().map(Enum::name).collect(Collectors.toList());
-        MapSqlParameterSource parameters = new MapSqlParameterSource()
-                .addValue("statuses", statusValues)
-                .addValue("limit", limit);
+        MapSqlParameterSource parameters =
+                new MapSqlParameterSource()
+                        .addValue("statuses", statusValues)
+                        .addValue("limit", limit);
         return namedParameterJdbcTemplate.query(
                 BASE_SELECT + " WHERE status IN (:statuses) ORDER BY created_at ASC LIMIT :limit",
                 parameters,
-                ORDER_ROW_MAPPER
-        );
+                ORDER_ROW_MAPPER);
     }
 
     /**
@@ -201,73 +210,149 @@ public class JdbcOrderRepository implements OrderRepository {
      * 一条循环排序查询只使用一份 limit，取出的扫描键与订单来自同一语句快照。
      */
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED,
+    @Transactional(
+            propagation = Propagation.REQUIRES_NEW,
+            isolation = Isolation.READ_COMMITTED,
             timeoutString = "${nq.reconciliation.scan-transaction-timeout-seconds:10}")
-    public List<OrderRecord> reserveReconciliationCandidates(String venue, Collection<OrderStatus> statuses, int limit) {
+    public List<OrderRecord> reserveReconciliationCandidates(
+            String venue, Collection<OrderStatus> statuses, int limit) {
         venue = TradingVenue.parse(venue).name();
-        if (venue == null || venue.isBlank() || statuses == null || statuses.isEmpty()
-                || statuses.stream().anyMatch(Objects::isNull) || limit <= 0) {
-            throw new IllegalArgumentException("venue, candidate statuses and positive limit are required");
+        if (venue == null
+                || venue.isBlank()
+                || statuses == null
+                || statuses.isEmpty()
+                || statuses.stream().anyMatch(Objects::isNull)
+                || limit <= 0) {
+            throw new IllegalArgumentException(
+                    "venue, candidate statuses and positive limit are required");
         }
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
-            throw new IllegalStateException("reconciliation reservation requires a Spring transaction");
+            throw new IllegalStateException(
+                    "reconciliation reservation requires a Spring transaction");
         }
-        jdbcTemplate.update("INSERT INTO reconciliation_scan_cursors(venue) VALUES (?) ON CONFLICT (venue) DO NOTHING", venue);
-        ScanKey cursor = jdbcTemplate.queryForObject(
-                "SELECT cursor_created_at, cursor_order_id FROM reconciliation_scan_cursors WHERE venue=? FOR UPDATE",
-                (rs, row) -> new ScanKey(rs.getTimestamp("cursor_created_at"), rs.getString("cursor_order_id")), venue);
-        MapSqlParameterSource parameters = new MapSqlParameterSource()
-                .addValue("venue", venue)
-                .addValue("statuses", statuses.stream().map(Enum::name).toList())
-                .addValue("cursorTime", cursor.createdAt(), Types.TIMESTAMP)
-                .addValue("cursorId", cursor.orderId(), Types.VARCHAR)
-                .addValue("limit", limit);
-        List<ScannedOrder> selected = namedParameterJdbcTemplate.query(
-                BASE_SELECT.replace("SELECT order_id", "SELECT created_at, order_id") + """
+        jdbcTemplate.update(
+                "INSERT INTO reconciliation_scan_cursors(venue) VALUES (?) ON CONFLICT (venue) DO NOTHING",
+                venue);
+        ScanKey cursor =
+                jdbcTemplate.queryForObject(
+                        "SELECT cursor_created_at, cursor_order_id FROM reconciliation_scan_cursors WHERE venue=? FOR UPDATE",
+                        (rs, row) ->
+                                new ScanKey(
+                                        rs.getTimestamp("cursor_created_at"),
+                                        rs.getString("cursor_order_id")),
+                        venue);
+        MapSqlParameterSource parameters =
+                new MapSqlParameterSource()
+                        .addValue("venue", venue)
+                        .addValue("statuses", statuses.stream().map(Enum::name).toList())
+                        .addValue("cursorTime", cursor.createdAt(), Types.TIMESTAMP)
+                        .addValue("cursorId", cursor.orderId(), Types.VARCHAR)
+                        .addValue("limit", limit);
+        List<ScannedOrder> selected =
+                namedParameterJdbcTemplate.query(
+                        BASE_SELECT.replace("SELECT order_id", "SELECT created_at, order_id")
+                                + """
                  WHERE venue = :venue AND status IN (:statuses)
                  ORDER BY CASE WHEN CAST(:cursorTime AS timestamptz) IS NULL
                      OR (created_at, order_id) > (CAST(:cursorTime AS timestamptz), :cursorId)
                      THEN 0 ELSE 1 END, created_at ASC, order_id ASC
                  LIMIT :limit
-                """, parameters, (rs, row) -> new ScannedOrder(mapOrderRecord(rs, row),
-                        new ScanKey(rs.getTimestamp("created_at"), rs.getString("order_id"))));
+                """,
+                        parameters,
+                        (rs, row) ->
+                                new ScannedOrder(
+                                        mapOrderRecord(rs, row),
+                                        new ScanKey(
+                                                rs.getTimestamp("created_at"),
+                                                rs.getString("order_id"))));
         if (!selected.isEmpty()) {
             ScanKey last = selected.getLast().key();
-            int updated = jdbcTemplate.update("UPDATE reconciliation_scan_cursors SET cursor_created_at=?, cursor_order_id=?,"
-                    + " revision=revision+1, updated_at=CURRENT_TIMESTAMP WHERE venue=?", last.createdAt(), last.orderId(), venue);
-            if (updated != 1) throw new IllegalStateException("locked reconciliation cursor was lost");
+            int updated =
+                    jdbcTemplate.update(
+                            "UPDATE reconciliation_scan_cursors SET cursor_created_at=?, cursor_order_id=?,"
+                                    + " revision=revision+1, updated_at=CURRENT_TIMESTAMP WHERE venue=?",
+                            last.createdAt(),
+                            last.orderId(),
+                            venue);
+            if (updated != 1)
+                throw new IllegalStateException("locked reconciliation cursor was lost");
         }
         return selected.stream().map(ScannedOrder::order).toList();
     }
 
     @Override
     public BigDecimal durableExecutedQuantity(String orderId) {
-        return jdbcTemplate.queryForObject("SELECT executed_qty, (" + VALID_EXECUTION_PROOF
-                + ") AS valid FROM (" + EXECUTION_PROOF + ") p", (rs, row) -> {
-                    if (!rs.getBoolean("valid")) throw new IllegalStateException("INVALID_DURABLE_EXECUTION_PROOF");
+        return jdbcTemplate.queryForObject(
+                "SELECT executed_qty, ("
+                        + VALID_EXECUTION_PROOF
+                        + ") AS valid FROM ("
+                        + EXECUTION_PROOF
+                        + ") p",
+                (rs, row) -> {
+                    if (!rs.getBoolean("valid"))
+                        throw new IllegalStateException("INVALID_DURABLE_EXECUTION_PROOF");
                     return rs.getBigDecimal("executed_qty");
-                }, orderId);
+                },
+                orderId);
+    }
+
+    @Override
+    public boolean hasDurableSimCancellation(OrderRecord observed) {
+        // 本地SIM adapter不维护第二套订单状态；终态凭据来自同事务提交的canonical回执与审计。
+        return Boolean.TRUE.equals(
+                jdbcTemplate.queryForObject(
+                        """
+                SELECT EXISTS(SELECT 1 FROM orders o
+                  WHERE o.order_id=? AND o.version=? AND o.account_id=?
+                    AND o.venue='PAPER' AND o.trade_env='SIM' AND o.status='CANCELLED'
+                    AND EXISTS(SELECT 1 FROM event_store e WHERE e.topic='order.event.v1'
+                      AND e.event_type='CancelAck' AND e.key_value=o.client_order_id
+                      AND e.payload_json->'payload'->>'account_id'=o.account_id::text
+                      AND e.payload_json->'payload'->>'venue'='PAPER'
+                      AND e.payload_json->'payload'->>'client_order_id'=o.client_order_id
+                      AND e.payload_json->'payload'->>'external_order_id'=o.external_order_id
+                      AND e.payload_json->'payload'->>'status'='CANCELLED')
+                    AND EXISTS(SELECT 1 FROM audit_logs a WHERE a.domain='ORDER'
+                      AND a.action='ORDER_CANCELLED' AND a.actor_id=o.order_id
+                      AND a.detail_json->>'order_id'=o.order_id AND a.detail_json->>'venue'='PAPER'
+                      AND a.detail_json->>'status'='CANCELLED'))
+                """,
+                        Boolean.class,
+                        observed.orderId(),
+                        observed.version(),
+                        observed.accountId()));
     }
 
     @Override
     @Transactional
-    public int compareAndSetCancelledToFilled(String orderId, long expectedVersion, String reason, Instant now) {
+    public int compareAndSetCancelledToFilled(
+            String orderId, long expectedVersion, String reason, Instant now) {
         if (expectedVersion < 0 || expectedVersion == Long.MAX_VALUE) {
             throw new IllegalArgumentException("order version cannot advance");
         }
         // 与 canonical Trade 插入共用订单行锁；等待结束后另起语句读取完整证明，避免等待前的旧快照。
-        jdbcTemplate.queryForObject("SELECT order_id FROM orders WHERE order_id=? FOR UPDATE", String.class, orderId);
+        jdbcTemplate.queryForObject(
+                "SELECT order_id FROM orders WHERE order_id=? FOR UPDATE", String.class, orderId);
         // 数量证明不是调用方传来的布尔值；更新语句自身重新读取已提交成交，并以状态和版本取所有权。
-        return jdbcTemplate.update("WITH proof AS (" + EXECUTION_PROOF + ") "
-                + "UPDATE orders o SET status='FILLED', reason=?, version=o.version+1, updated_at=? "
-                + "WHERE o.order_id=? AND o.status='CANCELLED' AND o.version=? "
-                + "AND EXISTS (SELECT 1 FROM proof p WHERE p.order_id=o.order_id AND "
-                + VALID_EXECUTION_PROOF + " AND executed_qty=original_qty AND executed_qty=o.qty)",
-                orderId, reason, Timestamp.from(now), orderId, expectedVersion);
+        return jdbcTemplate.update(
+                "WITH proof AS ("
+                        + EXECUTION_PROOF
+                        + ") "
+                        + "UPDATE orders o SET status='FILLED', reason=?, version=o.version+1, updated_at=? "
+                        + "WHERE o.order_id=? AND o.status='CANCELLED' AND o.version=? "
+                        + "AND EXISTS (SELECT 1 FROM proof p WHERE p.order_id=o.order_id AND "
+                        + VALID_EXECUTION_PROOF
+                        + " AND executed_qty=original_qty AND executed_qty=o.qty)",
+                orderId,
+                reason,
+                Timestamp.from(now),
+                orderId,
+                expectedVersion);
     }
 
-    private record ScanKey(Timestamp createdAt, String orderId) { }
-    private record ScannedOrder(OrderRecord order, ScanKey key) { }
+    private record ScanKey(Timestamp createdAt, String orderId) {}
+
+    private record ScannedOrder(OrderRecord order, ScanKey key) {}
 
     private static OrderRecord mapOrderRecord(ResultSet resultSet, int rowNum) throws SQLException {
         return new OrderRecord(
@@ -286,9 +371,6 @@ public class JdbcOrderRepository implements OrderRepository {
                 resultSet.getString("reason"),
                 resultSet.getString("trace_id"),
                 resultSet.getString("trade_env"),
-                resultSet.getLong("version")
-        );
+                resultSet.getLong("version"));
     }
 }
-
-

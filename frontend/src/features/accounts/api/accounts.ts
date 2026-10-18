@@ -1,9 +1,7 @@
 import {apiClient} from '@/api/client';
+import {accountCommandsApi} from './commands';
 import type {
     CreateExchangeAccountRequest,
-    ExchangeAccountActiveCredentialResponse,
-    ExchangeAccountCredentialSummary,
-    ExchangeAccountCredentialUpsertRequest,
     ExchangeAccountDetail,
     ExchangeAccountSummary,
     UpdateExchangeAccountRequest,
@@ -15,48 +13,34 @@ export const accountsApi = {
         return data;
     },
 
-    async detail(accountId: number): Promise<ExchangeAccountDetail> {
-        const {data} = await apiClient.get<ExchangeAccountDetail>(`/exchange-accounts/${accountId}`);
+    async detail(accountId: number, signal?: AbortSignal): Promise<ExchangeAccountDetail> {
+        const {data} = await apiClient.get<ExchangeAccountDetail>(
+            `/exchange-accounts/${accountId}`,
+            {signal},
+        );
         return data;
     },
 
     async create(payload: CreateExchangeAccountRequest): Promise<ExchangeAccountSummary> {
-        const {data} = await apiClient.post<ExchangeAccountSummary>('/exchange-accounts', payload);
-        return data;
+        return accountCommandsApi.submit({type: 'CREATE', ...payload});
     },
 
-    async update(accountId: number, payload: UpdateExchangeAccountRequest): Promise<ExchangeAccountSummary> {
-        const {data} = await apiClient.patch<ExchangeAccountSummary>(`/exchange-accounts/${accountId}`, payload);
-        return data;
+    async update(
+        accountId: number,
+        payload: UpdateExchangeAccountRequest,
+    ): Promise<ExchangeAccountSummary> {
+        return accountCommandsApi.submit({type: 'UPDATE', accountId, ...payload});
     },
 
     async enable(accountId: number): Promise<ExchangeAccountSummary> {
-        const {data} = await apiClient.post<ExchangeAccountSummary>(`/exchange-accounts/${accountId}/enable`);
-        return data;
+        return accountCommandsApi.submit({type: 'ENABLE', accountId});
     },
 
     async disable(accountId: number): Promise<ExchangeAccountSummary> {
-        const {data} = await apiClient.post<ExchangeAccountSummary>(`/exchange-accounts/${accountId}/disable`);
-        return data;
+        return accountCommandsApi.submit({type: 'DISABLE', accountId});
     },
 
     async setDefault(accountId: number): Promise<ExchangeAccountSummary> {
-        const {data} = await apiClient.post<ExchangeAccountSummary>(`/exchange-accounts/${accountId}/set-default`);
-        return data;
-    },
-
-    async getActiveCredential(accountId: number): Promise<ExchangeAccountActiveCredentialResponse> {
-        const {data} = await apiClient.get<ExchangeAccountActiveCredentialResponse>(`/exchange-accounts/${accountId}/credentials/active`);
-        return data;
-    },
-
-    async upsertCredential(accountId: number, payload: ExchangeAccountCredentialUpsertRequest): Promise<ExchangeAccountCredentialSummary> {
-        const {data} = await apiClient.post<ExchangeAccountCredentialSummary>(`/exchange-accounts/${accountId}/credentials`, payload);
-        return data;
-    },
-
-    async verifyCredential(accountId: number): Promise<ExchangeAccountCredentialSummary> {
-        const {data} = await apiClient.post<ExchangeAccountCredentialSummary>(`/exchange-accounts/${accountId}/credentials/verify`);
-        return data;
+        return accountCommandsApi.submit({type: 'SET_DEFAULT', accountId});
     },
 };

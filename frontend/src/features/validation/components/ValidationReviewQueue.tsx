@@ -36,13 +36,27 @@ interface ValidationReviewQueueProps {
     onRefresh: () => void;
 }
 
-const columns: ColumnsType<ValidationReviewCase> = [
+const reviewColumns = (onSelectCase: (caseId: string) => void): ColumnsType<ValidationReviewCase> => [
     {
         get title() { return t('pages:caseId'); },
         dataIndex: 'id',
         key: 'id',
         width: 210,
-        render: (value: string) => <Text code copyable>{value}</Text>,
+        // 详情入口使用真实按钮，键盘可达；复制身份不应同时打开抽屉。
+        render: (value: string) => (
+            <Space size={4} onClick={(event) => event.stopPropagation()}>
+                <Button
+                    type="link"
+                    size="small"
+                    aria-label={`${t('pages:validationReviewCase')} ${value}`}
+                    style={{padding: 0, height: 'auto', whiteSpace: 'normal', textAlign: 'left'}}
+                    onClick={() => onSelectCase(value)}
+                >
+                    {value}
+                </Button>
+                <Text copyable={{text: value}}/>
+            </Space>
+        ),
     },
     {
         get title() { return t('pages:status'); },
@@ -138,7 +152,7 @@ export function ValidationReviewQueue(props: ValidationReviewQueueProps) {
                 rowKey="id"
                 size="small"
                 loading={props.isLoading}
-                columns={columns}
+                columns={reviewColumns(props.onSelectCase)}
                 dataSource={props.data}
                 pagination={false}
                 scroll={{x: 1450}}

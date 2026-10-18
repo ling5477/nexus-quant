@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -178,6 +179,23 @@ public class ValidationReviewController {
         return operationsService.events(resolveActor(), caseId).stream()
                 .map(ValidationReviewEventResponse::from)
                 .toList();
+    }
+
+    /**
+     * 查询本人原复核动作的持久事件，不触发迁移、重试或审计写入。
+     *
+     * @param caseId 原复核对象
+     * @param idempotencyKey 原请求身份，仅用于限定查询，不回显
+     * @return 原事件的既有安全 DTO；404 表示尚未确认，不能解释为失败
+     */
+    @GetMapping("/{caseId}/action-result")
+    public ValidationReviewEventResponse originalResult(
+            @PathVariable UUID caseId,
+            @RequestHeader(name = IDEMPOTENCY_KEY_HEADER) String idempotencyKey) {
+        return operationsService.originalEvent(resolveActor(), caseId, idempotencyKey)
+                .map(ValidationReviewEventResponse::from)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "original review action result is not recorded"));
     }
 
     /**

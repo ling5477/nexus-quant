@@ -1,10 +1,11 @@
-import axios, {AxiosError} from 'axios';
+import axios, {AxiosError, CanceledError} from 'axios';
 
 import {normalizeApiError} from '@/api/errors';
 import {emitAppError} from '@/utils/error-events';
 import {useAuthStore} from '@/store/auth-store';
 import {appEnv} from '@/utils/env';
 import {saveAuthError} from '@/errors/auth-error';
+import {responseBelongsToSession} from './session-scope';
 
 function redirectToLogin(reason: 'expired' | 'unauthorized'): void {
     if (typeof window === 'undefined') {
@@ -12,9 +13,10 @@ function redirectToLogin(reason: 'expired' | 'unauthorized'): void {
     }
 
     const currentPath = `${window.location.pathname}${window.location.search}`;
-    const redirectQuery = currentPath && currentPath !== '/login'
-        ? `?redirect=${encodeURIComponent(currentPath)}&reason=${reason}`
-        : `?reason=${reason}`;
+    const redirectQuery =
+        currentPath && currentPath !== '/login'
+            ? `?redirect=${encodeURIComponent(currentPath)}&reason=${reason}`
+            : `?reason=${reason}`;
 
     window.location.assign(`/login${redirectQuery}`);
 }
@@ -33,19 +35,43 @@ export const apiClient = axios.create({
     },
 });
 
-apiClient.interceptors.request.use((config) => {
+apiClient.interceptors.request.use(
+    (config) => {
+        const {accessToken, tokenType} = useAuthStore.getState();
+
+        if (accessToken && !config.headers.Authorization) {
+            config.headers.Authorization = `${tokenType ?? 'Bearer'} ${accessToken}`;
+        }
+
+        return config;
+    },
+    undefined,
+    {synchronous: true},
+);
+
+function currentSession(config?: {url?: string; headers?: {Authorization?: unknown}}): boolean {
     const {accessToken, tokenType} = useAuthStore.getState();
-
-    if (accessToken && !config.headers.Authorization) {
-        config.headers.Authorization = `${tokenType ?? 'Bearer'} ${accessToken}`;
-    }
-
-    return config;
-});
+    return responseBelongsToSession(
+        config?.headers?.Authorization,
+        accessToken,
+        tokenType ?? 'Bearer',
+        config?.url,
+    );
+}
 
 apiClient.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        if (!currentSession(response.config))
+            return Promise.reject(
+                new CanceledError('Session changed while the request was pending.'),
+            );
+        return response;
+    },
     (error: AxiosError) => {
+        if (!currentSession(error.config))
+            return Promise.reject(
+                new CanceledError('Session changed while the request was pending.'),
+            );
         const normalizedError = normalizeApiError(error);
         const requestUrl = error.config?.url ?? '';
         const isLoginRequest = requestUrl.includes('/auth/login');
@@ -54,7 +80,10 @@ apiClient.interceptors.response.use(
             saveAuthError(normalizedError);
             useAuthStore.getState().clearAuth('expired');
             redirectToLogin('expired');
-        } else if (!isLoginRequest && (normalizedError.status === 403 || normalizedError.status >= 500)) {
+        } else if (
+            !isLoginRequest &&
+            (normalizedError.status === 403 || normalizedError.status >= 500)
+        ) {
             emitAppError(normalizedError);
         }
 

@@ -1,6 +1,7 @@
 import {Table} from 'antd';
 import type {TableProps} from 'antd';
 import type {ColumnType} from 'antd/es/table';
+import {cloneElement, isValidElement, type KeyboardEventHandler} from 'react';
 
 /**
  * NqDataTable — 高密度业务表格的统一包装。
@@ -11,9 +12,35 @@ import type {ColumnType} from 'antd/es/table';
  * 3) 数字列必须用 nqNumericColumn 注入右对齐 + tabular-nums（.nq-col-num）。
  */
 export function NqDataTable<RecordType extends object>(props: TableProps<RecordType>) {
-    const {size = 'small', ...rest} = props;
+    const {size = 'small', pagination, ...rest} = props;
+    const pageControls: TableProps<RecordType>['pagination'] =
+        pagination === false
+            ? false
+            : {
+                  ...pagination,
+                  itemRender: (page, type, original) => {
+                      const rendered = pagination?.itemRender
+                          ? pagination.itemRender(page, type, original)
+                          : original;
+                      if (
+                          (type !== 'prev' && type !== 'next') ||
+                          !isValidElement<{onKeyDown?: KeyboardEventHandler<HTMLButtonElement>}>(
+                              rendered,
+                          ) ||
+                          rendered.type !== 'button'
+                      )
+                          return rendered;
+                      return cloneElement(rendered, {
+                          onKeyDown: (event) => {
+                              rendered.props.onKeyDown?.(event);
+                              // rc-pagination父层也处理Enter；原生按钮保留默认click，只阻止同一按键再让父层翻页。
+                              if (event.key === 'Enter') event.stopPropagation();
+                          },
+                      });
+                  },
+              };
 
-    return <Table<RecordType> size={size} {...rest}/>;
+    return <Table<RecordType> size={size} pagination={pageControls} {...rest} />;
 }
 
 /**

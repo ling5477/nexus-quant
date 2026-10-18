@@ -19,10 +19,12 @@ export function useShadowRunOverview() {
     });
 }
 
-export function useShadowRunListQuery(params: ShadowRunListRequest) {
+export function useShadowRunListQuery(params: ShadowRunListRequest, enabled = true) {
     return useQuery({
         queryKey: shadowRunsQueryKeys.list(params),
         queryFn: () => shadowRunsApi.listShadowRuns(params),
+        // 无效URL筛选不发送请求，也不借用另一查询对象的缓存结果。
+        enabled,
         retry: false,
     });
 }
@@ -54,7 +56,10 @@ export function useShadowRunSnapshotsQuery(shadowRunId: string | null, enabled =
     });
 }
 
-export function useShadowRunLatestConsistencyReportQuery(shadowRunId: string | null, enabled = true) {
+export function useShadowRunLatestConsistencyReportQuery(
+    shadowRunId: string | null,
+    enabled = true,
+) {
     return useQuery({
         queryKey: shadowRunsQueryKeys.latestConsistencyReport(shadowRunId ?? ''),
         queryFn: () => shadowRunsApi.getShadowRunLatestConsistencyReport(shadowRunId ?? ''),

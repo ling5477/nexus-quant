@@ -1,6 +1,6 @@
-import {PaperAnalysisBoundary} from './components/PaperAnalysisBoundary';
+import {PaperAnalysisWorkspace} from './components/PaperAnalysisWorkspace';
 
-/** 历史诊断未读取 canonical 事实，不能据此归因为无订单或无成交。 */
+/** 按明确来源保留独立SIM与历史Paper业务，避免混合账户和事实口径。 */
 export function PaperDiagnosticsPage() {
-    return <PaperAnalysisBoundary kind="diagnostics"/>;
+    return <PaperAnalysisWorkspace kind="diagnostics" />;
 }

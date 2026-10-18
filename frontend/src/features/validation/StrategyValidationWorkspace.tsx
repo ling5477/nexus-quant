@@ -2971,7 +2971,12 @@ function QueryForm({
     const [form] = useLocalizedForm<StrategyValidationQuery>();
 
     useEffect(() => {
-        form.setFieldsValue(initialValues);
+        // 合并赋值不会移除旧字段；缺失项显式清空，保证清空与历史导航后的输入和 URL 一致。
+        const values: StrategyValidationQuery = {};
+        QUERY_FIELDS.forEach((field) => {
+            values[field] = initialValues[field] ?? '';
+        });
+        form.setFieldsValue(values);
     }, [form, initialValues]);
 
     return (
@@ -3470,7 +3475,7 @@ function StrategyValidationOverviewPanel({query}: { query: PanelQueryState<Strat
                     {t('pages:readOnlyGetApiStrategyValidationOverviewForTheValidationRuntimeBaselineWithoutNewRoutesDashboardV2Or')}</Paragraph>
                 <StrategyValidationOverviewBoundaryBadges overview={overview}/>
                 <OverviewBoundaryDriftAlert overview={overview}/>
-                <OverviewCounts overview={overview}/>
+                {overview ? <OverviewCounts overview={overview}/> : null}
                 {query.isLoading ? (
                     <Skeleton active paragraph={{rows: 8}}/>
                 ) : query.isError ? (
@@ -3818,7 +3823,7 @@ function ShadowValidationWorkflowPanel({query}: { query: PanelQueryState<ShadowV
                 <ShadowValidationWorkflowBoundaryBadges overview={overview}/>
                 <ShadowValidationWorkflowBoundaryDriftAlert overview={overview}/>
                 <ReadModelEvidenceMetadataSummary metadata={overview?.evidenceMetadata}/>
-                <ShadowValidationWorkflowCounts overview={overview}/>
+                {overview ? <ShadowValidationWorkflowCounts overview={overview}/> : null}
                 {query.isLoading ? (
                     <Skeleton active paragraph={{rows: 8}}/>
                 ) : query.isError ? (
@@ -4236,7 +4241,7 @@ function ConsistencyEvidenceOverviewPanel({query}: { query: PanelQueryState<Cons
                     metadata={overview?.evidenceMetadata}
                     testId="consistency-evidence-metadata"
                 />
-                <ConsistencyEvidenceCounts overview={overview}/>
+                {overview ? <ConsistencyEvidenceCounts overview={overview}/> : null}
                 {query.isLoading ? (
                     <Skeleton active paragraph={{rows: 8}}/>
                 ) : query.isError ? (
@@ -4647,7 +4652,7 @@ function IncidentReplayReviewOverviewPanel({query}: {
                     metadata={overview?.evidenceMetadata}
                     testId="incident-replay-review-evidence-metadata"
                 />
-                <IncidentReplayReviewCounts overview={overview}/>
+                {overview ? <IncidentReplayReviewCounts overview={overview}/> : null}
                 {query.isLoading ? (
                     <Skeleton active paragraph={{rows: 8}}/>
                 ) : query.isError ? (
@@ -5067,7 +5072,7 @@ function EvaluationArtifactPreviewOverviewPanel({query}: {
                 />
                 <EvaluationArtifactPreviewBoundaryBadges overview={overview}/>
                 <EvaluationArtifactPreviewBoundaryDriftAlert overview={overview}/>
-                <EvaluationArtifactPreviewCounts overview={overview}/>
+                {overview ? <EvaluationArtifactPreviewCounts overview={overview}/> : null}
                 <ReadModelEvidenceMetadataSummary
                     metadata={overview?.evidenceMetadata}
                     testId="evaluation-artifact-preview-evidence-metadata"
@@ -5444,7 +5449,7 @@ function IncidentReplayOverviewPanel({query}: { query: PanelQueryState<IncidentR
                     {t('pages:readOnlyGetApiIncidentsReplayOverviewAggregatesLocalShadowConsistencyPaperAlertRecoveryAndReplayDiag')}</Paragraph>
                 <IncidentReplayBoundaryBadges overview={overview}/>
                 <IncidentReplayBoundaryDriftAlert overview={overview}/>
-                <IncidentReplayCounts overview={overview}/>
+                {overview ? <IncidentReplayCounts overview={overview}/> : null}
                 {query.isLoading ? (
                     <Skeleton active paragraph={{rows: 8}}/>
                 ) : query.isError ? (
@@ -5719,7 +5724,7 @@ function ValidationOperationsWorkbench({queries}: { queries: ValidationOperation
                         description={t('pages:whenAnyValidationOrShadowOverviewIsMissingOnlyReturnedFactsAreShownEvidenceReviewDecisionsAndArtifac')}
                     />
                 ) : null}
-                <ValidationOperationsTopSummary queries={queries}/>
+                {!hasError ? <ValidationOperationsTopSummary queries={queries}/> : null}
                 <ValidationOperationsEvidenceMatrix queries={queries}/>
                 <ValidationOperationsOperatorQueuePreview queries={queries}/>
                 <Alert

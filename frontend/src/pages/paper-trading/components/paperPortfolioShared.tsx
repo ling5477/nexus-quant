@@ -1,6 +1,8 @@
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
-import {Space, Tag, Typography} from 'antd';
+import {Button, Space, Tag, Typography} from 'antd';
+import {useState} from 'react';
+import {LegacyAnalysisObjectLink} from './LegacyAnalysisControls';
 import type React from 'react';
 import type {ReactNode} from 'react';
 
@@ -16,17 +18,28 @@ import type {PaperPortfolioRunRef} from '@/features/paper-trading/types/paper-tr
 
 /** 把 run 引用清单渲染为紧凑 Tag 列表；空清单显示「无」，超过 12 条折叠为「等 N 个」。 */
 export function renderRunRefTags(runs: PaperPortfolioRunRef[]): ReactNode {
-    if (runs.length === 0) {
-        return <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:none')}</Typography.Text>;
-    }
+    return <RunRefTags runs={runs} />;
+}
+
+/** 每份清单保持有界；超过首屏12条可展开，不让被截断的身份变成无法访问的数字。 */
+function RunRefTags({runs}: {runs: PaperPortfolioRunRef[]}) {
+    useTranslation('pages');
+    const [expanded, setExpanded] = useState(false);
+    if (!runs.length) return <Typography.Text type="secondary">{t('pages:none')}</Typography.Text>;
     return (
         <Space size={[6, 6]} wrap>
-            {runs.slice(0, 12).map((run) => (
-                <Tag key={run.paperRunId} className="nq-mono" style={{fontSize: 11}}>{run.paperRunId}</Tag>
+            {(expanded ? runs : runs.slice(0, 12)).map((run) => (
+                <Tag key={run.paperRunId}>
+                    <LegacyAnalysisObjectLink kind="run" id={run.paperRunId} />
+                </Tag>
             ))}
-            {runs.length > 12 ? (
-                <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:andOthers')}{runs.length} {t('pages:items')}</Typography.Text>
-            ) : null}
+            {runs.length > 12 && (
+                <Button size="small" type="link" onClick={() => setExpanded(!expanded)}>
+                    {expanded
+                        ? t('pages:legacyPortfolio.showLess')
+                        : t('pages:legacyPortfolio.showRemaining', {count: runs.length - 12})}
+                </Button>
+            )}
         </Space>
     );
 }
@@ -52,7 +65,10 @@ export function ClickableMetricCard({
 }) {
     useTranslation('pages');
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') onClick();
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+        }
     };
     return (
         <div
@@ -66,9 +82,7 @@ export function ClickableMetricCard({
             style={{
                 cursor: 'pointer',
                 borderRadius: 'var(--nq-radius-lg)',
-                outline: isActive
-                    ? '2px solid var(--nq-color-primary)'
-                    : '2px solid transparent',
+                outline: isActive ? '2px solid var(--nq-color-primary)' : '2px solid transparent',
                 outlineOffset: '2px',
             }}
         >

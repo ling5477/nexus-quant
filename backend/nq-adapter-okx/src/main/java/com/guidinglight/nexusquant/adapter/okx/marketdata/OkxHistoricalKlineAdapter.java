@@ -1,13 +1,18 @@
 package com.guidinglight.nexusquant.adapter.okx.marketdata;
 
-import com.guidinglight.nexusquant.adapter.okx.http.OkxHttpClient;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.adapter.api.model.HistoricalKlineBar;
 import com.guidinglight.nexusquant.adapter.api.model.HistoricalKlineRequest;
-import com.guidinglight.nexusquant.adapter.api.service.port.HistoricalKlineAdapter;
 import com.guidinglight.nexusquant.adapter.api.service.error.HistoricalKlineAdapterException;
+import com.guidinglight.nexusquant.adapter.api.service.port.HistoricalKlineAdapter;
+import com.guidinglight.nexusquant.adapter.okx.http.OkxHttpClient;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.net.URLEncoder;
@@ -21,12 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.StreamSupport;
 
-import org.springframework.stereotype.Component;
-import org.springframework.context.annotation.Profile;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-
 /**
  * OkxHistoricalKlineAdapter 负责 OKX SPOT history-candles 的协议适配。
  * <p>
@@ -38,43 +37,44 @@ import org.springframework.beans.factory.annotation.Value;
  */
 @Component
 @Profile("public-marketdata-manual")
-@ConditionalOnProperty(prefix = "nq.public-marketdata.outbound", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(
+        prefix = "nq.public-marketdata.outbound",
+        name = "enabled",
+        havingValue = "true")
 public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
 
-    private static final Map<String, String> SYMBOLS = Map.of(
-            "BTC-USDT", "BTC-USDT",
-            "ETH-USDT", "ETH-USDT",
-            "SOL-USDT", "SOL-USDT"
-    );
-    private static final Map<String, String> INTERVALS = Map.of(
-            "1m", "1m",
-            "5m", "5m",
-            "15m", "15m",
-            "1h", "1H",
-            "4h", "4H",
-            "1d", "1D"
-    );
-    private static final Map<String, Duration> DURATIONS = Map.of(
-            "1m", Duration.ofMinutes(1),
-            "5m", Duration.ofMinutes(5),
-            "15m", Duration.ofMinutes(15),
-            "1h", Duration.ofHours(1),
-            "4h", Duration.ofHours(4),
-            "1d", Duration.ofDays(1)
-    );
+    private static final Map<String, String> SYMBOLS =
+            Map.of(
+                    "BTC-USDT", "BTC-USDT",
+                    "ETH-USDT", "ETH-USDT",
+                    "SOL-USDT", "SOL-USDT");
+    private static final Map<String, String> INTERVALS =
+            Map.of(
+                    "1m", "1m",
+                    "5m", "5m",
+                    "15m", "15m",
+                    "1h", "1H",
+                    "4h", "4H",
+                    "1d", "1D");
+    private static final Map<String, Duration> DURATIONS =
+            Map.of(
+                    "1m", Duration.ofMinutes(1),
+                    "5m", Duration.ofMinutes(5),
+                    "15m", Duration.ofMinutes(15),
+                    "1h", Duration.ofHours(1),
+                    "4h", Duration.ofHours(4),
+                    "1d", Duration.ofDays(1));
 
     private final OkxHttpClient client;
 
     @Autowired
     public OkxHistoricalKlineAdapter(
-            @Value("${nq.public-marketdata.outbound.base-url:${NQ_PUBLIC_MARKETDATA_BASE_URL:http://127.0.0.1:0}}") String baseUrl,
-            @Value("${nq.public-marketdata.outbound.total-request-timeout:PT8S}") Duration timeout) {
-        this(new OkxHttpClient(
-                HttpClient.newHttpClient(),
-                new ObjectMapper(),
-                baseUrl,
-                timeout
-        ));
+            @Value(
+                            "${nq.public-marketdata.outbound.base-url:${NQ_PUBLIC_MARKETDATA_BASE_URL:http://127.0.0.1:0}}")
+                    String baseUrl,
+            @Value("${nq.public-marketdata.outbound.total-request-timeout:PT8S}")
+                    Duration timeout) {
+        this(new OkxHttpClient(HttpClient.newHttpClient(), new ObjectMapper(), baseUrl, timeout));
     }
 
     OkxHistoricalKlineAdapter(OkxHttpClient client) {
@@ -89,20 +89,29 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
     @Override
     public List<HistoricalKlineBar> fetchHistoricalKlines(HistoricalKlineRequest request) {
         requireSpot(request);
-        String path = "/api/v5/market/history-candles"
-                + "?instId=" + encode(mapSymbol(request.symbol()))
-                + "&bar=" + encode(mapInterval(request.interval()))
-                + "&after=" + request.endTime().toEpochMilli()
-                + "&before=" + request.startTime().toEpochMilli()
-                + "&limit=" + normalizeLimit(request.limit());
+        String path =
+                "/api/v5/market/history-candles"
+                        + "?instId="
+                        + encode(mapSymbol(request.symbol()))
+                        + "&bar="
+                        + encode(mapInterval(request.interval()))
+                        + "&after="
+                        + request.endTime().toEpochMilli()
+                        // 供应方游标为排他，NQ范围包含起始bar；否则最早一根会被跳过。
+                        + "&before="
+                        + Math.subtractExact(request.startTime().toEpochMilli(), 1)
+                        + "&limit="
+                        + normalizeLimit(request.limit());
         try {
             JsonNode payload = client.get(path, null);
             if (!"0".equals(payload.path("code").asText())) {
-                throw new HistoricalKlineAdapterException("OKX history-candles failed, code=" + payload.path("code").asText());
+                throw new HistoricalKlineAdapterException(
+                        "OKX history-candles failed, code=" + payload.path("code").asText());
             }
             JsonNode data = payload.path("data");
             if (!data.isArray()) {
-                throw new HistoricalKlineAdapterException("OKX history-candles data is not an array");
+                throw new HistoricalKlineAdapterException(
+                        "OKX history-candles data is not an array");
             }
             return StreamSupport.stream(data.spliterator(), false)
                     .map(row -> parseBar(request, row))
@@ -111,7 +120,8 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
             if (ex instanceof HistoricalKlineAdapterException adapterException) {
                 throw adapterException;
             }
-            throw new HistoricalKlineAdapterException("OKX historical candles request failed: " + ex.getMessage(), ex);
+            throw new HistoricalKlineAdapterException(
+                    "OKX historical candles request failed: " + ex.getMessage(), ex);
         }
     }
 
@@ -134,20 +144,21 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
                 new BigDecimal(row.get(5).asText()),
                 row.size() > 7 ? new BigDecimal(row.get(7).asText()) : null,
                 null,
-                row.toString()
-        );
+                row.toString());
     }
 
     private void requireSpot(HistoricalKlineRequest request) {
         if (!"SPOT".equalsIgnoreCase(request.marketType())) {
-            throw new HistoricalKlineAdapterException("OKX historical kline adapter only supports SPOT");
+            throw new HistoricalKlineAdapterException(
+                    "OKX historical kline adapter only supports SPOT");
         }
     }
 
     private String mapSymbol(String symbol) {
         String mapped = SYMBOLS.get(symbol == null ? "" : symbol.toUpperCase(Locale.ROOT));
         if (mapped == null) {
-            throw new HistoricalKlineAdapterException("unsupported OKX historical kline symbol: " + symbol);
+            throw new HistoricalKlineAdapterException(
+                    "unsupported OKX historical kline symbol: " + symbol);
         }
         return mapped;
     }
@@ -155,7 +166,8 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
     private String mapInterval(String interval) {
         String mapped = INTERVALS.get(interval == null ? "" : interval.toLowerCase(Locale.ROOT));
         if (mapped == null) {
-            throw new HistoricalKlineAdapterException("unsupported OKX historical kline interval: " + interval);
+            throw new HistoricalKlineAdapterException(
+                    "unsupported OKX historical kline interval: " + interval);
         }
         return mapped;
     }

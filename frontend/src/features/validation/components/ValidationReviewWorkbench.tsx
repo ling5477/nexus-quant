@@ -8,6 +8,7 @@ import {ValidationReviewCaseDrawer} from '@/features/validation/components/Valid
 import {ValidationReviewQueue} from '@/features/validation/components/ValidationReviewQueue';
 import {useValidationReviewListQuery} from '@/features/validation/hooks/useValidationReviewQueries';
 import {useAuthStore} from '@/store/auth-store';
+import {ResearchResultRecovery} from '@/features/ResearchResultRecovery';
 import type {AppApiError} from '@/types/api';
 import type {ValidationReviewSeverity, ValidationReviewState} from '@/features/validation/types/validation-review';
 
@@ -82,8 +83,9 @@ export function ValidationReviewWorkbench() {
                         action={<Button size="small" onClick={() => selectCase(null)}>{t('pages:clearInvalidSelection')}</Button>}
                     />
                 ) : null}
+                {!selectedCaseId && <ResearchResultRecovery kind="VALIDATION_REVIEW" />}
                 <ValidationReviewQueue
-                    data={listQuery.data ?? []}
+                    data={listQuery.isError ? [] : (listQuery.data ?? [])}
                     error={listQuery.error as AppApiError | null}
                     isLoading={listQuery.isLoading}
                     isFetching={listQuery.isFetching}

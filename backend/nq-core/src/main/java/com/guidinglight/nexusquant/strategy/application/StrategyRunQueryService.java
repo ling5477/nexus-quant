@@ -6,10 +6,10 @@ import com.guidinglight.nexusquant.strategy.domain.StrategyRunExecutionResult;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRunSummary;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunQueryRepository;
 
+import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.Objects;
-
-import org.springframework.stereotype.Service;
 
 /**
  * StrategyRunQueryService 提供执行与补偿契约的最小运行结果查询面。
@@ -32,18 +32,22 @@ public class StrategyRunQueryService {
     private final StrategyRunQueryRepository strategyRunQueryRepository;
 
     public StrategyRunQueryService(StrategyRunQueryRepository strategyRunQueryRepository) {
-        this.strategyRunQueryRepository = Objects.requireNonNull(
-                strategyRunQueryRepository,
-                "strategyRunQueryRepository must not be null"
-        );
+        this.strategyRunQueryRepository =
+                Objects.requireNonNull(
+                        strategyRunQueryRepository, "strategyRunQueryRepository must not be null");
     }
 
     /**
      * 按 `strategyRunId` 查询运行详情。
      */
     public StrategyRunDetail getRunDetail(String strategyRunId) {
-        StrategyRun run = strategyRunQueryRepository.findRunByStrategyRunId(requireText(strategyRunId, "strategyRunId"))
-                .orElseThrow(() -> new IllegalArgumentException("strategy run not found: " + strategyRunId));
+        StrategyRun run =
+                strategyRunQueryRepository
+                        .findRunByStrategyRunId(requireText(strategyRunId, "strategyRunId"))
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "strategy run not found: " + strategyRunId));
         return toDetail(run);
     }
 
@@ -51,7 +55,9 @@ public class StrategyRunQueryService {
      * 按 `strategyId` 查询最近运行列表。
      */
     public List<StrategyRunSummary> listRecentRunsByStrategyId(String strategyId) {
-        return strategyRunQueryRepository.listRecentRunsByStrategyId(requireText(strategyId, "strategyId"), DEFAULT_LIST_LIMIT)
+        return strategyRunQueryRepository
+                .listRecentRunsByStrategyId(
+                        requireText(strategyId, "strategyId"), DEFAULT_LIST_LIMIT)
                 .stream()
                 .map(this::toSummary)
                 .toList();
@@ -64,7 +70,9 @@ public class StrategyRunQueryService {
      * 当前没有独立 `trigger_id` 表，因此这里只做基于 schedule requestId 前缀的最小可用查询。
      */
     public List<StrategyRunSummary> listRecentRunsByScheduleJobId(String scheduleJobId) {
-        return strategyRunQueryRepository.listRecentRunsByScheduleJobId(requireText(scheduleJobId, "scheduleJobId"), DEFAULT_LIST_LIMIT)
+        return strategyRunQueryRepository
+                .listRecentRunsByScheduleJobId(
+                        requireText(scheduleJobId, "scheduleJobId"), DEFAULT_LIST_LIMIT)
                 .stream()
                 .map(this::toSummary)
                 .toList();
@@ -73,7 +81,7 @@ public class StrategyRunQueryService {
     private StrategyRunDetail toDetail(StrategyRun run) {
         return new StrategyRunDetail(
                 run.strategyId(),
-                deriveScheduleJobId(run.requestId()),
+                scheduleJobId(run),
                 run.strategyRunId(),
                 run.requestId(),
                 normalizeTriggerType(run),
@@ -85,19 +93,19 @@ public class StrategyRunQueryService {
                 run.finishedAt(),
                 run.errorMessage(),
                 new StrategyRunExecutionResult(
-                        strategyRunQueryRepository.listOrderSummariesByStrategyRunId(run.strategyRunId()),
-                        strategyRunQueryRepository.listTradeSummariesByStrategyRunId(run.strategyRunId()),
+                        strategyRunQueryRepository.listOrderSummariesByStrategyRunId(
+                                run.strategyRunId()),
+                        strategyRunQueryRepository.listTradeSummariesByStrategyRunId(
+                                run.strategyRunId()),
                         LEDGER_LIMITATION,
                         RISK_LIMITATION,
-                        EVENT_LIMITATION
-                )
-        );
+                        EVENT_LIMITATION));
     }
 
     private StrategyRunSummary toSummary(StrategyRun run) {
         return new StrategyRunSummary(
                 run.strategyId(),
-                deriveScheduleJobId(run.requestId()),
+                scheduleJobId(run),
                 run.strategyRunId(),
                 run.requestId(),
                 normalizeTriggerType(run),
@@ -107,11 +115,19 @@ public class StrategyRunQueryService {
                 run.tradeEnv(),
                 run.startedAt(),
                 run.finishedAt(),
-                run.errorMessage()
-        );
+                run.errorMessage());
+    }
+
+    /** 正式准入关系优先于旧请求解析，列表与深链详情必须指向同一计划。 */
+    private String scheduleJobId(StrategyRun run) {
+        return run.admissionScheduleId() != null
+                ? run.admissionScheduleId()
+                : deriveScheduleJobId(run.requestId());
     }
 
     private String normalizeTriggerType(StrategyRun run) {
+        // 结构化准入已经明确触发来源，不能再因请求文本而误标为历史计划请求。
+        if (run.admissionScheduleId() != null) return run.triggerType();
         if (run.requestId() != null && run.requestId().startsWith("req-schedule-")) {
             return "SCHEDULED";
         }
@@ -139,5 +155,3 @@ public class StrategyRunQueryService {
         return value.trim();
     }
 }
-
-

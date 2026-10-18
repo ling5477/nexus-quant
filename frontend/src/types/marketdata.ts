@@ -5,14 +5,54 @@ export interface MarketdataBar {
     interval: string;
     openTime: string;
     closeTime: string;
-    openPrice: number;
-    highPrice: number;
-    lowPrice: number;
-    closePrice: number;
-    volume: number;
-    quoteVolume?: number | null;
+    openPrice: string | number;
+    highPrice: string | number;
+    lowPrice: string | number;
+    closePrice: string | number;
+    volume: string | number;
+    quoteVolume?: string | number | null;
     tradeCount?: number | null;
     qualityStatus?: string | null;
+    source?: string | null;
+    availableAt?: string | null;
+    barId?: string | null;
+    barIdentitySha256?: string | null;
+    priceEventTimes?: PriceEventTimes;
+}
+
+/** 原始边界、可见时间和四价发生时点是不同事实；缺来源不能补成区间起止。 */
+export interface PriceEventTimes {
+    status: 'NOT_PROVIDED' | 'SOURCE_PROVIDED';
+    sourceId: string | null;
+    sourceName: string | null;
+    documentSha256: string | null;
+    openPriceAt: string | null;
+    highPriceAt: string | null;
+    lowPriceAt: string | null;
+    closePriceAt: string | null;
+    recordedAt: string | null;
+}
+export interface PriceEventSourceSubmission {
+    sourceId: string;
+    barId: string;
+    expectedBarSha256: string;
+    sourceName: string;
+    documentJson: string;
+}
+export interface PriceEventSourceRecord {
+    sourceId: string;
+    barId: string;
+    barIdentitySha256: string;
+    sourceName: string;
+    documentSha256: string;
+    documentJson: string;
+    barSnapshotJson: string;
+    openPriceAt: string;
+    highPriceAt: string;
+    lowPriceAt: string;
+    closePriceAt: string;
+    createdByUserId: number;
+    createdAt: string;
 }
 
 export interface PublicMarketCapture {
@@ -25,8 +65,27 @@ export interface PublicMarketCapture {
     end: string;
     barCount: number;
     observedAt: string;
+    rawSha256: string;
+    normalizedSha256: string;
     consumedSha256: string;
+    replayVisibilityVersion: string;
+    replayVisibilitySource: string;
+    ruleObservedAt: string;
+    ruleRawSha256: string;
     ruleSha256: string;
+    rulePolicy: string;
+}
+
+/** 原请求回执独立于来源开关；PENDING只代表已登记，不能显示成捕获成功。 */
+export interface PublicCaptureOperation {
+    captureId: string;
+    state: 'PENDING' | 'SUCCEEDED' | 'FAILED';
+    start: string;
+    end: string;
+    createdAt: string;
+    completedAt: string | null;
+    result: PublicMarketCapture | null;
+    failureCode: string | null;
 }
 
 export interface MarketdataBarsQuery {
@@ -163,11 +222,7 @@ type MarketdataReadinessSourceHealth =
     | 'ERROR'
     | 'UNKNOWN';
 
-type MarketdataReadinessGapStatus =
-    | 'NONE'
-    | 'PARTIAL'
-    | 'GAP'
-    | 'UNKNOWN';
+type MarketdataReadinessGapStatus = 'NONE' | 'PARTIAL' | 'GAP' | 'UNKNOWN';
 
 type MarketdataReadinessDataOrigin =
     | 'LOCAL_DB'
@@ -321,4 +376,68 @@ export interface MarketdataDataset {
     createdAt: string;
     updatedAt: string;
     requestJson: string;
+}
+
+/** 目录过滤不代表绑定许可；执行仍由正式数据质量及冻结合同校验。 */
+export interface DatasetPageRequest {
+    datasetId?: string;
+    datasetName?: string;
+    exchangeCode?: string;
+    marketType?: string;
+    symbol?: string;
+    interval?: string;
+    status?: string;
+    qualityStatus?: string;
+    source?: string;
+    maximumGapCount?: number;
+    limit: number;
+    offset: number;
+}
+
+export interface DatasetPage {
+    items: MarketdataDataset[];
+    total: number;
+    limit: number;
+    offset: number;
+}
+
+/** 原次覆盖记录独立于数据集的可变最新质量；计数必须完整且保持安全整数。 */
+export interface DatasetCoverage {
+    coverageId: string;
+    datasetId: string;
+    rangeStartTime: string;
+    rangeEndTime: string;
+    expectedBars: number;
+    actualBars: number;
+    missingBars: number;
+    duplicateBars: number;
+    invalidBars: number;
+    qualityStatus: string;
+    summaryJson: string;
+    createdAt: string;
+}
+
+export type DatasetOperationRequest =
+    | {
+          kind: 'CREATE';
+          operationId: string;
+          datasetId: string;
+          input: CreateMarketdataDatasetRequest;
+      }
+    | {kind: 'REFRESH'; operationId: string; datasetId: string; input: Record<string, never>};
+
+export interface DatasetOperation {
+    operationId: string;
+    kind: 'CREATE' | 'REFRESH';
+    datasetId: string;
+    state: 'PENDING' | 'SUCCEEDED' | 'FAILED';
+    input: CreateMarketdataDatasetRequest | Record<string, never>;
+    createdAt: string;
+    completedAt: string | null;
+    result: {dataset: MarketdataDataset; coverage: DatasetCoverage} | null;
+    failureCode:
+        | 'DATASET_ID_OCCUPIED'
+        | 'DATASET_NOT_FOUND'
+        | 'PUBLIC_CAPTURE_DATASET_IMMUTABLE'
+        | null;
 }

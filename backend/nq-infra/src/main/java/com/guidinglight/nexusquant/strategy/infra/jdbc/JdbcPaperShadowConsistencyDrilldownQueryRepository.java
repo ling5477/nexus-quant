@@ -14,6 +14,11 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunAuthorizationBoundary;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -22,11 +27,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Repository;
 
 /**
  * JdbcPaperShadowConsistencyDrilldownQueryRepository 是验证只读视图 drilldown 的 JDBC read adapter。
@@ -37,11 +37,14 @@ import org.springframework.stereotype.Repository;
  * 等深层表，只保留 id anchor。
  */
 @Repository
-public class JdbcPaperShadowConsistencyDrilldownQueryRepository implements PaperShadowConsistencyDrilldownQueryPort {
+public class JdbcPaperShadowConsistencyDrilldownQueryRepository
+        implements PaperShadowConsistencyDrilldownQueryPort {
 
-    private static final String RUN_SELECT = """
+    private static final String RUN_SELECT =
+            """
             SELECT id, strategy_version_id, dataset_id, evaluation_id, publish_id, artifact_digest, paper_run_id,
-                   status, window_start, window_end, side_effect_policy::text AS side_effect_policy,
+                   status, window_start, window_end, window_start_nanosecond_remainder,
+                   window_end_nanosecond_remainder, side_effect_policy::text AS side_effect_policy,
                    no_order_submission, no_credential_access, no_private_endpoint, no_ledger_mutation,
                    no_account_mutation, no_external_private_io, authorization_boundary, request_id,
                    idempotency_key, trace_id, blockers::text AS blockers, warnings::text AS warnings,
@@ -50,7 +53,8 @@ public class JdbcPaperShadowConsistencyDrilldownQueryRepository implements Paper
             FROM shadow_runs
             """;
 
-    private static final String REPORT_SELECT = """
+    private static final String REPORT_SELECT =
+            """
             SELECT id, shadow_run_id, paper_run_id, comparison_status, metric_delta::text AS metric_delta,
                    divergence_reasons::text AS divergence_reasons, limitations::text AS limitations,
                    generated_at, trace_id, created_at
@@ -61,7 +65,8 @@ public class JdbcPaperShadowConsistencyDrilldownQueryRepository implements Paper
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public JdbcPaperShadowConsistencyDrilldownQueryRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+    public JdbcPaperShadowConsistencyDrilldownQueryRepository(
+            JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
     }
@@ -79,55 +84,54 @@ public class JdbcPaperShadowConsistencyDrilldownQueryRepository implements Paper
     @Override
     public PaperShadowConsistencyDrilldownFacts loadDrilldownFacts(UUID shadowRunId) {
         Objects.requireNonNull(shadowRunId, "shadowRunId must not be null");
-        Optional<ShadowRun> run = queryOptional(
-                RUN_SELECT + " WHERE id = ?",
-                this::mapRun,
-                shadowRunId
-        );
+        Optional<ShadowRun> run =
+                queryOptional(RUN_SELECT + " WHERE id = ?", this::mapRun, shadowRunId);
         if (run.isEmpty()) {
             return PaperShadowConsistencyDrilldownFacts.missingRun();
         }
 
-        Optional<ShadowConsistencyReport> latestReport = queryOptional(
-                REPORT_SELECT + " WHERE shadow_run_id = ? ORDER BY generated_at DESC, created_at DESC, id DESC LIMIT 1",
-                this::mapReport,
-                shadowRunId
-        );
+        Optional<ShadowConsistencyReport> latestReport =
+                queryOptional(
+                        REPORT_SELECT
+                                + " WHERE shadow_run_id = ? ORDER BY generated_at DESC, created_at DESC, id DESC LIMIT 1",
+                        this::mapReport,
+                        shadowRunId);
         SnapshotFacts snapshotFacts = loadSnapshotFacts(shadowRunId);
-        long totalEvents = count("SELECT COUNT(*) FROM shadow_run_events WHERE shadow_run_id = ?", shadowRunId);
-        Optional<LatestEventFact> latestEvent = queryOptional("""
+        long totalEvents =
+                count(
+                        "SELECT COUNT(*) FROM shadow_run_events WHERE shadow_run_id = ?",
+                        shadowRunId);
+        Optional<LatestEventFact> latestEvent =
+                queryOptional(
+                        """
                         SELECT id::text AS event_id, event_type, reason_code, created_at
                         FROM shadow_run_events
                         WHERE shadow_run_id = ?
                         ORDER BY created_at DESC, id DESC
                         LIMIT 1
                         """,
-                this::mapLatestEvent,
-                shadowRunId
-        );
-        Optional<LatestSnapshotFact> latestSnapshot = queryOptional("""
+                        this::mapLatestEvent,
+                        shadowRunId);
+        Optional<LatestSnapshotFact> latestSnapshot =
+                queryOptional(
+                        """
                         SELECT id::text AS snapshot_id, snapshot_type, schema_version, captured_at, checksum
                         FROM shadow_run_snapshots
                         WHERE shadow_run_id = ?
                         ORDER BY captured_at DESC, created_at DESC, id DESC
                         LIMIT 1
                         """,
-                this::mapLatestSnapshot,
-                shadowRunId
-        );
+                        this::mapLatestSnapshot,
+                        shadowRunId);
 
         return new PaperShadowConsistencyDrilldownFacts(
-                run,
-                latestReport,
-                snapshotFacts,
-                totalEvents,
-                latestEvent,
-                latestSnapshot
-        );
+                run, latestReport, snapshotFacts, totalEvents, latestEvent, latestSnapshot);
     }
 
     private SnapshotFacts loadSnapshotFacts(UUID shadowRunId) {
-        Optional<SnapshotFacts> aggregate = queryOptional("""
+        Optional<SnapshotFacts> aggregate =
+                queryOptional(
+                        """
                         SELECT COUNT(*) AS total_snapshots,
                                COALESCE(SUM(CASE WHEN snapshot_type = 'INPUT_MARKETDATA' THEN 1 ELSE 0 END), 0) AS input_marketdata_snapshots,
                                COALESCE(SUM(CASE WHEN snapshot_type = 'STRATEGY_DECISION' THEN 1 ELSE 0 END), 0) AS strategy_decision_snapshots,
@@ -137,18 +141,19 @@ public class JdbcPaperShadowConsistencyDrilldownQueryRepository implements Paper
                         FROM shadow_run_snapshots
                         WHERE shadow_run_id = ?
                         """,
-                (rs, rowNum) -> new SnapshotFacts(
-                        rs.getLong("total_snapshots"),
-                        rs.getLong("input_marketdata_snapshots"),
-                        rs.getLong("strategy_decision_snapshots"),
-                        rs.getLong("risk_preflight_snapshots"),
-                        rs.getLong("order_intent_preview_snapshots"),
-                        toInstant(rs.getTimestamp("latest_snapshot_at")),
-                        List.of()
-                ),
-                shadowRunId
-        );
-        List<String> latestTypes = jdbcTemplate.query("""
+                        (rs, rowNum) ->
+                                new SnapshotFacts(
+                                        rs.getLong("total_snapshots"),
+                                        rs.getLong("input_marketdata_snapshots"),
+                                        rs.getLong("strategy_decision_snapshots"),
+                                        rs.getLong("risk_preflight_snapshots"),
+                                        rs.getLong("order_intent_preview_snapshots"),
+                                        toInstant(rs.getTimestamp("latest_snapshot_at")),
+                                        List.of()),
+                        shadowRunId);
+        List<String> latestTypes =
+                jdbcTemplate.query(
+                        """
                         SELECT DISTINCT snapshot_type
                         FROM shadow_run_snapshots
                         WHERE shadow_run_id = ?
@@ -159,10 +164,9 @@ public class JdbcPaperShadowConsistencyDrilldownQueryRepository implements Paper
                           )
                         ORDER BY snapshot_type ASC
                         """,
-                (rs, rowNum) -> rs.getString("snapshot_type"),
-                shadowRunId,
-                shadowRunId
-        );
+                        (rs, rowNum) -> rs.getString("snapshot_type"),
+                        shadowRunId,
+                        shadowRunId);
         SnapshotFacts value = aggregate.orElseGet(SnapshotFacts::empty);
         return new SnapshotFacts(
                 value.totalSnapshots(),
@@ -171,8 +175,7 @@ public class JdbcPaperShadowConsistencyDrilldownQueryRepository implements Paper
                 value.riskPreflightSnapshots(),
                 value.orderIntentPreviewSnapshots(),
                 value.latestSnapshotAt(),
-                latestTypes
-        );
+                latestTypes);
     }
 
     private long count(String sql, Object... args) {
@@ -195,8 +198,12 @@ public class JdbcPaperShadowConsistencyDrilldownQueryRepository implements Paper
                 rs.getString("artifact_digest"),
                 rs.getString("paper_run_id"),
                 ShadowRunStatus.fromDatabase(rs.getString("status")),
-                toInstant(rs.getTimestamp("window_start")),
-                toInstant(rs.getTimestamp("window_end")),
+                ShadowRunWindowPrecision.restore(
+                        rs.getTimestamp("window_start"),
+                        rs.getInt("window_start_nanosecond_remainder")),
+                ShadowRunWindowPrecision.restore(
+                        rs.getTimestamp("window_end"),
+                        rs.getInt("window_end_nanosecond_remainder")),
                 readJson(rs.getString("side_effect_policy")),
                 rs.getBoolean("no_order_submission"),
                 rs.getBoolean("no_credential_access"),
@@ -216,8 +223,7 @@ public class JdbcPaperShadowConsistencyDrilldownQueryRepository implements Paper
                 rs.getTimestamp("updated_at").toInstant(),
                 toInstant(rs.getTimestamp("started_at")),
                 toInstant(rs.getTimestamp("stopped_at")),
-                toInstant(rs.getTimestamp("completed_at"))
-        );
+                toInstant(rs.getTimestamp("completed_at")));
     }
 
     private ShadowConsistencyReport mapReport(ResultSet rs, int rowNum) throws SQLException {
@@ -231,8 +237,7 @@ public class JdbcPaperShadowConsistencyDrilldownQueryRepository implements Paper
                 readJson(rs.getString("limitations")),
                 rs.getTimestamp("generated_at").toInstant(),
                 rs.getString("trace_id"),
-                rs.getTimestamp("created_at").toInstant()
-        );
+                rs.getTimestamp("created_at").toInstant());
     }
 
     private LatestEventFact mapLatestEvent(ResultSet rs, int rowNum) throws SQLException {
@@ -240,8 +245,7 @@ public class JdbcPaperShadowConsistencyDrilldownQueryRepository implements Paper
                 rs.getString("event_id"),
                 rs.getString("event_type"),
                 rs.getString("reason_code"),
-                rs.getTimestamp("created_at").toInstant()
-        );
+                rs.getTimestamp("created_at").toInstant());
     }
 
     private LatestSnapshotFact mapLatestSnapshot(ResultSet rs, int rowNum) throws SQLException {
@@ -250,15 +254,15 @@ public class JdbcPaperShadowConsistencyDrilldownQueryRepository implements Paper
                 rs.getString("snapshot_type"),
                 rs.getString("schema_version"),
                 rs.getTimestamp("captured_at").toInstant(),
-                rs.getString("checksum")
-        );
+                rs.getString("checksum"));
     }
 
     private JsonNode readJson(String value) {
         try {
             return objectMapper.readTree(value == null || value.isBlank() ? "{}" : value);
         } catch (JsonProcessingException ex) {
-            throw new IllegalStateException("failed to parse paper shadow consistency drilldown JSONB field", ex);
+            throw new IllegalStateException(
+                    "failed to parse paper shadow consistency drilldown JSONB field", ex);
         }
     }
 

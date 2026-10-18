@@ -16,6 +16,12 @@ import java.util.Optional;
  */
 public interface ExchangeAccountCredentialRepository {
 
+    /** 有界读取全部生命周期的脱敏摘要，不读取加密或解密材料。 */
+    default List<ExchangeAccountCredentialSummary> listHistory(
+            Long ownerUserId, Long accountId, Long beforeCredentialId, int limit) {
+        throw new UnsupportedOperationException("credential history is not implemented");
+    }
+
     /**
      * 列出指定 owner + account 下所有当前 ACTIVE credential 摘要。
      *
@@ -23,7 +29,8 @@ public interface ExchangeAccountCredentialRepository {
      * 同时存在多个 active credential type。无 credentialType 的读取必须先看到完整候选集，
      * 才能在多候选时返回明确冲突，而不是按更新时间静默选错。</p>
      */
-    List<ExchangeAccountCredentialSummary> listActiveSummaries(Long ownerUserId, Long exchangeAccountId);
+    List<ExchangeAccountCredentialSummary> listActiveSummaries(
+            Long ownerUserId, Long exchangeAccountId);
 
     /**
      * 读取唯一 active 摘要；多 credential type 候选时抛出状态冲突。
@@ -31,12 +38,17 @@ public interface ExchangeAccountCredentialRepository {
      * <p>Why: 保留旧调用方的单 active 兼容行为，同时把多 ACTIVE type 从隐式
      * `LIMIT 1` 改为显式业务冲突，避免后续权限探活或展示路径选错凭证。</p>
      */
-    default Optional<ExchangeAccountCredentialSummary> findActiveSummary(Long ownerUserId, Long exchangeAccountId) {
-        List<ExchangeAccountCredentialSummary> activeSummaries = listActiveSummaries(ownerUserId, exchangeAccountId);
+    default Optional<ExchangeAccountCredentialSummary> findActiveSummary(
+            Long ownerUserId, Long exchangeAccountId) {
+        List<ExchangeAccountCredentialSummary> activeSummaries =
+                listActiveSummaries(ownerUserId, exchangeAccountId);
         if (activeSummaries.size() > 1) {
-            throw new IllegalStateException("multiple active credential types require credentialType");
+            throw new IllegalStateException(
+                    "multiple active credential types require credentialType");
         }
-        return activeSummaries.isEmpty() ? Optional.empty() : Optional.of(activeSummaries.getFirst());
+        return activeSummaries.isEmpty()
+                ? Optional.empty()
+                : Optional.of(activeSummaries.getFirst());
     }
 
     /**
@@ -46,12 +58,10 @@ public interface ExchangeAccountCredentialRepository {
      * 选择业务需要的 type，不能依赖更新时间或插入顺序。</p>
      */
     Optional<ExchangeAccountCredentialSummary> findActiveSummary(
-            Long ownerUserId,
-            Long exchangeAccountId,
-            String credentialType
-    );
+            Long ownerUserId, Long exchangeAccountId, String credentialType);
 
-    Optional<ExchangeAccountCredentialSummary> findActiveByAccountAndType(Long exchangeAccountId, String credentialType);
+    Optional<ExchangeAccountCredentialSummary> findActiveByAccountAndType(
+            Long exchangeAccountId, String credentialType);
 
     /**
      * 读取唯一 active material；多 credential type 候选时抛出状态冲突。
@@ -59,9 +69,13 @@ public interface ExchangeAccountCredentialRepository {
      * <p>Why: active material 包含服务端解密后的 payload，必须先通过摘要候选集确认
      * 无歧义，再按唯一 credentialType 读取 material，避免为冲突检测解密多份凭证。</p>
      */
-    default Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(Long ownerUserId, Long exchangeAccountId) {
+    default Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(
+            Long ownerUserId, Long exchangeAccountId) {
         return findActiveSummary(ownerUserId, exchangeAccountId)
-                .flatMap(summary -> findActiveMaterial(ownerUserId, exchangeAccountId, summary.credentialType()));
+                .flatMap(
+                        summary ->
+                                findActiveMaterial(
+                                        ownerUserId, exchangeAccountId, summary.credentialType()));
     }
 
     /**
@@ -71,10 +85,7 @@ public interface ExchangeAccountCredentialRepository {
      * 本方法仍只允许 `is_active=true` 且 `credential_status='ACTIVE'` 的记录进入 material。</p>
      */
     Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(
-            Long ownerUserId,
-            Long exchangeAccountId,
-            String credentialType
-    );
+            Long ownerUserId, Long exchangeAccountId, String credentialType);
 
     /**
      * 按 credentialId 读取凭证摘要，并复用 exchange account owner 校验。
@@ -83,10 +94,7 @@ public interface ExchangeAccountCredentialRepository {
      * 不能只按 credentialId 裸查，否则可能绕过账户归属边界。</p>
      */
     Optional<ExchangeAccountCredentialSummary> findByCredentialIdForOwner(
-            Long ownerUserId,
-            Long exchangeAccountId,
-            Long credentialId
-    );
+            Long ownerUserId, Long exchangeAccountId, Long credentialId);
 
     /**
      * 按 account + credentialId 锁定当前 ACTIVE credential。
@@ -95,10 +103,7 @@ public interface ExchangeAccountCredentialRepository {
      * 新版本 ACTIVE 和 audit log 写入，避免并发 rotate 留下双 active 或半成品审计。</p>
      */
     Optional<ExchangeAccountCredentialSummary> findActiveByCredentialIdForOwnerForUpdate(
-            Long ownerUserId,
-            Long exchangeAccountId,
-            Long credentialId
-    );
+            Long ownerUserId, Long exchangeAccountId, Long credentialId);
 
     /**
      * 按 account + credentialId 锁定任意生命周期的 credential material。
@@ -108,10 +113,7 @@ public interface ExchangeAccountCredentialRepository {
      * 完成状态检查、结构性校验、ACTIVE 冲突检测、状态写回和 audit log，避免并发 enable 造成双 active。</p>
      */
     Optional<ExchangeAccountCredentialMaterial> findByCredentialIdForOwnerForUpdate(
-            Long ownerUserId,
-            Long exchangeAccountId,
-            Long credentialId
-    );
+            Long ownerUserId, Long exchangeAccountId, Long credentialId);
 
     /**
      * 检查同一 account + credentialType 下是否存在其他 ACTIVE credential。
@@ -120,12 +122,10 @@ public interface ExchangeAccountCredentialRepository {
      * 业务冲突，而不是依赖数据库 partial unique index 抛底层异常。</p>
      */
     boolean existsOtherActiveCredential(
-            Long exchangeAccountId,
-            String credentialType,
-            Long excludedCredentialId
-    );
+            Long exchangeAccountId, String credentialType, Long excludedCredentialId);
 
-    void deactivateActiveByAccountAndType(Long exchangeAccountId, String credentialType, Instant revokedAt);
+    void deactivateActiveByAccountAndType(
+            Long exchangeAccountId, String credentialType, Instant revokedAt);
 
     ExchangeAccountCredentialSummary insertNewVersion(
             Long exchangeAccountId,
@@ -135,16 +135,14 @@ public interface ExchangeAccountCredentialRepository {
             String cipherSuite,
             String maskedAccessKey,
             Long rotatedFromCredentialId,
-            Instant now
-    );
+            Instant now);
 
     boolean markVerificationResult(
             Long credentialId,
             String verificationStatus,
             Instant verifiedAt,
             String lastVerificationError,
-            Instant updatedAt
-    );
+            Instant updatedAt);
 
     /**
      * 把 credential 标记为 permission probe IN_PROGRESS。
@@ -153,10 +151,7 @@ public interface ExchangeAccountCredentialRepository {
      * 再用本方法 claim 状态，避免并发请求重复调用 adapter。</p>
      */
     default boolean markPermissionProbeInProgress(
-            Long credentialId,
-            Long exchangeAccountId,
-            Instant updatedAt
-    ) {
+            Long credentialId, Long exchangeAccountId, Instant updatedAt) {
         throw new UnsupportedOperationException("permission probe claim is not implemented");
     }
 
@@ -178,9 +173,9 @@ public interface ExchangeAccountCredentialRepository {
             Instant lastPermissionProbeAt,
             String lastPermissionProbeError,
             boolean incrementFailedAuthCount,
-            Instant updatedAt
-    ) {
-        throw new UnsupportedOperationException("permission probe result writeback is not implemented");
+            Instant updatedAt) {
+        throw new UnsupportedOperationException(
+                "permission probe result writeback is not implemented");
     }
 
     /**
@@ -194,8 +189,7 @@ public interface ExchangeAccountCredentialRepository {
             Long exchangeAccountId,
             String verificationStatus,
             Instant verifiedAt,
-            Instant updatedAt
-    );
+            Instant updatedAt);
 
     /**
      * 更新凭证生命周期状态，不删除 credential 历史版本。
@@ -211,8 +205,7 @@ public interface ExchangeAccountCredentialRepository {
             Instant revokedAt,
             String revokedBy,
             String revokeReason,
-            Instant updatedAt
-    );
+            Instant updatedAt);
 
     /**
      * 把旧 ACTIVE credential 标记为 ROTATED，不删除历史记录。
@@ -221,11 +214,7 @@ public interface ExchangeAccountCredentialRepository {
      * 需要写 rotated_at / rotated_by，但不得写 revoke_reason 或 hard delete。</p>
      */
     boolean markRotated(
-            Long credentialId,
-            Long exchangeAccountId,
-            String rotatedBy,
-            Instant rotatedAt
-    );
+            Long credentialId, Long exchangeAccountId, String rotatedBy, Instant rotatedAt);
 
     /**
      * 追加凭证审计日志，调用方只允许传入脱敏 metadata。
@@ -240,6 +229,5 @@ public interface ExchangeAccountCredentialRepository {
             String actor,
             String reason,
             String metadataJson,
-            Instant createdAt
-    );
+            Instant createdAt);
 }

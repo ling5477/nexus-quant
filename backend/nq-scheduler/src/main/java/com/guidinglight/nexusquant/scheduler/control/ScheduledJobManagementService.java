@@ -2,19 +2,23 @@ package com.guidinglight.nexusquant.scheduler.control;
 
 import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import org.springframework.stereotype.Service;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.transaction.annotation.Transactional;
+import java.util.UUID;
 
 /** 运维入口只修改固定控制字段，执行权限仍由代码能力门槛决定。 */
 @Service
-@ConditionalOnProperty(name = "nq.runtime.provider-observation.enabled", havingValue = "false", matchIfMissing = true)
+@ConditionalOnProperty(
+        name = "nq.runtime.provider-observation.enabled",
+        havingValue = "false",
+        matchIfMissing = true)
 public class ScheduledJobManagementService {
     private final ScheduledJobRegistry registry;
     private final ScheduledJobControlRepository controls;
@@ -22,8 +26,10 @@ public class ScheduledJobManagementService {
     private final AuditLogRepository audit;
     private final Clock clock = Clock.systemUTC();
 
-    public ScheduledJobManagementService(ScheduledJobRegistry registry,
-            ScheduledJobControlRepository controls, SchedulerDispatcher dispatcher,
+    public ScheduledJobManagementService(
+            ScheduledJobRegistry registry,
+            ScheduledJobControlRepository controls,
+            SchedulerDispatcher dispatcher,
             AuditLogRepository audit) {
         this.registry = registry;
         this.controls = controls;
@@ -37,12 +43,18 @@ public class ScheduledJobManagementService {
 
     public ScheduledJobControl detail(String key) {
         registry.require(key);
-        return controls.find(key).orElseThrow(() -> new IllegalStateException("SCHEDULER_CONTROL_MISSING"));
+        return controls.find(key)
+                .orElseThrow(() -> new IllegalStateException("SCHEDULER_CONTROL_MISSING"));
     }
 
     @Transactional
-    public ScheduledJobControl patch(String key, Boolean enabled, Long fixedDelayMs,
-            long expectedVersion, String actor, String traceId) {
+    public ScheduledJobControl patch(
+            String key,
+            Boolean enabled,
+            Long fixedDelayMs,
+            long expectedVersion,
+            String actor,
+            String traceId) {
         ScheduledJobRegistry.Job job = registry.require(key);
         ScheduledJobControl old = detail(key);
         boolean newEnabled = enabled == null ? old.enabled() : enabled;
@@ -52,7 +64,8 @@ public class ScheduledJobManagementService {
             throw new IllegalStateException("SCHEDULER_CAPABILITY_UNAVAILABLE");
         }
         if (old.enabled() == newEnabled && old.fixedDelayMs() == newDelay) {
-            if (expectedVersion != old.version()) throw new IllegalStateException("SCHEDULER_VERSION_CONFLICT");
+            if (expectedVersion != old.version())
+                throw new IllegalStateException("SCHEDULER_VERSION_CONFLICT");
             return old;
         }
         if (!controls.patch(key, expectedVersion, newEnabled, newDelay, actor, clock.instant())) {
@@ -78,15 +91,27 @@ public class ScheduledJobManagementService {
     public SchedulerDispatcher.ExecutionOutcome runOnce(String key, String actor, String traceId) {
         registry.require(key);
         Objects.requireNonNull(actor);
-        audit.append("SCHEDULER", "RUN_ONCE_REQUESTED", actor, traceId,
+        audit.append(
+                "SCHEDULER",
+                "RUN_ONCE_REQUESTED",
+                actor,
+                traceId,
                 Map.of("jobKey", key, "result", "REQUESTED"));
         try {
             SchedulerDispatcher.ExecutionOutcome outcome = dispatcher.runOnce(key);
-            audit.append("SCHEDULER", "RUN_ONCE", actor, traceId,
+            audit.append(
+                    "SCHEDULER",
+                    "RUN_ONCE",
+                    actor,
+                    traceId,
                     Map.of("jobKey", key, "result", outcome.name()));
             return outcome;
         } catch (RuntimeException failure) {
-            audit.append("SCHEDULER", "RUN_ONCE", actor, traceId,
+            audit.append(
+                    "SCHEDULER",
+                    "RUN_ONCE",
+                    actor,
+                    traceId,
                     Map.of("jobKey", key, "result", "REJECTED"));
             throw failure;
         }
@@ -101,4 +126,9 @@ public class ScheduledJobManagementService {
         }
     }
 
+    /** 仅用于已有持久回执的运行请求；领取/完成审计由对应原子事务记录，保留原执行器资格与锁。 */
+    public SchedulerDispatcher.ExecutionOutcome runOnce(String key, UUID operationId) {
+        registry.require(key);
+        return dispatcher.runOnce(key, Objects.requireNonNull(operationId));
+    }
 }

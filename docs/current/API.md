@@ -1,5 +1,27 @@
 # Current API
 
+## 评估与发布结果服务端分页
+
+`GET /api/evaluations/page` 与 `GET /api/publishes/page` 返回 `{items,total,limit,offset}`。`limit` 默认20、范围1—100，`offset` 默认0、非负int；ID过滤最长128，状态最长32，原始控制字符拒绝。状态只接受真实 `SUCCEEDED/FAILED`（可忽略大小写），未知状态返回既有400错误DTO。
+
+评估页参数 `researchConfigId/backtestConfigId` 沿原接口精确匹配，`backtestRunId` 保留原页面的不区分大小写普通子串含义。发布页的 `researchConfigId/backtestConfigId/sourceStrategyId` 为普通子串，`strategyVersionId` 沿原接口精确匹配。子串里的 `% _ !` 按字面量处理。评估按 `evaluated_at DESC NULLS LAST,created_at DESC,eval_report_id DESC`，发布按 `updated_at DESC,publish_record_id DESC` 排序。无匹配父过滤仍为空结果，不改变旧结果列表合同，也不因配置已归档而隐藏已有历史结果。
+
+COUNT与页记录共用原冻结运行的费用来源可见范围，在5秒只读REPEATABLE_READ事务内读取。响应沿用完整评估/发布DTO，不重新计算指标或重放发布；金额保持正式十进制，前端评估解析继续保留数值词法精度。旧数组、详情、重新评估和发布写入口兼容保留；其他旧数组消费者/选择器的分页迁移仍待完成。
+
+## 回测配置服务端分页
+
+`GET /api/backtest-configs/page` 返回 `{items,total,limit,offset}`。可选 `researchConfigId` 精确匹配；`backtestConfigId`、`name` 为不区分大小写的普通文本子串，`% _ !` 按字面值处理。ID最长128、名称最长255；拒绝控制字符。`limit` 默认20、范围1—100；`offset` 默认0、非负int。同一只读REPEATABLE_READ快照内，COUNT和页记录复用既有费用来源所有者隔离及非ARCHIVED范围；DISABLED仍可见，排序为 `created_at DESC,backtest_config_id DESC`。指定研究父对象不存在时保留404。
+
+旧 `GET /api/backtest-configs` 数组合同保留，未静默截断；研究配置选择器、回测运行选择器及其他旧数组消费者仍待分页迁移。新接口复用原配置响应和金额精度，不创建配置、绑定、运行、评估或发布，不改变这些动作的前提。
+
+## 研究配置分页读取
+
+`GET /api/research-configs/page` 使用现有登录认证和研究配置可见性，返回 `{items,total,limit,offset}`。`sourceStrategyId` 为可选精确过滤，`researchConfigId` 和 `name` 为不区分大小写的普通子串过滤；百分号、下划线、感叹号不解释为SQL通配符。默认排除归档，停用配置仍可见，按 `created_at DESC,research_config_id DESC` 稳定排序。
+
+`limit` 默认20，范围1—100；`offset` 为非负32位整数。ID过滤最长128、名称255，拒绝控制字符；非法参数返回既有400错误DTO。总数与页面在同一只读REPEATABLE READ事务中取得，读取超时5秒，分页请求不改变研究或交易事实。
+
+研究工作台的查询、筛选和页码消费本接口，用户身份、全部过滤条件、窗口和查询版本进入缓存键，读取可取消且离开的页不保留缓存。原 `GET /api/research-configs` 数组接口保留兼容，没有静默截断；旧选择器及其他业务列表的无界读取仍是待迁移项，不能据本接口声明全站查询边界已完成。详情和创建接口保持原合同。
+
 统一错误协议继续使用 `ApiErrorResponse`，保留 `timestamp/status/error/code/message/path/traceId/fieldErrors`，为已登记错误增加可省略的 `errorKey/errorId`。订单准备阶段 CAS 冲突保持 HTTP 409 / `code=STATE_CONFLICT`，附加 `errorKey=ORDER_VERSION_CONFLICT` / `errorId=NQ-TRD-1001`；其他旧错误 code 与未编号 JSON 形状保持原有契约。机器身份与本地化 UX 分离，字段原始诊断保留；完整兼容说明、真实调用路径和目录 ownership 见[错误目录](../error-catalog/README.md)。
 
 当前 API 事实以代码中的 controller 与 DTO 为准。下方分类描述现有接口能力；按 Gate 编号排列的段落保留实施时的范围和验收记录，其中的“当时状态”不表示当前接口尚未交付。当前运行与交易授权边界以 [STATUS.md](STATUS.md) 为准。
@@ -22,9 +44,18 @@
 
 `POST /api/marketdata/public-captures` 仅在 `public-marketdata-manual` profile 且 `nq.public-marketdata.outbound.enabled=true` 时装配，并沿用 `/api/**` 的 ADMIN/OPERATOR 鉴权。请求体为 `start`、`end` UTC 整点；服务端固定 OKX SPOT / BTC-USDT / 1h，单次窗口 1–100 根已收盘 bar。响应给出 dataset ID、请求窗口、实际 `observedAt`、`CLOSED_HOURLY_BOUNDARY_V1` 回放可见时间假设、原始/规范化/实际消费 SHA-256，以及当前公开 instrument rule 的观察时间与身份。捕获及 dataset 不可变；再次采集产生新身份。公开规则仅表示采集时观察到的状态，费用与滑点须由后续回测配置显式给出非零实验假设。该入口不授予 LIVE 或真实交易权限。
 
+### 公开历史捕获的稳定请求与原结果恢复
+
+`POST /api/marketdata/public-captures/{captureId}` 接受客户端非零 UUID 及 `{start,end}`，当前有效 ADMIN/OPERATOR 才可提交；`GET /api/marketdata/public-captures/{captureId}` 仅原 owner 用户 ID 可读，其他用户返回404。请求在来源读取前独立提交登记；同号必须保持原 owner、actor 与完整 UTC 小时窗口，1—100小时且结束至少早于当前1小时。响应包括 `captureId/state/start/end/createdAt/completedAt/result/failureCode`；状态为 `PENDING/SUCCEEDED/FAILED`，PENDING不能显示成成功。
+
+同号同输入的终态直接重放原回执，PENDING须由用户明确按原编号继续。数据集、原捕获事实及成功回执在同一事务提交；未知数据库失败回滚这些事实、保留PENDING，不伪装成确定来源失败。来源确认失败冻结有界原因码。行锁等待上限3秒、单JVM最多2次执行、事务65秒上限；公开响应完整正文期限8秒、最大256000字节。`nq.marketdata.public-capture.base-url` 默认OKX公开源站，每次外联仍要求现有manual profile、enabled、no-outbound及CI守卫；不授予私有接入或真实交易。
+
+原不带编号的POST兼容入口保留。正式页面改用稳定编号：提交前持久化原编号和原窗口，刷新只读，查询404不推断未执行；必须查明终态并明确确认阅读才能释放本机原请求。后端14项、独立PG42项及传输7项、前端405项单测通过；UI修正后type/build及10文件格式AST/稳定性再次通过。相同R2候选已取得正式Servlet/PG同号并发与真实锁等待、进程中断后第二JVM恢复、中文桌面1536/英文手机390/当前VIEWER，以及关闭来源后的原回执读取/重放证据。桌面完整场景与后续手机/只读补验属于两份明确范围的复用证据，早期夹具失败保留，不追认为全运行通过。来源数据为本机OKX协议夹具；另一次真实OKX正式Java尝试冻结为PUBLIC_MARKET_TRANSPORT_FAILURE，独立DNS探测gaierror/11004；未创建数据集，不声明真实OKX捕获成功。V25已在隔离PG执行并冻结，禁止就地修改。
+
+
 ## 隔离策略 SIM 接口（默认关闭）
 
-开启服务端 `nq.strategy-sim.enabled=true` 后，`/api/paper-trading/strategy-sim/runs` 提供创建、`/{paperRunId}/start`、`/stop`、`/advance`、`/decisions` 和 `/facts`。创建仅接受已成功发布的 `publishId` 与隔离预算；方向和数量来自冻结策略及服务端 sizing。`advance` 每次保存一个可解释决策，已接受订单仍经过 canonical Risk / Execution；`facts` 返回关联的订单、成交、账本、现金、持仓及按最近已处理事件可见价格标记的 PnL。前端入口另由 `VITE_STRATEGY_SIM_ENABLED=true` 显式开启。默认不开启自动决策，不授予 LIVE 或真实交易权限。
+开启服务端 `nq.strategy-sim.enabled=true` 后，`/api/paper-trading/strategy-sim/runs` 提供创建、`/{paperRunId}/start`、`/stop`、`/advance`、`/decisions` 和 `/facts`。创建仅接受已成功发布的 `publishId` 与隔离预算；方向和数量来自冻结策略及服务端 sizing。`advance` 每次保存一个可解释决策，已接受订单仍经过 canonical Risk / Execution；`facts` 返回关联的订单、成交、账本、现金、持仓及按最近已处理事件可见价格标记的 PnL。标准生产前端构建默认保留策略 SIM 与连续 SIM 入口；可用 `VITE_STRATEGY_SIM_ENABLED=false`、`VITE_CONTINUOUS_SIM_ENABLED=false` 分别显式关闭，开发模式则需显式设置为 `true`。构建开关仅决定入口呈现，连续命令仍要求服务端能力可用及操作角色；它们不会启用后台驱动、自动决策或授予 LIVE、真实交易权限。
 
 ## API 分类
 
@@ -597,6 +628,7 @@ GateI 后续规划不改变当前事实：AI、AI 信号、AI 自动交易和 AI
 - `GET /api/paper-trading/runs/{paperRunId}`：查询 Paper Trading run 详情。
 - `GET /api/paper-trading/runs/{paperRunId}/summary`：只读聚合该 Paper run 的运行结果复盘、异常原因诊断、运行事件时间线与关键计数（counts/latest/resultReview/diagnoses/timeline/safety），供前端详情区优先消费；不触发任何状态机或外部调用，environment 固定 SIM/PAPER、LIVE 未开启。
 - `GET /api/paper-trading/portfolio/summary`：跨多个 Paper run 只读聚合组合看板（overview/strategyGroups/publishGroups/highlights/dataQuality/safety/portfolioCurve）：组合总资产/总 PnL/累计收益率/最大回撤、按 strategyVersionId 与 publishId 的收益排行（strategyGroups/publishGroups 每组含组内精确风险计数 `noTradeCount`/`dataInsufficientCount`/`comparableRunCount`/`runningCount`/`stoppedCount`/`failedCount`/`cancelledCount`/`createdCount`，基于完整 bounded runs、向后兼容新增；并含订单/成交执行计数 `orderCount`/`tradeCount` 与执行进度三态 run 计数 `noOrderCount`/`orderNoFillCount`/`filledRunCount`，其中 `noOrderCount + orderNoFillCount == noTradeCount`，向后兼容新增）、overview 同步新增 `noOrderRunCount`/`orderNoFillRunCount`/`filledRunCount`（把「无交易」拆为「无订单」「有订单无成交」并显式「有成交」，三者互斥穷尽 totalRuns，向后兼容新增）、Run 排行 run 引用新增 `orderCount` 与执行进度标记 `noOrder`/`orderNoFill`/`hasFill`（向后兼容新增）、Run 排行（收益最高/回撤最大/风险最高/最近活跃/无交易/风控拦截）、数据质量提示与组合级 equity/drawdown 时间序列（`portfolioCurve`：points/latestEquity/peakEquity/currentDrawdown/maxDrawdown/pointCount/coverage，向后兼容新增，数据不足时 points 为空、指标为 null）；仅基于已有 run/equity/日报/风控/告警/成交事实，不触发任何状态机或外部调用，数据不足时不伪造收益率，environment 固定 SIM/PAPER、LIVE 未开启。
+- `GET /api/paper-trading/legacy-analysis`：research域历史Paper只读快照，主体来自正式认证，不接受页面传owner。先选`canonical_account_id IS NULL AND trade_env=SIM`并应用真实费用owner/public可见范围，再按`updated_at DESC,paper_run_id DESC`限201条；200条参与统计，额外一条仅用于`hasMore`。返回`source=LEGACY_PAPER`、`valuationStatus=UNIT_NOT_RECORDED`、`maxRuns=200`、`includedRuns`、`hasMore`、`generatedAt`以及同窗`portfolio`、完整`runs`、`diagnostics`、`evaluations`、`reviews`。旧权益和日报未记录币种，创建也不保证统一计价单位，因此新快照不计算跨运行金额合计、资金加权收益/收益偏差、金额winner或组合资金曲线；无法判定的盈利/亏损策略计数为null，单运行原始金额/收益率/回撤/执行风险及无量纲样本均值保留。真实计价来源能力仍未实现，不能按symbol或当前主数据追填历史。重点`runReviews`最多50条，与完整200运行窗口区分。窗口及批量经济事实、发布与评估都处于同一只读REPEATABLE_READ、10秒事务；发布和最多200个distinct回测评估均有界参数化IN批量读取，200来源实测1条评估SELECT，与逐项投影值相同且沿用相同feeScope；空/重复不放大，201拒绝，不返回费用原文或配置。匿名401、GET-only；失败/超时不表示成功空态；真实空源200空结构。`generatedAt`仅为读取时间；服务端原始规则正文保留中文，前端对已知完整文案与确定模板按当前语言显示，未知文案原样保留。接口不触发监控/调度/交易/账务写入或外呼；旧默认聚合保留原合同，新界面不消费其混合来源结果。独立SIM仍按单实例读取canonical事实，不合计为顶部账户可用资金。
 - `GET /api/paper-trading/execution-diagnostics`：跨多个 bounded Paper run 只读聚合执行诊断（GateK K1），对每个 run 做规则化归因，回答「为什么无订单/有订单无成交/成交亏损/风控拦截/数据不足/高回撤/异常终态」。响应含 `overview`（`totalRuns`/`noOrderRunCount`/`orderNoFillRunCount`/`filledRunCount`/`filledLossRunCount`/`riskBlockedRunCount`/`dataInsufficientRunCount`/`highDrawdownRunCount`/`failedRunCount`/`runningRunCount`，按事实独立计数、桶可重叠）、`causeDistribution`（按 primaryCause 聚合 `cause`/`count`/`severity`/`confidence`/`description`）、`runDiagnostics`（单 run：`primaryCause`/`secondaryCauses`/`severity`/`causeConfidence`/`explanation`/`suggestedAction` 等）、`strategyDiagnostics`/`publishDiagnostics`（按 strategyVersionId/publishId 聚合 `primaryCause`/`topCauses` 与各 cause 计数）、`safety`。`cause` 取值 `NO_ORDER`/`ORDER_NO_FILL`/`FILLED_LOSS`/`RISK_BLOCKED`/`DATA_INSUFFICIENT`/`HIGH_DRAWDOWN`/`FAILED_RUN`/`RUNNING_NO_RESULT`/`HEALTHY`/`UNKNOWN`，primaryCause 按该顺序优先级取最紧急者；`severity` ∈ `INFO`/`WARNING`/`CRITICAL`，`causeConfidence` ∈ `HIGH`/`MEDIUM`/`LOW`；高回撤阈值首版固定 -10%。复用组合看板同一批量只读事实，不引入 per-run 查询放大，无 run 时返回稳定空结构；不触发任何状态机或外部调用，environment 固定 SIM/PAPER、LIVE 未开启，诊断结论为 Paper-only 规则化归因、不构成真实投资建议。
 - `GET /api/paper-trading/strategy-evaluations`：跨多个 bounded Paper run 只读聚合策略评估（GateK K3），从 strategyVersionId / publishId 维度评估 Paper 模拟表现、Paper vs Backtest 偏差、样本充足性与风险调整评分。响应含 `overview`（`strategyCount`/`publishCount`/`evaluatedRunCount`/`comparableRunCount`/`sampleInsufficientStrategyCount`/`profitableStrategyCount`/`lossStrategyCount`/`highRiskStrategyCount`/`backtestDeviationStrategyCount`/`topCompositeScore`/`worstCompositeScore`）、`strategyEvaluations`（每 strategyVersionId 含 run/收益/回撤/胜率聚合 + 评分 `sampleScore`/`riskScore`/`returnScore`/`executionScore`/`backtestDeviationScore`/`compositeScore` + `ratingLabel`/`evaluationConfidence`/`primaryWeakness`/`warnings` + `backtestDeviation`）、`publishEvaluations`（publishId 维度同类字段）、`rankings`（topComposite/worstComposite/topReturn/worstDrawdown/sampleInsufficient/highDeviation/highRisk 的 key 列表）、`safety`。评分为 0~100 Paper 内部启发式分（returnScore 30% / riskScore 25% / executionScore 20% / sampleScore 15% / backtestDeviationScore 10%，缺 backtest 时按剩余权重归一），`ratingLabel` ∈ `STRONG_PAPER_PERFORMER`/`WATCHLIST`/`HIGH_RISK`/`SAMPLE_INSUFFICIENT`/`DATA_INSUFFICIENT`/`EXECUTION_PROBLEM`/`UNKNOWN`，`evaluationConfidence` ∈ `HIGH`/`MEDIUM`/`LOW`，`deviationLevel` ∈ `LOW`/`MEDIUM`/`HIGH`/`UNAVAILABLE`。复用组合看板批量只读事实并 join publish/backtest 评估投影，不引入 per-run 查询放大；Backtest 缺失时偏差为 null 并在 warnings/confidence 降级、不伪造；无 run 时返回稳定空结构；不触发任何状态机或外部调用，environment 固定 SIM/PAPER、LIVE 未开启，评分为 Paper 内部启发式分、非真实投资评级、不构成投资建议。
 - `GET /api/paper-trading/auto-reviews`：跨多个 bounded Paper run 只读聚合规则化自动复盘（GateK K4），复用 K1 执行诊断与 K3 策略评估，把组合 / 重点 run / 策略 / 发布事实归纳为结构化复盘摘要并按问题类型确定性聚类。响应含 `overview`（`totalRuns`/`reviewedRunCount`/`issueRunCount`/`healthyRunCount`/`criticalIssueCount`/`warningIssueCount`/`strategyReviewedCount`/`publishReviewedCount`/`topIssueCause`/`topWeakness`/`generatedAt`）、`portfolioReview`（`headline`/`summary`/`keyFindings`/`riskHighlights`/`executionHighlights`/`strategyHighlights`/`backtestDeviationHighlights`/`suggestedNextActions`/`limitations`，headline 按「关键问题 > 显著偏差 > 整体稳定 > 无数据」优先级生成）、`runReviews`（重点 run：`primaryCause`/`severity`/`confidence`/`reviewHeadline`/`reviewSummary`/`keyFacts`/`likelyReasons`/`suggestedActions`/`tags`）、`strategyReviews`/`publishReviews`（`ratingLabel`/`compositeScore`/`evaluationConfidence`/`primaryWeakness`/`reviewSummary`/`strengths`/`weaknesses`/`warnings`/`suggestedActions`）、`issueClusters`（按 `EXECUTION_NO_ORDER`/`EXECUTION_ORDER_NO_FILL`/`EXECUTION_FILLED_LOSS`/`RISK_BLOCKED`/`DATA_INSUFFICIENT`/`HIGH_DRAWDOWN`/`BACKTEST_DEVIATION_HIGH`/`SAMPLE_INSUFFICIENT`/`FAILED_RUN` 聚类，含 `count`/`affectedRunIds`/`affectedStrategyVersionIds`/`affectedPublishIds`/`summary`/`suggestedAction`）与 `safety`（`paperOnly`/`rulesBased`/`noInvestmentAdvice`/`noLiveTrading`/`noAiRuntime` 恒为 true）。复盘由 if/else + enum mapping + 字符串模板规则化生成，suggestedActions 一律为工程排查动作、不含买入/卖出/加仓/减仓/做多/做空/实盘等投资动作；复用诊断/评估的批量只读事实，不引入 per-run 查询放大，无 run / 无策略时返回稳定空结构；不触发任何状态机或外部调用，不接 AI / DH runtime，environment 固定 SIM/PAPER、LIVE 未开启，结论为 Paper-only 规则化摘要、不构成真实投资建议。
@@ -779,3 +811,243 @@ run 状态为 `CREATED / DISPATCHING / RUNNING / SUCCEEDED / FAILED`。`SUCCEEDE
 本节描述已实现、待独立正确性审查的 V51 工作树候选，不表示 B5 qualification、部署或真实交易授权已完成。
 
 <!-- nq-stage-history:end -->
+# 行情数据集有界目录
+
+`GET /api/marketdata/datasets/page` 沿用已登录用户的共享行情目录读取范围，返回 `{items,total,limit,offset}`，单行仍为原数据集响应。`limit` 默认为 20、范围 1—100，`offset` 为非负整数。总数与页记录在同一个只读 REPEATABLE READ、5 秒超时事务中读取，按 `updated_at DESC, dataset_id DESC` 稳定排序。
+
+`datasetId` 为精确 UUID；`datasetName` 是不区分大小写的字面子串，`%`、`_`、`!` 不作为通配符。`exchangeCode`、`marketType`、`symbol`、`interval`、`status`、`qualityStatus`、`source` 精确匹配；交易所、市场、交易对及状态统一大写。`maximumGapCount` 为可选非负 long 上界。筛选控制字符、超长字段和无效窗口返回原错误 DTO，不静默截断或回退无过滤查询。
+
+优惠资产换算的选择界面使用原条件：所选交易所、SPOT、BNB-USDT、1m、READY、OK、`source=marketdata_bars`、`maximumGapCount=0`；服务端绑定及费用冻结继续独立校验。目录筛选不代表已经具备回测、换算或交易资格。旧 `GET /api/marketdata/datasets`、精确详情和所有写入合同保持兼容。
+
+# 策略版本有界目录
+
+`GET /api/strategies/{strategyCode}/versions/page` 始终精确限定父策略，沿用已登录用户的版本读取范围。返回 `{items,total,limit,offset}`，单行包含版本 ID、父策略编码、版本号、名称、状态、摘要、创建人和创建/更新时间，不包含三份 JSON 快照。总数与记录在同一只读 REPEATABLE READ、5 秒事务读取，按 `version DESC, created_at DESC, strategy_version_id DESC` 稳定排序。`limit` 默认 20、范围 1—100，`offset` 为非负 int。
+
+`strategyVersionId` 精确匹配；`versionName` 是不区分大小写的字面子串，`%`、`_`、`!` 作为普通文字；`version` 是可选正 int；`status` 可选 DRAFT、ACTIVE、ARCHIVED，大小写不敏感。控制字符、超长字段和无效窗口使用原错误 DTO 返回 400，不静默截断。未知父编码与旧列表保持相同空结果行为。
+
+完整快照继续由 `GET /api/strategies/{strategyCode}/versions/{strategyVersionId}` 精确读取。列表分页不改变旧数组端点、版本创建、回测绑定或执行前提；DRAFT/ACTIVE/ARCHIVED 都能按原元数据绑定合同选择，状态不表示策略正在运行，也不授予 LIVE 权限。
+
+
+版本创建、回测配置及版本绑定、账户费用准备与运行冻结、执行事实假设和评估费用校验使用独立精确 JSON 读取器，原生 JSON 小数不先经过 double，字符串与数组类型保持原合同。共享解析器、金额舍入规则、费用来源摘要及研究事实一致性校验不变；原历史快照不回写。本轮已在合成回环费用来源的正、零、负情形验证配置保存、运行冻结、实际执行、Buy & Hold 和评估，不表示真实私有来源或 LIVE 已获授权。
+
+
+# 策略运行历史有界查询
+
+`GET /api/strategy-runs/page`要求`strategyId`或`scheduleId`恰好填写一项，沿用原运行读取范围，不提供无范围全局列表。两种身份按完整值精确比较；控制字符或超过128字符拒绝。`status`可选CREATED、DISPATCHING、RUNNING、SUCCEEDED、FAILED；`triggerType`可选MANUAL、SCHEDULED（仅历史请求推导）、SCHEDULER（正式准入）、RECOVERY，枚举大小写不敏感。状态和触发筛选在分页前完成。
+
+返回`{items,total,limit,offset}`，`limit`默认20、范围1—100，`offset`非负int。总数和摘要在同一只读REPEATABLE_READ、5秒事务中读取，按`started_at DESC,strategy_run_id DESC`排序。单行保留原运行摘要字段，不包含配置JSON、订单或成交数组；无匹配范围返回真实空页，非法查询返回既有错误DTO与traceId。
+
+计划关系优先取`admission_schedule_id`，否则按原请求格式与标记顺序推导；精确详情读取同一字段。正式准入记录保留原触发类型，不因请求文本被标为历史SCHEDULED。旧数组仍返回最近20条；所有写入与执行前提不变。分页和状态展示不代表交易完成、账务完成或执行授权。运行详情关联子列表的有界化与金额传输精度不属于本次分页完成结论。
+
+
+# 策略运行概览与有界关联明细
+
+所属查询面为strategy模块，订单和成交owner仍为canonical交易域。三个新增GET沿用正式运行读取权限，不包含创建、下单、撤单或资金写入，不赋予执行授权：
+
+- `/api/strategy-runs/{runId}/overview`返回`{run,orderCount,tradeCount,traceId,unavailableRelationships,relationshipScopes}`，不包含无界子数组或配置JSON。`run`保持正式摘要字段与准入计划优先关系。当前`relationshipScopes`明确risk为ORDER_EVENTS、ledger为TRADE_POSTINGS、events为CANONICAL_BUSINESS_EVENTS；`unavailableRelationships`仅保留UNSCOPED_SYSTEM_EVENTS，表示缺乏确定运行身份的系统消息不纳入，不是零业务事实。
+- `/api/strategy-runs/{runId}/orders/page`返回`{strategyRunId,items,total,limit,offset}`，单行包含orderId/clientOrderId/exchangeOrderId/orderStatus/symbol/side/orderType/price/quantity/createdAt/updatedAt。price可null，其他金额为普通十进制字符串。当前canonical约束每个运行至多关联一个Order，不建立第二套订单模型或事实源。
+- `/api/strategy-runs/{runId}/trades/page`返回相同窗口，单行包含tradeId/orderId/exchangeTradeId/exchangeOrderId/symbol/price/quantity/fee/feeCurrency/tradeTs。price/quantity/fee以原生十进制字符串传输，fee保留正/零/负及null，feeCurrency保留原记录，不换汇或倒算。
+
+子页按已持久化strategy_run_id精确读取，订单按created_at/order_id升序，成交按ts/trade_id升序；不按trace、请求前缀或名称猜测归属。limit默认20、范围1—100，offset非负int；存在性、总数和页记录在只读REPEATABLE_READ、5秒事务中读取。runId拒绝空白、控制字符及超过64字符。非法窗口或身份400、无认证401、未知运行404/RESOURCE_NOT_FOUND；已存在但没有关联事实则200空页。失败均沿用正式错误DTO与trace。只读查询不引入幂等写入合同，显式刷新允许重新读取。旧`GET /api/strategy-runs/{id}`公开聚合详情保持兼容，已迁移前端不再消费其无界数组。
+
+
+# 策略运行订单风险与成交分录读取
+
+此节补充前述运行概览与子页合同。`overview.relationshipScopes`返回`{risk:ORDER_EVENTS,ledger:TRADE_POSTINGS,events:CANONICAL_BUSINESS_EVENTS}`，`unavailableRelationships`仅保留`UNSCOPED_SYSTEM_EVENTS`。旧聚合详情说明保留兼容；新界面使用概览能力及以下新增接口，不把旧文本当作新增查询的权限或完整性依据。
+
+- `GET /api/strategy-runs/{runId}/risk-events/page`：窗口`{strategyRunId,items,total,limit,offset}`，单行riskEventId/orderId/ruleId/decision/reason/severity/traceId/createdAt。ruleId/reason/severity可null。只显示与运行所属订单精确关联的ORDER事件，不能据空页宣称账户或全局没有风险。
+- `GET /api/strategy-runs/{runId}/ledger-entries/page`：相同窗口，单行entryId/tradeId/orderId/accountId/currency/delta/balanceAfter/direction/refType/idempotencyKey/traceId/occurredAt。账户ID和金额保留普通字符串，balanceAfter及idempotencyKey可null。只显示正式TRADE引用且账户相符的分录，现金和对手腿分别显示，不合计为账户现金流，balanceAfter不是当前资产。
+
+两个端点的owner由GatewayAuthFacade/CurrentUserProfileService解析，必须为正数，不接受客户端owner字段。普通账户owner与账户/交易所/环境相符；独立PAPER SIM按创建者或源策略owner再叠加发布回测私有费用来源范围，排除普通账户旁路，不设ADMIN越权。共享运行元信息的可读性不代表这些账户关联可读。无认证401、非法窗口/运行身份400、未知或不可见运行404/RESOURCE_NOT_FOUND，真实拥有者空页200；沿用现有错误DTO/trace。limit默认20、1—100，offset非负int；存在性/总数/items同次只读REPEATABLE_READ/5秒事务。风险按created_at/risk_event_id，分录按ts/entry_id升序。只读操作不修改业务状态，不授予执行或资金写入权限。
+
+
+# 策略调度计划分页读取
+
+`GET /api/strategy-schedules/page`沿用原策略计划读取权限，strategyId必填；可选scheduleId为精确值，status为ENABLED/DISABLED（由enabled派生）。可选scheduleType为CRON/INTERVAL/MANUAL的读取筛选，大小写规范化；后两者只保留历史配置读取，不因此增加创建或执行能力。筛选拒绝控制字符及超过128字符，状态规范为大写，非法窗口/枚举/缺少范围400。limit默认20、1—100，offset非负int。返回`{items,total,limit,offset}`，COUNT和items同次只读REPEATABLE_READ/5秒事务，按created_at/schedule_job_id倒序。
+
+列表行包含scheduleJobId/strategyId/scheduleType/cronExpr/timezone/enabled/status/exchangeCode/accountId/tradeEnv/lastTriggeredAt/createdAt/updatedAt，accountId为可空字符串；不携带windowConfig，详情仍由旧`GET /api/strategy-schedules/{id}`读取原始窗口JSON与dedupScope。lastTriggeredAt沿用持久化旧游标与正式admission_due_at最大值的较晚者，不据此推断运行成功。未知策略按旧列表合同返回200空页。旧数组、精确详情、POST创建和PATCH状态合同兼容，内部扫描listAll没有分页截断。
+
+现有状态PATCH只设置目标enabled，仍需ADMIN/OPERATOR；查看者403。新增页面不自动重发状态命令，不把超时/丢回执显示成功；显式重读仅证明当前状态，不证明原命令回执。创建POST当前仍缺客户端稳定创建身份/原结果恢复合同，新增创建界面尚待该能力补齐，不以状态PATCH的可重读性代替创建幂等性。
+
+
+### 策略调度计划的稳定创建身份与原回执
+
+`POST /api/strategy-schedule-creations`接收`{creationId: UUID, request: {strategyId,scheduleType,cronExpr,timezone,enabled,windowConfig,dedupScope}}`。创建编号非零，scheduleType目前仅CRON；Cron按Spring六段表达式或正式宏校验，时区为有效ZoneId。windowConfig保留trim后的原字符串，最大8 KiB的UTF-8 JSON对象；不重排或经double回写。每日窗口支持时分秒、跨午夜和相等时间表示全天；非空星期限制需完整时段。原`POST /api/strategy-schedules`保持兼容。
+
+新请求先解析当前数据库主体与ADMIN/OPERATOR角色，再委托原StrategyScheduleService创建；没有增加策略账户owner前提，也没有改变既有共享计划权限或交易准入。`GET /api/strategy-schedule-creations/{creationId}`只读取当前creator的原回执，其他OPERATOR/ADMIN均404，VIEWER对新POST/GET均403。主体不从请求body读取。原创建回执的owner与共享计划读取/创建权限是不同边界。
+
+响应`{creationId,status:"COMPLETED",requestVersion:1,request,result,traceId,completedAt}`中的request是原规范化输入，result是创建时的正式计划快照，accountId始终为可空字符串。后续启停不改原回执，同号重放不会重置当前计划。只有计划、原回执与`STRATEGY_SCHEDULE_CREATION_COMPLETED`审计同一事务全部提交，才返回成功；没有持久STARTING状态。审计不保存原窗口明文。
+
+同编号、同creator、同完整规范化输入返回原结果；字段的长度前缀UTF-8 SHA-256包含原窗口字符串，内部空格变化也属于不同输入。不同输入或owner为409/`STRATEGY_SCHEDULE_CREATION_ID_CONFLICT`；事务锁忙为409/`STRATEGY_SCHEDULE_CREATION_BUSY`。原子创建使用REQUIRES_NEW/READ_COMMITTED/10秒和不等待的PG advisory xact lock。GET404可能发生在原事务未提交时，不能据此证明原请求没执行；客户端先查询，再明确选择是否用原编号、原输入继续，不能自动换号或盲重试。
+
+前端发送前必须成功持久保存本主体的原编号与完整输入，并取得浏览器跨标签锁；存储或锁不可用则不发POST。未知请求跨刷新保留，不可修改原输入或释放未知编号；已确认回执保留至用户查看当前计划或继续新建。所有409、网络/5xx、身份变化与异常回执保持未知，恢复时的拒绝不能当作原请求从未执行。时间控件Enter只确认时间，不隐式提交创建。时区自动采用浏览器，创建时冻结。
+
+V23新增不可变的strategy_schedule_creations回执及一致性约束；本地隔离迁移已执行并冻结，后续修正只允许forward migration。V1—V22不变。该接口不调用扫描、创建运行或发交易，不授予LIVE、真实私有联网或安装发布权限。
+
+### 运行正式业务事件分页
+
+`GET /api/strategy-runs/{runId}/business-events/page?limit=20&offset=0`沿用关联读取的当前用户、运行/账户及私有费用来源可见性交集，不接受客户端指定owner。不存在和不可见均404；可见运行无匹配事件返回200空页。窗口为`{strategyRunId,items,total,limit,offset}`，limit为1—100、offset为非负int；存在性、总数和记录在同一只读REPEATABLE_READ、5秒事务读取。按`event_store.created_at,event_id`升序，跨次请求不承诺冻结历史窗口。
+
+单行仅返回`eventId,orderId,tradeId,accountId,eventType,topic,source,association,status,decision,result,rejectCode,occurredAt,publishedAt,recordedAt,traceId`。accountId为字符串；不返回原始payload、任意reason或私有费用载荷。发生、发布、写入时间分开；历史时间无效时保留null，不用写入时间推造发生时间。所有回报仅为历史快照，不能替代当前订单/记账/运行状态，命令记录不代表执行成功。
+
+当前schema_version=1的正式producer范围：
+
+- 订单身份：PlaceOrderCommand、CancelOrderCommand、OrderCreated、OrderSubmitted、OrderStatusChangedPayload、RiskPassed、RiskRejected。
+- 成交身份：TradeExecuted、LedgerPosted、LedgerPostFailed。
+- 风险作用域：RiskEventRaised的ORDER/LEDGER，沿已确定订单或成交归属。
+- 账户＋venue＋客户端订单身份：OrderAck、OrderReject、CancelAck、CancelReject。客户端号缺省时，仅当账户＋venue＋外部订单号能在全局canonical orders唯一定位时关联；存在但冲突的客户端号不能回退到外部号。
+- PositionUpdated仅接受nq-ledger.trade-posting来源、canonical orderId键及匹配账户/交易对；这是运行订单触发的账户整体持仓快照，不是该运行专有持仓。
+
+事件envelope与表列的event_id/type/version/trace/key必须相符，canonical run/order/trade的账户、环境及交易所也须一致。不按共享trace猜测归属，不纳入未知版本、未知类型及缺乏确定业务身份的AuditRecorded/系统消息。
+
+状态投影由事件合同决定：status仅用于OrderCreated/OrderSubmitted/OrderStatusChangedPayload/OrderAck/CancelAck；decision仅用于RiskPassed/RiskRejected/RiskEventRaised；result仅用于LedgerPosted/LedgerPostFailed；rejectCode仅用于OrderReject/CancelReject。其他同名附加字段不投影成执行结果。
+
+此节更新前述概览能力合同：`relationshipScopes`现为`{risk:ORDER_EVENTS,ledger:TRADE_POSTINGS,events:CANONICAL_BUSINESS_EVENTS}`，`unavailableRelationships`仅为`UNSCOPED_SYSTEM_EVENTS`。这一区分明确业务事件可确定的范围，不把“未关联的系统消息”当作已实现的完整运行日志。原聚合详情兼容合同保持。
+
+V24只新增五个有界partial expression indexes；不改事件、订单、成交或账务内容。已在隔离PostgreSQL执行的V1—V24保持冻结，后续修正使用forward-only迁移。
+
+
+### 历史行情采集的稳定编号与原结果恢复
+
+本轮扩展原marketdata模块，继续使用marketdata_ingestion_jobs和marketdata_ingestion_runs正式事实，不新增平行任务表或migration。
+
+| 接口 | 输入与结果 | 权限及范围 |
+| --- | --- | --- |
+| POST /api/marketdata/ingestion-jobs/{jobId} | 路径UUID由客户端在提交前保存；body沿用交易所、SPOT、交易对、周期、开始/结束UTC时间。首次创建；原编号、同创建者、同冻结输入重放只返回原任务。 | 当前有效ADMIN/OPERATOR；createdBy取正式认证用户名；不同创建者或输入复用编号409，原任务不变。 |
+| GET /api/marketdata/ingestion-jobs/{jobId}/creation-result | 查询原创建者已提交的任务。当前状态可变化，创建输入不变。 | 已认证的原创建者；其他创建者和未读到已提交结果均404。不把404当作原请求从未执行的证明。 |
+| POST /api/marketdata/ingestion-jobs/{jobId}/runs/{runId} | 以两个路径UUID执行一次；同runId返回原结果，包括已持久化FAILED，不自动再次访问来源。用户明确发起另一次执行才使用新runId。 | 当前有效ADMIN/OPERATOR；沿用原共享行情任务的操作范围，不增加交易权限；运行编号不能跨任务复用，冲突409。 |
+| GET /api/marketdata/ingestion-jobs/{jobId}/runs/{runId} | 两身份同时匹配才返回原运行。 | 沿用共享行情任务的已认证只读范围；未提交或身份不匹配404，不能因此生成新编号重试。 |
+
+创建窗口须严格开始早于结束，时间规范到PostgreSQL微秒精度后冻结；交易所/交易对/周期仍按现有服务与具体适配器支持范围校验，不因该接口扩展交易品种或权限。旧无客户端编号的创建/run-once入口继续可用，但正式新UI应使用稳定编号入口。旧普通任务详情的既有错误合同保持。
+
+同任务在真实数据库事务中持有行锁，断点和写入串行；锁竞争最长三秒。事务提交前，其他连接可能尚读不到RUNNING及原结果；网络/事务异常后保留原编号查询，不能假称已执行或未执行。正常失败结果重放不触发外部读取；仅在原结果尚未记录时明确继续原编号。原运行统计来自数据库规范化后的事实，不从界面列表倒算。
+
+历史closeTime是包含最后一毫秒的闭区间，下一段从其后一毫秒开始，避免多加一个周期跳过紧邻K线。该修复不宣称会补齐旧任务已经跳过的历史缺段，缺段仍须正式质量检查和重新采集。
+
+历史适配器分发在任何请求前检查既有公开外联开关：需public-marketdata-manual、公开读取enabled、no-outbound=false且CI=false；仅当前local/prod/manual profile组合可进入。关闭或测试/未知profile返回PUBLIC_HISTORY_OUTBOUND_DISABLED，不能通过旧采集入口绕开。该开关只允许公开行情读取，不授予私有联网、凭据、LIVE、PLACE/CANCEL或发布权限。
+
+后端23目标测试包含真实PG16/V24、Spring事务代理、观察到的行锁等待、唯一约束、回滚、失败重读和新上下文重读；来源为明确合成/Mock边界。随后生产UI已消费上述稳定编号接口，并完成真实可执行prod JAR、生产前端、隔离PG与第二新JVM的作者定向证明。该次来源为本机协议源；后续新增真源证明范围见下节。全站集中独立复核、全站及发行资格仍待。
+
+
+采集页面在提交前按当前userId保存原编号、原用户名、规范化输入与确认状态，并以浏览器跨窗口互斥避免生成并行新请求。刷新不自动发写请求；成功响应丢失后查询原结果；明确GET404后才允许按原编号继续，不从404推断“从未执行”。确认后的本地记录只用于恢复与提示，不是服务端权威。确认阅读结果后才能提交下一项操作；运行FAILED也是已确认的原结果，不能自动重试为成功。当前只读用户可查询和确认自己的原结果，创建/执行/继续仍需当前操作员权限。
+
+目录与运行各保留原最多100项窗口，并区分窗口数量与全库总数；当前userId进入读取query key，读取携带取消信号，离开页面/来源取消读取。所选jobId/runId及页码进入URL；非法身份、越界页码、读取失败和真实空窗口分别表达。桌面表格、手机列表、详情和技术跟踪使用同一正式身份，任务当前状态与所选历史运行结果分别呈现。选项取正式目录有效现货与实际适配器支持交集，未给OKX增加BNB采集能力。
+
+
+### Binance 公开目录的有界完整读取与真实来源验证
+
+公开exchangeInfo请求增加showPermissionSets=false，只省略未参与规则解析的权限集合，仍读取全部交易对、状态和原有filters。仅无签名GET /api/v3/exchangeInfo使用gzip传输与完整网络正文期限；传输最多8MiB、解压后最多24MiB，超时取消原读取，超大、截断、损坏压缩及未知编码均拒绝，不接受部分规则，不自动重试。该期限覆盖完整网络正文；解压和JSON解析由字节边界约束，不承诺单独的CPU耗时期限。签名及订单mutation传输保持原行为。
+
+后端27目标测试和独立审查的13个新探针分别记录，原先响应头返回后仍读取超时正文的失败反例保留。前端仅删除已无消费者的四个旧采集API包装及两个query-key定义，服务端兼容入口保留；此前368单测/type/build和未变界面的合成协议源GUI按各自精确范围复用，不冒充新的真源验证。
+
+随后以官方公开行情域名data-api.binance.vision、真实prod可执行JAR、正式初始化/登录/改密、正式目录同步、稳定任务/运行接口、隔离PG和生产前端完成有界真源证明。BTC-USDT/1m三根已收盘K线的OHLC、volume与quoteVolume使用Decimal与独立公开GET精确比较；实际返回范围所建数据集质量OK、gap0。原候选在真源中额外取得请求边界的一根K线，正式服务跳过该根并记录PARTIAL（fetched4/inserted3/skipped1），没有改为SUCCEEDED，也没有据实际返回范围的数据集宣称原请求范围全量完成。
+
+真实中文1536桌面与英文390手机GUI读取原job/run、K线和成交量、数据集列表；修改开始时间再查询由三根变为两根。第二新JVM使用同配置同库、不reset/reseed，job/run/bar/dataset指纹及正式API结果精确保持。浏览器读取没有行情或交易mutation；经济权威表均零。成功随机库清理，临时进程停止，失败库及原网络超时、选择器失败记录保留。该证明没有覆盖所有交易对/周期、其他交易所、私有来源、LIVE、发行安装或全站验收。
+
+
+### 历史完整K线窗口与采集提示
+
+当前Binance历史适配器按正式的整根K线范围换算请求：开盘不早于startTime、收盘不晚于endTime。Binance筛选的是开盘毫秒闭区间，因此原生startTime为客户端开始时间向上取整到毫秒，原生endTime为客户端结束时间向下取整到毫秒后减去周期毫秒数再加1。1m/5m/15m/1h/4h/1d沿用UTC固定分桶，不平移时间事实；显示仍自动跟随浏览器时区。结束恰好等于收盘最后一毫秒时包含该根，少一毫秒时不包含。窗口不足以容纳完整K线则返回空结果且不请求交易所，逆序窗口在外联前拒绝。真实返回的越界或无效数据仍交由既有正式质量校验，跳过计数和PARTIAL语义保持，不静默过滤成成功。
+
+本次只影响后续新读取，不修改旧任务、运行、K线、数据集及冻结回测来源。旧PARTIAL原结果继续按原编号返回，不能因适配器修复改为SUCCEEDED。前述原候选的真源边界PARTIAL记录和截图均保留。
+
+页面以正式status决定结果提示：PARTIAL为校验警告，FAILED为失败，外联禁用保留专门原因；没有原始错误文字的FAILED仍显示失败。原始原因、跳过数量、请求与实际范围继续保留在详情。空结果只说明没有可入库的完整K线，不推断一定已访问来源或已完整覆盖。K线/成交量时间轴按自定义日期和时分标签长度预留刻度宽度，保持日期、完整详情时间、自动时区、全部数据及既有缩放交互。
+
+修复前11个协议边界测试中10个失败，原日志保留。修复后38个适配器目标与2个分发目标通过；372前端单测、类型检查和生产构建通过。两Java及六前端文件的局部格式化AST等价并稳定，最终全任务格式化仍待。新prod JAR通过官方公开源正式采集BTC-USDT/1m的三分钟窗口，fetched3/inserted3/updated0/skipped0、状态SUCCEEDED，逐项Decimal对照OHLC与成交量，数据集实际范围quality OK/gap0。中文1536和英文390生产页面、两新JVM同库配置重读及指纹保持均已验证；两个视口的PARTIAL/FAILED提示另外使用只读响应夹具，只证明呈现，不作为真实业务结果。无行情/交易mutation来自GUI，经济权威表均零，成功临时库和进程已清理。全站及发行资格仍未完成，未安装、未提交。
+
+
+### 数据集创建与质量刷新的稳定原请求
+
+| 接口 | 正式合同 | 权限 |
+| --- | --- | --- |
+| POST /api/marketdata/datasets/{datasetId}/creation | 创建编号同时为operationId和datasetId；body沿用名称、交易所、SPOT、品种、周期、起止时间。同编号、原用户ID、同规范输入返回原回执。 | 当前有效ADMIN/OPERATOR。 |
+| POST /api/marketdata/datasets/{datasetId}/quality-refreshes/{operationId} | body为空对象；独立刷新编号绑定目标数据集，原次覆盖记录coverageId=operationId。 | 当前有效ADMIN/OPERATOR；公开捕获数据集保持不可变。 |
+| GET /api/marketdata/dataset-operations/{operationId} | 返回原请求与PENDING/SUCCEEDED/FAILED，成功结果包含原次dataset/coverage快照。当前最新数据集不得替代原回执。 | 当前有效原owner用户ID；用户名变化不改归属，当前VIEWER可查询自己的回执，其他用户或未提交回执404。 |
+
+旧创建与refresh-quality入口继续兼容。新UI在POST前可靠保存原编号和输入；刷新、返回与换标签仅查询。PENDING或明确未找到本机原编号后，只能由用户明确继续同号同输入；查询错误不等于未执行，不生成另一编号重试。正式终态经阅读确认后才释放本机原请求，存储不可用不冒充没有待确认操作。原次操作完成不代表数据质量合格，数据不足仍显示INVALID/INCOMPLETE。
+
+创建沿用两交易所、四品种（含BNB）和六周期的实际后端能力；界面品种还须存在于有效SPOT目录。名称必填且不超过255字符，起始严格早于结束，拒绝无法按PostgreSQL微秒精度往返的非零亚微秒输入。客户端规范化保留微秒，不能用毫秒截断把不同请求视为相同。
+
+V26增加marketdata_dataset_operations原请求回执。先用独立登记事务保存PENDING；正式数据集、原次覆盖、主质量状态和成功回执共用执行事务。未知SQL或并发错误回滚并保持PENDING；确定拒绝仅DATASET_ID_OCCUPIED、DATASET_NOT_FOUND、PUBLIC_CAPTURE_DATASET_IMMUTABLE。终态与原身份不可修改或删除。同JVM最多四执行，执行30秒、登记10秒、读取5秒、操作锁等待3秒。质量写入沿用准入状态锁后数据集行锁的顺序；内部写入器要求原线程、回调有效期和同一DataSource事务资源，不能在同线程REQUIRES_NEW中借用原锁。
+
+已在真实隔离PG验证V25旧数据升级至V26、原子失败、原结果、同号及异号锁并发、state-first锁序和新上下文恢复。独立审查原发现DQ-IR-001已通过事务资源身份修复及真实PG独立补审关闭；原反例保留。正式生产JAR/Servlet/JWT还验证了失败回滚、真实同号锁等待及第一JVM中断后第二JVM同库继续；中文1536、英文390和当前VIEWER生产页面完成有界恢复验证。GUI目录为明确SQL元数据夹具，行情表为空，结果如实为数据不足，不构成真源或质量合格证明。原失败整轮仍保留，仅复用其中已完成的分项，另有成功补验。436前端单测、类型与生产构建通过；本轮局部格式化AST一致，全部开发完成后的全任务格式门槛仍待。未替换18128/R9或18280/V22，未提交或发布。
+
+
+### 历史Paper规则说明与原始输出呈现
+
+诊断、评估与复盘继续读取同一正式legacy-analysis快照，不新增接口、经济事实或写权限。156条当前引擎完整文案与明确的动态计数/评分模板提供中英文展示；未知模板保留原文，不翻译业务对象ID、不重算评分、不把精确比例转浮点或改成百分数。聚类summary和suggestedAction是自由正文，已修复误经状态枚举翻译后显示未知值的问题。当前窗口缺失策略版本/发布的装配器占位名称可本地化；真实匹配的对象身份及跳转仍保留，原键在title及原始输出可查。
+
+各区域底部“原始规则输出”由当前已认证响应按需展开，不额外请求；保留服务端原始说明、机器码和解析后的精确数值，关闭时不序列化整个窗口。它不是原始HTTP字节归档。键盘可展开并聚焦原输出，内容有界滚动。历史计价币种缺口及UNIT_NOT_RECORDED保护继续存在，不因翻译恢复无单位金额合计或冒充来源已补齐。
+
+当前446前端单测/type/build通过，十文件局部格式化AST一致且稳定。生产包配合未变V26正式JAR/Servlet及隔离PG，在中英文各1536/390完成三类说明、聚类原文与动作、原输出等值/键盘/溢出验证，并在新候选补验缺失版本标签。夹具仅含明确历史元数据，订单/成交/权益/余额/账务未手工填入，正式业务请求全部GET，元数据指纹保持；这只证明呈现和真实读取集成，不是历史交易执行或估值来源资格。临时成功库及进程清理，18128/R9与18280/V22未替换，Git NONE，最终全任务格式化及全站验收仍待。
+
+
+### 统一币种基础与旧Paper来源决定（2026-10-16）
+
+用户明确决定旧Paper历史来源为UNVERIFIED：保留全部原金额、时间与source，不推断USDT、不覆盖历史，不进入需要统一计价单位的账户汇总；该历史调查非阻断且不重复索取未经证实的来源。V27新增可扩展currency_definitions和权益快照六项估值元数据，V26→V27迁移/validate证明原11列指纹不变、币种NULL及UNKNOWN。已执行V27冻结，不修改V1—V26或就地重写V27。
+
+新增只读GET /api/reference/currencies（需认证），首批USDT、USDC、USD、BTC、ETH、CNY。valuationSupported仅表示该币种可作为权益统一计价目标：当前只有USDT；不表示目录内其他原币资产有来源时不能折成USDT。注册不授予交易或结算能力。displayConversionSupported当前全部false；CNY只预留展示用途，无人民币结算或无来源切换。不同币种永不默认固定1:1。
+
+账户表现推荐使用valuationCurrency参数与响应属性；原quoteCurrency参数/属性保留兼容，其原含义就是账户权益计价单位，不是交易对报价币。双参数冲突返回400，不支持的目标返回400，无权账户仍404。正式采样复用同一余额投影与canonical资金分录，保存原币金额、源bar身份、观察/可见时间、转换价格与来源；未来、过期或缺失价格不生成完整金额。数量已含仓位，不重复加持仓。精确乘积在最终总额按16位HALF_UP舍入一次；比例仍无币种单位。sourceJson追加估值时间、来源、方法、状态、逐资产换算及精度依据。账户资金流不完整仍不输出收益。新Paper继续使用既有canonical SIM的持久化决策、成交和账务重建表现，新增明确计价属性、原价时间与决策来源，不在GET中复制或创建账务。
+
+独立审查实际复现旧Paper仓储的伪造VERIFIED来源及numeric分别舍入破坏分项合计两个反例。由于旧表没有已证实的正式producer，已移除新增的声明式验证/插入能力：该旧insert接口现在一律在SQL/连接前拒绝，机器码LEGACY_PAPER_EQUITY_PRODUCER_UNVERIFIED。旧记录单条/批量读取继续正常；新metadata SQL往返只以明确PARTIAL夹具测试，不能当可信生成链。两个finding经独立定向补审关闭，原反例库保留。旧Paper可信新采样器仍未实现，不能把关闭风险写成该能力完成。
+
+本轮30后端目标测试（含真实隔离PG/完整AppContext/Servlet/JWT）、449前端单测/type/build通过，局部20 Java及12前端文件格式化AST一致且稳定。生产包与正式JAR/Servlet配合随机隔离PG，在中英文各1536/390验证六币能力、键盘展开/关闭、账户明确计价、空金额不作0、旧Paper保护及无横溢出；控制台/pageerror为0。GUI夹具只有历史元数据，经济表全0，不代表交易或新权益生成验收。临时GUI进程停止、成功库删除。18128/R9与18280/V22未替换，Git NONE；最终全任务统一格式化及全站验收仍待。
+
+完整mvn -B -ntp test已在预迁移V27的随机owned PG15442库执行，未改测试列表或削弱断言；首次因PaperRunCanonicalProjectionTest未先提供新只读存在性校验所需run夹具而失败，其他后续模块SKIPPED，不报Full Maven通过。该轮960报告测试、13条件跳过、1错误；收集器长路径失败已单独回收报告，原失败与库保留。后续按真实失败修复夹具并重新执行完整命令。
+
+
+### 新canonical SIM计价上下文的复验（2026-10-16）
+
+`GET /api/paper-trading/strategy-sim/analysis/runs/{id}/performance` 保留quoteCurrency并返回valuationCurrency；每点带valuationTime、valuationMethod、valuationSource、valuationStatus及markObservedAt/markVisibleAt。当前正式USDT资金链返回USDT，来源为对应持久化strategy_sim_decisions身份。实际新建72点/22成交/90账务的正式HTTP、PG及两JVM重读证明相等，GET不采样、不写旧权益表。输入为明确录制公共协议夹具和冻结实验费用，不是私有源或旧Paper新producer资格。中英文桌面/手机显示金额币种与无单位收益比例；共享权益时间刻度分行并隐藏碰撞，完整秒仍在Tooltip/明细。
+
+最新完整Maven为本地PASS（2854报告测试、350原条件跳过、0失败/错误），450前端单测及新生产包type/build通过。证据见外部full-maven-remediation与equity-axis的resolution.json；未安装或发布，旧历史币种未知和全站未完成状态不变。
+
+
+### 对象搜索与窗口外canonical订单定位复验（2026-10-16）
+
+`GET /api/search?q=...&kind=...&offset=...` 保持2—80字模糊匹配与原分页上限；短账户编号需改用有效名称文本，合法的多个部分命中按各自正式身份区分。ACCOUNT/STRATEGY/VERSION/RUN/SIM/ORDER六类实际新链读取及另一身份无命中已验证。`GET /api/paper-trading/strategy-sim/runs/{paperRunId}/orders/{orderId}` 不依赖facts的500条窗口，正式生成且窗口外的原订单可精确读取，另一身份或不存在订单仍404。500条额外REJECTED元数据仅用于分页证明，不计作真实交易。
+
+生产前端已修复搜索关闭与新详情抽屉的焦点交接；成功定位不再把焦点抢回顶栏，普通取消仍恢复搜索入口。中英文桌面/手机12次定位、窗口外原订单刷新、Esc与焦点返回实际通过，无业务写请求。普通账户订单定位的另一分支尚待；未安装或发布。
+
+
+### 普通账户订单精度、人工提交与搜索定位（2026-10-16）
+
+普通交易五个GET保留原JSON十进制词法，金额/价格/数量/费用用精确文本展示，空费用、零和负返佣不混淆；账户ID及计数仍为整数。人工委托价格和数量采用stringMode，正式POST继续由原DTO、Risk及Execution校验。真实页面发现并修复查询/下单表单控件ID重复，以及未填策略运行ID被传成空串而遭策略入口guard拒绝；现在只省略空白身份，真实非空身份仍保留并受正式策略入口限制。
+
+新执行453前端单测、type/build及局部格式AST等价验证。正式生产JAR/Servlet、随机PG及两实际JVM核对价格9007199254740993.12345678和数量12345678.12345678完整保持，同客户端ID仅一条订单。中英文1536/390四组合从普通ORDER搜索进入临时账户，精确详情/刷新、唯一标签关联及实际字符串表单POST通过。最终5单均为RISK_REJECTED，0成交/账务，默认账户和kill switch未变；这不是成功成交、账务或全站资格。独立原审及实质请求映射补审均PASS、0 findings。前两类GUI脚本/标签问题和原400响应分别保留，不追认历史失败通过。
+
+证据：E:\Project\nq-production-reconstruction-output\ordinary-trading-precision-59b496848d8a4066b25d6ed234c4f1bd\resolution.json。旧Paper来源仍未知，可信新采样器未实现；只读检查与正式下单命名、拒绝反馈、手机排版及其他工作台功能继续处理。18128/R9及18280/V22未替换，Git NONE；全站ACTIVE_PARTIAL，最终全部新增修改代码统一格式化/短类型及中文注释检查仍待。
+
+
+### 工作台只读检查、真实分页及拒绝反馈（2026-10-16）
+
+“下单前检查”现在单独读取既有GET /api/trading/preflight/readiness，明确本地诊断、主要真实交易阻断范围及不授予交易权限；刷新也是GET。“下单/提交委托”继续POST原正式接口。回执按唯一已知状态展示：RISK_REJECTED/REJECTED为拒绝，FAILED为失败，部分成交与全部成交分开；未知或歧义状态不推断成功，原始detail、action与trace可展开核对。当前人工请求映射及后端/JAR未变。
+
+订单列表接回正式分页，筛选使用当前15个正式状态及可理解的中英文名称，去除不存在的CREATED；翻页沿用已提交筛选。原订单深链接可用正式订单交易对读取持仓；缺失仍明确为空。手机输入和详情改为单列/响应式，完整大数价格及小数保留；内部账户兼容身份收进详情，业务账户范围在主区说明。
+
+R3全量458单测/70文件通过；R4只增加焦点容器，另新跑8个相关目标测试及type/build，原未变测试覆盖复用。10文件及焦点修复1文件局部格式AST等价且稳定。正式JAR/Servlet、随机PG和两实际JVM，25条正式Risk拒绝订单验证第二页及orderId/symbol/status筛选、重置；中英文1536/390四组验证只读检查GET、刷新、明确503响应夹具后正式GET重试、拒绝警示、原回执、精确输入、详情刷新和无横溢出。共29条订单仍为RISK_REJECTED，0成交/账务，默认账户及kill switch未变；不证明成功撮合或其他写动作。503为前端响应夹具，不宣称真实后端故障。先前实际焦点掉到BODY导致Esc失效，已以持久容器只接回丢失焦点；四组失败状态和恢复成功后的Esc均实际通过。原失败及脚本loading点击竞争分别保留。
+
+证据：E:\Project\nq-production-reconstruction-output\ordinary-workbench-5804fa3e230d45e69b8b641cc306c227\resolution.json、ui-r4-candidate.json。原精度/请求映射独立审查按未变范围保留，本轮不冒充全页独立接受。普通委托未知结果恢复、其他交易动作/角色及全站收尾继续；旧Paper来源未知与可信新采样器缺口不变。18128/R9及18280/V22未替换，Git NONE；全任务最终统一格式化、中文注释与显式import/短类型复查仍未关闭。
+
+
+### 普通交易归属与原客户端身份查询（2026-10-16）
+
+普通交易列表、详情、成交、账户与持仓读取以及下单/撤单入口，使用正式认证主体和账户owner过滤，订单按真实legacy桥接、交易所与SIM/LIVE范围校验；不存在和无权均404。缺少legacy桥接时拒绝，不把相同数字当作映射。新增只读GET /api/trading/orders/by-client?accountId&clientOrderId：accountId是当前用户规范账户；client身份逐字匹配，不裁剪或改大小写，404不能解释成未执行。
+
+两种撤单locator先解析并共同检查目标归属、LIVE禁写与可选请求账户范围，再将稳定orderId及已验证account/venue/symbol传给原canonical命令，禁止命令按无范围组合键重选目标。全局维护接口、风险执行路径与账务未改。本轮51目标测试通过；正式Servlet/JWT/完整V27隔离PG及双JVM验证跨owner拒绝、VIEWER自有读取/写入403、三个同client不同账户/用户原订单，以及重启后的精确金额和经济指纹。两条明确SQL合成异常LIVE/错venue存量行在两种locator和读取均404；不声称正常API会产生它们。0成交/账务，默认账户和kill switch未变。
+
+独立R1确认OWNERSHIP-001并拒绝，原报告与反例保留；R2仅两文件修复经38独立检查补审通过、0新finding，44项未变原检查按范围复用，未实际执行取消或私有gateway。九文件初始及两文件R2局部格式AST等价稳定。证据：E:\Project\nq-production-reconstruction-output\ordinary-order-recovery-eb2b7967558c4664b07f1f9325dd65f9\ownership-resolution.json。普通前端自动编号/未知结果恢复尚待实现，成功取消、其他动作/角色、全站验收及最终全任务格式化仍待；当前源码全量Maven待重新验证，旧全量通过不覆盖新增权限代码。18128/R9和18280/V22未替换，Git NONE。旧Paper来源未核实、币种UNKNOWN、禁止无依据回填及可信新采样器缺口保持。
+
+
+### 人工委托自动身份与未知结果恢复（2026-10-16）
+
+人工表单只要求交易对、方向、限价/市价、价格和数量，当前规范账户提供账户/venue，系统生成稳定manual身份；不再要求填写内部订单、账户和策略运行ID，策略委托仍从策略运行进入。普通金额写入前按numeric(38,8)校验，stringMode/JSON文本保留精度；市价省略遗留隐藏价格。每主体最多保留一份原请求，以Web Locks协调标签页，POST前保存并读回owner、canonical/legacy映射、venue、精确输入及原client；存储或协调不可用时不发送。正式账户再查归属映射/启用及SIM。回执文本不作成功事实，正式GET原账户/原client返回的订单须逐项身份/精确数值一致才确认。
+
+响应不明保留UNKNOWN；刷新/重进不自动GET或POST，不能换号。404不能证明未执行；只在本会话原账户查询404后，由用户在确认弹窗明确继续原编号、原输入。原订单确认后可查看正式详情，明确已查看后才释放本地记录允许下一笔；确认记录存在不代表成交。切用户、账户和同用户重登录后的迟到响应均不能确认或污染另一记录。正式响应允许Jackson真实的1E-8、1.0E-7等有界精确展开；手工输入规则不变，不使用Number金额或静默舍入。未知/拒绝/记录存在与成交区分。
+
+R2全量509单测/71文件通过，本模块51条；R3仅一条已确认后隐藏旧404说明的呈现条件，金融与请求源码字节未变，复用R2单测，新执行R3 type/build及完整GUI。7文件三版局部格式AST等价稳定。独立R1发现SUBMISSION-001并拒绝，原反例保留；R2对修复168断言补审通过，0新finding，64项未变正常guard按范围复用。正式Servlet/JWT/完整V27隔离PG、实际生产bundle和两JVM验证中英1536/390四组、共8笔人工委托：四次正式POST落库后运输响应丢失，四次发送前abort、正式GET404后用户明确原号继续；每原身份恰好一单，刷新没有自动写入，确认框取消不POST，大额和最小价格/小额数量精确读取，旧404说明确认后消失，所有8次抽屉焦点inside=true/tag=DIV且Esc可关闭。0未预期页面/控制台错误，无横向溢出；真实缺失资源404及8次运输abort分开记录。
+
+数据库共9单（1正式种子＋8GUI）：5 RISK_REJECTED、4 SENT，0成交/账务；SENT是real/outbound provider禁用时的canonical记录状态，不证明真实私有发送或成交。重启后身份、精确数值、状态与经济指纹一致，默认账户/kill switch未变。成功随机库已删，临时进程停止；原失败库和证据保留。证据：E:\Project\nq-production-reconstruction-output\ordinary-order-submission-8ffdd505e8c340598dd2cb8924521425\resolution.json及ui-r3-candidate.json。
+
+其他结果、成功取消/外部gateway、剩余角色/故障及全站验收待完成；当前Java增量后的全量Maven仍待，旧通过保留原候选身份。旧Paper来源未知/币种UNKNOWN与可信新producer缺口不变。18128/R9及18280/V22未替换，未执行Git或发布；最终全部新增修改代码的统一格式化、中文注释与显式import/短类型复查仍未关闭。

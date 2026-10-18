@@ -2,14 +2,28 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {paperTradingApi} from '@/features/paper-trading/api/paper-trading';
 import {paperTradingQueryKeys} from '@/api/query-keys';
-import type {EmergencyStopRequest, PaperRunAlertAckRequest, PaperRunAlertCreateRequest, PaperRunDailyReportGenerateRequest, PaperRunRecoverRequest, PaperRunRetryFailedStepRequest, PaperRunScheduleCreateRequest, PaperRunScheduleStatusUpdateRequest, PaperRunStabilityCheckGenerateRequest, PaperTradingRunCreateRequest} from '@/features/paper-trading/types/paper-trading';
+import type {
+    EmergencyStopRequest,
+    PaperRunAlertAckRequest,
+    PaperRunAlertCreateRequest,
+    PaperRunDailyReportGenerateRequest,
+    PaperRunRecoverRequest,
+    PaperRunRetryFailedStepRequest,
+    PaperRunScheduleCreateRequest,
+    PaperRunScheduleStatusUpdateRequest,
+    PaperRunStabilityCheckGenerateRequest,
+    PaperTradingRunCreateRequest,
+} from '@/features/paper-trading/types/paper-trading';
 
 interface UsePaperTradingListRequest {
     publishId?: string;
     status?: string;
 }
 
-export function usePaperTradingListQuery(request: UsePaperTradingListRequest, searchVersion: number) {
+export function usePaperTradingListQuery(
+    request: UsePaperTradingListRequest,
+    searchVersion: number,
+) {
     return useQuery({
         queryKey: paperTradingQueryKeys.list(request, searchVersion),
         queryFn: () => paperTradingApi.list(request),
@@ -219,7 +233,8 @@ export function usePaperHeartbeatsQuery(paperRunId: string | null) {
 export function useCreateScheduleMutation() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (request: PaperRunScheduleCreateRequest) => paperTradingApi.createSchedule(request),
+        mutationFn: (request: PaperRunScheduleCreateRequest) =>
+            paperTradingApi.createSchedule(request),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
         },
@@ -229,8 +244,13 @@ export function useCreateScheduleMutation() {
 export function useUpdateScheduleStatusMutation() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({scheduleId, request}: {scheduleId: string; request: PaperRunScheduleStatusUpdateRequest}) =>
-            paperTradingApi.updateScheduleStatus(scheduleId, request),
+        mutationFn: ({
+            scheduleId,
+            request,
+        }: {
+            scheduleId: string;
+            request: PaperRunScheduleStatusUpdateRequest;
+        }) => paperTradingApi.updateScheduleStatus(scheduleId, request),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
         },
@@ -268,8 +288,13 @@ export function usePaperDailyReportsQuery(paperRunId: string | null) {
 export function useGenerateDailyReportMutation() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({paperRunId, request}: {paperRunId: string; request: PaperRunDailyReportGenerateRequest}) =>
-            paperTradingApi.generateDailyReport(paperRunId, request),
+        mutationFn: ({
+            paperRunId,
+            request,
+        }: {
+            paperRunId: string;
+            request: PaperRunDailyReportGenerateRequest;
+        }) => paperTradingApi.generateDailyReport(paperRunId, request),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
         },
@@ -287,10 +312,17 @@ export function usePaperAlertsQuery(paperRunId: string | null, status?: string, 
 export function useCreateAlertMutation() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({paperRunId, request}: {paperRunId: string; request: PaperRunAlertCreateRequest}) =>
-            paperTradingApi.createAlert(paperRunId, request),
+        retry: false,
+        mutationFn: ({
+            paperRunId,
+            request,
+        }: {
+            paperRunId: string;
+            request: PaperRunAlertCreateRequest;
+        }) => paperTradingApi.createAlert(paperRunId, request),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
+            queryClient.invalidateQueries({queryKey: ['user-notifications']});
         },
     });
 }
@@ -298,10 +330,19 @@ export function useCreateAlertMutation() {
 export function useAckAlertMutation() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({paperRunId, alertId, request}: {paperRunId: string; alertId: string; request?: PaperRunAlertAckRequest}) =>
-            paperTradingApi.ackAlert(paperRunId, alertId, request),
+        retry: false,
+        mutationFn: ({
+            paperRunId,
+            alertId,
+            request,
+        }: {
+            paperRunId: string;
+            alertId: string;
+            request?: PaperRunAlertAckRequest;
+        }) => paperTradingApi.ackAlert(paperRunId, alertId, request),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
+            queryClient.invalidateQueries({queryKey: ['user-notifications']});
         },
     });
 }
@@ -309,15 +350,21 @@ export function useAckAlertMutation() {
 export function useResolveAlertMutation() {
     const queryClient = useQueryClient();
     return useMutation({
+        retry: false,
         mutationFn: ({paperRunId, alertId}: {paperRunId: string; alertId: string}) =>
             paperTradingApi.resolveAlert(paperRunId, alertId),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
+            queryClient.invalidateQueries({queryKey: ['user-notifications']});
         },
     });
 }
 
-export function usePaperRecoveryEventsQuery(paperRunId: string | null, recoveryType?: string, status?: string) {
+export function usePaperRecoveryEventsQuery(
+    paperRunId: string | null,
+    recoveryType?: string,
+    status?: string,
+) {
     return useQuery({
         queryKey: paperTradingQueryKeys.recoveryEvents(paperRunId ?? '', recoveryType, status),
         queryFn: () => paperTradingApi.listRecoveryEvents(paperRunId ?? '', {recoveryType, status}),
@@ -328,8 +375,13 @@ export function usePaperRecoveryEventsQuery(paperRunId: string | null, recoveryT
 export function useRecoverMutation() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({paperRunId, request}: {paperRunId: string; request?: PaperRunRecoverRequest}) =>
-            paperTradingApi.recover(paperRunId, request),
+        mutationFn: ({
+            paperRunId,
+            request,
+        }: {
+            paperRunId: string;
+            request?: PaperRunRecoverRequest;
+        }) => paperTradingApi.recover(paperRunId, request),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
         },
@@ -339,8 +391,13 @@ export function useRecoverMutation() {
 export function useRetryFailedStepMutation() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({paperRunId, request}: {paperRunId: string; request?: PaperRunRetryFailedStepRequest}) =>
-            paperTradingApi.retryFailedStep(paperRunId, request),
+        mutationFn: ({
+            paperRunId,
+            request,
+        }: {
+            paperRunId: string;
+            request?: PaperRunRetryFailedStepRequest;
+        }) => paperTradingApi.retryFailedStep(paperRunId, request),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
         },
@@ -358,8 +415,13 @@ export function usePaperStabilityChecksQuery(paperRunId: string | null, status?:
 export function useGenerateStabilityCheckMutation() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({paperRunId, request}: {paperRunId: string; request: PaperRunStabilityCheckGenerateRequest}) =>
-            paperTradingApi.generateStabilityCheck(paperRunId, request),
+        mutationFn: ({
+            paperRunId,
+            request,
+        }: {
+            paperRunId: string;
+            request: PaperRunStabilityCheckGenerateRequest;
+        }) => paperTradingApi.generateStabilityCheck(paperRunId, request),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
         },
@@ -369,7 +431,8 @@ export function useGenerateStabilityCheckMutation() {
 export function useRunMonitorOnceMutation() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({paperRunId}: {paperRunId: string}) => paperTradingApi.runMonitorOnce(paperRunId),
+        mutationFn: ({paperRunId}: {paperRunId: string}) =>
+            paperTradingApi.runMonitorOnce(paperRunId),
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: paperTradingQueryKeys.all});
         },

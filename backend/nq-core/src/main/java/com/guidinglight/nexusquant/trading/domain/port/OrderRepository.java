@@ -2,11 +2,12 @@ package com.guidinglight.nexusquant.trading.domain.port;
 
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
+
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.math.BigDecimal;
 
 /**
  * OrderRepository 定义订单持久化端口。
@@ -57,16 +58,27 @@ public interface OrderRepository {
      * @param now 更新时间
      * @return 实际影响行数：1 成功且 version 加一，0 冲突，其他值由调用方 fail closed
      */
-    int compareAndSetStatus(String orderId, OrderStatus expectedStatus, long expectedVersion,
-            OrderStatus status, String reason, Instant now);
+    int compareAndSetStatus(
+            String orderId,
+            OrderStatus expectedStatus,
+            long expectedVersion,
+            OrderStatus status,
+            String reason,
+            Instant now);
 
     /** 对完整 durable Trade 集合按 venue fill 身份校验并累计；身份损坏、重复或非法数量必须拒绝。 */
     default BigDecimal durableExecutedQuantity(String orderId) {
         throw new UnsupportedOperationException("durable execution proof unavailable");
     }
 
+    /** 仅PAPER/SIM：原订单当前版本与canonical取消回执、取消审计同时存在；不能代替交易所最终取消查询。 */
+    default boolean hasDurableSimCancellation(OrderRecord observed) {
+        throw new UnsupportedOperationException("durable SIM cancellation proof unavailable");
+    }
+
     /** 仅供对账纠正撤单终态；同一 SQL 中重新验证完整成交证明及 expectedVersion，成功只加一代。 */
-    default int compareAndSetCancelledToFilled(String orderId, long expectedVersion, String reason, Instant now) {
+    default int compareAndSetCancelledToFilled(
+            String orderId, long expectedVersion, String reason, Instant now) {
         throw new UnsupportedOperationException("proven terminal correction unavailable");
     }
 
@@ -104,7 +116,6 @@ public interface OrderRepository {
      * @return 最多 limit 个订单快照；空集合不推进游标
      * @throws IllegalArgumentException 输入不满足预留约束
      */
-    List<OrderRecord> reserveReconciliationCandidates(String venue, Collection<OrderStatus> statuses, int limit);
+    List<OrderRecord> reserveReconciliationCandidates(
+            String venue, Collection<OrderStatus> statuses, int limit);
 }
-
-

@@ -7,7 +7,7 @@
  * 3) 盈亏配色遵循国内习惯：正=红（up），负=绿（down）。
  */
 
-import {formatNqNumber} from '@/nq-design-system/format/nqFormat';
+import {formatNqNumber, formatNqPercent, nqDirectionOf} from '@/nq-design-system/format/nqFormat';
 
 // 保留原出口，现有组件与页面共用设计系统的相同数字合同。
 export {formatNqNumber};
@@ -28,20 +28,29 @@ function signClassName(value: string | number | null | undefined, colorBySign: b
         return '';
     }
 
-    const numeric = Number(value);
-
-    if (!Number.isFinite(numeric) || numeric === 0) {
-        return '';
-    }
-
-    return numeric > 0 ? ' nq-text-up' : ' nq-text-down';
+    const direction = nqDirectionOf(value);
+    return direction === 'up' ? ' nq-text-up' : direction === 'down' ? ' nq-text-down' : '';
 }
 
-function NqNumericText({value, precision = 2, exact = false, signed = false, colorBySign = false, suffix = ''}: NqNumericTextProps) {
+function NqNumericText({
+    value,
+    precision = 2,
+    exact = false,
+    signed = false,
+    colorBySign = false,
+    suffix = '',
+}: NqNumericTextProps) {
     const text = formatNqNumber(value, {precision, exact, signed});
 
     return (
-        <span className={`nq-num${signClassName(value, colorBySign)}`}>
+        <span
+            className={`nq-num${signClassName(value, colorBySign)}`}
+            title={
+                !exact && value != null && value !== ''
+                    ? formatNqNumber(value, {exact: true, signed}) + suffix
+                    : undefined
+            }
+        >
             {text === '-' ? text : `${text}${suffix}`}
         </span>
     );
@@ -49,12 +58,12 @@ function NqNumericText({value, precision = 2, exact = false, signed = false, col
 
 /** 价格字段：默认 4 位小数，不带符号。 */
 export function NqPriceText(props: Omit<NqNumericTextProps, 'suffix'>) {
-    return <NqNumericText precision={4} {...props}/>;
+    return <NqNumericText precision={4} {...props} />;
 }
 
 /** 金额/数量字段：默认 2 位小数；盈亏类传 signed + colorBySign。 */
 export function NqAmountText(props: Omit<NqNumericTextProps, 'suffix'>) {
-    return <NqNumericText precision={2} {...props}/>;
+    return <NqNumericText precision={2} {...props} />;
 }
 
 interface NqPercentTextProps extends Omit<NqNumericTextProps, 'suffix' | 'signed'> {
@@ -64,11 +73,24 @@ interface NqPercentTextProps extends Omit<NqNumericTextProps, 'suffix' | 'signed
 }
 
 /** 百分比字段：默认带正负号、2 位小数；ratio=true 时输入按比例值换算。 */
-export function NqPercentText({value, ratio = false, signed = true, ...rest}: NqPercentTextProps) {
-    const numeric = Number(value);
-    const display = ratio && value !== null && value !== undefined && value !== '' && Number.isFinite(numeric)
-        ? numeric * 100
-        : value;
-
-    return <NqNumericText value={display} precision={2} signed={signed} suffix="%" {...rest}/>;
+export function NqPercentText({
+    value,
+    ratio = false,
+    signed = true,
+    precision = 2,
+    exact = false,
+    colorBySign = false,
+}: NqPercentTextProps) {
+    return (
+        <span
+            className={`nq-num${signClassName(value, colorBySign)}`}
+            title={
+                !exact && value != null && value !== ''
+                    ? formatNqPercent(value, {ratio, signed, exact: true})
+                    : undefined
+            }
+        >
+            {formatNqPercent(value, {ratio, signed, precision, exact})}
+        </span>
+    );
 }

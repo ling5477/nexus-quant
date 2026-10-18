@@ -1,3 +1,4 @@
+import {ResearchResultRecovery, usePendingResultAction} from '@/features/ResearchResultRecovery';
 import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
@@ -5,6 +6,7 @@ import {t} from '@/i18n';
 import {localizedPaperLabel, localizedPaperOptions} from './components/paperAnalysisOptions';
 import './PaperTradingRunsPage.css';
 import {
+    Alert,
     App,
     Button,
     Card,
@@ -25,10 +27,30 @@ import {useEffect, useState, type ReactNode} from 'react';
 import {Link, useSearchParams} from 'react-router-dom';
 
 import {showApiError} from '@/api/errors';
-import {NqAmountText, NqDangerConfirmButton, NqDataTable, NqEmptyState, TradingEnvironmentTag, NqErrorState, NqFilterBar, NqLoadingState, NqMetricCard, NqPageHeader, NqPercentText, NqPriceText, ApplicationRiskAlert, nqNumericColumn} from '@/components/nq';
-import {NqAlertPanel, NqHeartbeatPanel, NqRecoveryPanel, NqScheduleFirePanel, NqStabilityCheckPanel} from '@/features/paper-trading/components/index';
+import {CreationRecoveryPanel} from '@/features/research/components/CreationRecoveryPanel';
+import {
+    NqAmountText,
+    NqDangerConfirmButton,
+    NqDataTable,
+    NqEmptyState,
+    TradingEnvironmentTag,
+    NqErrorState,
+    NqFilterBar,
+    NqLoadingState,
+    NqMetricCard,
+    NqPercentText,
+    NqPriceText,
+    nqNumericColumn,
+} from '@/components/nq';
+import {
+    NqAlertPanel,
+    NqHeartbeatPanel,
+    NqRecoveryPanel,
+    NqScheduleFirePanel,
+    NqStabilityCheckPanel,
+} from '@/features/paper-trading/components/index';
+import {PaperAlertOperationRecovery} from '@/features/paper-trading/components/PaperAlertOperationRecovery';
 import {StrategySimPanel} from '@/features/paper-trading/components/StrategySimPanel';
-import {paperTradingApi} from '@/features/paper-trading/api/paper-trading';
 import {
     EXCHANGE_OPTIONS,
     INTERVAL_OPTIONS,
@@ -89,21 +111,43 @@ const DEFAULT_CREATE_VALUES: PaperTradingRunCreateRequest = {
 
 const EXECUTION_NAV_ITEMS = [
     {
-        get title() { return t('pages:portfolioAnalysis'); },
-        get description() { return t('pages:crossRunPortfolioPerformanceGroupedSummariesAndPortfolioCurvesAreNowOnASeparatePage'); },
-        get action() { return t('pages:viewPortfolioAnalysis'); },
+        get title() {
+            return t('pages:portfolioAnalysis');
+        },
+        get description() {
+            return t(
+                'pages:crossRunPortfolioPerformanceGroupedSummariesAndPortfolioCurvesAreNowOnASeparatePage',
+            );
+        },
+        get action() {
+            return t('pages:viewPortfolioAnalysis');
+        },
         to: '/paper-trading/portfolio',
     },
     {
-        get title() { return t('pages:executionDiagnostics'); },
-        get description() { return t('pages:diagnosticsForMissingOrdersUnfilledOrdersLossesAndRiskBlocksAreNowOnASeparatePage'); },
-        get action() { return t('pages:viewExecutionDiagnostics'); },
+        get title() {
+            return t('pages:executionDiagnostics');
+        },
+        get description() {
+            return t(
+                'pages:diagnosticsForMissingOrdersUnfilledOrdersLossesAndRiskBlocksAreNowOnASeparatePage',
+            );
+        },
+        get action() {
+            return t('pages:viewExecutionDiagnostics');
+        },
         to: '/paper-trading/diagnostics',
     },
     {
-        get title() { return t('pages:strategyEvaluation'); },
-        get description() { return t('pages:strategyEvaluationAndRuleBasedReviewsAreNowOnASeparatePage'); },
-        get action() { return t('pages:viewStrategyEvaluation'); },
+        get title() {
+            return t('pages:strategyEvaluation');
+        },
+        get description() {
+            return t('pages:strategyEvaluationAndRuleBasedReviewsAreNowOnASeparatePage');
+        },
+        get action() {
+            return t('pages:viewStrategyEvaluation');
+        },
         to: '/paper-trading/reviews',
     },
 ];
@@ -140,10 +184,12 @@ function amountTone(value: string | number | null | undefined): 'up' | 'down' | 
  */
 export function PaperTradingRunsPage() {
     useTranslation('pages');
-    const {message} = App.useApp();
+    const {message, modal} = App.useApp();
     const [queryForm] = useLocalizedForm<PaperTradingListFilters>();
     const [createForm] = useLocalizedForm<PaperTradingRunCreateRequest>();
-    const [submittedFilters, setSubmittedFilters] = useState<PaperTradingListFilters>(defaultPaperTradingListFilters);
+    const [submittedFilters, setSubmittedFilters] = useState<PaperTradingListFilters>(
+        defaultPaperTradingListFilters,
+    );
     const [searchVersion, setSearchVersion] = useState(0);
     const [selectedRow, setSelectedRow] = useState<PaperRunRow | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
@@ -159,23 +205,39 @@ export function PaperTradingRunsPage() {
     );
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const focusRunId = searchParams.get('paperRunId') ?? selectedRow?.paperRunId ?? null;
+    const focusAlertId = searchParams.get('alertId') || undefined;
+    // 明确进入新建流程时不允许详情回填effect重新选中旧运行；新建成功后再由正式返回身份接管URL。
+    const focusRunId =
+        searchParams.get('newSim') === 'true'
+            ? null
+            : (searchParams.get('paperRunId') ?? selectedRow?.paperRunId ?? null);
     const detailQuery = usePaperTradingDetailQuery(focusRunId);
-    const identityRun = detailQuery.data?.paperRunId === focusRunId ? detailQuery.data
-        : selectedRow?.paperRunId === focusRunId ? selectedRow : null;
+    const identityRun =
+        detailQuery.data?.paperRunId === focusRunId
+            ? detailQuery.data
+            : selectedRow?.paperRunId === focusRunId
+              ? selectedRow
+              : null;
     const legacyRunId = identityRun && !identityRun.canonicalAccountId ? focusRunId : null;
     const summaryQuery = usePaperRunSummaryQuery(legacyRunId);
     const ordersQuery = usePaperTradingOrdersQuery(legacyRunId, factTab === 'orders');
     const tradesQuery = usePaperTradingTradesQuery(legacyRunId, factTab === 'trades');
     const positionsQuery = usePaperTradingPositionsQuery(legacyRunId, factTab === 'positions');
-    const riskResultsQuery = usePaperTradingRiskResultsQuery(legacyRunId, factTab === 'risk-results');
+    const riskResultsQuery = usePaperTradingRiskResultsQuery(
+        legacyRunId,
+        factTab === 'risk-results',
+    );
     const equityCurveQuery = usePaperTradingEquityCurveQuery(legacyRunId);
-    const positionCurveQuery = usePaperTradingPositionCurveQuery(legacyRunId, factTab === 'position-curve');
+    const positionCurveQuery = usePaperTradingPositionCurveQuery(
+        legacyRunId,
+        factTab === 'position-curve',
+    );
     const replayQuery = usePaperTradingReplayQuery(legacyRunId, factTab === 'replay');
     const emergencyStopsQuery = usePaperTradingEmergencyStopsQuery(legacyRunId);
 
     useEffect(() => {
-        if (!selectedRow && detailQuery.data?.paperRunId === focusRunId) setSelectedRow(detailQuery.data);
+        if (!selectedRow && detailQuery.data?.paperRunId === focusRunId)
+            setSelectedRow(detailQuery.data);
     }, [detailQuery.data, focusRunId, selectedRow]);
 
     useEffect(() => {
@@ -187,17 +249,26 @@ export function PaperTradingRunsPage() {
     const stopMutation = useStopPaperTradingRunMutation();
     const riskOnceMutation = useRunRiskOnceMutation();
     const emergencyStopMutation = useEmergencyStopMutation();
+    const pendingEmergency = usePendingResultAction('PAPER_EMERGENCY');
 
     const hasSearched = searchVersion > 0;
+    // 深链接已指定实例而列表尚未查询时，不为未加载的列表保留整列空白；查询后恢复列表与详情并列。
+    const focusedWithoutList = Boolean(focusRunId) && !hasSearched;
     const visibleItems = listQuery.data ?? [];
-    const focusRun = detailQuery.data?.paperRunId === focusRunId ? detailQuery.data : selectedRow?.paperRunId === focusRunId ? selectedRow : null;
+    const focusRun =
+        detailQuery.data?.paperRunId === focusRunId
+            ? detailQuery.data
+            : selectedRow?.paperRunId === focusRunId
+              ? selectedRow
+              : null;
     const focusStatus = focusRun?.status ?? selectedRow?.status ?? '';
     const summary = asRunSummary(summaryQuery.data);
     const orderCount = summary?.counts.orderCount ?? null;
     const fillCount = summary?.counts.fillCount ?? summary?.counts.tradeCount ?? null;
     const positionCount = summary?.counts.positionCount ?? null;
     const openAlertCount = summary?.counts.openAlertCount ?? null;
-    const netPnl = summary?.resultReview.netPnl ?? null;
+    // 此摘要只服务旧Paper；日报零占位和未知计价都不能形成可信净收益。
+    const netPnl = null;
     const latestRisk = summary?.latest.riskResult ?? null;
 
     const handleSearch = (values: PaperTradingListFilters) => {
@@ -257,7 +328,14 @@ export function PaperTradingRunsPage() {
                 createForm.resetFields();
                 setSearchVersion((v) => v + 1);
             },
-            onError: (error) => showApiError(error as AppApiError, message),
+            onError: (error) => {
+                if ((error as AppApiError).code === 'RESEARCH_CREATION_UNKNOWN') {
+                    // 让原请求恢复面板接管，不能把未知创建留在可再次提交的新草稿弹窗中。
+                    setCreateOpen(false);
+                    return;
+                }
+                showApiError(error as AppApiError, message);
+            },
         });
     };
 
@@ -268,16 +346,24 @@ export function PaperTradingRunsPage() {
             key: 'paperRunId',
             render: (value: string, record) => (
                 <Space direction="vertical" size={2} style={{width: '100%'}}>
-                    <span className="nq-mono nq-run-id" title={value}>{value}</span>
+                    <span className="nq-mono nq-run-id" title={value}>
+                        {value}
+                    </span>
                     <Space size={6}>
-                        <StatusTag title={record.status} variant="pill" status={record.status} label={localizedPaperLabel(record.status)}/>
-                        <TradingEnvironmentTag env={record.tradeEnv}/>
+                        <StatusTag
+                            title={record.status}
+                            variant="pill"
+                            status={record.status}
+                            label={localizedPaperLabel(record.status)}
+                        />
+                        <TradingEnvironmentTag env={record.tradeEnv} />
                     </Space>
                     <Typography.Text type="secondary" style={{fontSize: 12}}>
                         {record.symbol} · {record.intervalCode} · {record.exchangeCode}
                     </Typography.Text>
                     <Typography.Text type="secondary" className="nq-num" style={{fontSize: 11}}>
-                        {t('pages:updated')}{formatDateTime(record.updatedAt)}
+                        {t('pages:updated')}
+                        {formatDateTime(record.updatedAt)}
                     </Typography.Text>
                 </Space>
             ),
@@ -288,8 +374,17 @@ export function PaperTradingRunsPage() {
             width: 96,
             render: (_, record) => (
                 <Space direction="vertical" size={2}>
-                    <Button type="link" size="small" style={{paddingInline: 0}} onClick={() => { setSelectedRow(record); setSearchParams({paperRunId: record.paperRunId}); }}>
-                        {t('pages:viewDetails')}</Button>
+                    <Button
+                        type="link"
+                        size="small"
+                        style={{paddingInline: 0}}
+                        onClick={() => {
+                            setSelectedRow(record);
+                            setSearchParams({paperRunId: record.paperRunId});
+                        }}
+                    >
+                        {t('pages:viewDetails')}
+                    </Button>
                     <Button
                         type="link"
                         size="small"
@@ -297,7 +392,8 @@ export function PaperTradingRunsPage() {
                         disabled={record.status !== 'CREATED'}
                         onClick={() => handleStart(record.paperRunId)}
                     >
-                        {t('pages:start')}</Button>
+                        {t('pages:start')}
+                    </Button>
                     <Button
                         type="link"
                         size="small"
@@ -306,7 +402,8 @@ export function PaperTradingRunsPage() {
                         disabled={record.status !== 'RUNNING'}
                         onClick={() => handleStop(record.paperRunId)}
                     >
-                        {t('pages:stop')}</Button>
+                        {t('pages:stop')}
+                    </Button>
                 </Space>
             ),
         },
@@ -314,33 +411,55 @@ export function PaperTradingRunsPage() {
 
     return (
         <>
-            <Space className="paper-runs-workspace" direction="vertical" size={12} style={{display: 'flex'}}>
-                <Card className="page-card" variant="borderless">
-                    <NqPageHeader
-                        title={t('pages:paperTrading')}
-                        description={t('pages:createStartStopRecoverAndInspectIndividualPaperRunsPortfolioAnalysisExecutionDiagnosticsAndStrategyE')}
-                        badge={t('pages:runExecutionLayer')}
-                        tip={(
-                            <ApplicationRiskAlert
-                                level="info"
-                                message={t('pages:theCurrentEnvironmentIsPaperSimLiveTradingIsDisabled')}
-                                description={t('pages:actionsAffectSimPaperRunsOnlyTheyDoNotPlaceOrCancelRealExchangeOrdersOrAccessCredentials')}
-                            />
-                        )}
+            <Space
+                className="paper-runs-workspace"
+                direction="vertical"
+                size={12}
+                style={{display: 'flex'}}
+            >
+                <PaperAlertOperationRecovery />
+                <ResearchResultRecovery kind="PAPER_EMERGENCY" />
+                <CreationRecoveryPanel kinds={['PAPER_RUN']} />
+                {legacyRunId && (
+                    <Alert
+                        className="paper-runs-legacy-trust"
+                        type="info"
+                        showIcon
+                        message={t('pages:legacyTrustedRun.title')}
+                        description={t('pages:legacyTrustedRun.description')}
+                        action={
+                            <Button
+                                onClick={() =>
+                                    modal.confirm({
+                                        title: t('pages:legacyTrustedRun.create'),
+                                        content: t('pages:legacyTrustedRun.confirm'),
+                                        okText: t('pages:legacyTrustedRun.continue'),
+                                        cancelText: t('pages:cancel'),
+                                        onOk: () => {
+                                            // 只进入已有SIM创建表单，不转换旧身份或发起业务创建。
+                                            setSelectedRow(null);
+                                            setSearchParams({newSim: 'true'});
+                                        },
+                                    })
+                                }
+                            >
+                                {t('pages:legacyTrustedRun.create')}
+                            </Button>
+                        }
                     />
-                </Card>
-
+                )}
                 <NqFilterBar
-                    actions={(
+                    actions={
                         <Space wrap className="paper-runs-query-actions">
                             <Button type="primary" onClick={() => queryForm.submit()}>
-                                {t('pages:search')}</Button>
-                            <Button onClick={handleReset}>
-                                {t('pages:reset')}</Button>
+                                {t('pages:search')}
+                            </Button>
+                            <Button onClick={handleReset}>{t('pages:reset')}</Button>
                             <Button type="primary" ghost onClick={() => setCreateOpen(true)}>
-                                {t('pages:simLegacyCreate')}</Button>
+                                {t('pages:simLegacyCreate')}
+                            </Button>
                         </Space>
-                    )}
+                    }
                 >
                     <Form
                         name="paper-runs-query"
@@ -352,12 +471,16 @@ export function PaperTradingRunsPage() {
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={8}>
                                 <Form.Item label={t('pages:publishId')} name="publishId">
-                                    <Input placeholder={t('pages:filterByPublishRecordId')}/>
+                                    <Input placeholder={t('pages:filterByPublishRecordId')} />
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label={t('pages:status')} name="status">
-                                    <Select allowClear placeholder={t('pages:allStatuses')} options={localizedPaperOptions(PAPER_RUN_STATUS_OPTIONS)}/>
+                                    <Select
+                                        allowClear
+                                        placeholder={t('pages:allStatuses')}
+                                        options={localizedPaperOptions(PAPER_RUN_STATUS_OPTIONS)}
+                                    />
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -365,19 +488,32 @@ export function PaperTradingRunsPage() {
                 </NqFilterBar>
 
                 <Row gutter={[12, 12]} align="top">
-                    <Col xs={24} xl={7} xxl={6}>
+                    <Col xs={24} xl={focusedWithoutList ? 24 : 7} xxl={focusedWithoutList ? 24 : 6}>
                         <Card
                             className="page-section"
                             variant="borderless"
                             title={t('pages:paperRuns')}
                             styles={{body: {padding: 0}}}
-                            extra={hasSearched ? (
-                                <Typography.Text type="secondary" style={{fontSize: 12}}>{t('pages:total')}{visibleItems.length} {t('pages:records')}</Typography.Text>
-                            ) : null}
+                            extra={
+                                hasSearched ? (
+                                    <Typography.Text type="secondary" style={{fontSize: 12}}>
+                                        {t('pages:total')}
+                                        {visibleItems.length} {t('pages:records')}
+                                    </Typography.Text>
+                                ) : null
+                            }
                         >
                             {!hasSearched ? (
                                 <div style={{padding: 16}}>
-                                    <NqEmptyState description={t('pages:searchToLoadPaperTradingRuns')}/>
+                                    {focusedWithoutList ? (
+                                        <Typography.Text type="secondary">
+                                            {t('pages:searchToLoadPaperTradingRuns')}
+                                        </Typography.Text>
+                                    ) : (
+                                        <NqEmptyState
+                                            description={t('pages:searchToLoadPaperTradingRuns')}
+                                        />
+                                    )}
                                 </div>
                             ) : listQuery.error ? (
                                 <div style={{padding: 16}}>
@@ -394,41 +530,83 @@ export function PaperTradingRunsPage() {
                                     dataSource={visibleItems}
                                     loading={listQuery.isFetching}
                                     showHeader={false}
-                                    pagination={{pageSize: 10, showSizeChanger: false, simple: true}}
-                                    rowClassName={(record) => (record.paperRunId === focusRunId ? 'nq-row-active' : '')}
+                                    pagination={{
+                                        pageSize: 10,
+                                        showSizeChanger: false,
+                                        simple: true,
+                                    }}
+                                    rowClassName={(record) =>
+                                        record.paperRunId === focusRunId ? 'nq-row-active' : ''
+                                    }
                                     scroll={{x: 300, y: 420}}
-                                    locale={{emptyText: t('pages:noPaperTradingRunsMatchTheseFilters')}}
+                                    locale={{
+                                        emptyText: t('pages:noPaperTradingRunsMatchTheseFilters'),
+                                    }}
                                 />
                             )}
                         </Card>
                     </Col>
 
-                    <Col xs={24} xl={17} xxl={18}>
+                    <Col
+                        xs={24}
+                        xl={focusedWithoutList ? 24 : 17}
+                        xxl={focusedWithoutList ? 24 : 18}
+                    >
                         <StrategySimPanel
                             selectedRun={focusRun ?? null}
                             onCreated={(paperRunId) => {
-                                void paperTradingApi.detail(paperRunId).then((run) => {
-                                    setSelectedRow(run);
-                                    setSearchParams({paperRunId: run.paperRunId});
-                                    setSearchVersion((version) => version + 1);
-                                }).catch((error) => showApiError(error as AppApiError, message));
+                                // 创建成功身份立即进入URL；后续详情读取失败不能丢掉实例或再次创建。
+                                setSelectedRow(null);
+                                setSearchParams({paperRunId});
+                                setSearchVersion((version) => version + 1);
                             }}
                         />
                         {!focusRun ? (
                             <Card className="page-section" variant="borderless">
-                                {detailQuery.error ? <NqErrorState title={t('pages:failedToLoadPaperRunDetails')} error={detailQuery.error as AppApiError}/>
-                                    : <NqEmptyState description={t('pages:selectAPaperRunToInspectItsStatusActionsRecoveryEventsAndExecutionFacts')}/>}
+                                {detailQuery.error ? (
+                                    <NqErrorState
+                                        title={t('pages:failedToLoadPaperRunDetails')}
+                                        error={detailQuery.error as AppApiError}
+                                    />
+                                ) : (
+                                    <NqEmptyState
+                                        description={t(
+                                            'pages:selectAPaperRunToInspectItsStatusActionsRecoveryEventsAndExecutionFacts',
+                                        )}
+                                    />
+                                )}
                             </Card>
-                        ) : focusRun.canonicalAccountId ? null : (
+                        ) : focusRun.canonicalAccountId ? (
+                            <NqAlertPanel
+                                key={focusRun.paperRunId}
+                                paperRunId={focusRun.paperRunId}
+                                focusAlertId={focusAlertId}
+                            />
+                        ) : (
                             <section aria-label={t('pages:paperTradingDetails')}>
                                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
                                     <Card className="page-section" variant="borderless">
                                         <Space size={8} wrap style={{marginBottom: 12}}>
-                                            <Typography.Text strong>{t('pages:runConsole')}</Typography.Text>
-                                            <StatusTag title={focusStatus} variant="pill" status={focusStatus} label={localizedPaperLabel(focusStatus)}/>
-                                            <TradingEnvironmentTag env={focusRun.tradeEnv}/>
-                                            <Typography.Text>{focusRun.canonicalAccountId ? t('pages:simCanonical') : t('pages:simLegacy')}</Typography.Text>
-                                            <Typography.Text type="secondary" className="nq-mono" style={{fontSize: 12}}>
+                                            <Typography.Text strong>
+                                                {t('pages:runConsole')}
+                                            </Typography.Text>
+                                            <StatusTag
+                                                title={focusStatus}
+                                                variant="pill"
+                                                status={focusStatus}
+                                                label={localizedPaperLabel(focusStatus)}
+                                            />
+                                            <TradingEnvironmentTag env={focusRun.tradeEnv} />
+                                            <Typography.Text>
+                                                {focusRun.canonicalAccountId
+                                                    ? t('pages:simCanonical')
+                                                    : t('pages:simLegacy')}
+                                            </Typography.Text>
+                                            <Typography.Text
+                                                type="secondary"
+                                                className="nq-mono"
+                                                style={{fontSize: 12}}
+                                            >
                                                 {focusRun.paperRunId}
                                             </Typography.Text>
                                         </Space>
@@ -441,7 +619,8 @@ export function PaperTradingRunsPage() {
                                                 loading={startMutation.isPending}
                                                 onClick={() => handleStart(focusRun.paperRunId)}
                                             >
-                                                {t('pages:startPaperRun')}</Button>
+                                                {t('pages:startPaperRun')}
+                                            </Button>
                                             <Button
                                                 danger
                                                 size="small"
@@ -449,66 +628,180 @@ export function PaperTradingRunsPage() {
                                                 loading={stopMutation.isPending}
                                                 onClick={() => handleStop(focusRun.paperRunId)}
                                             >
-                                                {t('pages:stopPaperRun')}</Button>
+                                                {t('pages:stopPaperRun')}
+                                            </Button>
                                             <NqDangerConfirmButton
                                                 size="small"
-                                                disabled={focusStatus !== 'RUNNING'}
+                                                disabled={focusStatus !== 'RUNNING' || Boolean(pendingEmergency)}
                                                 loading={emergencyStopMutation.isPending}
                                                 confirmTitle={t('pages:confirmEmergencyStop')}
-                                                confirmContent={t('pages:thisImmediatelyStopsTheCurrentSimPaperRunItDoesNotPlaceOrCancelRealLiveOrdersContinue')}
-                                                okText={t('pages:confirmStop')}
-                                                onConfirm={() => emergencyStopMutation.mutate(
-                                                    {
-                                                        paperRunId: focusRun.paperRunId,
-                                                        request: {triggerType: 'MANUAL', reason: '手动紧急停机', triggeredBy: 'console-user'},
-                                                    },
-                                                    {
-                                                        onSuccess: () => {
-                                                            message.success(t('pages:emergencyStopCompleted'));
-                                                            setSearchVersion((v) => v + 1);
-                                                        },
-                                                        onError: (err) => showApiError(err as AppApiError, message),
-                                                    },
+                                                confirmContent={t(
+                                                    'pages:thisImmediatelyStopsTheCurrentSimPaperRunItDoesNotPlaceOrCancelRealLiveOrdersContinue',
                                                 )}
+                                                okText={t('pages:confirmStop')}
+                                                onConfirm={() =>
+                                                    emergencyStopMutation.mutate(
+                                                        {
+                                                            paperRunId: focusRun.paperRunId,
+                                                            request: {
+                                                                triggerType: 'MANUAL',
+                                                                reason: '手动紧急停机',
+                                                                triggeredBy: 'console-user',
+                                                            },
+                                                        },
+                                                        {
+                                                            onSuccess: (result) => {
+                                                                // HTTP成功仅表示命令有回执，停机是否应用仍由正式业务状态决定。
+                                                                if (result.status === 'APPLIED') {
+                                                                    message.success(t('pages:emergencyStopCompleted'));
+                                                                } else {
+                                                                    message.warning(t('pages:emergencyStopNotApplied'));
+                                                                }
+                                                                setSearchVersion((v) => v + 1);
+                                                            },
+                                                            onError: (err) =>
+                                                                showApiError(
+                                                                    err as AppApiError,
+                                                                    message,
+                                                                ),
+                                                        },
+                                                    )
+                                                }
                                             >
-                                                {t('pages:emergencyStop')}</NqDangerConfirmButton>
-                                            <Typography.Text type="secondary" style={{fontSize: 12}}>
-                                                {t('pages:lifecycleActionsAffectThisSimPaperRunOnlyLiveIsDisabledAndNoRealExchangeActionIsTriggered')}</Typography.Text>
+                                                {t('pages:emergencyStop')}
+                                            </NqDangerConfirmButton>
+                                            <Typography.Text
+                                                type="secondary"
+                                                style={{fontSize: 12}}
+                                            >
+                                                {t(
+                                                    'pages:lifecycleActionsAffectThisSimPaperRunOnlyLiveIsDisabledAndNoRealExchangeActionIsTriggered',
+                                                )}
+                                            </Typography.Text>
                                         </Space>
 
                                         <div className="nq-status-strip">
-                                            <NqMetricCard label={t('pages:runStatus')} value={<StatusTag title={focusStatus} variant="pill" status={focusStatus} label={localizedPaperLabel(focusStatus)}/>}/>
-                                            <NqMetricCard label={t('pages:orderFacts')} value={orderCount === null ? '-' : String(orderCount)} loading={summaryQuery.isPending}/>
-                                            <NqMetricCard label={t('pages:tradeFacts')} value={fillCount === null ? '-' : String(fillCount)} loading={summaryQuery.isPending}/>
-                                            <NqMetricCard label={t('pages:positionFacts')} value={positionCount === null ? '-' : String(positionCount)} loading={summaryQuery.isPending}/>
+                                            <NqMetricCard
+                                                label={t('pages:runStatus')}
+                                                value={
+                                                    <StatusTag
+                                                        title={focusStatus}
+                                                        variant="pill"
+                                                        status={focusStatus}
+                                                        label={localizedPaperLabel(focusStatus)}
+                                                    />
+                                                }
+                                            />
+                                            <NqMetricCard
+                                                label={t('pages:orderFacts')}
+                                                value={
+                                                    orderCount === null ? '-' : String(orderCount)
+                                                }
+                                                loading={summaryQuery.isPending}
+                                            />
+                                            <NqMetricCard
+                                                label={t('pages:tradeFacts')}
+                                                value={fillCount === null ? '-' : String(fillCount)}
+                                                loading={summaryQuery.isPending}
+                                            />
+                                            <NqMetricCard
+                                                label={t('pages:positionFacts')}
+                                                value={
+                                                    positionCount === null
+                                                        ? '-'
+                                                        : String(positionCount)
+                                                }
+                                                loading={summaryQuery.isPending}
+                                            />
                                             <NqMetricCard
                                                 label={t('pages:netPnl2')}
-                                                value={<NqAmountText exact value={netPnl} signed colorBySign/>}
+                                                value={
+                                                    <NqAmountText
+                                                        exact
+                                                        value={netPnl}
+                                                        signed
+                                                        colorBySign
+                                                    />
+                                                }
                                                 tone={amountTone(netPnl)}
                                                 loading={summaryQuery.isPending}
                                             />
                                             <NqMetricCard
                                                 label={t('pages:riskControlLifecycle')}
-                                                value={latestRisk ? <StatusTag title={latestRisk.status} variant="pill" status={latestRisk.status} label={localizedPaperLabel(latestRisk.status)} tone={latestRisk.status === 'PASSED' ? 'success' : latestRisk.status === 'REJECTED' ? 'danger' : 'warning'}/> : '-'}
-                                                footer={latestRisk ? `${latestRisk.checkType} · ${localizedPaperLabel(latestRisk.severity)}` : t('pages:noRiskChecks')}
+                                                value={
+                                                    latestRisk ? (
+                                                        <StatusTag
+                                                            title={latestRisk.status}
+                                                            variant="pill"
+                                                            status={latestRisk.status}
+                                                            label={
+                                                                latestRisk.checkType ===
+                                                                'BASIC_HEALTH_CHECK'
+                                                                    ? t(
+                                                                          'pages:legacyMonitor.basicCheckOnly',
+                                                                      )
+                                                                    : localizedPaperLabel(
+                                                                          latestRisk.status,
+                                                                      )
+                                                            }
+                                                            tone="neutral"
+                                                        />
+                                                    ) : (
+                                                        '-'
+                                                    )
+                                                }
+                                                footer={
+                                                    latestRisk
+                                                        ? `${latestRisk.checkType} · ${localizedPaperLabel(latestRisk.severity)}`
+                                                        : t('pages:noRiskChecks')
+                                                }
                                                 loading={summaryQuery.isPending}
                                             />
                                             <NqMetricCard
                                                 label={t('pages:unresolvedAlerts')}
-                                                value={openAlertCount === null ? '-' : String(openAlertCount)}
-                                                tone={openAlertCount && openAlertCount > 0 ? 'warning' : 'muted'}
+                                                value={
+                                                    openAlertCount === null
+                                                        ? '-'
+                                                        : String(openAlertCount)
+                                                }
+                                                tone={
+                                                    openAlertCount && openAlertCount > 0
+                                                        ? 'warning'
+                                                        : 'muted'
+                                                }
                                                 loading={summaryQuery.isPending}
                                             />
-                                            <NqMetricCard label={t('pages:tradingEnvironment')} value={<TradingEnvironmentTag env={focusRun.tradeEnv}/>} footer={t('pages:liveDisabled2')}/>
+                                            <NqMetricCard
+                                                label={t('pages:tradingEnvironment')}
+                                                value={
+                                                    <TradingEnvironmentTag
+                                                        env={focusRun.tradeEnv}
+                                                    />
+                                                }
+                                                footer={t('pages:liveDisabled2')}
+                                            />
                                         </div>
 
                                         {detailQuery.error ? (
                                             <div style={{marginTop: 12}}>
-                                                <NqErrorState title={t('pages:failedToLoadPaperRunDetails')} error={detailQuery.error as AppApiError}/>
+                                                <NqErrorState
+                                                    title={t('pages:failedToLoadPaperRunDetails')}
+                                                    error={detailQuery.error as AppApiError}
+                                                />
                                             </div>
                                         ) : summaryQuery.error ? (
-                                            <Typography.Text type="warning" style={{display: 'block', marginTop: 12, fontSize: 12}}>
-                                                {t('pages:theRunSummaryFailedToLoadOrderTradeAndPositionFactTabsRemainIndependentlyAvailable')}</Typography.Text>
+                                            <Typography.Text
+                                                type="warning"
+                                                style={{
+                                                    display: 'block',
+                                                    marginTop: 12,
+                                                    fontSize: 12,
+                                                }}
+                                            >
+                                                {t(
+                                                    'pages:theRunSummaryFailedToLoadOrderTradeAndPositionFactTabsRemainIndependentlyAvailable',
+                                                )}
+                                            </Typography.Text>
                                         ) : null}
                                     </Card>
 
@@ -526,49 +819,169 @@ export function PaperTradingRunsPage() {
                                                 positionCurveQuery={positionCurveQuery}
                                                 replayQuery={replayQuery}
                                                 riskOncePending={riskOnceMutation.isPending}
-                                                onRunRiskOnce={() => riskOnceMutation.mutate(focusRun.paperRunId, {
-                                                    onSuccess: () => message.success(t('pages:riskCheckCompleted')),
-                                                    onError: (err) => showApiError(err as AppApiError, message),
-                                                })}
+                                                onRunRiskOnce={() =>
+                                                    riskOnceMutation.mutate(focusRun.paperRunId, {
+                                                        onSuccess: () =>
+                                                            message.success(
+                                                                t('pages:legacyMonitor.recorded'),
+                                                            ),
+                                                        onError: (err) =>
+                                                            showApiError(
+                                                                err as AppApiError,
+                                                                message,
+                                                            ),
+                                                    })
+                                                }
                                             />
                                         </div>
-                                        <Collapse items={[{key: 'operations', label: t('pages:paperRunOperationsDetails'), children: (
-                                            <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                                                <Card className="page-section" variant="borderless" title={t('pages:paperRunEmergencyHistory')}>
-                                                    <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                                                        <Typography.Text type="secondary" style={{fontSize: 12}}>
-                                                            {t('pages:emergencyStopAffectsThisSimPaperRunAndRecordsAStopEventItDoesNotPlaceOrCancelRealLiveOrders')}</Typography.Text>
+                                        <Collapse
+                                            items={[
+                                                {
+                                                    key: 'operations',
+                                                    label: t('pages:paperRunOperationsDetails'),
+                                                    children: (
+                                                        <Space
+                                                            direction="vertical"
+                                                            size={12}
+                                                            style={{display: 'flex'}}
+                                                        >
+                                                            <Card
+                                                                className="page-section"
+                                                                variant="borderless"
+                                                                title={t(
+                                                                    'pages:paperRunEmergencyHistory',
+                                                                )}
+                                                            >
+                                                                <Space
+                                                                    direction="vertical"
+                                                                    size={8}
+                                                                    style={{display: 'flex'}}
+                                                                >
+                                                                    <Typography.Text
+                                                                        type="secondary"
+                                                                        style={{fontSize: 12}}
+                                                                    >
+                                                                        {t(
+                                                                            'pages:emergencyStopAffectsThisSimPaperRunAndRecordsAStopEventItDoesNotPlaceOrCancelRealLiveOrders',
+                                                                        )}
+                                                                    </Typography.Text>
 
-                                                        {(emergencyStopsQuery.data ?? []).length > 0 ? (
-                                                            <NqDataTable
-                                                                rowKey="emergencyStopId"
-                                                                pagination={false}
-                                                                dataSource={emergencyStopsQuery.data ?? []}
-                                                                scroll={{y: 180}}
-                                                                columns={[
-                                                                    {title: t('pages:triggerType2'), dataIndex: 'triggerType', key: 'triggerType', width: 110},
-                                                                    {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title={v} variant="pill" status={v} label={localizedPaperLabel(v)} tone={v === 'APPLIED' ? 'danger' : v === 'RESOLVED' ? 'success' : 'warning'}/>},
-                                                                    {title: t('pages:triggeredAt'), dataIndex: 'triggeredAt', key: 'triggeredAt', width: 170, render: (v: string) => formatDateTime(v)},
-                                                                ]}
+                                                                    {(
+                                                                        emergencyStopsQuery.data ??
+                                                                        []
+                                                                    ).length > 0 ? (
+                                                                        <NqDataTable
+                                                                            rowKey="emergencyStopId"
+                                                                            pagination={false}
+                                                                            dataSource={
+                                                                                emergencyStopsQuery.data ??
+                                                                                []
+                                                                            }
+                                                                            scroll={{y: 180}}
+                                                                            columns={[
+                                                                                {
+                                                                                    title: t(
+                                                                                        'pages:triggerType2',
+                                                                                    ),
+                                                                                    dataIndex:
+                                                                                        'triggerType',
+                                                                                    key: 'triggerType',
+                                                                                    width: 110,
+                                                                                },
+                                                                                {
+                                                                                    title: t(
+                                                                                        'pages:status',
+                                                                                    ),
+                                                                                    dataIndex:
+                                                                                        'status',
+                                                                                    key: 'status',
+                                                                                    width: 100,
+                                                                                    render: (
+                                                                                        v: string,
+                                                                                    ) => (
+                                                                                        <StatusTag
+                                                                                            title={
+                                                                                                v
+                                                                                            }
+                                                                                            variant="pill"
+                                                                                            status={
+                                                                                                v
+                                                                                            }
+                                                                                            label={localizedPaperLabel(
+                                                                                                v,
+                                                                                            )}
+                                                                                            tone={
+                                                                                                v ===
+                                                                                                'APPLIED'
+                                                                                                    ? 'danger'
+                                                                                                    : v ===
+                                                                                                        'RESOLVED'
+                                                                                                      ? 'success'
+                                                                                                      : 'warning'
+                                                                                            }
+                                                                                        />
+                                                                                    ),
+                                                                                },
+                                                                                {
+                                                                                    title: t(
+                                                                                        'pages:triggeredAt',
+                                                                                    ),
+                                                                                    dataIndex:
+                                                                                        'triggeredAt',
+                                                                                    key: 'triggeredAt',
+                                                                                    width: 170,
+                                                                                    render: (
+                                                                                        v: string,
+                                                                                    ) =>
+                                                                                        formatDateTime(
+                                                                                            v,
+                                                                                        ),
+                                                                                },
+                                                                            ]}
+                                                                        />
+                                                                    ) : null}
+                                                                </Space>
+                                                            </Card>
+                                                            <NqScheduleFirePanel
+                                                                paperRunId={focusRun.paperRunId}
                                                             />
-                                                        ) : null}
-                                                    </Space>
-                                                </Card>
-                                                <NqScheduleFirePanel paperRunId={focusRun.paperRunId}/>
-                                                <NqHeartbeatPanel paperRunId={focusRun.paperRunId}/>
-                                                <RunDailyReportPanel paperRunId={focusRun.paperRunId}/>
-                                                <NqStabilityCheckPanel paperRunId={focusRun.paperRunId}/>
-                                                <NqRecoveryPanel paperRunId={focusRun.paperRunId}/>
-                                                <NqAlertPanel paperRunId={focusRun.paperRunId}/>
-                                            </Space>
-                                        )}]}/>
+                                                            <NqHeartbeatPanel
+                                                                paperRunId={focusRun.paperRunId}
+                                                            />
+                                                            <RunDailyReportPanel
+                                                                paperRunId={focusRun.paperRunId}
+                                                            />
+                                                            <NqStabilityCheckPanel
+                                                                paperRunId={focusRun.paperRunId}
+                                                            />
+                                                            <NqRecoveryPanel
+                                                                paperRunId={focusRun.paperRunId}
+                                                            />
+                                                        </Space>
+                                                    ),
+                                                },
+                                            ]}
+                                        />
                                     </Space>
+                                    <NqAlertPanel
+                                        key={focusRun.paperRunId}
+                                        paperRunId={focusRun.paperRunId}
+                                        focusAlertId={focusAlertId}
+                                    />
                                 </Space>
                             </section>
                         )}
                     </Col>
                 </Row>
-                <Collapse items={[{key: 'analysis', label: t('pages:analysisWorkspaces'), children: <ExecutionNavigationCard/>}]}/>
+                <Collapse
+                    items={[
+                        {
+                            key: 'analysis',
+                            label: t('pages:analysisWorkspaces'),
+                            children: <ExecutionNavigationCard />,
+                        },
+                    ]}
+                />
             </Space>
 
             <Modal
@@ -591,25 +1004,47 @@ export function PaperTradingRunsPage() {
                         name="publishId"
                         rules={[{required: true, message: t('pages:enterAPublishId')}]}
                     >
-                        <Input placeholder={t('pages:publishRecordIdPublishid')}/>
+                        <Input placeholder={t('pages:publishRecordIdPublishid')} />
                     </Form.Item>
-                    <Form.Item label={t('pages:tradingEnvironment')} name="tradeEnv" rules={[{required: true}]}>
-                        <Select options={localizedPaperOptions(TRADE_ENV_OPTIONS)}/>
+                    <Form.Item
+                        label={t('pages:tradingEnvironment')}
+                        name="tradeEnv"
+                        rules={[{required: true}]}
+                    >
+                        <Select options={localizedPaperOptions(TRADE_ENV_OPTIONS)} />
                     </Form.Item>
-                    <Form.Item label={t('pages:exchange')} name="exchangeCode" rules={[{required: true}]}>
-                        <Select options={localizedPaperOptions(EXCHANGE_OPTIONS)}/>
+                    <Form.Item
+                        label={t('pages:exchange')}
+                        name="exchangeCode"
+                        rules={[{required: true}]}
+                    >
+                        <Select options={localizedPaperOptions(EXCHANGE_OPTIONS)} />
                     </Form.Item>
-                    <Form.Item label={t('pages:marketType')} name="marketType" rules={[{required: true}]}>
-                        <Select options={localizedPaperOptions(MARKET_TYPE_OPTIONS)}/>
+                    <Form.Item
+                        label={t('pages:marketType')}
+                        name="marketType"
+                        rules={[{required: true}]}
+                    >
+                        <Select options={localizedPaperOptions(MARKET_TYPE_OPTIONS)} />
                     </Form.Item>
                     <Form.Item label={t('pages:symbol')} name="symbol" rules={[{required: true}]}>
-                        <Select showSearch options={localizedPaperOptions(SYMBOL_OPTIONS)}/>
+                        <Select showSearch options={localizedPaperOptions(SYMBOL_OPTIONS)} />
                     </Form.Item>
-                    <Form.Item label={t('pages:interval')} name="intervalCode" rules={[{required: true}]}>
-                        <Select options={localizedPaperOptions(INTERVAL_OPTIONS)}/>
+                    <Form.Item
+                        label={t('pages:interval')}
+                        name="intervalCode"
+                        rules={[{required: true}]}
+                    >
+                        <Select options={localizedPaperOptions(INTERVAL_OPTIONS)} />
                     </Form.Item>
-                    <Form.Item label={t('pages:runConfigurationSnapshotJsonOptional')} name="configSnapshotJson">
-                        <Input.TextArea rows={3} placeholder='{"feeRate":"0.001","slippageBps":"10"}'/>
+                    <Form.Item
+                        label={t('pages:runConfigurationSnapshotJsonOptional')}
+                        name="configSnapshotJson"
+                    >
+                        <Input.TextArea
+                            rows={3}
+                            placeholder='{"feeRate":"0.001","slippageBps":"10"}'
+                        />
                     </Form.Item>
                 </Form>
             </Modal>
@@ -637,7 +1072,9 @@ function ExecutionNavigationCard() {
                                     {item.description}
                                 </Typography.Text>
                                 <Link to={item.to}>
-                                    <Button type="primary" ghost block>{item.action}</Button>
+                                    <Button type="primary" ghost block>
+                                        {item.action}
+                                    </Button>
                                 </Link>
                             </Space>
                         </Card>
@@ -687,7 +1124,12 @@ function RunFactsCard({
     useTranslation('pages');
     return (
         <Card className="page-section" variant="borderless" title={t('pages:runFacts')}>
-            <Descriptions bordered column={{xs: 1, md: 2, xl: 3}} size="small" style={{marginBottom: 12}}>
+            <Descriptions
+                bordered
+                column={{xs: 1, md: 2, xl: 3}}
+                size="small"
+                style={{marginBottom: 12}}
+            >
                 <Descriptions.Item label={t('pages:paperRunId')}>
                     <span className="nq-mono">{selectedRow.paperRunId}</span>
                 </Descriptions.Item>
@@ -697,12 +1139,24 @@ function RunFactsCard({
                 <Descriptions.Item label={t('pages:strategyVersionId')}>
                     <span className="nq-mono">{selectedRow.strategyVersionId || '-'}</span>
                 </Descriptions.Item>
-                <Descriptions.Item label={t('pages:symbol')}>{selectedRow.symbol}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:interval')}>{selectedRow.intervalCode}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:marketType')}>{selectedRow.marketType}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:startedAt')}>{formatDateTime(selectedRow.startedAt)}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:stoppedAt')}>{formatDateTime(selectedRow.stoppedAt)}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:createdBy')}>{selectedRow.createdBy}</Descriptions.Item>
+                <Descriptions.Item label={t('pages:symbol')}>
+                    {selectedRow.symbol}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:interval')}>
+                    {selectedRow.intervalCode}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:marketType')}>
+                    {selectedRow.marketType}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:startedAt')}>
+                    {formatDateTime(selectedRow.startedAt)}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:stoppedAt')}>
+                    {formatDateTime(selectedRow.stoppedAt)}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:createdBy')}>
+                    {selectedRow.createdBy}
+                </Descriptions.Item>
             </Descriptions>
             <Tabs
                 activeKey={factTab}
@@ -712,20 +1166,73 @@ function RunFactsCard({
                         key: 'orders',
                         label: t('pages:order'),
                         children: (
-                            <PaperFactSection query={ordersQuery} emptyText={t('pages:noOrderFactsForThisPaperRun')}>
+                            <PaperFactSection
+                                query={ordersQuery}
+                                emptyText={t('pages:noOrderFactsForThisPaperRun')}
+                            >
                                 <NqDataTable
                                     rowKey="paperOrderId"
                                     pagination={false}
                                     dataSource={ordersQuery.data ?? []}
                                     scroll={{x: 900}}
                                     columns={[
-                                        {title: t('pages:orderId'), dataIndex: 'paperOrderId', key: 'paperOrderId', className: 'nq-mono'},
-                                        {title: t('pages:side'), dataIndex: 'side', key: 'side', width: 80},
-                                        {title: t('pages:type'), dataIndex: 'orderType', key: 'orderType', width: 80},
-                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText exact value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:price'), dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText exact value={v as string}/>}),
-                                        {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title={v} variant="pill" status={v} label={localizedPaperLabel(v)}/>},
-                                        {title: t('pages:createdAt'), dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
+                                        {
+                                            title: t('pages:orderId'),
+                                            dataIndex: 'paperOrderId',
+                                            key: 'paperOrderId',
+                                            className: 'nq-mono',
+                                        },
+                                        {
+                                            title: t('pages:side'),
+                                            dataIndex: 'side',
+                                            key: 'side',
+                                            width: 80,
+                                        },
+                                        {
+                                            title: t('pages:type'),
+                                            dataIndex: 'orderType',
+                                            key: 'orderType',
+                                            width: 80,
+                                        },
+                                        nqNumericColumn({
+                                            title: t('pages:quantity'),
+                                            dataIndex: 'quantity',
+                                            key: 'quantity',
+                                            width: 100,
+                                            render: (v) => (
+                                                <NqAmountText exact value={v as string} />
+                                            ),
+                                        }),
+                                        nqNumericColumn({
+                                            title: t('pages:price'),
+                                            dataIndex: 'price',
+                                            key: 'price',
+                                            width: 100,
+                                            render: (v) => (
+                                                <NqPriceText exact value={v as string} />
+                                            ),
+                                        }),
+                                        {
+                                            title: t('pages:status'),
+                                            dataIndex: 'status',
+                                            key: 'status',
+                                            width: 100,
+                                            render: (v: string) => (
+                                                <StatusTag
+                                                    title={v}
+                                                    variant="pill"
+                                                    status={v}
+                                                    label={localizedPaperLabel(v)}
+                                                />
+                                            ),
+                                        },
+                                        {
+                                            title: t('pages:createdAt'),
+                                            dataIndex: 'createdAt',
+                                            key: 'createdAt',
+                                            width: 170,
+                                            render: (v: string) => formatDateTime(v),
+                                        },
                                     ]}
                                 />
                             </PaperFactSection>
@@ -735,20 +1242,68 @@ function RunFactsCard({
                         key: 'trades',
                         label: t('pages:trade'),
                         children: (
-                            <PaperFactSection query={tradesQuery} emptyText={t('pages:noTradeFactsForThisPaperRun')}>
+                            <PaperFactSection
+                                query={tradesQuery}
+                                emptyText={t('pages:noTradeFactsForThisPaperRun')}
+                            >
                                 <NqDataTable
                                     rowKey="paperTradeId"
                                     pagination={false}
                                     dataSource={tradesQuery.data ?? []}
                                     scroll={{x: 900}}
                                     columns={[
-                                        {title: t('pages:tradeId'), dataIndex: 'paperTradeId', key: 'paperTradeId', className: 'nq-mono'},
-                                        {title: t('pages:orderId'), dataIndex: 'paperOrderId', key: 'paperOrderId', className: 'nq-mono'},
-                                        {title: t('pages:side'), dataIndex: 'side', key: 'side', width: 80},
-                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText exact value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:price'), dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText exact value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:fee'), dataIndex: 'fee', key: 'fee', width: 100, render: (v) => <NqAmountText exact value={v as string}/>}),
-                                        {title: t('pages:tradeTime'), dataIndex: 'tradedAt', key: 'tradedAt', width: 170, render: (v: string) => formatDateTime(v)},
+                                        {
+                                            title: t('pages:tradeId'),
+                                            dataIndex: 'paperTradeId',
+                                            key: 'paperTradeId',
+                                            className: 'nq-mono',
+                                        },
+                                        {
+                                            title: t('pages:orderId'),
+                                            dataIndex: 'paperOrderId',
+                                            key: 'paperOrderId',
+                                            className: 'nq-mono',
+                                        },
+                                        {
+                                            title: t('pages:side'),
+                                            dataIndex: 'side',
+                                            key: 'side',
+                                            width: 80,
+                                        },
+                                        nqNumericColumn({
+                                            title: t('pages:quantity'),
+                                            dataIndex: 'quantity',
+                                            key: 'quantity',
+                                            width: 100,
+                                            render: (v) => (
+                                                <NqAmountText exact value={v as string} />
+                                            ),
+                                        }),
+                                        nqNumericColumn({
+                                            title: t('pages:price'),
+                                            dataIndex: 'price',
+                                            key: 'price',
+                                            width: 100,
+                                            render: (v) => (
+                                                <NqPriceText exact value={v as string} />
+                                            ),
+                                        }),
+                                        nqNumericColumn({
+                                            title: t('pages:fee'),
+                                            dataIndex: 'fee',
+                                            key: 'fee',
+                                            width: 100,
+                                            render: (v) => (
+                                                <NqAmountText exact value={v as string} />
+                                            ),
+                                        }),
+                                        {
+                                            title: t('pages:tradeTime'),
+                                            dataIndex: 'tradedAt',
+                                            key: 'tradedAt',
+                                            width: 170,
+                                            render: (v: string) => formatDateTime(v),
+                                        },
                                     ]}
                                 />
                             </PaperFactSection>
@@ -758,19 +1313,75 @@ function RunFactsCard({
                         key: 'positions',
                         label: t('pages:position'),
                         children: (
-                            <PaperFactSection query={positionsQuery} emptyText={t('pages:noPositionFactsForThisPaperRun')}>
+                            <PaperFactSection
+                                query={positionsQuery}
+                                emptyText={t('pages:noPositionFactsForThisPaperRun')}
+                            >
                                 <NqDataTable
                                     rowKey="paperPositionId"
                                     pagination={false}
                                     dataSource={positionsQuery.data ?? []}
                                     scroll={{x: 900}}
                                     columns={[
-                                        {title: t('pages:symbol'), dataIndex: 'symbol', key: 'symbol', width: 120},
-                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 120, render: (v) => <NqAmountText exact value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:averagePrice'), dataIndex: 'avgPrice', key: 'avgPrice', width: 120, render: (v) => <NqPriceText exact value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:realizedPnl'), dataIndex: 'realizedPnl', key: 'realizedPnl', width: 140, render: (v) => <NqAmountText exact value={v as string} signed colorBySign/>}),
-                                        nqNumericColumn({title: t('pages:unrealizedPnl'), dataIndex: 'unrealizedPnl', key: 'unrealizedPnl', width: 140, render: (v) => <NqAmountText exact value={v as string} signed colorBySign/>}),
-                                        {title: t('pages:updatedAt'), dataIndex: 'updatedAt', key: 'updatedAt', width: 170, render: (v: string) => formatDateTime(v)},
+                                        {
+                                            title: t('pages:symbol'),
+                                            dataIndex: 'symbol',
+                                            key: 'symbol',
+                                            width: 120,
+                                        },
+                                        nqNumericColumn({
+                                            title: t('pages:quantity'),
+                                            dataIndex: 'quantity',
+                                            key: 'quantity',
+                                            width: 120,
+                                            render: (v) => (
+                                                <NqAmountText exact value={v as string} />
+                                            ),
+                                        }),
+                                        nqNumericColumn({
+                                            title: t('pages:averagePrice'),
+                                            dataIndex: 'avgPrice',
+                                            key: 'avgPrice',
+                                            width: 120,
+                                            render: (v) => (
+                                                <NqPriceText exact value={v as string} />
+                                            ),
+                                        }),
+                                        nqNumericColumn({
+                                            title: t('pages:realizedPnl'),
+                                            dataIndex: 'realizedPnl',
+                                            key: 'realizedPnl',
+                                            width: 140,
+                                            render: (v) => (
+                                                <NqAmountText
+                                                    exact
+                                                    value={v as string}
+                                                    signed
+                                                    colorBySign
+                                                />
+                                            ),
+                                        }),
+                                        nqNumericColumn({
+                                            title: t('pages:unrealizedPnl'),
+                                            dataIndex: 'unrealizedPnl',
+                                            key: 'unrealizedPnl',
+                                            width: 140,
+                                            render: (v) => (
+                                                <NqAmountText
+                                                    exact
+                                                    value={v as string}
+                                                    signed
+                                                    colorBySign
+                                                />
+                                            ),
+                                        }),
+                                        {
+                                            title: t('pages:updatedAt'),
+                                            dataIndex: 'updatedAt',
+                                            key: 'updatedAt',
+                                            width: 170,
+                                            render: (v: string) => formatDateTime(v),
+                                        },
                                     ]}
                                 />
                             </PaperFactSection>
@@ -781,33 +1392,95 @@ function RunFactsCard({
                         label: t('pages:snapshot'),
                         children: (
                             <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                                <SnapshotBlock title={t('pages:publishSnapshot')} content={selectedRow.publishSnapshotJson}/>
-                                <SnapshotBlock title={t('pages:strategyVersionSnapshot')} content={selectedRow.strategyVersionSnapshotJson}/>
-                                <SnapshotBlock title={t('pages:datasetSnapshot')} content={selectedRow.datasetSnapshotJson}/>
-                                <SnapshotBlock title={t('pages:parameterSnapshot')} content={selectedRow.paramSnapshotJson}/>
-                                <SnapshotBlock title={t('pages:configurationSnapshot')} content={selectedRow.configSnapshotJson}/>
+                                <SnapshotBlock
+                                    title={t('pages:publishSnapshot')}
+                                    content={selectedRow.publishSnapshotJson}
+                                />
+                                <SnapshotBlock
+                                    title={t('pages:strategyVersionSnapshot')}
+                                    content={selectedRow.strategyVersionSnapshotJson}
+                                />
+                                <SnapshotBlock
+                                    title={t('pages:datasetSnapshot')}
+                                    content={selectedRow.datasetSnapshotJson}
+                                />
+                                <SnapshotBlock
+                                    title={t('pages:parameterSnapshot')}
+                                    content={selectedRow.paramSnapshotJson}
+                                />
+                                <SnapshotBlock
+                                    title={t('pages:configurationSnapshot')}
+                                    content={selectedRow.configSnapshotJson}
+                                />
                             </Space>
                         ),
                     },
                     {
                         key: 'risk-results',
-                        label: t('pages:riskResults'),
+                        label: t('pages:legacyMonitor.riskTitle'),
                         children: (
                             <Space direction="vertical" size={8} style={{display: 'flex'}}>
-                                <Button size="small" loading={riskOncePending} onClick={onRunRiskOnce}>
-                                    {t('pages:runRiskCheck')}</Button>
-                                <PaperFactSection query={riskResultsQuery} emptyText={t('pages:noRiskCheckResultsForThisPaperRun')}>
+                                <Alert
+                                    type="info"
+                                    showIcon
+                                    message={t('pages:legacyMonitor.risk')}
+                                />
+                                <Button
+                                    size="small"
+                                    loading={riskOncePending}
+                                    onClick={onRunRiskOnce}
+                                >
+                                    {t('pages:legacyMonitor.recordRisk')}
+                                </Button>
+                                <PaperFactSection
+                                    query={riskResultsQuery}
+                                    emptyText={t('pages:noRiskCheckResultsForThisPaperRun')}
+                                >
                                     <NqDataTable
                                         rowKey="riskResultId"
                                         pagination={false}
                                         dataSource={riskResultsQuery.data ?? []}
                                         scroll={{x: 900}}
                                         columns={[
-                                            {title: t('pages:checkType'), dataIndex: 'checkType', key: 'checkType', width: 180},
-                                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 100, render: (v: string) => <StatusTag title={v} variant="pill" status={v} label={localizedPaperLabel(v)} tone={v === 'PASSED' ? 'success' : v === 'REJECTED' ? 'danger' : 'warning'}/>},
-                                            {title: t('pages:severity'), dataIndex: 'severity', key: 'severity', width: 100},
-                                            {title: t('pages:message'), dataIndex: 'message', key: 'message'},
-                                            {title: t('pages:time'), dataIndex: 'createdAt', key: 'createdAt', width: 170, render: (v: string) => formatDateTime(v)},
+                                            {
+                                                title: t('pages:checkType'),
+                                                dataIndex: 'checkType',
+                                                key: 'checkType',
+                                                width: 180,
+                                            },
+                                            {
+                                                title: t('pages:legacyMonitor.recordState'),
+                                                dataIndex: 'status',
+                                                key: 'status',
+                                                width: 100,
+                                                render: (v: string) => (
+                                                    <StatusTag
+                                                        title={v}
+                                                        variant="pill"
+                                                        status={v}
+                                                        label={localizedPaperLabel(v)}
+                                                        tone="neutral"
+                                                    />
+                                                ),
+                                            },
+                                            {
+                                                title: t('pages:severity'),
+                                                dataIndex: 'severity',
+                                                key: 'severity',
+                                                width: 100,
+                                            },
+                                            {
+                                                title: t('pages:message'),
+                                                dataIndex: 'message',
+                                                key: 'message',
+                                            },
+                                            {
+                                                title: t('pages:time'),
+                                                dataIndex: 'createdAt',
+                                                key: 'createdAt',
+                                                width: 170,
+                                                render: (v: string) => formatDateTime(v),
+                                            },
                                         ]}
                                     />
                                 </PaperFactSection>
@@ -818,18 +1491,56 @@ function RunFactsCard({
                         key: 'equity-curve',
                         label: t('pages:equityCurve2'),
                         children: (
-                            <PaperFactSection query={equityCurveQuery} emptyText={t('pages:noEquityCurveDataForThisPaperRun')}>
+                            <PaperFactSection
+                                query={equityCurveQuery}
+                                emptyText={t('pages:noEquityCurveDataForThisPaperRun')}
+                            >
                                 <NqDataTable
                                     rowKey="equitySnapshotId"
                                     pagination={false}
                                     dataSource={equityCurveQuery.data ?? []}
                                     scroll={{x: 900}}
                                     columns={[
-                                        {title: t('pages:time'), dataIndex: 'snapshotTime', key: 'snapshotTime', width: 170, render: (v: string) => formatDateTime(v)},
-                                        nqNumericColumn({title: t('pages:totalEquity'), dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText exact value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:cash'), dataIndex: 'cashBalance', key: 'cashBalance', width: 120, render: (v) => <NqAmountText exact value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:positionValue'), dataIndex: 'positionValue', key: 'positionValue', width: 120, render: (v) => <NqAmountText exact value={v as string}/>}),
-                                        {title: t('pages:source'), dataIndex: 'source', key: 'source', width: 100},
+                                        {
+                                            title: t('pages:time'),
+                                            dataIndex: 'snapshotTime',
+                                            key: 'snapshotTime',
+                                            width: 170,
+                                            render: (v: string) => formatDateTime(v),
+                                        },
+                                        nqNumericColumn({
+                                            title: t('pages:totalEquity'),
+                                            dataIndex: 'totalEquity',
+                                            key: 'totalEquity',
+                                            width: 120,
+                                            render: (v) => (
+                                                <NqAmountText exact value={v as string} />
+                                            ),
+                                        }),
+                                        nqNumericColumn({
+                                            title: t('pages:cash'),
+                                            dataIndex: 'cashBalance',
+                                            key: 'cashBalance',
+                                            width: 120,
+                                            render: (v) => (
+                                                <NqAmountText exact value={v as string} />
+                                            ),
+                                        }),
+                                        nqNumericColumn({
+                                            title: t('pages:positionValue'),
+                                            dataIndex: 'positionValue',
+                                            key: 'positionValue',
+                                            width: 120,
+                                            render: (v) => (
+                                                <NqAmountText exact value={v as string} />
+                                            ),
+                                        }),
+                                        {
+                                            title: t('pages:source'),
+                                            dataIndex: 'source',
+                                            key: 'source',
+                                            width: 100,
+                                        },
                                     ]}
                                 />
                             </PaperFactSection>
@@ -839,19 +1550,62 @@ function RunFactsCard({
                         key: 'position-curve',
                         label: t('pages:positionCurve'),
                         children: (
-                            <PaperFactSection query={positionCurveQuery} emptyText={t('pages:noPositionCurveDataForThisPaperRun')}>
+                            <PaperFactSection
+                                query={positionCurveQuery}
+                                emptyText={t('pages:noPositionCurveDataForThisPaperRun')}
+                            >
                                 <NqDataTable
                                     rowKey="positionSnapshotId"
                                     pagination={false}
                                     dataSource={positionCurveQuery.data ?? []}
                                     scroll={{x: 900}}
                                     columns={[
-                                        {title: t('pages:symbol'), dataIndex: 'symbol', key: 'symbol', width: 120},
-                                        {title: t('pages:time'), dataIndex: 'snapshotTime', key: 'snapshotTime', width: 170, render: (v: string) => formatDateTime(v)},
-                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText exact value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:averagePrice'), dataIndex: 'avgPrice', key: 'avgPrice', width: 100, render: (v) => <NqPriceText exact value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:markPrice'), dataIndex: 'markPrice', key: 'markPrice', width: 100, render: (v) => <NqPriceText exact value={v as string}/>}),
-                                        {title: t('pages:source'), dataIndex: 'source', key: 'source', width: 100},
+                                        {
+                                            title: t('pages:symbol'),
+                                            dataIndex: 'symbol',
+                                            key: 'symbol',
+                                            width: 120,
+                                        },
+                                        {
+                                            title: t('pages:time'),
+                                            dataIndex: 'snapshotTime',
+                                            key: 'snapshotTime',
+                                            width: 170,
+                                            render: (v: string) => formatDateTime(v),
+                                        },
+                                        nqNumericColumn({
+                                            title: t('pages:quantity'),
+                                            dataIndex: 'quantity',
+                                            key: 'quantity',
+                                            width: 100,
+                                            render: (v) => (
+                                                <NqAmountText exact value={v as string} />
+                                            ),
+                                        }),
+                                        nqNumericColumn({
+                                            title: t('pages:averagePrice'),
+                                            dataIndex: 'avgPrice',
+                                            key: 'avgPrice',
+                                            width: 100,
+                                            render: (v) => (
+                                                <NqPriceText exact value={v as string} />
+                                            ),
+                                        }),
+                                        nqNumericColumn({
+                                            title: t('pages:markPrice'),
+                                            dataIndex: 'markPrice',
+                                            key: 'markPrice',
+                                            width: 100,
+                                            render: (v) => (
+                                                <NqPriceText exact value={v as string} />
+                                            ),
+                                        }),
+                                        {
+                                            title: t('pages:source'),
+                                            dataIndex: 'source',
+                                            key: 'source',
+                                            width: 100,
+                                        },
                                     ]}
                                 />
                             </PaperFactSection>
@@ -861,20 +1615,64 @@ function RunFactsCard({
                         key: 'replay',
                         label: t('pages:tradeReview'),
                         children: (
-                            <PaperFactSection query={replayQuery} emptyText={t('pages:noTradeReviewsForThisPaperRun')}>
+                            <PaperFactSection
+                                query={replayQuery}
+                                emptyText={t('pages:noTradeReviewsForThisPaperRun')}
+                            >
                                 <NqDataTable
                                     rowKey="replayRecordId"
                                     pagination={false}
                                     dataSource={replayQuery.data ?? []}
                                     scroll={{x: 900}}
                                     columns={[
-                                        {title: t('pages:time'), dataIndex: 'replayTime', key: 'replayTime', width: 170, render: (v: string) => formatDateTime(v)},
-                                        {title: t('pages:eventType'), dataIndex: 'eventType', key: 'eventType', width: 140},
-                                        {title: t('pages:symbol'), dataIndex: 'symbol', key: 'symbol', width: 120},
-                                        {title: t('pages:side'), dataIndex: 'side', key: 'side', width: 80},
-                                        nqNumericColumn({title: t('pages:price'), dataIndex: 'price', key: 'price', width: 100, render: (v) => <NqPriceText exact value={v as string}/>}),
-                                        nqNumericColumn({title: t('pages:quantity'), dataIndex: 'quantity', key: 'quantity', width: 100, render: (v) => <NqAmountText exact value={v as string}/>}),
-                                        {title: t('pages:reason'), dataIndex: 'reason', key: 'reason'},
+                                        {
+                                            title: t('pages:time'),
+                                            dataIndex: 'replayTime',
+                                            key: 'replayTime',
+                                            width: 170,
+                                            render: (v: string) => formatDateTime(v),
+                                        },
+                                        {
+                                            title: t('pages:eventType'),
+                                            dataIndex: 'eventType',
+                                            key: 'eventType',
+                                            width: 140,
+                                        },
+                                        {
+                                            title: t('pages:symbol'),
+                                            dataIndex: 'symbol',
+                                            key: 'symbol',
+                                            width: 120,
+                                        },
+                                        {
+                                            title: t('pages:side'),
+                                            dataIndex: 'side',
+                                            key: 'side',
+                                            width: 80,
+                                        },
+                                        nqNumericColumn({
+                                            title: t('pages:price'),
+                                            dataIndex: 'price',
+                                            key: 'price',
+                                            width: 100,
+                                            render: (v) => (
+                                                <NqPriceText exact value={v as string} />
+                                            ),
+                                        }),
+                                        nqNumericColumn({
+                                            title: t('pages:quantity'),
+                                            dataIndex: 'quantity',
+                                            key: 'quantity',
+                                            width: 100,
+                                            render: (v) => (
+                                                <NqAmountText exact value={v as string} />
+                                            ),
+                                        }),
+                                        {
+                                            title: t('pages:reason'),
+                                            dataIndex: 'reason',
+                                            key: 'reason',
+                                        },
                                     ]}
                                 />
                             </PaperFactSection>
@@ -886,61 +1684,62 @@ function RunFactsCard({
     );
 }
 
-/**
- * RunDailyReportPanel 恢复 K5 `/paper-trading/runs` 的 run-local 日报入口。
- *
- * Why:
- * K5 拆分只迁出跨 run 分析 dashboard；日报仍是单个 Paper Run 的执行事实与验收辅助证据。
- * 如果 runs 页不挂载该 panel，既有 backend-dependent smoke 无法覆盖日报生成链路，也会让用户从执行控制台失去
- * run-local 日报入口。
- *
- * Boundary / Failure Modes:
- * - 复用既有 `usePaperDailyReportsQuery` 与 `useGenerateDailyReportMutation`，不新增 API、query key 或 global store。
- * - 只展示当前 `paperRunId` 的日报列表；生成按钮省略 reportDate，由后端按“今日”幂等生成。
- * - 查询失败只影响本 panel，通过 `NqErrorState` 局部展示，不阻塞订单、风控、调度、心跳或恢复面板。
- * - 日报仅代表 SIM/Paper 执行事实，不构成 LIVE 或真实交易表现。
- */
+/** 历史日报只保留原记录和告警摘要；原零占位不能成为权益或收益依据，真实分析转向canonical SIM。 */
 function RunDailyReportPanel({paperRunId}: {paperRunId: string}) {
     useTranslation('pages');
     const {message} = App.useApp();
     const dailyReportsQuery = usePaperDailyReportsQuery(paperRunId);
     const generateDailyReportMutation = useGenerateDailyReportMutation();
-    const data = dailyReportsQuery.data ?? [];
+    // 历史日报没有正式计价依据；保留原记录，不能把旧生成器的零占位当作真实收益。
+    const data = (dailyReportsQuery.data ?? []).map((row) => ({
+        ...row,
+        totalEquity: null,
+        dailyPnl: null,
+        dailyReturn: null,
+        maxDrawdown: null,
+    }));
 
     return (
         <Card
             className="page-section"
             size="small"
-            title={t('pages:dailyReport')}
-            extra={(
+            title={t('pages:legacyMonitor.dailyTitle')}
+            extra={
                 <Button
                     size="small"
                     type="primary"
                     ghost
                     loading={generateDailyReportMutation.isPending}
-                    onClick={() => generateDailyReportMutation.mutate(
-                        {paperRunId, request: {}},
-                        {
-                            onSuccess: () => {
-                                message.success(t('pages:dailyReportGenerated'));
-                                void dailyReportsQuery.refetch();
+                    onClick={() =>
+                        generateDailyReportMutation.mutate(
+                            {paperRunId, request: {}},
+                            {
+                                onSuccess: () => {
+                                    message.success(t('pages:legacyMonitor.recorded'));
+                                    void dailyReportsQuery.refetch();
+                                },
+                                onError: (err) => showApiError(err as AppApiError, message),
                             },
-                            onError: (err) => showApiError(err as AppApiError, message),
-                        },
-                    )}
+                        )
+                    }
                 >
-                    {t('pages:generateTodaySReport')}</Button>
-            )}
+                    {t('pages:legacyMonitor.recordDaily')}
+                </Button>
+            }
         >
             <Space direction="vertical" size={8} style={{display: 'flex'}}>
                 <Typography.Text type="secondary" style={{fontSize: 12}}>
-                    {t('pages:dailyReportsSummarizeThisSimPaperRunOnlyNotLiveOrRealTradingPerformance')}</Typography.Text>
+                    {t('pages:legacyMonitor.daily')}
+                </Typography.Text>
                 {dailyReportsQuery.isFetching && data.length === 0 ? (
-                    <NqLoadingState/>
+                    <NqLoadingState />
                 ) : dailyReportsQuery.error ? (
-                    <NqErrorState error={dailyReportsQuery.error as AppApiError} onRetry={() => dailyReportsQuery.refetch()}/>
+                    <NqErrorState
+                        error={dailyReportsQuery.error as AppApiError}
+                        onRetry={() => dailyReportsQuery.refetch()}
+                    />
                 ) : data.length === 0 ? (
-                    <NqEmptyState description={t('pages:noDailyReportsForThisPaperRun')}/>
+                    <NqEmptyState description={t('pages:noDailyReportsForThisPaperRun')} />
                 ) : (
                     <NqDataTable<PaperRunDailyReportItem>
                         rowKey="reportId"
@@ -948,16 +1747,96 @@ function RunDailyReportPanel({paperRunId}: {paperRunId: string}) {
                         dataSource={data}
                         scroll={{x: 900, y: 240}}
                         columns={[
-                            {title: t('pages:date'), dataIndex: 'reportDate', key: 'reportDate', width: 120},
-                            {title: t('pages:status'), dataIndex: 'status', key: 'status', width: 110, render: (v: string) => <StatusTag title={v} variant="pill" status={v} label={localizedPaperLabel(v)} tone={v === 'GENERATED' ? 'success' : 'warning'}/>},
-                            nqNumericColumn({title: t('pages:totalEquity'), dataIndex: 'totalEquity', key: 'totalEquity', width: 120, render: (v) => <NqAmountText exact value={v as string}/>}),
-                            nqNumericColumn({title: t('pages:dailyPnl'), dataIndex: 'dailyPnl', key: 'dailyPnl', width: 120, render: (v) => <NqAmountText exact value={v as string} signed colorBySign/>}),
-                            nqNumericColumn({title: t('pages:dailyReturn2'), dataIndex: 'dailyReturn', key: 'dailyReturn', width: 110, render: (v) => <NqPercentText value={v as string} ratio colorBySign/>}),
-                            nqNumericColumn({title: t('pages:maximumDrawdown'), dataIndex: 'maxDrawdown', key: 'maxDrawdown', width: 110, render: (v) => <NqPercentText value={v as string} ratio signed={false}/>}),
-                            nqNumericColumn({title: t('pages:order'), dataIndex: 'orderCount', key: 'orderCount', width: 80}),
-                            nqNumericColumn({title: t('pages:trade'), dataIndex: 'tradeCount', key: 'tradeCount', width: 80}),
-                            nqNumericColumn({title: t('pages:alert'), dataIndex: 'alertCount', key: 'alertCount', width: 80}),
-                            {title: t('pages:generatedAt'), dataIndex: 'generatedAt', key: 'generatedAt', width: 170, render: (v: string) => formatDateTime(v)},
+                            {
+                                title: t('pages:date'),
+                                dataIndex: 'reportDate',
+                                key: 'reportDate',
+                                width: 120,
+                            },
+                            {
+                                title: t('pages:legacyMonitor.recordState'),
+                                dataIndex: 'status',
+                                key: 'status',
+                                width: 110,
+                                render: (v: string) => (
+                                    <StatusTag
+                                        title={v}
+                                        variant="pill"
+                                        status={v}
+                                        label={localizedPaperLabel(v)}
+                                        tone="neutral"
+                                    />
+                                ),
+                            },
+                            nqNumericColumn({
+                                title: t('pages:totalEquity'),
+                                dataIndex: 'totalEquity',
+                                key: 'totalEquity',
+                                width: 120,
+                                render: (v) => <NqAmountText exact value={v as string} />,
+                            }),
+                            nqNumericColumn({
+                                title: t('pages:dailyPnl'),
+                                dataIndex: 'dailyPnl',
+                                key: 'dailyPnl',
+                                width: 120,
+                                render: (v) => (
+                                    <NqAmountText exact value={v as string} signed colorBySign />
+                                ),
+                            }),
+                            nqNumericColumn({
+                                title: t('pages:dailyReturn2'),
+                                dataIndex: 'dailyReturn',
+                                key: 'dailyReturn',
+                                width: 110,
+                                render: (v) => (
+                                    <NqPercentText value={v as string} ratio colorBySign />
+                                ),
+                            }),
+                            nqNumericColumn({
+                                title: t('pages:maximumDrawdown'),
+                                dataIndex: 'maxDrawdown',
+                                key: 'maxDrawdown',
+                                width: 110,
+                                render: (v) => (
+                                    <NqPercentText value={v as string} ratio signed={false} />
+                                ),
+                            }),
+                            nqNumericColumn({
+                                title: t('pages:order'),
+                                dataIndex: 'orderCount',
+                                key: 'orderCount',
+                                width: 80,
+                                render: () => (
+                                    <Typography.Text type="secondary">
+                                        {t('pages:legacyMonitor.unverified')}
+                                    </Typography.Text>
+                                ),
+                            }),
+                            nqNumericColumn({
+                                title: t('pages:trade'),
+                                dataIndex: 'tradeCount',
+                                key: 'tradeCount',
+                                width: 80,
+                                render: () => (
+                                    <Typography.Text type="secondary">
+                                        {t('pages:legacyMonitor.unverified')}
+                                    </Typography.Text>
+                                ),
+                            }),
+                            nqNumericColumn({
+                                title: t('pages:alert'),
+                                dataIndex: 'alertCount',
+                                key: 'alertCount',
+                                width: 80,
+                            }),
+                            {
+                                title: t('pages:generatedAt'),
+                                dataIndex: 'generatedAt',
+                                key: 'generatedAt',
+                                width: 170,
+                                render: (v: string) => formatDateTime(v),
+                            },
                         ]}
                     />
                 )}
@@ -976,13 +1855,13 @@ function PaperFactSection({query, emptyText, children}: PaperFactSectionProps) {
     useTranslation('pages');
     const data = query.data ?? [];
     if (query.isFetching && data.length === 0) {
-        return <NqLoadingState/>;
+        return <NqLoadingState />;
     }
     if (query.error) {
-        return <NqErrorState error={query.error as AppApiError}/>;
+        return <NqErrorState error={query.error as AppApiError} />;
     }
     if (data.length === 0) {
-        return <NqEmptyState description={emptyText}/>;
+        return <NqEmptyState description={emptyText} />;
     }
     return <>{children}</>;
 }
@@ -990,10 +1869,25 @@ function PaperFactSection({query, emptyText, children}: PaperFactSectionProps) {
 function SnapshotBlock({title, content}: {title: string; content?: string | null}) {
     useTranslation('pages');
     return (
-        <Collapse items={[{key: 'snapshot', label: title, children:
-            <Typography.Paragraph className="nq-mono" style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', marginBottom: 0}}>
-                {content || '-'}
-            </Typography.Paragraph>,
-        }]}/>
+        <Collapse
+            items={[
+                {
+                    key: 'snapshot',
+                    label: title,
+                    children: (
+                        <Typography.Paragraph
+                            className="nq-mono"
+                            style={{
+                                whiteSpace: 'pre-wrap',
+                                overflowWrap: 'anywhere',
+                                marginBottom: 0,
+                            }}
+                        >
+                            {content || '-'}
+                        </Typography.Paragraph>
+                    ),
+                },
+            ]}
+        />
     );
 }

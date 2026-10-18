@@ -1,3 +1,4 @@
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {MemoryRouter} from 'react-router-dom';
@@ -6,22 +7,50 @@ import i18n, {t} from '@/i18n';
 import {localizedPaperLabel} from '@/pages/paper-trading/components/paperAnalysisOptions';
 
 const fixture = vi.hoisted(() => ({
-    paperRunId: 'ptr-layout-test', publishId: 'pub-layout-test', strategyVersionId: 'sv-layout-test',
-    canonicalAccountId: null, status: 'RUNNING', tradeEnv: 'SIM', exchangeCode: 'OKX', marketType: 'SPOT',
-    symbol: 'BTC-USDT', intervalCode: '1m', createdAt: null, updatedAt: null, startedAt: null, stoppedAt: null,
-    createdBy: 'test-user', publishSnapshotJson: 'SNAPSHOT_MUST_NOT_OBSCURE_OPERATIONS',
+    paperRunId: 'ptr-layout-test',
+    publishId: 'pub-layout-test',
+    strategyVersionId: 'sv-layout-test',
+    canonicalAccountId: null,
+    status: 'RUNNING',
+    tradeEnv: 'SIM',
+    exchangeCode: 'OKX',
+    marketType: 'SPOT',
+    symbol: 'BTC-USDT',
+    intervalCode: '1m',
+    createdAt: null,
+    updatedAt: null,
+    startedAt: null,
+    stoppedAt: null,
+    createdBy: 'test-user',
+    publishSnapshotJson: 'SNAPSHOT_MUST_NOT_OBSCURE_OPERATIONS',
 }));
 
 vi.mock('@/features/paper-trading/hooks/usePaperTradingQuery', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
-    return Object.fromEntries(Object.keys(actual).map((name) => [name, () => ({
-        data: name === 'usePaperTradingDetailQuery' ? fixture : undefined,
-        isFetching: false, isPending: false, error: null, mutate: vi.fn(), refetch: vi.fn(),
-    })]));
+    return Object.fromEntries(
+        Object.keys(actual).map((name) => [
+            name,
+            () => ({
+                data: name === 'usePaperTradingDetailQuery' ? fixture : undefined,
+                isFetching: false,
+                isPending: false,
+                error: null,
+                mutate: vi.fn(),
+                refetch: vi.fn(),
+            }),
+        ]),
+    );
 });
 
 // 面板自身的功能开关由既有路径验证，这里只隔离运行页的操作顺序与详情层级。
-vi.mock('@/features/paper-trading/components/StrategySimPanel', () => ({StrategySimPanel: () => null}));
+vi.mock('@/features/paper-trading/components/StrategySimPanel', () => ({
+    StrategySimPanel: () => null,
+}));
+// 本测试只检查页面层级；告警读写与恢复在专门的单测及正式GUI中验证。
+vi.mock('@/features/paper-trading/components/PaperAlertOperationRecovery', () => ({
+    PaperAlertOperationRecovery: () => null,
+}));
+vi.mock('@/features/paper-trading/components/NqAlertPanel', () => ({NqAlertPanel: () => null}));
 
 import {PaperTradingRunsPage} from '@/pages/paper-trading/PaperTradingRunsPage';
 
@@ -31,11 +60,26 @@ describe('Paper run layout', () => {
     it('keeps query and lifecycle actions ahead of detail facts and collapsed diagnostics', async () => {
         vi.stubEnv('VITE_STRATEGY_SIM_ENABLED', 'false');
         await i18n.changeLanguage('en-US');
-        const html = renderToStaticMarkup(createElement(MemoryRouter,
-            {initialEntries: ['/paper-trading/runs?paperRunId=ptr-layout-test']}, createElement(PaperTradingRunsPage)));
-        expect(html.indexOf('paper-runs-query')).toBeLessThan(html.indexOf(t('pages:startPaperRun')));
-        expect(html.indexOf(t('pages:startPaperRun'))).toBeLessThan(html.indexOf(t('pages:runFacts')));
-        expect(html.indexOf(t('pages:emergencyStop'))).toBeLessThan(html.indexOf(t('pages:runFacts')));
+        const html = renderToStaticMarkup(
+            createElement(
+                MemoryRouter,
+                {initialEntries: ['/paper-trading/runs?paperRunId=ptr-layout-test']},
+                createElement(
+                    QueryClientProvider,
+                    {client: new QueryClient()},
+                    createElement(PaperTradingRunsPage),
+                ),
+            ),
+        );
+        expect(html.indexOf('paper-runs-query')).toBeLessThan(
+            html.indexOf(t('pages:startPaperRun')),
+        );
+        expect(html.indexOf(t('pages:startPaperRun'))).toBeLessThan(
+            html.indexOf(t('pages:runFacts')),
+        );
+        expect(html.indexOf(t('pages:emergencyStop'))).toBeLessThan(
+            html.indexOf(t('pages:runFacts')),
+        );
         expect(html).toContain('ptr-layout-test');
         expect(html).not.toContain('SNAPSHOT_MUST_NOT_OBSCURE_OPERATIONS');
         expect(html).not.toContain('paper-runs-create_publishId');

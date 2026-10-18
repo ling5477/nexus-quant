@@ -102,6 +102,13 @@ public class PaperTradingMonitorService {
     }
 
     public EmergencyStopEvent triggerEmergencyStop(String paperRunId, String triggerType, String reason, String triggeredBy) {
+        return triggerEmergencyStop(paperRunId, triggerType, reason, triggeredBy,
+                "es-" + UUID.randomUUID(), null);
+    }
+
+    /** 稳定请求入口由外层事务提供原事件身份；旧内部调用保留原合同。 */
+    EmergencyStopEvent triggerEmergencyStop(String paperRunId, String triggerType, String reason,
+            String triggeredBy, String eventId, String originalRequestJson) {
         PaperTradingRun run = runService.getById(paperRunId);
         Instant now = clock.instant();
 
@@ -122,11 +129,12 @@ public class PaperTradingMonitorService {
         }
 
         EmergencyStopEvent event = new EmergencyStopEvent(
-                "es-" + UUID.randomUUID(), paperRunId,
+                eventId, paperRunId,
                 EmergencyStopTriggerType.valueOf(triggerType), resultStatus,
                 reason, triggeredBy, now,
                 resultStatus == EmergencyStopStatus.APPLIED ? now : null,
-                "{\"triggerType\":\"" + triggerType + "\",\"reason\":\"" + (reason != null ? reason.replace("\"", "'") : "") + "\"}",
+                originalRequestJson != null ? originalRequestJson :
+                    "{\"triggerType\":\"" + triggerType + "\",\"reason\":\"" + (reason != null ? reason.replace("\"", "'") : "") + "\"}",
                 resultJson, now
         );
         emergencyStopEventRepository.insert(event);

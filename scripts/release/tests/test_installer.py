@@ -1,5 +1,7 @@
 """正式 POSIX 入口的隔离 SIMULATED 回归；不能替代真实平台资格证据。"""
 import hashlib
+import json
+import uuid
 import os
 from pathlib import Path
 import shutil
@@ -663,6 +665,79 @@ printf '%s\\n' SIMULATED_APT_PROXY_VERIFIED
         f.run('rollback', '--yes')
         self.assertEqual('1\nFACTS_A\n', f.facts()); self.assertEqual(config, f.config())
         self.assertFalse((f.home / 'runtime/pending-update').exists())
+
+
+class PosixHandoffTest(unittest.TestCase):
+    """原POSIX安装器真实入口，宿主/Docker/数据均为SIMULATED，不代表安装或更新资格。"""
+    setUp = PosixInstallerTest.setUp
+
+    def request(self, action='CHECK', check=None, **changes):
+        f=self.fixture
+        installed=metadata(f.home/'config/runtime.env'); target=metadata(f.target_manifest)
+        value={'format':'NQ_UPDATE_HANDOFF_V1','action':action,'requestId':str(uuid.uuid4()),
+               'checkRequestId':'NONE','checkReceiptSha256':'NONE','installationId':'UNCONFIRMED',
+               'environmentId':installed['PROJECT_NAME'],'sourceVersion':installed['NQ_VERSION'],
+               'sourceManifestSha256':installed['PACKAGE_MANIFEST_SHA256'],'sourceCommit':installed['SOURCE_SHA'],
+               'targetVersion':target['VERSION'],'targetManifestSha256':digest(f.target_manifest),
+               'targetArtifactSha256':target['ARCHIVE_SHA256'],'targetArchitecture':target['ARCH'],
+               'targetSourceCommit':target['SOURCE_SHA']}
+        if check:
+            receipt=json.loads(check.read_text('utf8'));value.update(checkRequestId=receipt['requestId'],
+                checkReceiptSha256=digest(check),installationId=receipt['installationId'])
+        value.update(changes)
+        path=f.root/(value['requestId']+'.json');path.write_text(json.dumps(value,indent=2)+'\n','utf8',newline='\n')
+        return path,value
+
+    def receipt(self, value):
+        return self.fixture.home/'runtime/handoffs'/value['requestId']/'receipt.json'
+
+    def test_check_is_real_readonly_handoff_and_repeated_or_changed_identity_refuses(self):
+        f=self.fixture;f.run('install');before=f.facts();f.clear_calls()
+        path,request=self.request();f.run('check-update',*f.target_args(),'--handoff-request',shell_path(path))
+        receipt=self.receipt(request);result=json.loads(receipt.read_text('utf8'))
+        self.assertEqual('CHECKED',result['status']);self.assertEqual('UPDATE_ELIGIBLE',result['resultCode'])
+        self.assertEqual('NOT_CHECKED',result['healthStatus']);self.assertEqual('true',result['updateAvailable'])
+        self.assertEqual(str(uuid.UUID(result['installationId'])),result['installationId'])
+        self.assertEqual('',f.calls());self.assertEqual(before,f.facts());original=receipt.read_bytes()
+        f.run('check-update',*f.target_args(),'--handoff-request',shell_path(path),success=False)
+        request['targetArtifactSha256']='f'*64;path.write_text(json.dumps(request,indent=2)+'\n','utf8',newline='\n')
+        f.run('check-update',*f.target_args(),'--handoff-request',shell_path(path),success=False)
+        self.assertEqual(original,receipt.read_bytes());self.assertEqual('',f.calls())
+
+    def test_update_consumes_original_local_check_then_retains_transaction_and_rejects_replay(self):
+        f=self.fixture;f.run('install');checkpath,checkrequest=self.request()
+        f.run('check-update',*f.target_args(),'--handoff-request',shell_path(checkpath));check=self.receipt(checkrequest)
+        bad,badreq=self.request('UPDATE',check,installationId=str(uuid.uuid4()))
+        f.clear_calls();f.run('update',*f.target_args(),'--yes','--handoff-request',shell_path(bad),success=False)
+        self.assertEqual('',f.calls());self.assertFalse(self.receipt(badreq).exists())
+        path,request=self.request('UPDATE',check)
+        f.run('update',*f.target_args(),'--yes','--handoff-request',shell_path(path))
+        receipt=self.receipt(request);result=json.loads(receipt.read_text('utf8'))
+        self.assertEqual('SUCCEEDED',result['status']);self.assertEqual('VERIFIED',result['healthStatus'])
+        self.assertEqual('1.0.1',result['installedVersion']);self.assertEqual(digest(f.target_manifest),result['installedManifestSha256'])
+        self.assertNotEqual('NONE',result['transactionId']);self.assertTrue((f.home/'runtime/transactions'/result['transactionId']/'receipt.env').exists())
+        f.clear_calls();original=receipt.read_bytes()
+        f.run('update',*f.target_args(),'--yes','--handoff-request',shell_path(path),success=False)
+        self.assertEqual('',f.calls());self.assertEqual(original,receipt.read_bytes())
+
+    def test_interruption_retains_unknown_original_identity_and_no_new_execution(self):
+        f=self.fixture;f.run('install');checkpath,checkrequest=self.request()
+        f.run('check-update',*f.target_args(),'--handoff-request',shell_path(checkpath))
+        path,request=self.request('UPDATE',self.receipt(checkrequest))
+        f.run('update',*f.target_args(),'--yes','--handoff-request',shell_path(path),success=False,NQ_FIX_FAIL='INTERRUPT')
+        self.assertEqual('UNKNOWN',json.loads(self.receipt(request).read_text('utf8'))['status'])
+        f.clear_calls();f.run('update',*f.target_args(),'--yes','--handoff-request',shell_path(path),success=False)
+        self.assertNotIn(' up ',f.calls());self.assertTrue((f.home/'runtime/pending-update').exists())
+
+    def test_noncanonical_and_wrong_source_are_rejected_before_docker(self):
+        f=self.fixture;f.run('install');f.clear_calls()
+        for changes in ({'sourceManifestSha256':'f'*64},{'environmentId':'other-host'},{'targetSourceCommit':'f'*40}):
+            path,request=self.request(**changes)
+            f.run('check-update',*f.target_args(),'--handoff-request',shell_path(path),success=False)
+            if self.receipt(request).exists():self.assertEqual('REJECTED',json.loads(self.receipt(request).read_text('utf8'))['status'])
+        path,request=self.request();raw=path.read_bytes();path.write_bytes(raw.replace(b'"format":',b'"duplicate":'))
+        f.run('check-update',*f.target_args(),'--handoff-request',shell_path(path),success=False)
+        self.assertFalse(self.receipt(request).exists());self.assertEqual('',f.calls())
 
 
 if __name__ == '__main__':

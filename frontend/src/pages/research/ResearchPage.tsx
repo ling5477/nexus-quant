@@ -1,3 +1,6 @@
+import {useAuthStore} from '@/store/auth-store';
+import {CreationRecoveryPanel} from '@/features/research/components/CreationRecoveryPanel';
+import {MarketdataDatasetPicker} from '@/features/marketdata/components/MarketdataDatasetPicker';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
@@ -7,6 +10,7 @@ import {
     Button,
     Card,
     Col,
+    Collapse,
     Descriptions,
     Drawer,
     Empty,
@@ -18,13 +22,15 @@ import {
     Typography,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import {useState} from 'react';
+import {useRef, useState} from 'react';
+import {StrategyDefinitionPicker} from '@/features/strategies/components/StrategyDefinitionPicker';
 import {Link, useSearchParams} from 'react-router-dom';
 
 import {formatApiError, showApiError} from '@/api/errors';
 import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {
     useCreateResearchMutation,
+    useArchiveResearchMutation,
     useResearchDetailQuery,
     useResearchListQuery,
 } from '@/features/research/hooks/useResearchListQuery';
@@ -35,29 +41,51 @@ import {
     type ResearchConfigListItem,
     type ResearchListFilters,
 } from '@/features/research/types/research';
-import {containsIgnoreCase, formatDateTime, normalizeOptionalText} from '@/utils/formatters';
+import {formatDateTime, normalizeOptionalText} from '@/utils/formatters';
+import {ConfigurationArchiveAction} from '@/features/research/components/ConfigurationArchiveAction';
 
 type ResearchRow = ResearchConfigListItem;
 
 export function ResearchPage() {
     useTranslation('pages');
     const {message} = App.useApp();
-    const [params] = useSearchParams();
+    const canWrite = useAuthStore(
+        (state) =>
+            state.currentUser?.roles.some((role) => ['ADMIN', 'OPERATOR'].includes(role)) ?? false,
+    );
+    const [params, setParams] = useSearchParams();
+    // 列表选择与创建结果都保留正式对象深链；地址变化时不复用旧的局部详情身份。
+    const selectedConfigId = params.get('researchConfigId');
+    const selectConfig = (researchConfigId: string | null) => {
+        const next = new URLSearchParams(params);
+        if (researchConfigId) next.set('researchConfigId', researchConfigId);
+        else next.delete('researchConfigId');
+        next.delete('create');
+        setParams(next);
+    };
     const [queryForm] = useLocalizedForm<ResearchListFilters>();
     const [createForm] = useLocalizedForm<ResearchConfigCreateRequest>();
-    const [submittedFilters, setSubmittedFilters] = useState<ResearchListFilters>(defaultResearchListFilters);
+    const [submittedFilters, setSubmittedFilters] = useState<ResearchListFilters>(
+        defaultResearchListFilters,
+    );
     const [searchVersion, setSearchVersion] = useState(0);
-    const [selectedConfigId, setSelectedConfigId] = useState<string | null>(params.get('researchConfigId'));
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
     const [createOpen, setCreateOpen] = useState(params.get('create') === 'true');
-    const researchQuery = useResearchListQuery(submittedFilters.sourceStrategyId, searchVersion);
+    const [createAttempted, setCreateAttempted] = useState(false);
+    const createDatasetSpec = Form.useWatch('datasetSpec', createForm);
+    const researchQuery = useResearchListQuery(
+        {...submittedFilters, limit: pageSize, offset: (currentPage - 1) * pageSize},
+        searchVersion,
+    );
     const researchDetailQuery = useResearchDetailQuery(selectedConfigId);
     const createResearchMutation = useCreateResearchMutation();
+    const archiveResearchMutation = useArchiveResearchMutation();
+    const createRequestInFlight = useRef(false);
+    const [createDatasetId, setCreateDatasetId] = useState<string>();
     const hasSearched = searchVersion > 0;
 
-    const visibleItems = (researchQuery.data ?? []).filter((item) => (
-        containsIgnoreCase(item.researchConfigId, submittedFilters.researchConfigId)
-        && containsIgnoreCase(item.name, submittedFilters.name)
-    ));
+    const visibleItems = researchQuery.data?.items ?? [];
 
     const researchColumns: ColumnsType<ResearchRow> = [
         {
@@ -107,13 +135,15 @@ export function ResearchPage() {
             fixed: 'right',
             width: 120,
             render: (_, record) => (
-                <Button type="link" onClick={() => setSelectedConfigId(record.researchConfigId)}>
-                    {t('pages:viewDetails')}</Button>
+                <Button type="link" onClick={() => selectConfig(record.researchConfigId)}>
+                    {t('pages:viewDetails')}
+                </Button>
             ),
         },
     ];
 
     const handleSearch = (values: ResearchListFilters) => {
+        setCurrentPage(1);
         setSubmittedFilters({
             sourceStrategyId: normalizeOptionalText(values.sourceStrategyId),
             researchConfigId: normalizeOptionalText(values.researchConfigId),
@@ -126,9 +156,13 @@ export function ResearchPage() {
         queryForm.resetFields();
         setSubmittedFilters(defaultResearchListFilters);
         setSearchVersion(0);
+        setCurrentPage(1);
     };
 
     const handleCreate = (values: ResearchConfigCreateRequest) => {
+        // loading要等React更新后才拦截点击；同步占用防止同一帧双击创建两个正式对象。
+        if (createRequestInFlight.current) return;
+        createRequestInFlight.current = true;
         createResearchMutation.mutate(
             {
                 ...values,
@@ -144,10 +178,15 @@ export function ResearchPage() {
                     message.success(t('pages:researchConfigurationCreated'));
                     setCreateOpen(false);
                     createForm.resetFields();
-                    setSelectedConfigId(created.researchConfigId);
+                    setCreateDatasetId(undefined);
+                    setCreateAttempted(false);
+                    selectConfig(created.researchConfigId);
                 },
                 onError: (error) => {
                     showApiError(error as AppApiError, message);
+                },
+                onSettled: () => {
+                    createRequestInFlight.current = false;
                 },
             },
         );
@@ -156,46 +195,73 @@ export function ResearchPage() {
     return (
         <>
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
+                {!canWrite && (
+                    <Alert type="info" showIcon message={t('pages:researchReadOnlyRole')} />
+                )}
+                <CreationRecoveryPanel kinds={['RESEARCH']} />
                 <Card className="page-card" bordered={false}>
                     <NqPageHeader
                         title={t('pages:researchConfigurations')}
-                        description={t('pages:viewResearchConfigurationsLinkedSourceStrategiesAndParameterDefinitionsOrCreateAConfiguration')}
+                        description={t(
+                            'pages:viewResearchConfigurationsLinkedSourceStrategiesAndParameterDefinitionsOrCreateAConfiguration',
+                        )}
                         badge="Research"
+                        extra={
+                            <Button
+                                type="primary"
+                                disabled={!canWrite}
+                                onClick={() => {
+                                    setCreateAttempted(false);
+                                    setCreateOpen(true);
+                                }}
+                            >
+                                {t('pages:createResearchConfiguration')}
+                            </Button>
+                        }
                     />
                 </Card>
                 <Card
                     className="page-section"
                     bordered={false}
                     title={t('pages:filters')}
-                    extra={(
+                    extra={
                         <Space>
                             <Button type="primary" onClick={() => queryForm.submit()}>
-                                {t('pages:search')}</Button>
-                            <Button onClick={handleReset}>
-                                {t('pages:reset')}</Button>
+                                {t('pages:search')}
+                            </Button>
+                            <Button onClick={handleReset}>{t('pages:reset')}</Button>
                         </Space>
-                    )}
+                    }
                 >
                     <Form
-                        name="research-queryForm" form={queryForm}
+                        name="research-queryForm"
+                        form={queryForm}
                         layout="vertical"
                         initialValues={defaultResearchListFilters}
                         onFinish={handleSearch}
                     >
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={8}>
-                                <Form.Item label={t('pages:sourceStrategyId')} name="sourceStrategyId">
-                                    <Input placeholder={t('pages:filterBySourceStrategyId')}/>
+                                <Form.Item
+                                    label={t('pages:sourceStrategyId')}
+                                    name="sourceStrategyId"
+                                >
+                                    <Input placeholder={t('pages:filterBySourceStrategyId')} />
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
-                                <Form.Item label={t('pages:researchConfigurationId')} name="researchConfigId">
-                                    <Input placeholder={t('pages:filterByResearchConfigurationId')}/>
+                                <Form.Item
+                                    label={t('pages:researchConfigurationId')}
+                                    name="researchConfigId"
+                                >
+                                    <Input
+                                        placeholder={t('pages:filterByResearchConfigurationId')}
+                                    />
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
                                 <Form.Item label={t('pages:name')} name="name">
-                                    <Input placeholder={t('pages:filterByConfigurationName')}/>
+                                    <Input placeholder={t('pages:filterByConfigurationName')} />
                                 </Form.Item>
                             </Col>
                         </Row>
@@ -204,45 +270,53 @@ export function ResearchPage() {
                 <Card
                     className="page-section"
                     bordered={false}
-                    title={t('pages:actions2')}
-                    extra={(
-                        <Button type="primary" onClick={() => setCreateOpen(true)}>
-                            {t('pages:createResearchConfiguration')}</Button>
-                    )}
-                >
-                    <Alert
-                        type="info"
-                        showIcon
-                        message={t('pages:createAConfigurationFromTheActionsAreaTheDetailsDrawerIsReadOnly')}
-                    />
-                </Card>
-                <Card
-                    className="page-section"
-                    bordered={false}
                     title={t('pages:results')}
-                    extra={hasSearched ?
-                        <Typography.Text type="secondary">{t('pages:total')}{visibleItems.length} {t('pages:records')}</Typography.Text> : null}
+                    extra={
+                        hasSearched ? (
+                            <Typography.Text type="secondary">
+                                {t('pages:total')}
+                                {researchQuery.data?.total ?? 0} {t('pages:records')}
+                            </Typography.Text>
+                        ) : null
+                    }
                 >
                     {!hasSearched ? (
-                        <Empty description={t('pages:workflowManualSearch')}/>
+                        <Empty description={t('pages:workflowManualSearch')} />
                     ) : researchQuery.error ? (
                         <Alert
                             type="error"
                             showIcon
                             message={t('pages:failedToQueryResearchConfigurations')}
                             description={formatApiError(researchQuery.error as AppApiError)}
-                            action={(
-                                <Button size="small" onClick={() => setSearchVersion((value) => value + 1)}>
-                                    {t('pages:retry')}</Button>
-                            )}
+                            action={
+                                <Button
+                                    size="small"
+                                    onClick={() => setSearchVersion((value) => value + 1)}
+                                >
+                                    {t('pages:retry')}
+                                </Button>
+                            }
                         />
                     ) : (
                         <Table
+                            className="research-config-list-table"
                             rowKey="researchConfigId"
                             columns={researchColumns}
                             dataSource={visibleItems}
                             loading={researchQuery.isFetching}
-                            pagination={{pageSize: 10, showSizeChanger: false}}
+                            pagination={{
+                                current: currentPage,
+                                pageSize,
+                                total: researchQuery.data?.total ?? 0,
+                                showSizeChanger: true,
+                                responsive: true,
+                                showLessItems: true,
+                                pageSizeOptions: [10, 20, 50, 100],
+                                onChange: (page, size) => {
+                                    setCurrentPage(size === pageSize ? page : 1);
+                                    setPageSize(size);
+                                },
+                            }}
                             scroll={{x: 1520}}
                             locale={{
                                 emptyText: t('pages:noResearchConfigurationsMatchTheseFilters'),
@@ -255,11 +329,15 @@ export function ResearchPage() {
                 open={Boolean(selectedConfigId)}
                 width={760}
                 title={t('pages:researchConfigurationDetails')}
-                onClose={() => setSelectedConfigId(null)}
+                onClose={() => selectConfig(null)}
                 destroyOnClose
             >
                 {researchDetailQuery.isLoading ? (
-                    <Alert type="info" showIcon message={t('pages:loadingResearchConfigurationDetails')}/>
+                    <Alert
+                        type="info"
+                        showIcon
+                        message={t('pages:loadingResearchConfigurationDetails')}
+                    />
                 ) : researchDetailQuery.error ? (
                     <Alert
                         type="error"
@@ -269,21 +347,37 @@ export function ResearchPage() {
                     />
                 ) : researchDetailQuery.data ? (
                     <Space direction="vertical" size={16} style={{display: 'flex'}}>
-                        <Link to={`/backtests?researchConfigId=${encodeURIComponent(researchDetailQuery.data.researchConfigId)}&create=true`}>
-                            {t('pages:workflowCreateBacktest')}
-                        </Link>
-                        <Descriptions bordered column={2} size="small">
-                            <Descriptions.Item
-                                label={t('pages:researchConfigurationId')}>{researchDetailQuery.data.researchConfigId}</Descriptions.Item>
-                            <Descriptions.Item
-                                label={t('pages:sourceStrategyId')}>{researchDetailQuery.data.sourceStrategyId}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:name')}>{researchDetailQuery.data.name}</Descriptions.Item>
-                            <Descriptions.Item
-                                label={t('pages:description')}>{researchDetailQuery.data.description || '-'}</Descriptions.Item>
-                            <Descriptions.Item
-                                label={t('pages:createdAt')}>{formatDateTime(researchDetailQuery.data.createdAt)}</Descriptions.Item>
-                            <Descriptions.Item
-                                label={t('pages:updatedAt')}>{formatDateTime(researchDetailQuery.data.updatedAt)}</Descriptions.Item>
+                        {researchDetailQuery.data.status !== 'ARCHIVED' && (
+                            <Link
+                                to={`/backtests?researchConfigId=${encodeURIComponent(researchDetailQuery.data.researchConfigId)}&create=true`}
+                            >
+                                {t('pages:workflowCreateBacktest')}
+                            </Link>
+                        )}
+                        <Descriptions
+                            className="research-object-details"
+                            bordered
+                            column={{xs: 1, sm: 1, md: 2, lg: 2, xl: 2, xxl: 2}}
+                            size="small"
+                        >
+                            <Descriptions.Item label={t('pages:researchConfigurationId')}>
+                                {researchDetailQuery.data.researchConfigId}
+                            </Descriptions.Item>
+                            <Descriptions.Item label={t('pages:sourceStrategyId')}>
+                                {researchDetailQuery.data.sourceStrategyId}
+                            </Descriptions.Item>
+                            <Descriptions.Item label={t('pages:name')}>
+                                {researchDetailQuery.data.name}
+                            </Descriptions.Item>
+                            <Descriptions.Item label={t('pages:description')}>
+                                {researchDetailQuery.data.description || '-'}
+                            </Descriptions.Item>
+                            <Descriptions.Item label={t('pages:createdAt')}>
+                                {formatDateTime(researchDetailQuery.data.createdAt)}
+                            </Descriptions.Item>
+                            <Descriptions.Item label={t('pages:updatedAt')}>
+                                {formatDateTime(researchDetailQuery.data.updatedAt)}
+                            </Descriptions.Item>
                             <Descriptions.Item label={t('pages:parameterSchema')} span={2}>
                                 <Typography.Paragraph style={{marginBottom: 0}}>
                                     {researchDetailQuery.data.parameterSchema || '-'}
@@ -300,12 +394,55 @@ export function ResearchPage() {
                                 </Typography.Paragraph>
                             </Descriptions.Item>
                         </Descriptions>
+                        {/* 研究来源按创建时事实展示，不能用当前定义回填历史快照。 */}
+                        <Collapse
+                            items={[
+                                {
+                                    key: 'source-strategy-snapshot',
+                                    label: t('pages:researchSourceSnapshot'),
+                                    children: (
+                                        <Typography.Paragraph
+                                            copyable={Boolean(
+                                                researchDetailQuery.data.strategySnapshot,
+                                            )}
+                                            style={{
+                                                marginBottom: 0,
+                                                whiteSpace: 'pre-wrap',
+                                                overflowWrap: 'anywhere',
+                                            }}
+                                        >
+                                            {researchDetailQuery.data.strategySnapshot || '—'}
+                                        </Typography.Paragraph>
+                                    ),
+                                },
+                            ]}
+                        />
                         <Card title={t('pages:actions2')} size="small">
                             <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                                <Alert type="info" showIcon
-                                       message={t('pages:researchConfigurationDetailsAreReadOnlyUseTheActionsAreaToCreateAConfiguration')}/>
+                                <Alert
+                                    type="info"
+                                    showIcon
+                                    message={t('pages:configurationArchiveMeaning')}
+                                />
                                 <Button onClick={() => researchDetailQuery.refetch()}>
-                                    {t('pages:refreshDetails')}</Button>
+                                    {t('pages:refreshDetails')}
+                                </Button>
+                                <ConfigurationArchiveAction
+                                    key={researchDetailQuery.data.researchConfigId}
+                                    label={t('pages:archiveResearchConfig')}
+                                    configurationId={researchDetailQuery.data.researchConfigId}
+                                    configuration={researchDetailQuery.data}
+                                    pending={archiveResearchMutation.isPending}
+                                    onArchive={(reason) =>
+                                        archiveResearchMutation
+                                            .mutateAsync({
+                                                configId:
+                                                    researchDetailQuery.data!.researchConfigId,
+                                                reason,
+                                            })
+                                            .then(() => setCurrentPage(1))
+                                    }
+                                />
                             </Space>
                         </Card>
                     </Space>
@@ -318,35 +455,127 @@ export function ResearchPage() {
                 onClose={() => setCreateOpen(false)}
                 destroyOnClose
             >
-                <Form name="research-createForm" form={createForm} layout="vertical" onFinish={handleCreate}
-                    initialValues={{sourceStrategyId: params.get('sourceStrategyId') ?? ''}}>
-                    <Form.Item label={t('pages:sourceStrategyId')} name="sourceStrategyId"
-                               rules={[{required: true, message: t('pages:enterSourcestrategyid')}]}>
-                        <Input/>
+                <Form
+                    disabled={!canWrite}
+                    name="research-createForm"
+                    form={createForm}
+                    layout="vertical"
+                    onFinish={handleCreate}
+                    onFinishFailed={() => setCreateAttempted(true)}
+                    initialValues={{
+                        sourceStrategyId: params.get('sourceStrategyId') ?? '',
+                        parameterSchema: '{}',
+                        parameterDefaults: '{}',
+                    }}
+                >
+                    <Form.Item
+                        label={t('pages:sourceStrategySelection')}
+                        name="sourceStrategyId"
+                        rules={[{required: true, message: t('pages:strategyPickerPlaceholder')}]}
+                    >
+                        <StrategyDefinitionPicker active={createOpen} />
                     </Form.Item>
-                    <Form.Item label={t('pages:name')} name="name" rules={[{required: true, message: t('pages:enterAName')}]}>
-                        <Input/>
+                    <Form.Item
+                        label={t('pages:name')}
+                        name="name"
+                        rules={[{required: true, message: t('pages:enterAName')}]}
+                    >
+                        <Input />
                     </Form.Item>
                     <Form.Item label={t('pages:description')} name="description">
-                        <Input.TextArea rows={3}/>
+                        <Input.TextArea rows={3} />
                     </Form.Item>
-                    <Form.Item label={t('pages:parameterSchema')} name="parameterSchema"
-                               rules={[{required: true, message: t('pages:enterParameterschema')}]}>
-                        <Input.TextArea rows={4}/>
+                    {/* 必填错误必须留在可见选择器旁，不能只显示在折叠的高级JSON字段中。 */}
+                    <Form.Item
+                        label={t('pages:dataset')}
+                        required
+                        validateStatus={createAttempted && !createDatasetSpec ? 'error' : undefined}
+                        help={
+                            createAttempted && !createDatasetSpec
+                                ? t('pages:selectADataset')
+                                : undefined
+                        }
+                    >
+                        <MarketdataDatasetPicker
+                            aria-label={t('pages:selectADataset')}
+                            active={createOpen}
+                            value={createDatasetId}
+                            onChange={(id) => {
+                                setCreateDatasetId(id);
+                                if (!id) createForm.setFieldValue('datasetSpec', undefined);
+                            }}
+                            onSelect={(dataset) =>
+                                createForm.setFieldValue(
+                                    'datasetSpec',
+                                    JSON.stringify({
+                                        datasetId: dataset.datasetId,
+                                        exchangeCode: dataset.exchangeCode,
+                                        marketType: dataset.marketType,
+                                        symbol: dataset.symbol,
+                                        interval: dataset.interval,
+                                    }),
+                                )
+                            }
+                        />
                     </Form.Item>
-                    <Form.Item label={t('pages:parameterDefaults')} name="parameterDefaults"
-                               rules={[{required: true, message: t('pages:enterParameterdefaults')}]}>
-                        <Input.TextArea rows={4}/>
-                    </Form.Item>
-                    <Form.Item label={t('pages:datasetSpecification')} name="datasetSpec"
-                               rules={[{required: true, message: t('pages:enterDatasetspec')}]}>
-                        <Input.TextArea rows={4}/>
-                    </Form.Item>
+                    <Collapse
+                        items={[
+                            {
+                                key: 'advanced',
+                                forceRender: true,
+                                label: t('pages:researchAdvanced'),
+                                children: (
+                                    <>
+                                        <Form.Item
+                                            label={t('pages:parameterSchema')}
+                                            name="parameterSchema"
+                                            rules={[
+                                                {
+                                                    required: true,
+                                                    message: t('pages:enterParameterschema'),
+                                                },
+                                            ]}
+                                        >
+                                            <Input.TextArea rows={4} />
+                                        </Form.Item>
+                                        <Form.Item
+                                            label={t('pages:parameterDefaults')}
+                                            name="parameterDefaults"
+                                            rules={[
+                                                {
+                                                    required: true,
+                                                    message: t('pages:enterParameterdefaults'),
+                                                },
+                                            ]}
+                                        >
+                                            <Input.TextArea rows={4} />
+                                        </Form.Item>
+                                        <Form.Item
+                                            label={t('pages:datasetSpecification')}
+                                            name="datasetSpec"
+                                            rules={[
+                                                {
+                                                    required: true,
+                                                    message: t('pages:enterDatasetspec'),
+                                                },
+                                            ]}
+                                        >
+                                            <Input.TextArea rows={4} />
+                                        </Form.Item>
+                                    </>
+                                ),
+                            },
+                        ]}
+                    />
                     <Space>
-                        <Button type="primary" htmlType="submit" loading={createResearchMutation.isPending}>
-                            {t('pages:create')}</Button>
-                        <Button onClick={() => setCreateOpen(false)}>
-                            {t('pages:cancel')}</Button>
+                        <Button
+                            type="primary"
+                            htmlType="submit"
+                            loading={createResearchMutation.isPending}
+                        >
+                            {t('pages:create')}
+                        </Button>
+                        <Button onClick={() => setCreateOpen(false)}>{t('pages:cancel')}</Button>
                     </Space>
                 </Form>
             </Drawer>

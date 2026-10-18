@@ -21,26 +21,40 @@ import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-
 class MinimalLivePilotConfigurationTest {
 
     @Test
     void operatorPilotPlaceRequestDoesNotForgeStrategyRunIdentity() {
-        MinimalLivePilotPermit permit = new MinimalLivePilotPermit(
-                7L, UUID.randomUUID(), UUID.randomUUID(), "a".repeat(64), UUID.randomUUID(),
-                UUID.randomUUID(), "nq-client", "pilot-request", "pilot-trace",
-                new BigDecimal("111963.40000000"), new BigDecimal("0.00008830"),
-                new BigDecimal("9.88636822"));
-        MinimalLivePilotCommand command = new MinimalLivePilotCommand(
-                1L, 2L, "BTC-USDT", ExactPilotBinding.Side.BUY, new BigDecimal("10.00000000"));
+        MinimalLivePilotPermit permit =
+                new MinimalLivePilotPermit(
+                        7L,
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        "a".repeat(64),
+                        UUID.randomUUID(),
+                        UUID.randomUUID(),
+                        "nq-client",
+                        "pilot-request",
+                        "pilot-trace",
+                        new BigDecimal("111963.40000000"),
+                        new BigDecimal("0.00008830"),
+                        new BigDecimal("9.88636822"));
+        MinimalLivePilotCommand command =
+                new MinimalLivePilotCommand(
+                        1L,
+                        2L,
+                        "BTC-USDT",
+                        ExactPilotBinding.Side.BUY,
+                        new BigDecimal("10.00000000"));
 
         var request = MinimalLivePilotConfiguration.placeOrderRequest(permit, 17L, command);
 
@@ -58,24 +72,62 @@ class MinimalLivePilotConfigurationTest {
         TradeLedgerGateway ledger = mock(TradeLedgerGateway.class);
         AuditLogRepository audit = mock(AuditLogRepository.class);
         Instant filledAt = Instant.parse("2026-08-23T00:00:00Z");
-        OrderRecord order = new OrderRecord(
-                "ord-1", 17L, null, "OKX", "BTC-USDT", "nq-client", "BUY", "LIMIT",
-                new BigDecimal("100.00000000"), new BigDecimal("0.01000000"), "okx-order-1",
-                OrderStatus.FILLED, "PILOT", "trace");
-        PaperTradeRecord existing = new PaperTradeRecord(
-                "trd-stable", order.orderId(), order.accountId(), order.symbol(), "OKX",
-                order.externalOrderId(), "okx-trade-1", order.price(), order.qty(),
-                new BigDecimal("0.00100000"), "USDT", "trace", filledAt);
-        var fill = new SpotProviderResults.FillReference(
-                existing.exchangeTradeId(), existing.price(), existing.qty(), existing.fee(),
-                existing.feeCurrency(), filledAt);
-        var observation = new SpotProviderResults.OrderObservation(
-                SpotProviderResults.OrderState.FILLED, order.clientOrderId(), order.externalOrderId(),
-                order.qty(), order.qty(), BigDecimal.ZERO, List.of(fill), null, filledAt);
-        var reconciliation = new MinimalPilotTradingVenueGateway.PilotReconciliation(
-                mock(ExactPilotBinding.class),
-                observation,
-                new SpotProviderResults.FillPage(order.clientOrderId(), List.of(fill), true, null, filledAt));
+        OrderRecord order =
+                new OrderRecord(
+                        "ord-1",
+                        17L,
+                        null,
+                        "OKX",
+                        "BTC-USDT",
+                        "nq-client",
+                        "BUY",
+                        "LIMIT",
+                        new BigDecimal("100.00000000"),
+                        new BigDecimal("0.01000000"),
+                        "okx-order-1",
+                        OrderStatus.FILLED,
+                        "PILOT",
+                        "trace");
+        PaperTradeRecord existing =
+                new PaperTradeRecord(
+                        "trd-stable",
+                        order.orderId(),
+                        order.accountId(),
+                        order.symbol(),
+                        "OKX",
+                        order.externalOrderId(),
+                        "okx-trade-1",
+                        order.price(),
+                        order.qty(),
+                        new BigDecimal("0.00100000"),
+                        "USDT",
+                        "trace",
+                        filledAt);
+        var fill =
+                new SpotProviderResults.FillReference(
+                        existing.exchangeTradeId(),
+                        existing.price(),
+                        existing.qty(),
+                        existing.fee().negate(),
+                        existing.feeCurrency(),
+                        filledAt);
+        var observation =
+                new SpotProviderResults.OrderObservation(
+                        SpotProviderResults.OrderState.FILLED,
+                        order.clientOrderId(),
+                        order.externalOrderId(),
+                        order.qty(),
+                        order.qty(),
+                        BigDecimal.ZERO,
+                        List.of(fill),
+                        null,
+                        filledAt);
+        var reconciliation =
+                new MinimalPilotTradingVenueGateway.PilotReconciliation(
+                        mock(ExactPilotBinding.class),
+                        observation,
+                        new SpotProviderResults.FillPage(
+                                order.clientOrderId(), List.of(fill), true, null, filledAt));
         when(trades.findByExchangeAndExchangeTradeId("OKX", existing.exchangeTradeId()))
                 .thenReturn(Optional.of(existing));
         when(ledger.postTrade(argThat(request -> request.tradeId().equals(existing.tradeId()))))
@@ -86,11 +138,12 @@ class MinimalLivePilotConfigurationTest {
 
         verify(trades, never()).insert(ArgumentMatchers.any());
         verify(ledger).postTrade(argThat(request -> request.tradeId().equals(existing.tradeId())));
-        verify(audit).append(
-                ArgumentMatchers.eq("RECONCILE"),
-                ArgumentMatchers.eq("CONTROLLED_EXECUTION_FILL_LEDGER_RECONCILED"),
-                ArgumentMatchers.eq(order.orderId()),
-                ArgumentMatchers.eq("trace"),
-                ArgumentMatchers.anyMap());
+        verify(audit)
+                .append(
+                        ArgumentMatchers.eq("RECONCILE"),
+                        ArgumentMatchers.eq("CONTROLLED_EXECUTION_FILL_LEDGER_RECONCILED"),
+                        ArgumentMatchers.eq(order.orderId()),
+                        ArgumentMatchers.eq("trace"),
+                        ArgumentMatchers.anyMap());
     }
 }

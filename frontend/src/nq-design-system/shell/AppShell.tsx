@@ -16,8 +16,17 @@ interface AppShellProps {
 }
 
 /** 正式控制台与设计预览共用产品壳；窄屏抽屉避免展开侧栏挤出业务内容。 */
-export function AppShell({nav, brand, topRight, header, pageHeader, riskBanner,
-    collapsed, onCollapsedChange, children}: AppShellProps) {
+export function AppShell({
+    nav,
+    brand,
+    topRight,
+    header,
+    pageHeader,
+    riskBanner,
+    collapsed,
+    onCollapsedChange,
+    children,
+}: AppShellProps) {
     const {t} = useTranslation();
     const screens = Grid.useBreakpoint();
     const mobile = screens.md === false;
@@ -36,7 +45,11 @@ export function AppShell({nav, brand, topRight, header, pageHeader, riskBanner,
         }
     }, [screens.lg, onCollapsedChange]);
 
-    const navigation = <nav className="app-shell__nav" aria-label={t('shell.console')}>{nav}</nav>;
+    const navigation = (
+        <nav className="app-shell__nav" aria-label={t('shell.console')}>
+            {nav}
+        </nav>
+    );
 
     return (
         <Layout className="app-shell">
@@ -44,7 +57,7 @@ export function AppShell({nav, brand, topRight, header, pageHeader, riskBanner,
                 <Drawer
                     title={brand ?? 'NexusQuant'}
                     placement="left"
-                    width={264}
+                    width={220}
                     open={!isCollapsed}
                     onClose={() => setCollapsed(true)}
                     className="app-shell__drawer"
@@ -52,17 +65,31 @@ export function AppShell({nav, brand, topRight, header, pageHeader, riskBanner,
                     {navigation}
                 </Drawer>
             ) : (
-                <Layout.Sider className="app-shell__sider" width={240} collapsedWidth={72} collapsed={isCollapsed}>
+                <Layout.Sider
+                    className="app-shell__sider"
+                    width={204}
+                    collapsedWidth={72}
+                    collapsed={isCollapsed}
+                >
                     <div className="app-shell__logo">{brand ?? 'NexusQuant'}</div>
                     {navigation}
+                    {!isCollapsed && (
+                        <div className="app-shell__brand-footer" aria-hidden="true">
+                            <span>NEXUS QUANT</span>
+                            <small>BUILD SMARTER FUTURE</small>
+                        </div>
+                    )}
                 </Layout.Sider>
             )}
             <Layout className="app-shell__body">
                 {header ?? (
                     <header className="app-shell__header">
-                        <Button type="text" aria-label={isCollapsed ? t('shell.expand') : t('shell.collapse')}
-                            icon={isCollapsed ? <MenuUnfoldOutlined/> : <MenuFoldOutlined/>}
-                            onClick={() => setCollapsed(!isCollapsed)}/>
+                        <Button
+                            type="text"
+                            aria-label={isCollapsed ? t('shell.expand') : t('shell.collapse')}
+                            icon={isCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                            onClick={() => setCollapsed(!isCollapsed)}
+                        />
                         {topRight}
                     </header>
                 )}

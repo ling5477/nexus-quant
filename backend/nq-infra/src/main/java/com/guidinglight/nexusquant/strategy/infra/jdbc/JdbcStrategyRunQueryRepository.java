@@ -6,15 +6,15 @@ import com.guidinglight.nexusquant.strategy.domain.StrategyRunStatus;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRunTradeSummary;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunQueryRepository;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
-
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Repository;
 
 /**
  * JdbcStrategyRunQueryRepository 提供执行与补偿契约的最小 JDBC 聚合查询。
@@ -22,9 +22,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class JdbcStrategyRunQueryRepository implements StrategyRunQueryRepository {
 
-    private static final RowMapper<StrategyRun> RUN_ROW_MAPPER = JdbcStrategyRunQueryRepository::mapRun;
-    private static final RowMapper<StrategyRunOrderSummary> ORDER_ROW_MAPPER = JdbcStrategyRunQueryRepository::mapOrderSummary;
-    private static final RowMapper<StrategyRunTradeSummary> TRADE_ROW_MAPPER = JdbcStrategyRunQueryRepository::mapTradeSummary;
+    private static final RowMapper<StrategyRun> RUN_ROW_MAPPER =
+            JdbcStrategyRunQueryRepository::mapRun;
+    private static final RowMapper<StrategyRunOrderSummary> ORDER_ROW_MAPPER =
+            JdbcStrategyRunQueryRepository::mapOrderSummary;
+    private static final RowMapper<StrategyRunTradeSummary> TRADE_ROW_MAPPER =
+            JdbcStrategyRunQueryRepository::mapTradeSummary;
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -34,16 +37,16 @@ public class JdbcStrategyRunQueryRepository implements StrategyRunQueryRepositor
 
     @Override
     public Optional<StrategyRun> findRunByStrategyRunId(String strategyRunId) {
-        List<StrategyRun> rows = jdbcTemplate.query(
-                """
+        List<StrategyRun> rows =
+                jdbcTemplate.query(
+                        """
                         SELECT strategy_run_id, strategy_id, account_id, exchange_code, trade_env, trigger_type, status,
-                               config_snapshot::text AS config_snapshot, request_id, started_at, finished_at, error_message, trace_id
+                               config_snapshot::text AS config_snapshot, request_id, started_at, finished_at, error_message, trace_id, admission_schedule_id
                         FROM strategy_runs
                         WHERE strategy_run_id = ?
                         """,
-                RUN_ROW_MAPPER,
-                strategyRunId
-        );
+                        RUN_ROW_MAPPER,
+                        strategyRunId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
@@ -52,7 +55,7 @@ public class JdbcStrategyRunQueryRepository implements StrategyRunQueryRepositor
         return jdbcTemplate.query(
                 """
                         SELECT strategy_run_id, strategy_id, account_id, exchange_code, trade_env, trigger_type, status,
-                               config_snapshot::text AS config_snapshot, request_id, started_at, finished_at, error_message, trace_id
+                               config_snapshot::text AS config_snapshot, request_id, started_at, finished_at, error_message, trace_id, admission_schedule_id
                         FROM strategy_runs
                         WHERE strategy_id = ?
                         ORDER BY started_at DESC, strategy_run_id DESC
@@ -60,8 +63,7 @@ public class JdbcStrategyRunQueryRepository implements StrategyRunQueryRepositor
                         """,
                 RUN_ROW_MAPPER,
                 strategyId,
-                limit
-        );
+                limit);
     }
 
     @Override
@@ -69,7 +71,7 @@ public class JdbcStrategyRunQueryRepository implements StrategyRunQueryRepositor
         return jdbcTemplate.query(
                 """
                         SELECT strategy_run_id, strategy_id, account_id, exchange_code, trade_env, trigger_type, status,
-                               config_snapshot::text AS config_snapshot, request_id, started_at, finished_at, error_message, trace_id
+                               config_snapshot::text AS config_snapshot, request_id, started_at, finished_at, error_message, trace_id, admission_schedule_id
                         FROM strategy_runs
                         WHERE request_id LIKE ?
                         ORDER BY started_at DESC, strategy_run_id DESC
@@ -77,8 +79,7 @@ public class JdbcStrategyRunQueryRepository implements StrategyRunQueryRepositor
                         """,
                 RUN_ROW_MAPPER,
                 "req-schedule-" + scheduleJobId + "-%",
-                limit
-        );
+                limit);
     }
 
     @Override
@@ -99,8 +100,7 @@ public class JdbcStrategyRunQueryRepository implements StrategyRunQueryRepositor
                         ORDER BY created_at ASC, order_id ASC
                         """,
                 ORDER_ROW_MAPPER,
-                strategyRunId
-        );
+                strategyRunId);
     }
 
     @Override
@@ -118,8 +118,7 @@ public class JdbcStrategyRunQueryRepository implements StrategyRunQueryRepositor
                         ORDER BY ts ASC, trade_id ASC
                         """,
                 TRADE_ROW_MAPPER,
-                strategyRunId
-        );
+                strategyRunId);
     }
 
     private static StrategyRun mapRun(ResultSet resultSet, int rowNum) throws SQLException {
@@ -137,11 +136,12 @@ public class JdbcStrategyRunQueryRepository implements StrategyRunQueryRepositor
                 resultSet.getTimestamp("started_at").toInstant(),
                 finishedAt == null ? null : finishedAt.toInstant(),
                 resultSet.getString("error_message"),
-                resultSet.getString("trace_id")
-        );
+                resultSet.getString("trace_id"),
+                resultSet.getString("admission_schedule_id"));
     }
 
-    private static StrategyRunOrderSummary mapOrderSummary(ResultSet resultSet, int rowNum) throws SQLException {
+    private static StrategyRunOrderSummary mapOrderSummary(ResultSet resultSet, int rowNum)
+            throws SQLException {
         return new StrategyRunOrderSummary(
                 resultSet.getString("order_id"),
                 resultSet.getString("client_order_id"),
@@ -151,20 +151,17 @@ public class JdbcStrategyRunQueryRepository implements StrategyRunQueryRepositor
                 resultSet.getString("side"),
                 resultSet.getString("type"),
                 resultSet.getBigDecimal("price"),
-                resultSet.getBigDecimal("qty")
-        );
+                resultSet.getBigDecimal("qty"));
     }
 
-    private static StrategyRunTradeSummary mapTradeSummary(ResultSet resultSet, int rowNum) throws SQLException {
+    private static StrategyRunTradeSummary mapTradeSummary(ResultSet resultSet, int rowNum)
+            throws SQLException {
         return new StrategyRunTradeSummary(
                 resultSet.getString("trade_id"),
                 resultSet.getString("exchange_trade_id"),
                 resultSet.getString("exchange_order_id"),
                 resultSet.getBigDecimal("price"),
                 resultSet.getBigDecimal("qty"),
-                resultSet.getTimestamp("ts").toInstant()
-        );
+                resultSet.getTimestamp("ts").toInstant());
     }
 }
-
-

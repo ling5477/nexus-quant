@@ -1,13 +1,11 @@
 package com.guidinglight.nexusquant.adapter.binance.http;
 
-import com.guidinglight.nexusquant.adapter.binance.error.BinanceApiException;
-import com.guidinglight.nexusquant.adapter.binance.signing.BinanceRequestSigner;
-
-import com.guidinglight.nexusquant.adapter.binance.time.BinanceTimestampProvider;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.adapter.binance.error.BinanceApiException;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
+import com.guidinglight.nexusquant.adapter.binance.signing.BinanceRequestSigner;
+import com.guidinglight.nexusquant.adapter.binance.time.BinanceTimestampProvider;
 
 import java.io.IOException;
 import java.net.URI;
@@ -48,26 +46,29 @@ public class BinanceHttpClient {
             Duration timeout,
             BinanceRequestSigner signer,
             BinanceTimestampProvider timestampProvider,
-            BinanceApiCredentials credentials
-    ) {
+            BinanceApiCredentials credentials) {
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.baseUrl = Objects.requireNonNull(baseUrl, "baseUrl must not be null");
         this.timeout = Objects.requireNonNull(timeout, "timeout must not be null");
         this.signer = Objects.requireNonNull(signer, "signer must not be null");
-        this.timestampProvider = Objects.requireNonNull(timestampProvider, "timestampProvider must not be null");
+        this.timestampProvider =
+                Objects.requireNonNull(timestampProvider, "timestampProvider must not be null");
         this.credentials = credentials;
     }
 
-    public JsonNode get(String requestPath, Map<String, ?> queryParams, boolean signed, String traceId) {
+    public JsonNode get(
+            String requestPath, Map<String, ?> queryParams, boolean signed, String traceId) {
         return send("GET", requestPath, queryParams, signed, traceId);
     }
 
-    public JsonNode post(String requestPath, Map<String, ?> queryParams, boolean signed, String traceId) {
+    public JsonNode post(
+            String requestPath, Map<String, ?> queryParams, boolean signed, String traceId) {
         return send("POST", requestPath, queryParams, signed, traceId);
     }
 
-    public JsonNode delete(String requestPath, Map<String, ?> queryParams, boolean signed, String traceId) {
+    public JsonNode delete(
+            String requestPath, Map<String, ?> queryParams, boolean signed, String traceId) {
         return send("DELETE", requestPath, queryParams, signed, traceId);
     }
 
@@ -77,15 +78,32 @@ public class BinanceHttpClient {
      * Why:
      * 当前 PR 明确禁止盲重试，因此这里对 timeout / IO / 业务错误只做结构化抛错，不做任何补偿重试。
      */
-    public JsonNode send(String method, String requestPath, Map<String, ?> queryParams, boolean signed, String traceId) {
+    public JsonNode send(
+            String method,
+            String requestPath,
+            Map<String, ?> queryParams,
+            boolean signed,
+            String traceId) {
         String endpoint = requestPath;
         try {
             HttpRequest request = buildRequest(method, requestPath, queryParams, signed, traceId);
             endpoint = request.uri().getPath();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            JsonNode payload = parseBody(response.body(), response.statusCode(), endpoint, traceId);
-            if (response.statusCode() >= 400) {
-                throw buildApiException(response.statusCode(), endpoint, traceId, payload);
+            int statusCode;
+            String body;
+            if (isPublicCatalogueRequest(request.method(), endpoint, signed)) {
+                BinancePublicSnapshotReader.Snapshot snapshot =
+                        BinancePublicSnapshotReader.read(httpClient, request, timeout);
+                statusCode = snapshot.statusCode();
+                body = snapshot.body();
+            } else {
+                HttpResponse<String> response =
+                        httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                statusCode = response.statusCode();
+                body = response.body();
+            }
+            JsonNode payload = parseBody(body, statusCode, endpoint, traceId);
+            if (statusCode >= 400) {
+                throw buildApiException(statusCode, endpoint, traceId, payload);
             }
             return payload;
         } catch (HttpTimeoutException ex) {
@@ -96,21 +114,24 @@ public class BinanceHttpClient {
                     "HTTP_TIMEOUT",
                     "request timed out",
                     traceId,
-                    ex
-            );
+                    ex);
         } catch (IOException | InterruptedException ex) {
             if (ex instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
             throw new BinanceApiException(
-                    "Binance request failed, endpoint=" + endpoint + ", trace_id=" + traceId + ", reason=" + ex.getMessage(),
+                    "Binance request failed, endpoint="
+                            + endpoint
+                            + ", trace_id="
+                            + traceId
+                            + ", reason="
+                            + ex.getMessage(),
                     0,
                     endpoint,
                     "HTTP_CLIENT_ERROR",
                     ex.getMessage(),
                     traceId,
-                    ex
-            );
+                    ex);
         }
     }
 
@@ -119,8 +140,7 @@ public class BinanceHttpClient {
             String requestPath,
             Map<String, ?> queryParams,
             boolean signed,
-            String traceId
-    ) {
+            String traceId) {
         String normalizedMethod = normalizeMethod(method);
         LinkedHashMap<String, String> params = normalizeQuery(queryParams);
         if (signed) {
@@ -134,32 +154,47 @@ public class BinanceHttpClient {
             try {
                 String signature = signer.sign(encodedQuery, credentials);
                 String encodedSignature = encode(signature);
-                finalQuery = encodedQuery.isBlank()
-                        ? "signature=" + encodedSignature
-                        : encodedQuery + "&signature=" + encodedSignature;
+                finalQuery =
+                        encodedQuery.isBlank()
+                                ? "signature=" + encodedSignature
+                                : encodedQuery + "&signature=" + encodedSignature;
             } catch (IllegalArgumentException | IllegalStateException ex) {
                 throw new BinanceApiException(
-                        "Binance signer config invalid, endpoint=" + requestPath + ", trace_id=" + traceId,
+                        "Binance signer config invalid, endpoint="
+                                + requestPath
+                                + ", trace_id="
+                                + traceId,
                         0,
                         requestPath,
                         "BINANCE_SIGNER_CONFIG_INVALID",
                         ex.getMessage(),
                         traceId,
-                        ex
-                );
+                        ex);
             }
         }
         String requestUri = baseUrl + requestPath + (finalQuery.isBlank() ? "" : "?" + finalQuery);
-        HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(requestUri))
-                .timeout(timeout)
-                .header("Content-Type", "application/json")
-                .header("X-NQ-TRACE-ID", traceId == null ? "" : traceId)
-                .method(normalizedMethod, HttpRequest.BodyPublishers.noBody());
+        HttpRequest.Builder builder =
+                HttpRequest.newBuilder()
+                        .uri(URI.create(requestUri))
+                        .timeout(timeout)
+                        .header("Content-Type", "application/json")
+                        .header("X-NQ-TRACE-ID", traceId == null ? "" : traceId)
+                        .method(normalizedMethod, HttpRequest.BodyPublishers.noBody());
+        if (isPublicCatalogueRequest(normalizedMethod, requestPath, signed)) {
+            // 全量目录包含所有交易对；压缩仅减少传输，不裁剪交易规则或扩大私有请求范围。
+            builder.header("Accept-Encoding", "gzip");
+        }
         if (signed) {
             builder.header("X-MBX-APIKEY", credentials.apiKey());
         }
         return builder.build();
+    }
+
+    private static boolean isPublicCatalogueRequest(
+            String method, String requestPath, boolean signed) {
+        return !signed
+                && "GET".equalsIgnoreCase(method)
+                && "/api/v3/exchangeInfo".equals(requestPath);
     }
 
     private JsonNode parseBody(String body, int statusCode, String endpoint, String traceId) {
@@ -170,31 +205,39 @@ public class BinanceHttpClient {
             return objectMapper.readTree(body);
         } catch (IOException ex) {
             throw new BinanceApiException(
-                    "failed to parse Binance response, status=" + statusCode + ", endpoint=" + endpoint + ", trace_id=" + traceId,
+                    "failed to parse Binance response, status="
+                            + statusCode
+                            + ", endpoint="
+                            + endpoint
+                            + ", trace_id="
+                            + traceId,
                     statusCode,
                     endpoint,
                     "INVALID_JSON",
                     "invalid json response",
                     traceId,
-                    ex
-            );
+                    ex);
         }
     }
 
-    private BinanceApiException buildApiException(int httpStatus, String endpoint, String traceId, JsonNode payload) {
+    private BinanceApiException buildApiException(
+            int httpStatus, String endpoint, String traceId, JsonNode payload) {
         String code = payload.path("code").asText("UNKNOWN");
         String message = payload.path("msg").asText("unknown Binance error");
         return new BinanceApiException(
-                "Binance request failed, status=" + httpStatus
-                        + ", error_code=" + code
-                        + ", endpoint=" + endpoint
-                        + ", trace_id=" + traceId,
+                "Binance request failed, status="
+                        + httpStatus
+                        + ", error_code="
+                        + code
+                        + ", endpoint="
+                        + endpoint
+                        + ", trace_id="
+                        + traceId,
                 httpStatus,
                 endpoint,
                 code,
                 message,
-                traceId
-        );
+                traceId);
     }
 
     private LinkedHashMap<String, String> normalizeQuery(Map<String, ?> queryParams) {
@@ -233,8 +276,7 @@ public class BinanceHttpClient {
                     endpoint,
                     "BINANCE_CREDENTIALS_MISSING",
                     "credentials missing",
-                    traceId
-            );
+                    traceId);
         }
     }
 

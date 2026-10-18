@@ -1,12 +1,9 @@
 package com.guidinglight.nexusquant.ledger.service;
 
-import com.guidinglight.nexusquant.ledger.application.service.TradeLedgerPostingService;
-import com.guidinglight.nexusquant.ledger.application.service.SimCashFundingService;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -16,6 +13,9 @@ import com.guidinglight.nexusquant.common.numeric.NumericType;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
+import com.guidinglight.nexusquant.ledger.application.service.SimCashFundingService;
+import com.guidinglight.nexusquant.ledger.application.service.TradeLedgerPostingService;
+import com.guidinglight.nexusquant.ledger.contracts.model.AccountBalanceBasis;
 import com.guidinglight.nexusquant.ledger.contracts.model.AccountSnapshotProjection;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingEntry;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
@@ -24,15 +24,15 @@ import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerPostingRepository;
 import com.guidinglight.nexusquant.ledger.service.port.LedgerRiskAuditRepository;
 
+import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
  * TradeLedgerPostingServiceTest 覆盖记账幂等与平衡校验分支。
@@ -45,14 +45,15 @@ class TradeLedgerPostingServiceTest {
     @Test
     void shouldBeIdempotentForRepeatedTradePosting() {
         InMemoryLedgerPostingRepository postingRepository = new InMemoryLedgerPostingRepository();
-        RecordingLedgerRiskAuditRepository riskAuditRepository = new RecordingLedgerRiskAuditRepository();
+        RecordingLedgerRiskAuditRepository riskAuditRepository =
+                new RecordingLedgerRiskAuditRepository();
         RecordingJdbcTemplate eventStoreJdbcTemplate = new RecordingJdbcTemplate();
-        TradeLedgerPostingService service = new TradeLedgerPostingService(
-                postingRepository,
-                riskAuditRepository,
-                new RecordingEventPublisherPort(eventStoreJdbcTemplate),
-                objectMapper()
-        );
+        TradeLedgerPostingService service =
+                new TradeLedgerPostingService(
+                        postingRepository,
+                        riskAuditRepository,
+                        new RecordingEventPublisherPort(eventStoreJdbcTemplate),
+                        objectMapper());
 
         TradeLedgerRequest request = baseRequest("trd-401", BigDecimal.ZERO);
         LedgerPostingResult first = service.postTrade(request);
@@ -69,11 +70,20 @@ class TradeLedgerPostingServiceTest {
         assertEquals("SIM", postingRepository.accountSnapshots.get("BTC").tradeEnv());
         assertEquals("SIM", postingRepository.accountSnapshots.get("USDT").tradeEnv());
         assertEquals(new BigDecimal("0.01000000"), postingRepository.accountSnapshotBalance("BTC"));
-        assertEquals(new BigDecimal("0.01000000"), postingRepository.accountSnapshotAvailable("BTC"));
-        assertEquals(NumericPolicy.normalize(NumericType.QTY, BigDecimal.ZERO), postingRepository.accountSnapshotFrozen("BTC"));
-        assertEquals(NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO), postingRepository.accountSnapshotBalance("USDT"));
-        assertEquals(NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO), postingRepository.accountSnapshotAvailable("USDT"));
-        assertEquals(NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO), postingRepository.accountSnapshotFrozen("USDT"));
+        assertEquals(
+                new BigDecimal("0.01000000"), postingRepository.accountSnapshotAvailable("BTC"));
+        assertEquals(
+                NumericPolicy.normalize(NumericType.QTY, BigDecimal.ZERO),
+                postingRepository.accountSnapshotFrozen("BTC"));
+        assertEquals(
+                NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO),
+                postingRepository.accountSnapshotBalance("USDT"));
+        assertEquals(
+                NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO),
+                postingRepository.accountSnapshotAvailable("USDT"));
+        assertEquals(
+                NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO),
+                postingRepository.accountSnapshotFrozen("USDT"));
         assertEquals(2, eventStoreJdbcTemplate.updateCount());
     }
 
@@ -83,16 +93,18 @@ class TradeLedgerPostingServiceTest {
     @Test
     void shouldPostBalancedEntriesWhenFeeIsPresent() {
         InMemoryLedgerPostingRepository postingRepository = new InMemoryLedgerPostingRepository();
-        RecordingLedgerRiskAuditRepository riskAuditRepository = new RecordingLedgerRiskAuditRepository();
+        RecordingLedgerRiskAuditRepository riskAuditRepository =
+                new RecordingLedgerRiskAuditRepository();
         RecordingJdbcTemplate eventStoreJdbcTemplate = new RecordingJdbcTemplate();
-        TradeLedgerPostingService service = new TradeLedgerPostingService(
-                postingRepository,
-                riskAuditRepository,
-                new RecordingEventPublisherPort(eventStoreJdbcTemplate),
-                objectMapper()
-        );
+        TradeLedgerPostingService service =
+                new TradeLedgerPostingService(
+                        postingRepository,
+                        riskAuditRepository,
+                        new RecordingEventPublisherPort(eventStoreJdbcTemplate),
+                        objectMapper());
 
-        LedgerPostingResult result = service.postTrade(baseRequest("trd-402", new BigDecimal("0.10000000")));
+        LedgerPostingResult result =
+                service.postTrade(baseRequest("trd-402", new BigDecimal("0.10000000")));
 
         assertTrue(result.posted());
         assertEquals("POSTED", result.reason());
@@ -101,8 +113,7 @@ class TradeLedgerPostingServiceTest {
         assertEquals(2, postingRepository.accountSnapshotCount());
         assertEquals(
                 NumericPolicy.normalize(NumericType.AMOUNT, BigDecimal.ZERO),
-                postingRepository.accountSnapshotBalance("USDT")
-        );
+                postingRepository.accountSnapshotBalance("USDT"));
         assertEquals(0, riskAuditRepository.riskCount());
         assertEquals(1, riskAuditRepository.auditCount());
         assertEquals(2, eventStoreJdbcTemplate.updateCount());
@@ -111,25 +122,110 @@ class TradeLedgerPostingServiceTest {
     @Test
     void simFundingPublishesExplicitCashProjection() {
         InMemoryLedgerPostingRepository repository = new InMemoryLedgerPostingRepository();
-        new SimCashFundingService(repository).fundOnce(1001L, "paper-run-1", BigDecimal.TEN, "synthetic");
+        new SimCashFundingService(repository)
+                .fundOnce(1001L, "paper-run-1", BigDecimal.TEN, "synthetic");
         AccountSnapshotProjection snapshot = repository.accountSnapshots.get("USDT");
         assertEquals("SIM", snapshot.tradeEnv());
-        assertEquals(com.guidinglight.nexusquant.ledger.contracts.model.AccountBalanceBasis.LEDGER_CASH_PROJECTION,
-                snapshot.balanceBasis());
+        assertEquals(AccountBalanceBasis.LEDGER_CASH_PROJECTION, snapshot.balanceBasis());
     }
 
     @Test
     void absentTradeEnvironmentRejectsBeforePosting() {
         InMemoryLedgerPostingRepository repository = new InMemoryLedgerPostingRepository();
-        TradeLedgerPostingService service = new TradeLedgerPostingService(repository,
-                new RecordingLedgerRiskAuditRepository(), new RecordingEventPublisherPort(new RecordingJdbcTemplate()),
-                objectMapper());
+        TradeLedgerPostingService service =
+                new TradeLedgerPostingService(
+                        repository,
+                        new RecordingLedgerRiskAuditRepository(),
+                        new RecordingEventPublisherPort(new RecordingJdbcTemplate()),
+                        objectMapper());
         TradeLedgerRequest valid = baseRequest("trd-unknown", BigDecimal.ZERO);
-        TradeLedgerRequest unknown = new TradeLedgerRequest(valid.tradeId(), valid.orderId(), valid.accountId(),
-                valid.symbol(), valid.side(), valid.price(), valid.qty(), valid.fee(), valid.feeCurrency(),
-                valid.traceId(), valid.ts(), null);
+        TradeLedgerRequest unknown =
+                new TradeLedgerRequest(
+                        valid.tradeId(),
+                        valid.orderId(),
+                        valid.accountId(),
+                        valid.symbol(),
+                        valid.side(),
+                        valid.price(),
+                        valid.qty(),
+                        valid.fee(),
+                        valid.feeCurrency(),
+                        valid.traceId(),
+                        valid.ts(),
+                        null);
         assertThrows(IllegalArgumentException.class, () -> service.postTrade(unknown));
         assertEquals(0, repository.entryCount());
+    }
+
+    /** 返佣沿用原费用幂等键并反向形成成对分录，重复调用不再次增加资产。 */
+    @Test
+    void rebatePostsOppositeSignedFeeEntriesOnce() {
+        InMemoryLedgerPostingRepository repository = new InMemoryLedgerPostingRepository();
+        TradeLedgerPostingService service =
+                new TradeLedgerPostingService(
+                        repository,
+                        new RecordingLedgerRiskAuditRepository(),
+                        new RecordingEventPublisherPort(new RecordingJdbcTemplate()),
+                        objectMapper());
+        TradeLedgerRequest request = baseRequest("trd-rebate", new BigDecimal("-0.1"));
+        assertTrue(service.postTrade(request).posted());
+        assertEquals(
+                0,
+                new BigDecimal("0.1")
+                        .compareTo(
+                                repository
+                                        .entriesByIdempotencyKey
+                                        .get("trd-rebate:LEDGER:FEE_1")
+                                        .delta()));
+        assertEquals(
+                0,
+                new BigDecimal("-0.1")
+                        .compareTo(
+                                repository
+                                        .entriesByIdempotencyKey
+                                        .get("trd-rebate:LEDGER:FEE_2")
+                                        .delta()));
+        assertTrue(service.postTrade(request).idempotentHit());
+        assertEquals(4, repository.entryCount());
+        assertEquals(0, new BigDecimal("0.01").compareTo(repository.positionQty("BTC-USDT")));
+    }
+
+    /** base币种返佣与费用使用同一八位舍入；极小值不能造成有仓位变化却无对应费用分录。 */
+    @Test
+    void baseRebateAndTinyFeesUseLedgerPrecision() {
+        for (String fee : new String[] {"-0.001", "0.001", "-0.000000001", "0.000000001"}) {
+            InMemoryLedgerPostingRepository repository = new InMemoryLedgerPostingRepository();
+            TradeLedgerPostingService service =
+                    new TradeLedgerPostingService(
+                            repository,
+                            new RecordingLedgerRiskAuditRepository(),
+                            new RecordingEventPublisherPort(new RecordingJdbcTemplate()),
+                            objectMapper());
+            TradeLedgerRequest original = baseRequest("trd-base", new BigDecimal(fee));
+            TradeLedgerRequest request =
+                    new TradeLedgerRequest(
+                            original.tradeId(),
+                            original.orderId(),
+                            original.accountId(),
+                            original.symbol(),
+                            original.side(),
+                            original.price(),
+                            original.qty(),
+                            original.fee(),
+                            "BTC",
+                            original.traceId(),
+                            original.ts(),
+                            "SIM");
+            assertTrue(service.postTrade(request).posted());
+            BigDecimal normalizedFee =
+                    NumericPolicy.normalize(NumericType.FEE, new BigDecimal(fee));
+            assertEquals(
+                    0,
+                    new BigDecimal("0.01")
+                            .subtract(normalizedFee)
+                            .compareTo(repository.positionQty("BTC-USDT")));
+            assertEquals(normalizedFee.signum() == 0 ? 2 : 4, repository.entryCount());
+        }
     }
 
     private TradeLedgerRequest baseRequest(String tradeId, BigDecimal fee) {
@@ -145,8 +241,7 @@ class TradeLedgerPostingServiceTest {
                 "USDT",
                 "trc-" + tradeId,
                 Instant.parse("2026-02-25T12:00:00Z"),
-                "SIM"
-        );
+                "SIM");
     }
 
     private ObjectMapper objectMapper() {
@@ -158,18 +253,22 @@ class TradeLedgerPostingServiceTest {
     private static final class InMemoryLedgerPostingRepository implements LedgerPostingRepository {
 
         @Override
-        public void lockSnapshotCurrencies(Long accountId, List<String> currencies) { }
+        public void lockSnapshotCurrencies(Long accountId, List<String> currencies) {}
 
         @Override
-        public void assertAccountEnvironment(Long accountId, String tradeEnv) { }
+        public void assertAccountEnvironment(Long accountId, String tradeEnv) {}
 
         @Override
-        public void lockPosition(Long accountId, String symbol, String traceId) { }
+        public void lockPosition(Long accountId, String symbol, String traceId) {}
 
         @Override
         public Optional<PositionProjection> findAssetPosition(Long accountId, String currency) {
-            return positions.values().stream().filter(p -> p.accountId().equals(accountId)
-                    && p.symbol().startsWith(currency + "-")).findFirst();
+            return positions.values().stream()
+                    .filter(
+                            p ->
+                                    p.accountId().equals(accountId)
+                                            && p.symbol().startsWith(currency + "-"))
+                    .findFirst();
         }
 
         private final Map<String, LedgerPostingEntry> entriesByIdempotencyKey = new HashMap<>();
@@ -185,7 +284,10 @@ class TradeLedgerPostingServiceTest {
         @Override
         public BigDecimal currentBalance(Long accountId, String currency, String tradeEnv) {
             return entriesByIdempotencyKey.values().stream()
-                    .filter(entry -> entry.accountId().equals(accountId) && entry.currency().equals(currency))
+                    .filter(
+                            entry ->
+                                    entry.accountId().equals(accountId)
+                                            && entry.currency().equals(currency))
                     .map(LedgerPostingEntry::delta)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
@@ -196,7 +298,8 @@ class TradeLedgerPostingServiceTest {
         }
 
         @Override
-        public void insertLedgerEvent(String entryId, String eventType, String payloadJson, String traceId) {
+        public void insertLedgerEvent(
+                String entryId, String eventType, String payloadJson, String traceId) {
             ledgerEventCount++;
         }
 
@@ -248,7 +351,8 @@ class TradeLedgerPostingServiceTest {
         }
     }
 
-    private static final class RecordingLedgerRiskAuditRepository implements LedgerRiskAuditRepository {
+    private static final class RecordingLedgerRiskAuditRepository
+            implements LedgerRiskAuditRepository {
 
         private int riskCount;
         private int auditCount;
@@ -260,13 +364,17 @@ class TradeLedgerPostingServiceTest {
                 String decision,
                 String reason,
                 String severity,
-                String traceId
-        ) {
+                String traceId) {
             riskCount++;
         }
 
         @Override
-        public void appendAudit(String domain, String action, String actorId, String traceId, Map<String, Object> detail) {
+        public void appendAudit(
+                String domain,
+                String action,
+                String actorId,
+                String traceId,
+                Map<String, Object> detail) {
             auditCount++;
         }
 
@@ -288,7 +396,8 @@ class TradeLedgerPostingServiceTest {
 
         @Override
         public void append(String topic, EventEnvelope<?> envelope) {
-            jdbcTemplate.update("insert into event_store(topic, payload_json) values (?, ?)", topic, envelope);
+            jdbcTemplate.update(
+                    "insert into event_store(topic, payload_json) values (?, ?)", topic, envelope);
         }
     }
 

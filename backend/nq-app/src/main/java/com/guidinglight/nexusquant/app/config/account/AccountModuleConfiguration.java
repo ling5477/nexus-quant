@@ -1,37 +1,43 @@
 package com.guidinglight.nexusquant.app.config.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.account.application.service.AccountCommandService;
+import com.guidinglight.nexusquant.account.application.service.CredentialOperationService;
 import com.guidinglight.nexusquant.account.application.service.CredentialPermissionProbeService;
 import com.guidinglight.nexusquant.account.application.service.ExchangeAccountCommandService;
 import com.guidinglight.nexusquant.account.application.service.ExchangeAccountCredentialCommandService;
 import com.guidinglight.nexusquant.account.application.service.ExchangeAccountCredentialVerificationService;
 import com.guidinglight.nexusquant.account.application.service.ExchangeAccountQueryService;
+import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectation;
+import com.guidinglight.nexusquant.account.domain.port.AccountCommandReceiptRepository;
+import com.guidinglight.nexusquant.account.domain.port.AccountTradeEnvironmentAuthority;
+import com.guidinglight.nexusquant.account.domain.port.CredentialOperationRepository;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialVerifier;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
-import com.guidinglight.nexusquant.account.domain.port.AccountTradeEnvironmentAuthority;
-import com.guidinglight.nexusquant.account.domain.port.SimAccountIdentityBridge;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeCredentialPermissionProbePort;
-import com.guidinglight.nexusquant.account.domain.CredentialPermissionExpectation;
+import com.guidinglight.nexusquant.account.domain.port.SimAccountIdentityBridge;
+import com.guidinglight.nexusquant.account.infra.jdbc.JdbcAccountCommandReceiptRepository;
+import com.guidinglight.nexusquant.account.infra.jdbc.JdbcAccountTradeEnvironmentAuthority;
+import com.guidinglight.nexusquant.account.infra.jdbc.JdbcCredentialOperationRepository;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountCredentialRepository;
 import com.guidinglight.nexusquant.account.infra.jdbc.JdbcExchangeAccountRepository;
-import com.guidinglight.nexusquant.account.infra.jdbc.JdbcAccountTradeEnvironmentAuthority;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.JdbcOkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.okx.readonly.OkxPrivateCredentialExecutor;
 import com.guidinglight.nexusquant.account.infra.probe.NoRealExchangeCredentialPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.probe.OkxRealReadonlyPermissionProbePort;
 import com.guidinglight.nexusquant.account.infra.verification.StructuralExchangeAccountCredentialVerifier;
-import com.guidinglight.nexusquant.app.config.StableCapabilityPropertyResolver;
 import com.guidinglight.nexusquant.app.config.RetiredRuntimeConfigurationGuard;
+import com.guidinglight.nexusquant.app.config.StableCapabilityPropertyResolver;
 
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -42,9 +48,43 @@ import java.time.Clock;
  */
 @Configuration
 @EnableConfigurationProperties(AccountCredentialRuntimeProperties.class)
-@Import({AccountIdentityBridgeConfiguration.class,
-        RetiredRuntimeConfigurationGuard.class})
+@Import({AccountIdentityBridgeConfiguration.class, RetiredRuntimeConfigurationGuard.class})
 public class AccountModuleConfiguration {
+
+    @Bean
+    public CredentialOperationRepository credentialOperationRepository(
+            JdbcTemplate jdbc, ObjectMapper mapper, AccountCredentialRuntimeProperties properties) {
+        return new JdbcCredentialOperationRepository(jdbc, mapper, properties.getMasterKey());
+    }
+
+    @Bean
+    public CredentialOperationService credentialOperationService(
+            CredentialOperationRepository operations,
+            ExchangeAccountRepository accounts,
+            ExchangeAccountCredentialRepository credentials,
+            ExchangeAccountCredentialCommandService commands,
+            ExchangeAccountCredentialVerificationService verification,
+            AccountCredentialRuntimeProperties properties) {
+        return new CredentialOperationService(
+                operations,
+                accounts,
+                credentials,
+                commands,
+                verification,
+                properties.getKeyVersion());
+    }
+
+    @Bean
+    public AccountCommandReceiptRepository accountCommandReceiptRepository(
+            JdbcTemplate jdbc, ObjectMapper mapper) {
+        return new JdbcAccountCommandReceiptRepository(jdbc, mapper);
+    }
+
+    @Bean
+    public AccountCommandService accountCommandService(
+            AccountCommandReceiptRepository receipts, ExchangeAccountCommandService commands) {
+        return new AccountCommandService(receipts, commands);
+    }
 
     private static final String STABLE_READ_ONLY_PREFIX = "nq.okx.private-readonly-diagnostics";
 
@@ -54,35 +94,36 @@ public class AccountModuleConfiguration {
     }
 
     @Bean
-    public AccountTradeEnvironmentAuthority accountTradeEnvironmentAuthority(JdbcTemplate jdbcTemplate) {
+    public AccountTradeEnvironmentAuthority accountTradeEnvironmentAuthority(
+            JdbcTemplate jdbcTemplate) {
         return new JdbcAccountTradeEnvironmentAuthority(jdbcTemplate);
     }
 
     @Bean
-    public ExchangeAccountQueryService exchangeAccountQueryService(ExchangeAccountRepository exchangeAccountRepository) {
+    public ExchangeAccountQueryService exchangeAccountQueryService(
+            ExchangeAccountRepository exchangeAccountRepository) {
         return new ExchangeAccountQueryService(exchangeAccountRepository);
     }
 
     @Bean
-    public ExchangeAccountCommandService exchangeAccountCommandService(ExchangeAccountRepository exchangeAccountRepository,
+    public ExchangeAccountCommandService exchangeAccountCommandService(
+            ExchangeAccountRepository exchangeAccountRepository,
             SimAccountIdentityBridge simAccountIdentityBridge) {
-        return new ExchangeAccountCommandService(exchangeAccountRepository, simAccountIdentityBridge);
+        return new ExchangeAccountCommandService(
+                exchangeAccountRepository, simAccountIdentityBridge);
     }
 
     @Bean
     public ExchangeAccountCredentialRepository exchangeAccountCredentialRepository(
-            JdbcTemplate jdbcTemplate,
-            AccountCredentialRuntimeProperties properties
-    ) {
+            JdbcTemplate jdbcTemplate, AccountCredentialRuntimeProperties properties) {
         return new JdbcExchangeAccountCredentialRepository(jdbcTemplate, properties.getMasterKey());
     }
 
     @Bean
     public ExchangeAccountCredentialVerifier exchangeAccountCredentialVerifier(
-            ObjectMapper objectMapper,
-            AccountCredentialRuntimeProperties properties
-    ) {
-        return new StructuralExchangeAccountCredentialVerifier(objectMapper, properties.getVerificationMode());
+            ObjectMapper objectMapper, AccountCredentialRuntimeProperties properties) {
+        return new StructuralExchangeAccountCredentialVerifier(
+                objectMapper, properties.getVerificationMode());
     }
 
     @Bean
@@ -90,35 +131,31 @@ public class AccountModuleConfiguration {
             ExchangeAccountRepository exchangeAccountRepository,
             ExchangeAccountCredentialRepository exchangeAccountCredentialRepository,
             ExchangeAccountCredentialVerifier exchangeAccountCredentialVerifier,
-            ObjectMapper objectMapper
-    ) {
+            ObjectMapper objectMapper) {
         return new ExchangeAccountCredentialCommandService(
                 exchangeAccountRepository,
                 exchangeAccountCredentialRepository,
                 exchangeAccountCredentialVerifier,
-                objectMapper
-        );
+                objectMapper);
     }
 
     @Bean
-    public ExchangeAccountCredentialVerificationService exchangeAccountCredentialVerificationService(
-            ExchangeAccountRepository exchangeAccountRepository,
-            ExchangeAccountCredentialRepository exchangeAccountCredentialRepository,
-            ExchangeAccountCredentialVerifier exchangeAccountCredentialVerifier
-    ) {
+    public ExchangeAccountCredentialVerificationService
+            exchangeAccountCredentialVerificationService(
+                    ExchangeAccountRepository exchangeAccountRepository,
+                    ExchangeAccountCredentialRepository exchangeAccountCredentialRepository,
+                    ExchangeAccountCredentialVerifier exchangeAccountCredentialVerifier) {
         return new ExchangeAccountCredentialVerificationService(
                 exchangeAccountRepository,
                 exchangeAccountCredentialRepository,
-                exchangeAccountCredentialVerifier
-        );
+                exchangeAccountCredentialVerifier);
     }
 
     @Bean
     public ExchangeCredentialPermissionProbePort exchangeCredentialPermissionProbePort(
             ObjectProvider<OkxPrivateCredentialExecutor> credentialExecutorProvider,
             OkxPrivateReadOnlyPermissionProbeProperties permissionProperties,
-            Environment environment
-    ) {
+            Environment environment) {
         OkxPrivateCredentialExecutor executor = credentialExecutorProvider.getIfAvailable();
         CredentialPermissionExpectation permissionExpectation = permissionExpectation(environment);
         if (!permissionProperties.enabled()
@@ -140,8 +177,7 @@ public class AccountModuleConfiguration {
                     executor,
                     permissionProperties.expectedIp(),
                     permissionExpectation,
-                    Clock.systemUTC()
-            );
+                    Clock.systemUTC());
         } catch (IllegalArgumentException ex) {
             // expectedIp 缺失/非法时回落 NoReal；错误信息不得回显配置原值。
             return new NoRealExchangeCredentialPermissionProbePort();
@@ -150,20 +186,15 @@ public class AccountModuleConfiguration {
 
     @Bean
     public OkxPrivateReadOnlyPermissionProbeProperties okxPrivateReadOnlyPermissionProbeProperties(
-            Environment environment
-    ) {
+            Environment environment) {
         String stablePrefix = STABLE_READ_ONLY_PREFIX + ".permission-probe";
 
-        boolean enabled = StableCapabilityPropertyResolver.matchesExactBoolean(
-                environment,
-                stablePrefix + ".enabled",
-                true
-        );
-        String expectedIp = StableCapabilityPropertyResolver.value(
-                environment,
-                stablePrefix + ".expected-ip",
-                null
-        );
+        boolean enabled =
+                StableCapabilityPropertyResolver.matchesExactBoolean(
+                        environment, stablePrefix + ".enabled", true);
+        String expectedIp =
+                StableCapabilityPropertyResolver.value(
+                        environment, stablePrefix + ".expected-ip", null);
         return new OkxPrivateReadOnlyPermissionProbeProperties(enabled, expectedIp);
     }
 
@@ -173,15 +204,13 @@ public class AccountModuleConfiguration {
             ExchangeAccountCredentialRepository exchangeAccountCredentialRepository,
             ExchangeCredentialPermissionProbePort exchangeCredentialPermissionProbePort,
             ObjectMapper objectMapper,
-            PlatformTransactionManager transactionManager
-    ) {
+            PlatformTransactionManager transactionManager) {
         return new CredentialPermissionProbeService(
                 exchangeAccountRepository,
                 exchangeAccountCredentialRepository,
                 exchangeCredentialPermissionProbePort,
                 objectMapper,
-                new TransactionTemplate(transactionManager)
-        );
+                new TransactionTemplate(transactionManager));
     }
 
     private static boolean exactBoolean(Environment environment, String name, boolean required) {
@@ -189,23 +218,19 @@ public class AccountModuleConfiguration {
         return value != null && Boolean.toString(required).equalsIgnoreCase(value.trim());
     }
 
-    private static boolean exactReadOnlyBoolean(Environment environment, String name, boolean required) {
+    private static boolean exactReadOnlyBoolean(
+            Environment environment, String name, boolean required) {
         return StableCapabilityPropertyResolver.matchesExactBoolean(
-                environment,
-                STABLE_READ_ONLY_PREFIX + "." + name,
-                required
-        );
+                environment, STABLE_READ_ONLY_PREFIX + "." + name, required);
     }
 
     /**
      * profile 与 permission policy 一一绑定；diagnostics 与 scoped profile 同时出现时 fail-closed。
      */
     private static CredentialPermissionExpectation permissionExpectation(Environment environment) {
-        boolean scoped = environment.acceptsProfiles(Profiles.of(
-                "scoped-okx-private-readonly"));
-        boolean diagnostics = environment.acceptsProfiles(Profiles.of(
-                "okx-private-readonly-diagnostics"
-        ));
+        boolean scoped = environment.acceptsProfiles(Profiles.of("scoped-okx-private-readonly"));
+        boolean diagnostics =
+                environment.acceptsProfiles(Profiles.of("okx-private-readonly-diagnostics"));
         if (scoped == diagnostics) {
             return null;
         }

@@ -11,7 +11,7 @@ services:
     volumes:
       - ${NQ_HOME:?installer directory required}/data/postgres:/var/lib/postgresql/data
     healthcheck:
-      test: [CMD-SHELL, "pg_isready -U nexusquant -d nexus_quant"]
+      test: [CMD-SHELL, 'pg_isready -U nexusquant -d nexus_quant']
       interval: 5s
       timeout: 3s
       retries: 30
@@ -27,6 +27,12 @@ services:
       postgres: {condition: service_healthy}
     environment:
       NQ_PROFILE: prod,public-marketdata-manual
+      # 使用安装器已核验的包身份；不把Maven服务版本当作产品包版本。
+      NQ_VERSION: ${NQ_VERSION:?installer package version required}
+      SOURCE_SHA: ${SOURCE_SHA:?installer source commit required}
+      RELEASE_SOURCE_HASH: ${RELEASE_SOURCE_HASH:?installer release source required}
+      PACKAGE_MANIFEST_SHA256: ${PACKAGE_MANIFEST_SHA256:?installer package manifest required}
+      SCHEMA_VERSION: ${SCHEMA_VERSION:?installer package schema required}
       JAVA_TOOL_OPTIONS: '-XX:MaxRAMPercentage=65 -XX:InitialRAMPercentage=20'
       NQ_PROD_DB_URL: jdbc:postgresql://postgres:5432/nexus_quant
       NQ_PROD_DB_USER: nexusquant

@@ -2,6 +2,9 @@ import {t} from '@/i18n';
 import {useTranslation} from 'react-i18next';
 import {Button} from 'antd';
 import {useNavigate, useSearchParams} from 'react-router-dom';
+import {useQueryClient} from '@tanstack/react-query';
+import {useAuthStore} from '@/store/auth-store';
+import {useAccountContextStore} from '@/store/account-context-store';
 
 import {ExceptionView, type ExceptionTone} from '@/components/standalone/ExceptionView';
 import {StandaloneSurface} from '@/components/standalone/StandaloneSurface';
@@ -61,6 +64,15 @@ export function AuthFailurePage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const copy = getReasonCopy()[resolveReason(searchParams.get('reason'))];
+    const queryClient = useQueryClient();
+    const returnToSignIn = async () => {
+        // 异常页也可能由仍登录的主体访问；返回登录时同步清除旧会话及账户范围缓存。
+        useAuthStore.getState().clearAuth('manual');
+        useAccountContextStore.getState().clearAccountContext();
+        await queryClient.cancelQueries();
+        queryClient.clear();
+        navigate('/login', {replace: true});
+    };
 
     return (
         <StandaloneSurface ariaLabel={t('exception.authFailure')}>
@@ -72,8 +84,12 @@ export function AuthFailurePage() {
                 nextSteps={<p style={{margin: 0}}>{copy.nextStep}</p>}
                 actions={
                     <>
-                        <Button type="primary" onClick={() => navigate('/login', {replace: true})}>{t('exception.signInAgain')}</Button>
-                        <Button onClick={() => navigate('/login')}>{t('exception.backToLogin')}</Button>
+                        <Button type="primary" onClick={() => void returnToSignIn()}>
+                            {t('exception.signInAgain')}
+                        </Button>
+                        <Button onClick={() => void returnToSignIn()}>
+                            {t('exception.backToLogin')}
+                        </Button>
                     </>
                 }
             />

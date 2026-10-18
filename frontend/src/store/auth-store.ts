@@ -1,7 +1,12 @@
 import {create} from 'zustand';
 
 import type {CurrentUser, LoginResponse} from '@/types/auth';
-import {clearStoredSession, readStoredSession, toCurrentUser, writeStoredSession} from '@/utils/token-storage';
+import {
+    clearStoredSession,
+    readStoredSession,
+    toCurrentUser,
+    writeStoredSession,
+} from '@/utils/token-storage';
 
 type BootstrapStatus = 'idle' | 'loading' | 'ready';
 type LogoutReason = 'manual' | 'expired' | 'unauthorized';
@@ -35,6 +40,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     bootstrapStatus: initialSession ? 'loading' : 'ready',
     lastLogoutReason: null,
     setSession: (payload) => {
+        // 只有正式登录开始新一轮声明提示；刷新和认证资料重读不清除此标记。
+        try {
+            sessionStorage.removeItem('nq:login-disclosures:' + payload.username);
+        } catch {
+            /* 浏览器禁用会话存储时由声明组件的当前挂载状态处理。 */
+        }
         writeStoredSession(payload);
         set({
             accessToken: payload.accessToken,

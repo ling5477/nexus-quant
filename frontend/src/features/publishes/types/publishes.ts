@@ -24,6 +24,19 @@ export interface PublishesListFilters {
     publishStatus: string;
 }
 
+export interface PublishPageRequest extends PublishesListFilters {
+    limit: number;
+    offset: number;
+}
+
+/** 分页仍引用原发布及冻结快照，不能把策略存在当作已发布或已运行。 */
+export interface PublishPage {
+    items: BacktestPublishListItem[];
+    total: number;
+    limit: number;
+    offset: number;
+}
+
 export const defaultPublishesListFilters: PublishesListFilters = {
     researchConfigId: '',
     backtestConfigId: '',

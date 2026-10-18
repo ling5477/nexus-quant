@@ -1,24 +1,21 @@
 package com.guidinglight.nexusquant.account.application.service;
 
-import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
+import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * ExchangeAccountQueryService 提供账户上下文与账户管理页的最小查询能力。
- */
+/** ExchangeAccountQueryService 提供账户上下文与账户管理页的最小查询能力。 */
 public class ExchangeAccountQueryService {
 
     private final ExchangeAccountRepository exchangeAccountRepository;
 
     public ExchangeAccountQueryService(ExchangeAccountRepository exchangeAccountRepository) {
-        this.exchangeAccountRepository = Objects.requireNonNull(
-                exchangeAccountRepository,
-                "exchangeAccountRepository must not be null"
-        );
+        this.exchangeAccountRepository =
+                Objects.requireNonNull(
+                        exchangeAccountRepository, "exchangeAccountRepository must not be null");
     }
 
     public List<ExchangeAccountSummary> listByOwnerUserId(Long ownerUserId) {
@@ -42,12 +39,29 @@ public class ExchangeAccountQueryService {
         return exchangeAccountRepository.findDefaultByOwnerUserId(ownerUserId);
     }
 
-    public Optional<ExchangeAccountSummary> findByIdForOwner(Long ownerUserId, Long exchangeAccountId) {
-        if (ownerUserId == null || ownerUserId <= 0 || exchangeAccountId == null || exchangeAccountId <= 0) {
+    public Optional<ExchangeAccountSummary> findByIdForOwner(
+            Long ownerUserId, Long exchangeAccountId) {
+        if (ownerUserId == null
+                || ownerUserId <= 0
+                || exchangeAccountId == null
+                || exchangeAccountId <= 0) {
             return Optional.empty();
         }
         return exchangeAccountRepository.findByIdForOwner(ownerUserId, exchangeAccountId);
     }
+
+    /** 单笔订单只可经明确的账户、交易所和环境映射确认当前用户归属。 */
+    public boolean hasTradingScopeForOwner(
+            Long ownerUserId, Long tradingAccountId, String venue, String tradeEnv) {
+        if (ownerUserId == null
+                || ownerUserId <= 0
+                || tradingAccountId == null
+                || tradingAccountId <= 0
+                || venue == null
+                || venue.isBlank()
+                || tradeEnv == null
+                || tradeEnv.isBlank()) return false;
+        return exchangeAccountRepository.hasTradingScopeForOwner(
+                ownerUserId, tradingAccountId, venue, tradeEnv);
+    }
 }
-
-

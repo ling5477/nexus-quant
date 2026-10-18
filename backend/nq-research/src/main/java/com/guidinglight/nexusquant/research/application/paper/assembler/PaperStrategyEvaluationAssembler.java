@@ -2,7 +2,6 @@ package com.guidinglight.nexusquant.research.application.paper.assembler;
 
 import com.guidinglight.nexusquant.research.application.paper.model.PaperPortfolioSummary;
 import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation;
-
 import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.BacktestDeviation;
 import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.DeviationLevel;
 import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation.EvaluationConfidence;
@@ -16,12 +15,12 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -46,44 +45,69 @@ public final class PaperStrategyEvaluationAssembler {
 
     /** Backtest 偏差分级阈值（首版规则阈值，比例绝对值）。 */
     private static final BigDecimal DEVIATION_LOW = new BigDecimal("0.05");
+
     private static final BigDecimal DEVIATION_MEDIUM = new BigDecimal("0.15");
 
     private static final String STRATEGY_FALLBACK_KEY = "(未绑定策略版本)";
     private static final String PUBLISH_FALLBACK_KEY = "(未知发布)";
 
-    private PaperStrategyEvaluationAssembler() {
-    }
+    private PaperStrategyEvaluationAssembler() {}
 
     public static PaperStrategyEvaluation assemble(
             List<PaperPortfolioSummary.RunRef> runRefs,
-            Map<String, BacktestEvaluationView> backtestViewByPublishId
-    ) {
+            Map<String, BacktestEvaluationView> backtestViewByPublishId) {
+        return assemble(runRefs, backtestViewByPublishId, true);
+    }
+
+    /** 单次收益率和回撤可比较，但无计价单位时不能合计资金或计算资金加权的跨运行收益偏差。 */
+    public static PaperStrategyEvaluation assembleWithoutCommonValuationUnit(
+            List<PaperPortfolioSummary.RunRef> runRefs,
+            Map<String, BacktestEvaluationView> backtestViewByPublishId) {
+        return assemble(runRefs, backtestViewByPublishId, false);
+    }
+
+    private static PaperStrategyEvaluation assemble(
+            List<PaperPortfolioSummary.RunRef> runRefs,
+            Map<String, BacktestEvaluationView> backtestViewByPublishId,
+            boolean commonValuationUnit) {
         List<PaperPortfolioSummary.RunRef> safeRefs = runRefs != null ? runRefs : List.of();
-        Map<String, BacktestEvaluationView> btByPublish = backtestViewByPublishId != null
-                ? backtestViewByPublishId : Map.of();
+        Map<String, BacktestEvaluationView> btByPublish =
+                backtestViewByPublishId != null ? backtestViewByPublishId : Map.of();
 
         // 分组：strategyVersionId（含未绑定回退）与 publishId（含未知回退）。
-        Map<String, List<PaperPortfolioSummary.RunRef>> byStrategy = groupBy(
-                safeRefs, ref -> normalizeKey(ref.strategyVersionId(), STRATEGY_FALLBACK_KEY));
-        Map<String, List<PaperPortfolioSummary.RunRef>> byPublish = groupBy(
-                safeRefs, ref -> normalizeKey(ref.publishId(), PUBLISH_FALLBACK_KEY));
+        Map<String, List<PaperPortfolioSummary.RunRef>> byStrategy =
+                groupBy(
+                        safeRefs,
+                        ref -> normalizeKey(ref.strategyVersionId(), STRATEGY_FALLBACK_KEY));
+        Map<String, List<PaperPortfolioSummary.RunRef>> byPublish =
+                groupBy(safeRefs, ref -> normalizeKey(ref.publishId(), PUBLISH_FALLBACK_KEY));
 
         List<StrategyEvaluation> strategyEvaluations = new ArrayList<>();
         for (Map.Entry<String, List<PaperPortfolioSummary.RunRef>> entry : byStrategy.entrySet()) {
-            strategyEvaluations.add(buildStrategyEvaluation(entry.getKey(), entry.getValue(), btByPublish));
+            strategyEvaluations.add(
+                    buildStrategyEvaluation(
+                            entry.getKey(), entry.getValue(), btByPublish, commonValuationUnit));
         }
         // 复合分降序，便于排行与展示稳定。
-        strategyEvaluations.sort(Comparator.comparingInt(StrategyEvaluation::compositeScore).reversed());
+        strategyEvaluations.sort(
+                Comparator.comparingInt(StrategyEvaluation::compositeScore).reversed());
 
         List<PublishEvaluation> publishEvaluations = new ArrayList<>();
         for (Map.Entry<String, List<PaperPortfolioSummary.RunRef>> entry : byPublish.entrySet()) {
-            publishEvaluations.add(buildPublishEvaluation(entry.getKey(), entry.getValue(), btByPublish));
+            publishEvaluations.add(
+                    buildPublishEvaluation(
+                            entry.getKey(), entry.getValue(), btByPublish, commonValuationUnit));
         }
-        publishEvaluations.sort(Comparator.comparingInt(PublishEvaluation::compositeScore).reversed());
+        publishEvaluations.sort(
+                Comparator.comparingInt(PublishEvaluation::compositeScore).reversed());
 
-        var overview = buildOverview(strategyEvaluations);
+        var overview = buildOverview(strategyEvaluations, commonValuationUnit);
         var rankings = buildRankings(strategyEvaluations);
-        return new PaperStrategyEvaluation(overview, List.copyOf(strategyEvaluations), List.copyOf(publishEvaluations), rankings);
+        return new PaperStrategyEvaluation(
+                overview,
+                List.copyOf(strategyEvaluations),
+                List.copyOf(publishEvaluations),
+                rankings);
     }
 
     // ---- 分组聚合事实 ----
@@ -110,10 +134,10 @@ public final class PaperStrategyEvaluationAssembler {
             int filledLossCount,
             int failedRunCount,
             int publishCount,
-            Instant latestRunTime
-    ) {}
+            Instant latestRunTime) {}
 
-    private static GroupAgg aggregate(List<PaperPortfolioSummary.RunRef> members) {
+    private static GroupAgg aggregate(
+            List<PaperPortfolioSummary.RunRef> members, boolean commonValuationUnit) {
         int comparable = 0;
         int win = 0;
         int loss = 0;
@@ -138,8 +162,10 @@ public final class PaperStrategyEvaluationAssembler {
             boolean comparableRun = ref.currentEquity() != null && ref.initialEquity() != null;
             if (comparableRun) {
                 comparable++;
-                sumCurrent = sumCurrent.add(ref.currentEquity());
-                sumInitial = sumInitial.add(ref.initialEquity());
+                if (commonValuationUnit) {
+                    sumCurrent = sumCurrent.add(ref.currentEquity());
+                    sumInitial = sumInitial.add(ref.initialEquity());
+                }
             } else {
                 dataInsufficient++;
             }
@@ -180,27 +206,63 @@ public final class PaperStrategyEvaluationAssembler {
             if (ref.publishId() != null && !ref.publishId().isBlank()) {
                 publishes.add(ref.publishId());
             }
-            if (ref.lastActivityAt() != null && (latest == null || ref.lastActivityAt().isAfter(latest))) {
+            if (ref.lastActivityAt() != null
+                    && (latest == null || ref.lastActivityAt().isAfter(latest))) {
                 latest = ref.lastActivityAt();
             }
         }
 
-        BigDecimal totalReturn = comparable > 0 ? ratio(sumCurrent.subtract(sumInitial), sumInitial) : null;
-        BigDecimal totalPnl = comparable > 0 ? sumCurrent.subtract(sumInitial) : null;
-        BigDecimal averageReturn = returnSampleCount > 0
-                ? sumReturn.divide(BigDecimal.valueOf(returnSampleCount), RATIO_SCALE, RoundingMode.HALF_UP) : null;
-        BigDecimal averageDrawdown = drawdownSampleCount > 0
-                ? sumDrawdown.divide(BigDecimal.valueOf(drawdownSampleCount), RATIO_SCALE, RoundingMode.HALF_UP) : null;
-        BigDecimal winRate = returnSampleCount > 0
-                ? BigDecimal.valueOf(win).divide(BigDecimal.valueOf(returnSampleCount), RATIO_SCALE, RoundingMode.HALF_UP) : null;
+        BigDecimal totalReturn =
+                commonValuationUnit && comparable > 0
+                        ? ratio(sumCurrent.subtract(sumInitial), sumInitial)
+                        : null;
+        BigDecimal totalPnl =
+                commonValuationUnit && comparable > 0 ? sumCurrent.subtract(sumInitial) : null;
+        BigDecimal averageReturn =
+                returnSampleCount > 0
+                        ? sumReturn.divide(
+                                BigDecimal.valueOf(returnSampleCount),
+                                RATIO_SCALE,
+                                RoundingMode.HALF_UP)
+                        : null;
+        BigDecimal averageDrawdown =
+                drawdownSampleCount > 0
+                        ? sumDrawdown.divide(
+                                BigDecimal.valueOf(drawdownSampleCount),
+                                RATIO_SCALE,
+                                RoundingMode.HALF_UP)
+                        : null;
+        BigDecimal winRate =
+                returnSampleCount > 0
+                        ? BigDecimal.valueOf(win)
+                                .divide(
+                                        BigDecimal.valueOf(returnSampleCount),
+                                        RATIO_SCALE,
+                                        RoundingMode.HALF_UP)
+                        : null;
 
         return new GroupAgg(
-                members.size(), comparable,
-                comparable > 0 ? sumCurrent : null, comparable > 0 ? sumInitial : null,
-                totalPnl, totalReturn, worstDrawdown,
-                win, loss, winRate, averageReturn, averageDrawdown,
-                riskBlocked, dataInsufficient, noOrder, orderNoFill, filled, filledLoss, failed,
-                publishes.size(), latest);
+                members.size(),
+                comparable,
+                commonValuationUnit && comparable > 0 ? sumCurrent : null,
+                commonValuationUnit && comparable > 0 ? sumInitial : null,
+                totalPnl,
+                totalReturn,
+                worstDrawdown,
+                win,
+                loss,
+                winRate,
+                averageReturn,
+                averageDrawdown,
+                riskBlocked,
+                dataInsufficient,
+                noOrder,
+                orderNoFill,
+                filled,
+                filledLoss,
+                failed,
+                publishes.size(),
+                latest);
     }
 
     // ---- 评分（0~100 Paper 内部启发式分，非真实投资评级）----
@@ -224,14 +286,26 @@ public final class PaperStrategyEvaluationAssembler {
         if (averageReturn == null) {
             return 0;
         }
-        return clamp(50 + averageReturn.multiply(BigDecimal.valueOf(250)).setScale(0, RoundingMode.HALF_UP).intValue());
+        return clamp(
+                50
+                        + averageReturn
+                                .multiply(BigDecimal.valueOf(250))
+                                .setScale(0, RoundingMode.HALF_UP)
+                                .intValue());
     }
 
     /** 风险分：最差回撤、风控拦截、失败终态越多扣分越多。 */
     private static int riskScore(GroupAgg agg) {
-        int drawdownPenalty = agg.maxDrawdown() != null
-                ? Math.min(agg.maxDrawdown().abs().multiply(BigDecimal.valueOf(200)).setScale(0, RoundingMode.HALF_UP).intValue(), 60)
-                : 0;
+        int drawdownPenalty =
+                agg.maxDrawdown() != null
+                        ? Math.min(
+                                agg.maxDrawdown()
+                                        .abs()
+                                        .multiply(BigDecimal.valueOf(200))
+                                        .setScale(0, RoundingMode.HALF_UP)
+                                        .intValue(),
+                                60)
+                        : 0;
         int riskBlockedPenalty = Math.min(agg.riskBlockedCount() * 15, 30);
         int failedPenalty = Math.min(agg.failedRunCount() * 20, 30);
         return clamp(100 - drawdownPenalty - riskBlockedPenalty - failedPenalty);
@@ -251,8 +325,13 @@ public final class PaperStrategyEvaluationAssembler {
         if (deviation == null || deviation.returnDeviation() == null) {
             return null;
         }
-        int penalty = deviation.returnDeviation().abs()
-                .multiply(BigDecimal.valueOf(200)).setScale(0, RoundingMode.HALF_UP).intValue();
+        int penalty =
+                deviation
+                        .returnDeviation()
+                        .abs()
+                        .multiply(BigDecimal.valueOf(200))
+                        .setScale(0, RoundingMode.HALF_UP)
+                        .intValue();
         return clamp(100 - penalty);
     }
 
@@ -260,7 +339,8 @@ public final class PaperStrategyEvaluationAssembler {
      * 复合分：returnScore 30% / riskScore 25% / executionScore 20% / sampleScore 15% / backtestDeviationScore 10%；
      * backtest 缺失时按剩余权重重新归一（不让缺失项默认拉低分数）。Paper 内部启发式分，非真实投资评级。
      */
-    private static int compositeScore(int returnScore, int riskScore, int executionScore, int sampleScore, Integer btScore) {
+    private static int compositeScore(
+            int returnScore, int riskScore, int executionScore, int sampleScore, Integer btScore) {
         int weighted = returnScore * 30 + riskScore * 25 + executionScore * 20 + sampleScore * 15;
         int weightSum = 90;
         if (btScore != null) {
@@ -272,21 +352,27 @@ public final class PaperStrategyEvaluationAssembler {
 
     // ---- 评级 / 可信度 / 警告 ----
 
-    private static RatingLabel ratingLabel(GroupAgg agg, int riskScore, int returnScore, int compositeScore) {
+    private static RatingLabel ratingLabel(
+            GroupAgg agg, int riskScore, int returnScore, int compositeScore) {
         if (agg.comparableRunCount() == 0) {
             return RatingLabel.DATA_INSUFFICIENT;
         }
         if (agg.comparableRunCount() < 2) {
             return RatingLabel.SAMPLE_INSUFFICIENT;
         }
-        boolean executionBroken = agg.filledRunCount() == 0
-                || (agg.runCount() > 0 && (agg.noOrderCount() + agg.orderNoFillCount()) * 2 > agg.runCount());
+        boolean executionBroken =
+                agg.filledRunCount() == 0
+                        || (agg.runCount() > 0
+                                && (agg.noOrderCount() + agg.orderNoFillCount()) * 2
+                                        > agg.runCount());
         if (executionBroken) {
             return RatingLabel.EXECUTION_PROBLEM;
         }
-        boolean highRisk = agg.failedRunCount() > 0
-                || (agg.maxDrawdown() != null && agg.maxDrawdown().compareTo(HIGH_RISK_DRAWDOWN) <= 0)
-                || riskScore < 40;
+        boolean highRisk =
+                agg.failedRunCount() > 0
+                        || (agg.maxDrawdown() != null
+                                && agg.maxDrawdown().compareTo(HIGH_RISK_DRAWDOWN) <= 0)
+                        || riskScore < 40;
         if (highRisk) {
             return RatingLabel.HIGH_RISK;
         }
@@ -306,8 +392,10 @@ public final class PaperStrategyEvaluationAssembler {
         return EvaluationConfidence.MEDIUM;
     }
 
-    private static List<String> warnings(GroupAgg agg, BacktestDeviation deviation) {
+    private static List<String> warnings(
+            GroupAgg agg, BacktestDeviation deviation, boolean commonValuationUnit) {
         List<String> warnings = new ArrayList<>();
+        if (!commonValuationUnit) warnings.add("VALUATION_UNIT_NOT_RECORDED");
         if (agg.comparableRunCount() == 0) {
             warnings.add("DATA_INSUFFICIENT");
         } else if (agg.comparableRunCount() < 2) {
@@ -334,7 +422,8 @@ public final class PaperStrategyEvaluationAssembler {
     }
 
     /** 主要短板：取得分最低的维度（缺失的 backtest 维度不参与，不误判为短板）。 */
-    private static String primaryWeakness(int returnScore, int riskScore, int executionScore, int sampleScore, Integer btScore) {
+    private static String primaryWeakness(
+            int returnScore, int riskScore, int executionScore, int sampleScore, Integer btScore) {
         String weakest = "RETURN";
         int lowest = returnScore;
         if (riskScore < lowest) {
@@ -361,8 +450,8 @@ public final class PaperStrategyEvaluationAssembler {
     private static BacktestDeviation strategyDeviation(
             List<PaperPortfolioSummary.RunRef> members,
             Map<String, BacktestEvaluationView> btByPublish,
-            BigDecimal paperReturn, BigDecimal paperDrawdown
-    ) {
+            BigDecimal paperReturn,
+            BigDecimal paperDrawdown) {
         BigDecimal sumReturn = BigDecimal.ZERO;
         int returnCount = 0;
         BigDecimal sumDrawdown = BigDecimal.ZERO;
@@ -387,42 +476,71 @@ public final class PaperStrategyEvaluationAssembler {
                 drawdownCount++;
             }
         }
-        BigDecimal btReturn = returnCount > 0
-                ? sumReturn.divide(BigDecimal.valueOf(returnCount), RATIO_SCALE, RoundingMode.HALF_UP) : null;
-        BigDecimal btDrawdown = drawdownCount > 0
-                ? sumDrawdown.divide(BigDecimal.valueOf(drawdownCount), RATIO_SCALE, RoundingMode.HALF_UP) : null;
+        BigDecimal btReturn =
+                returnCount > 0
+                        ? sumReturn.divide(
+                                BigDecimal.valueOf(returnCount), RATIO_SCALE, RoundingMode.HALF_UP)
+                        : null;
+        BigDecimal btDrawdown =
+                drawdownCount > 0
+                        ? sumDrawdown.divide(
+                                BigDecimal.valueOf(drawdownCount),
+                                RATIO_SCALE,
+                                RoundingMode.HALF_UP)
+                        : null;
         return buildDeviation(btReturn, btDrawdown, paperReturn, paperDrawdown);
     }
 
     private static BacktestDeviation publishDeviation(
-            BacktestEvaluationView view, BigDecimal paperReturn, BigDecimal paperDrawdown
-    ) {
+            BacktestEvaluationView view, BigDecimal paperReturn, BigDecimal paperDrawdown) {
         if (view == null) {
             return buildDeviation(null, null, paperReturn, paperDrawdown);
         }
         BigDecimal btReturn = view.totalReturnRate();
-        BigDecimal btDrawdown = view.maxDrawdownRate() != null ? view.maxDrawdownRate().abs().negate() : null;
+        BigDecimal btDrawdown =
+                view.maxDrawdownRate() != null ? view.maxDrawdownRate().abs().negate() : null;
         return buildDeviation(btReturn, btDrawdown, paperReturn, paperDrawdown);
     }
 
     private static BacktestDeviation buildDeviation(
-            BigDecimal btReturn, BigDecimal btDrawdown, BigDecimal paperReturn, BigDecimal paperDrawdown
-    ) {
+            BigDecimal btReturn,
+            BigDecimal btDrawdown,
+            BigDecimal paperReturn,
+            BigDecimal paperDrawdown) {
         if (btReturn == null && btDrawdown == null) {
-            return new BacktestDeviation(null, paperReturn, null, null, paperDrawdown, null,
-                    DeviationLevel.UNAVAILABLE, "无可比 Backtest 评估数据，无法计算 Paper 与 Backtest 偏差。");
+            return new BacktestDeviation(
+                    null,
+                    paperReturn,
+                    null,
+                    null,
+                    paperDrawdown,
+                    null,
+                    DeviationLevel.UNAVAILABLE,
+                    "无可比 Backtest 评估数据，无法计算 Paper 与 Backtest 偏差。");
         }
-        BigDecimal returnDeviation = btReturn != null && paperReturn != null ? paperReturn.subtract(btReturn) : null;
-        BigDecimal drawdownDeviation = btDrawdown != null && paperDrawdown != null ? paperDrawdown.subtract(btDrawdown) : null;
+        BigDecimal returnDeviation =
+                btReturn != null && paperReturn != null ? paperReturn.subtract(btReturn) : null;
+        BigDecimal drawdownDeviation =
+                btDrawdown != null && paperDrawdown != null
+                        ? paperDrawdown.subtract(btDrawdown)
+                        : null;
         DeviationLevel level = deviationLevel(returnDeviation);
-        String explanation = switch (level) {
-            case LOW -> "Paper 与 Backtest 收益偏差较小（首版阈值 < 5%）。";
-            case MEDIUM -> "Paper 与 Backtest 收益存在中等偏差（首版阈值 5%~15%），建议结合执行诊断复盘。";
-            case HIGH -> "Paper 与 Backtest 收益偏差较大（首版阈值 > 15%），Paper 模拟与回测差异显著，需重点复盘。";
-            case UNAVAILABLE -> "Backtest 收益不可比，无法量化收益偏差（仅回撤可对照或均缺失）。";
-        };
-        return new BacktestDeviation(btReturn, paperReturn, returnDeviation, btDrawdown, paperDrawdown,
-                drawdownDeviation, level, explanation);
+        String explanation =
+                switch (level) {
+                    case LOW -> "Paper 与 Backtest 收益偏差较小（首版阈值 < 5%）。";
+                    case MEDIUM -> "Paper 与 Backtest 收益存在中等偏差（首版阈值 5%~15%），建议结合执行诊断复盘。";
+                    case HIGH -> "Paper 与 Backtest 收益偏差较大（首版阈值 > 15%），Paper 模拟与回测差异显著，需重点复盘。";
+                    case UNAVAILABLE -> "Backtest 收益不可比，无法量化收益偏差（仅回撤可对照或均缺失）。";
+                };
+        return new BacktestDeviation(
+                btReturn,
+                paperReturn,
+                returnDeviation,
+                btDrawdown,
+                paperDrawdown,
+                drawdownDeviation,
+                level,
+                explanation);
     }
 
     private static DeviationLevel deviationLevel(BigDecimal returnDeviation) {
@@ -442,35 +560,66 @@ public final class PaperStrategyEvaluationAssembler {
     // ---- 组装 strategy / publish 评估 ----
 
     private static StrategyEvaluation buildStrategyEvaluation(
-            String key, List<PaperPortfolioSummary.RunRef> members, Map<String, BacktestEvaluationView> btByPublish
-    ) {
-        GroupAgg agg = aggregate(members);
-        BacktestDeviation deviation = strategyDeviation(members, btByPublish, agg.totalReturn(), agg.maxDrawdown());
+            String key,
+            List<PaperPortfolioSummary.RunRef> members,
+            Map<String, BacktestEvaluationView> btByPublish,
+            boolean commonValuationUnit) {
+        GroupAgg agg = aggregate(members, commonValuationUnit);
+        BacktestDeviation deviation =
+                strategyDeviation(members, btByPublish, agg.totalReturn(), agg.maxDrawdown());
 
         int sampleScore = sampleScore(agg.comparableRunCount());
         int returnScore = returnScore(agg.averageReturn());
         int riskScore = riskScore(agg);
         int executionScore = executionScore(agg);
         Integer btScore = backtestDeviationScore(deviation);
-        int composite = compositeScore(returnScore, riskScore, executionScore, sampleScore, btScore);
+        int composite =
+                compositeScore(returnScore, riskScore, executionScore, sampleScore, btScore);
         RatingLabel rating = ratingLabel(agg, riskScore, returnScore, composite);
         EvaluationConfidence confidence = confidence(agg, btScore);
 
         return new StrategyEvaluation(
-                key, agg.runCount(), agg.comparableRunCount(), agg.publishCount(), agg.latestRunTime(),
-                agg.currentEquity(), agg.initialEquity(), agg.totalPnl(), agg.totalReturn(), agg.maxDrawdown(),
-                agg.winRunCount(), agg.lossRunCount(), agg.winRate(), agg.averageReturn(), agg.averageDrawdown(),
-                agg.riskBlockedCount(), agg.dataInsufficientCount(), agg.noOrderCount(), agg.orderNoFillCount(),
-                agg.filledRunCount(), agg.filledLossCount(), agg.failedRunCount(),
-                sampleScore, riskScore, returnScore, executionScore, btScore, composite,
-                rating, confidence, primaryWeakness(returnScore, riskScore, executionScore, sampleScore, btScore),
-                List.copyOf(warnings(agg, deviation)), deviation);
+                key,
+                agg.runCount(),
+                agg.comparableRunCount(),
+                agg.publishCount(),
+                agg.latestRunTime(),
+                agg.currentEquity(),
+                agg.initialEquity(),
+                agg.totalPnl(),
+                agg.totalReturn(),
+                agg.maxDrawdown(),
+                agg.winRunCount(),
+                agg.lossRunCount(),
+                agg.winRate(),
+                agg.averageReturn(),
+                agg.averageDrawdown(),
+                agg.riskBlockedCount(),
+                agg.dataInsufficientCount(),
+                agg.noOrderCount(),
+                agg.orderNoFillCount(),
+                agg.filledRunCount(),
+                agg.filledLossCount(),
+                agg.failedRunCount(),
+                sampleScore,
+                riskScore,
+                returnScore,
+                executionScore,
+                btScore,
+                composite,
+                rating,
+                confidence,
+                primaryWeakness(returnScore, riskScore, executionScore, sampleScore, btScore),
+                List.copyOf(warnings(agg, deviation, commonValuationUnit)),
+                deviation);
     }
 
     private static PublishEvaluation buildPublishEvaluation(
-            String key, List<PaperPortfolioSummary.RunRef> members, Map<String, BacktestEvaluationView> btByPublish
-    ) {
-        GroupAgg agg = aggregate(members);
+            String key,
+            List<PaperPortfolioSummary.RunRef> members,
+            Map<String, BacktestEvaluationView> btByPublish,
+            boolean commonValuationUnit) {
+        GroupAgg agg = aggregate(members, commonValuationUnit);
         // publish 维度直接用该 publishId 的 backtest 视图；fallback key 无对应视图。
         BacktestEvaluationView view = btByPublish.get(key);
         BacktestDeviation deviation = publishDeviation(view, agg.totalReturn(), agg.maxDrawdown());
@@ -480,62 +629,151 @@ public final class PaperStrategyEvaluationAssembler {
         int riskScore = riskScore(agg);
         int executionScore = executionScore(agg);
         Integer btScore = backtestDeviationScore(deviation);
-        int composite = compositeScore(returnScore, riskScore, executionScore, sampleScore, btScore);
+        int composite =
+                compositeScore(returnScore, riskScore, executionScore, sampleScore, btScore);
         RatingLabel rating = ratingLabel(agg, riskScore, returnScore, composite);
         EvaluationConfidence confidence = confidence(agg, btScore);
 
         // 取组内第一个非空 strategyVersionId 作为 publish 归属（同一 publish 通常对应单一策略版本）。
-        String strategyVersionId = members.stream()
-                .map(PaperPortfolioSummary.RunRef::strategyVersionId)
-                .filter(v -> v != null && !v.isBlank())
-                .findFirst().orElse(null);
+        String strategyVersionId =
+                members.stream()
+                        .map(PaperPortfolioSummary.RunRef::strategyVersionId)
+                        .filter(v -> v != null && !v.isBlank())
+                        .findFirst()
+                        .orElse(null);
 
         return new PublishEvaluation(
-                key, strategyVersionId, agg.runCount(), agg.comparableRunCount(), agg.latestRunTime(),
-                agg.totalPnl(), agg.totalReturn(), agg.maxDrawdown(), agg.winRate(),
-                sampleScore, riskScore, returnScore, executionScore, btScore, composite,
-                rating, confidence, List.copyOf(warnings(agg, deviation)), deviation);
+                key,
+                strategyVersionId,
+                agg.runCount(),
+                agg.comparableRunCount(),
+                agg.latestRunTime(),
+                agg.totalPnl(),
+                agg.totalReturn(),
+                agg.maxDrawdown(),
+                agg.winRate(),
+                sampleScore,
+                riskScore,
+                returnScore,
+                executionScore,
+                btScore,
+                composite,
+                rating,
+                confidence,
+                List.copyOf(warnings(agg, deviation, commonValuationUnit)),
+                deviation);
     }
 
     // ---- 总览 / 排行 ----
 
-    private static PaperStrategyEvaluation.Overview buildOverview(List<StrategyEvaluation> strategies) {
+    private static PaperStrategyEvaluation.Overview buildOverview(
+            List<StrategyEvaluation> strategies, boolean commonValuationUnit) {
         int evaluatedRuns = strategies.stream().mapToInt(StrategyEvaluation::runCount).sum();
-        int comparableRuns = strategies.stream().mapToInt(StrategyEvaluation::comparableRunCount).sum();
-        int sampleInsufficient = (int) strategies.stream().filter(s -> s.ratingLabel() == RatingLabel.SAMPLE_INSUFFICIENT).count();
-        int profitable = (int) strategies.stream().filter(s -> s.totalReturn() != null && s.totalReturn().signum() > 0).count();
-        int loss = (int) strategies.stream().filter(s -> s.totalReturn() != null && s.totalReturn().signum() < 0).count();
-        int highRisk = (int) strategies.stream().filter(s -> s.ratingLabel() == RatingLabel.HIGH_RISK).count();
-        int highDeviation = (int) strategies.stream()
-                .filter(s -> s.backtestDeviation() != null && s.backtestDeviation().deviationLevel() == DeviationLevel.HIGH).count();
+        int comparableRuns =
+                strategies.stream().mapToInt(StrategyEvaluation::comparableRunCount).sum();
+        int sampleInsufficient =
+                (int)
+                        strategies.stream()
+                                .filter(s -> s.ratingLabel() == RatingLabel.SAMPLE_INSUFFICIENT)
+                                .count();
+        int profitable =
+                (int)
+                        strategies.stream()
+                                .filter(
+                                        s ->
+                                                s.totalReturn() != null
+                                                        && s.totalReturn().signum() > 0)
+                                .count();
+        int loss =
+                (int)
+                        strategies.stream()
+                                .filter(
+                                        s ->
+                                                s.totalReturn() != null
+                                                        && s.totalReturn().signum() < 0)
+                                .count();
+        int highRisk =
+                (int)
+                        strategies.stream()
+                                .filter(s -> s.ratingLabel() == RatingLabel.HIGH_RISK)
+                                .count();
+        int highDeviation =
+                (int)
+                        strategies.stream()
+                                .filter(
+                                        s ->
+                                                s.backtestDeviation() != null
+                                                        && s.backtestDeviation().deviationLevel()
+                                                                == DeviationLevel.HIGH)
+                                .count();
         int publishCount = strategies.stream().mapToInt(StrategyEvaluation::publishCount).sum();
-        Integer top = strategies.stream().map(StrategyEvaluation::compositeScore).max(Comparator.naturalOrder()).orElse(null);
-        Integer worst = strategies.stream().map(StrategyEvaluation::compositeScore).min(Comparator.naturalOrder()).orElse(null);
+        Integer top =
+                strategies.stream()
+                        .map(StrategyEvaluation::compositeScore)
+                        .max(Comparator.naturalOrder())
+                        .orElse(null);
+        Integer worst =
+                strategies.stream()
+                        .map(StrategyEvaluation::compositeScore)
+                        .min(Comparator.naturalOrder())
+                        .orElse(null);
 
         return new PaperStrategyEvaluation.Overview(
-                strategies.size(), publishCount, evaluatedRuns, comparableRuns,
-                sampleInsufficient, profitable, loss, highRisk, highDeviation, top, worst);
+                strategies.size(),
+                publishCount,
+                evaluatedRuns,
+                comparableRuns,
+                sampleInsufficient,
+                commonValuationUnit ? profitable : null,
+                commonValuationUnit ? loss : null,
+                highRisk,
+                highDeviation,
+                top,
+                worst);
     }
 
-    private static PaperStrategyEvaluation.Rankings buildRankings(List<StrategyEvaluation> strategies) {
+    private static PaperStrategyEvaluation.Rankings buildRankings(
+            List<StrategyEvaluation> strategies) {
         return new PaperStrategyEvaluation.Rankings(
-                rankKeys(strategies, Comparator.comparingInt(StrategyEvaluation::compositeScore).reversed(), s -> true),
-                rankKeys(strategies, Comparator.comparingInt(StrategyEvaluation::compositeScore), s -> true),
-                rankKeys(strategies, Comparator.comparing(
-                        (StrategyEvaluation s) -> s.totalReturn() == null ? BigDecimal.valueOf(Long.MIN_VALUE) : s.totalReturn()).reversed(),
+                rankKeys(
+                        strategies,
+                        Comparator.comparingInt(StrategyEvaluation::compositeScore).reversed(),
+                        s -> true),
+                rankKeys(
+                        strategies,
+                        Comparator.comparingInt(StrategyEvaluation::compositeScore),
+                        s -> true),
+                rankKeys(
+                        strategies,
+                        Comparator.comparing(
+                                        (StrategyEvaluation s) ->
+                                                s.totalReturn() == null
+                                                        ? BigDecimal.valueOf(Long.MIN_VALUE)
+                                                        : s.totalReturn())
+                                .reversed(),
                         s -> s.totalReturn() != null),
-                rankKeys(strategies, Comparator.comparing(
-                        (StrategyEvaluation s) -> s.maxDrawdown() == null ? BigDecimal.ZERO : s.maxDrawdown()),
+                rankKeys(
+                        strategies,
+                        Comparator.comparing(
+                                (StrategyEvaluation s) ->
+                                        s.maxDrawdown() == null
+                                                ? BigDecimal.ZERO
+                                                : s.maxDrawdown()),
                         s -> s.maxDrawdown() != null),
                 filterKeys(strategies, s -> s.ratingLabel() == RatingLabel.SAMPLE_INSUFFICIENT),
-                filterKeys(strategies, s -> s.backtestDeviation() != null && s.backtestDeviation().deviationLevel() == DeviationLevel.HIGH),
+                filterKeys(
+                        strategies,
+                        s ->
+                                s.backtestDeviation() != null
+                                        && s.backtestDeviation().deviationLevel()
+                                                == DeviationLevel.HIGH),
                 filterKeys(strategies, s -> s.ratingLabel() == RatingLabel.HIGH_RISK));
     }
 
     private static List<String> rankKeys(
-            List<StrategyEvaluation> strategies, Comparator<StrategyEvaluation> comparator,
-            Predicate<StrategyEvaluation> include
-    ) {
+            List<StrategyEvaluation> strategies,
+            Comparator<StrategyEvaluation> comparator,
+            Predicate<StrategyEvaluation> include) {
         return strategies.stream()
                 .filter(include)
                 .sorted(comparator)
@@ -544,7 +782,8 @@ public final class PaperStrategyEvaluationAssembler {
                 .toList();
     }
 
-    private static List<String> filterKeys(List<StrategyEvaluation> strategies, Predicate<StrategyEvaluation> include) {
+    private static List<String> filterKeys(
+            List<StrategyEvaluation> strategies, Predicate<StrategyEvaluation> include) {
         return strategies.stream()
                 .filter(include)
                 .limit(MAX_RANKING_SIZE)
@@ -555,8 +794,8 @@ public final class PaperStrategyEvaluationAssembler {
     // ---- helpers ----
 
     private static Map<String, List<PaperPortfolioSummary.RunRef>> groupBy(
-            List<PaperPortfolioSummary.RunRef> refs, Function<PaperPortfolioSummary.RunRef, String> keyFn
-    ) {
+            List<PaperPortfolioSummary.RunRef> refs,
+            Function<PaperPortfolioSummary.RunRef, String> keyFn) {
         Map<String, List<PaperPortfolioSummary.RunRef>> grouped = new LinkedHashMap<>();
         for (PaperPortfolioSummary.RunRef ref : refs) {
             grouped.computeIfAbsent(keyFn.apply(ref), k -> new ArrayList<>()).add(ref);

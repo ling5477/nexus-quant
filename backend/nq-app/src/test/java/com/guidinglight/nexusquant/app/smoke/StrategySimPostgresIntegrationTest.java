@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
@@ -64,10 +65,13 @@ import java.security.MessageDigest;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.Duration;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HexFormat;
@@ -97,6 +101,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
+import org.springframework.scheduling.config.Task;
+import org.springframework.scheduling.support.ScheduledMethodRunnable;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -153,8 +160,11 @@ class StrategySimPostgresIntegrationTest {
         baseUrl = database.url();
         schema = "public";
         admin = database.source();
-        database.flyway().migrate();
-        database.flyway().validate();
+        // 当前实现消费新增费用与决策字段；仅初始化本夹具的独立库，不修改历史迁移。
+        var currentSchema = Flyway.configure().dataSource(database.source())
+                .locations("classpath:db/migration").cleanDisabled(true).target("27").load();
+        currentSchema.migrate();
+        currentSchema.validate();
         registry.add("spring.datasource.url", () -> baseUrl);
         registry.add("spring.datasource.username", () -> databaseUser);
         registry.add("spring.datasource.password", () -> databasePassword);
@@ -535,7 +545,27 @@ class StrategySimPostgresIntegrationTest {
     void springSchedulerClosesContinuousSimEconomicFactsWithoutManualMatching() throws Exception {
         var processors = applicationContext.getBeansOfType(ScheduledAnnotationBeanPostProcessor.class);
         assertEquals(1, processors.size());
-        assertEquals(1, processors.values().iterator().next().getScheduledTasks().size());
+        // Spring 6.2通过已知包装记录执行结果；解包后仍按目标实例和方法精确核对，未知包装直接失败。
+        // JVM资源采样也是合法定时任务，不能把全部任务数误当成交易调度入口数。
+        long dispatcherTasks = processors.values().iterator().next().getScheduledTasks().stream()
+                .map(task -> task.getTask().getRunnable())
+                .map(runnable -> {
+                    if (runnable instanceof ScheduledMethodRunnable method) return method;
+                    assertEquals(Task.class.getName() + "$OutcomeTrackingRunnable", runnable.getClass().getName());
+                    Object delegate = ReflectionTestUtils.getField(runnable, "runnable");
+                    assertTrue(delegate instanceof ScheduledMethodRunnable,
+                            "调度结果包装必须委托真实的Spring方法任务");
+                    return (ScheduledMethodRunnable) delegate;
+                })
+                .filter(task -> task.getTarget() == schedulerDispatcher
+                        && task.getMethod().getName().equals("scheduledTick"))
+                .count();
+        assertEquals(1, dispatcherTasks);
+        // 固定任务控制在应用就绪时持久化，不依赖用户创建策略计划；开关开启后才能推进独立SIM。
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT count(*) FROM scheduled_job_controls WHERE job_key='CONTINUOUS_SIM_POLL'", Integer.class));
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT count(*) FROM scheduled_job_controls WHERE job_key='PAPER_MATCHING'", Integer.class));
         Fixture fixture = seedPublicHourly();
         jdbc.update("""
                 UPDATE kill_switch_states SET status='DISENGAGED', version=version+1,
@@ -1105,7 +1135,11 @@ class StrategySimPostgresIntegrationTest {
         sim.advance(created.paperRunId());
         assertEquals("ACCEPTED", sim.advance(created.paperRunId()).status());
         assertEquals("NO_LATER_TRADABLE_EVENT", sim.advance(created.paperRunId()).reason());
-        assertEquals(0, new BigDecimal("104").compareTo(sim.facts(created.paperRunId()).markPrice()));
+        var facts = sim.facts(created.paperRunId());
+        // 未撮合订单的下一开盘不是已发生的执行事件；估值只能使用已可见信号收盘。
+        assertEquals(0, facts.trades().size());
+        assertEquals(0, new BigDecimal("103").compareTo(facts.markPrice()));
+        assertEquals(Instant.parse("2026-09-25T00:04:00Z"), facts.markAsOf());
     }
 
     @Test
@@ -1787,8 +1821,11 @@ class StrategySimPostgresIntegrationTest {
     private String cloneFrozenPublicReplayInput(String publishId) throws Exception {
         var database = ReleaseBaselineTestDatabase.create("nq.strategy-sim.pg");
         ownedDatabases.add(database);
-        database.flyway().migrate();
-        database.flyway().validate();
+        // 当前实现消费新增费用与决策字段；仅初始化本夹具的独立库，不修改历史迁移。
+        var currentSchema = Flyway.configure().dataSource(database.source())
+                .locations("classpath:db/migration").cleanDisabled(true).target("27").load();
+        currentSchema.migrate();
+        currentSchema.validate();
         JdbcTemplate isolation = new JdbcTemplate(database.source());
         // B 只取得冻结研究输入；两个 public schema 属于不同数据库，不能共享 canonical 写入。
         for (String table : List.of("accounts", "marketdata_datasets", "marketdata_bars",
@@ -2132,11 +2169,15 @@ class StrategySimPostgresIntegrationTest {
             String token = login.path("accessToken").asText();
             assertTrue(!token.isBlank());
             String createJson = "{\"publishId\":\"" + fixture.publishId() + "\",\"budget\":\"100\"}";
-            String filled = c3Http("POST", "/api/paper-trading/strategy-sim/runs/continuous", createJson, token).path("paperRunId").asText();
+            UUID creationOperationId = UUID.randomUUID();
+            String filled = c3Http("POST", "/api/paper-trading/strategy-sim/runs/continuous",
+                    createJson, token, creationOperationId).path("paperRunId").asText();
             c3Http("POST", "/api/scheduler/jobs/CONTINUOUS_SIM_POLL/run-once", "{}", token);
             c3Http("POST", "/api/scheduler/jobs/PAPER_MATCHING/run-once", "{}", token);
             assertEquals(1, sim.facts(filled).trades().size());
-            c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + filled + "/continuous/stop", "{}", token);
+            UUID pauseOperationId = UUID.randomUUID();
+            c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + filled + "/continuous/stop",
+                    "{}", token, pauseOperationId);
             String noSignal = c3Http("POST", "/api/paper-trading/strategy-sim/runs", createJson, token).path("paperRunId").asText();
             c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + noSignal + "/start", "{}", token);
             assertEquals("NO_SIGNAL", c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + noSignal + "/advance", "{}", token).path("status").asText());
@@ -2188,15 +2229,24 @@ class StrategySimPostgresIntegrationTest {
         }
     }
 
-    private com.fasterxml.jackson.databind.JsonNode c3Http(String method, String path, String json, String token) throws Exception {
-        var builder = java.net.http.HttpRequest.newBuilder(URI.create("http://127.0.0.1:18889" + path))
-                .timeout(java.time.Duration.ofSeconds(20)).header("Content-Type", "application/json");
+    private JsonNode c3Http(String method, String path, String json, String token) throws Exception {
+        return c3Http(method, path, json, token, null);
+    }
+
+    /** 连续命令由调用点保存原UUID；通用HTTP助手不能在重发时偷偷生成另一个身份。 */
+    private JsonNode c3Http(String method, String path, String json, String token, UUID operationId)
+            throws Exception {
+        var builder = HttpRequest.newBuilder(URI.create("http://127.0.0.1:18889" + path))
+                .timeout(Duration.ofSeconds(20)).header("Content-Type", "application/json");
         if (token != null) builder.header("Authorization", "Bearer " + token);
-        builder.method(method, json == null ? java.net.http.HttpRequest.BodyPublishers.noBody()
-                : java.net.http.HttpRequest.BodyPublishers.ofString(json));
-        var response = HttpClient.newHttpClient().send(builder.build(), java.net.http.HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, response.statusCode(), path + " failed");
-        return mapper.readTree(response.body());
+        if (operationId != null) builder.header("Idempotency-Key", operationId.toString());
+        builder.method(method, json == null ? HttpRequest.BodyPublishers.noBody()
+                : HttpRequest.BodyPublishers.ofString(json));
+        try (var http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()) {
+            var response = http.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, response.statusCode(), path + " failed");
+            return mapper.readTree(response.body());
+        }
     }
 
     private Fixture seed() {
@@ -2272,7 +2322,7 @@ class StrategySimPostgresIntegrationTest {
             assumptions.put("rulePolicy", "CURRENTLY_OBSERVED_PUBLIC_RULES");
             summary.put("datasetProvider", "public-capture");
             summary.put("costAndRuleSha256", PublicReplayAssumptionIdentity.sha256(assumptions));
-            dataset = "{\"provider\":\"public-capture\",\"source\":\"OKX_PUBLIC_CAPTURE\","
+            dataset = "{\"provider\":\"public-capture\",\"source\":\"OKX_PUBLIC_CAPTURE\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\","
                     + "\"interval\":\"1h\",\"barCount\":" + bars.size() + ",\"capture\":{"
                     + "\"consumedSha256\":\"" + identity.sha256() + "\","
                     + "\"replayVisibilityVersion\":\"CLOSED_HOURLY_BOUNDARY_V1\","

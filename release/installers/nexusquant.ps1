@@ -5,6 +5,7 @@ param(
     [string]$PackageRoot = '',
     [string]$TargetPackageRoot,
     [string]$TrustedManifestSha256,
+    [string]$UpdateRequestFile,
     [string]$BackupPath,
     [switch]$ConfirmUpdate,
     [switch]$ConfirmRollback,
@@ -29,6 +30,7 @@ function Assert-SafePath([string]$Path) {
     return $absolute
 }
 $InstallRoot = Assert-SafePath $InstallRoot
+if ($UpdateRequestFile -and $Action -cnotin @('check-update','update')) { throw 'Handoff is only supported for check-update or update' }
 function Assert-NoReparseTree([string]$Path) {
     $queue = New-Object 'Collections.Generic.Queue[string]'; $queue.Enqueue($Path); $count = 0
     while ($queue.Count) {
@@ -413,6 +415,90 @@ function Restore-Database([string]$Path) {
 function Confirm-Choice([switch]$Confirmed, [string]$Word) {
     if (-not $Confirmed -and (Read-Host ('Type ' + $Word + ' to confirm')) -cne $Word) { throw 'Operation not confirmed' }
 }
+
+# 交接文件只描述固定身份，不携带命令、路径或秘密；宿主仍显式选择目标包并执行原安装器。
+function Handoff-Fields([switch]$Receipt) {
+    $fields = @('format','action','requestId','checkRequestId','checkReceiptSha256','installationId','environmentId','sourceVersion','sourceManifestSha256','sourceCommit','targetVersion','targetManifestSha256','targetArtifactSha256','targetArchitecture','targetSourceCommit')
+    if ($Receipt) { $fields += @('status','updateAvailable','transactionId','resultCode','completedAt','installedVersion','installedManifestSha256','healthStatus') }
+    return $fields
+}
+function Read-Handoff([string]$Path, [switch]$Receipt) {
+    $Path=Assert-SafePath $Path
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf) -or (Get-Item -LiteralPath $Path).Length -gt 8192) { throw 'Invalid handoff file' }
+    $raw=(New-Object Text.UTF8Encoding($false,$true)).GetString([IO.File]::ReadAllBytes($Path))
+    if ($raw -match '[^\x0a\x20-\x7e]' -or -not $raw.EndsWith("`n")) { throw 'Handoff requires canonical ASCII JSON with LF' }
+    $lines=$raw.Split("`n"); $fields=@(Handoff-Fields -Receipt:$Receipt)
+    if ($lines.Count -ne $fields.Count+3 -or $lines[0] -cne '{' -or $lines[-2] -cne '}' -or $lines[-1] -cne '') { throw 'Invalid handoff shape' }
+    $values=@{}
+    for ($i=0; $i -lt $fields.Count; $i++) {
+        if ($lines[$i+1] -cnotmatch '^  "([A-Za-z][A-Za-z0-9]*)": "([A-Za-z0-9_.:+-]{1,128})"(,?)$') { throw 'Invalid handoff field' }
+        if ($Matches[1] -cne $fields[$i] -or $Matches[3] -cne $(if ($i -lt $fields.Count-1) { ',' } else { '' })) { throw 'Duplicate, reordered or unknown handoff field' }
+        $values[$fields[$i]]=$Matches[2]
+    }
+    if ($values.format -cne 'NQ_UPDATE_HANDOFF_V1' -or $values.action -cnotin @('CHECK','UPDATE')) { throw 'Unsupported handoff contract' }
+    $uuid='^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$'
+    if ($values.requestId -cnotmatch $uuid -or $values.environmentId -cnotmatch '^[a-z0-9][a-z0-9-]{0,48}$') { throw 'Invalid handoff identity' }
+    foreach ($key in @('sourceVersion','targetVersion')) { if ($values[$key] -cnotmatch '^(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})$') { throw 'Invalid handoff version' } }
+    foreach ($key in @('sourceManifestSha256','targetManifestSha256','targetArtifactSha256')) { if ($values[$key] -cnotmatch '^[a-f0-9]{64}$') { throw 'Invalid handoff digest' } }
+    foreach ($key in @('sourceCommit','targetSourceCommit')) { if ($values[$key] -cnotmatch '^[a-f0-9]{40}$') { throw 'Invalid handoff commit' } }
+    if ($values.targetArchitecture -cnotin @('amd64','arm64')) { throw 'Invalid handoff architecture' }
+    if ($values.action -ceq 'CHECK') {
+        if ($values.checkRequestId -cne 'NONE' -or $values.checkReceiptSha256 -cne 'NONE' -or (-not $Receipt -and $values.installationId -cne 'UNCONFIRMED')) { throw 'Invalid CHECK correlation' }
+    } elseif ($values.checkRequestId -cnotmatch $uuid -or $values.checkRequestId -ceq $values.requestId -or $values.checkReceiptSha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'Invalid UPDATE correlation' }
+    if (($Receipt -or $values.action -ceq 'UPDATE') -and $values.installationId -cnotmatch $uuid) { throw 'Invalid installation identity' }
+    $values['__raw']=$raw
+    return $values
+}
+function Write-HandoffReceipt([string]$Status,[string]$Code,[string]$Health='UNKNOWN') {
+    if (-not $script:Handoff) { return }
+    $h=$script:Handoff; $values=@{}; foreach ($key in (Handoff-Fields)) { $values[$key]=$h.Request[$key] }
+    $values.installationId=$h.InstallationId; $values.status=$Status; $values.resultCode=$Code; $values.healthStatus=$Health
+    $values.updateAvailable=$h.Available; $values.transactionId=$h.TransactionId; $values.completedAt=[DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
+    $values.installedVersion='UNKNOWN'; $values.installedManifestSha256='UNKNOWN'
+    try { $current=Read-Config; if ($current.NQ_VERSION -match '^[0-9.]+$' -and $current.PACKAGE_MANIFEST_SHA256 -cmatch '^[a-f0-9]{64}$') { $values.installedVersion=$current.NQ_VERSION; $values.installedManifestSha256=$current.PACKAGE_MANIFEST_SHA256 } } catch { }
+    $fields=@(Handoff-Fields -Receipt); $lines=for ($i=0;$i -lt $fields.Count;$i++) { '  "'+$fields[$i]+'": "'+$values[$fields[$i]]+'"'+$(if($i -lt $fields.Count-1){','}else{''}) }
+    Write-Text (Join-Path $h.Directory 'receipt.json') ("{`n"+($lines -join "`n")+"`n}`n")
+    $h.Terminal=$Status -in @('CHECKED','REJECTED','SUCCEEDED','FAILED')
+}
+function Begin-Handoff([hashtable]$Config) {
+    if (-not $UpdateRequestFile) { return }
+    $request=Read-Handoff $UpdateRequestFile
+    if ($Action -cne $(if($request.action -ceq 'CHECK'){'check-update'}else{'update'})) { throw 'Handoff action mismatch' }
+    foreach ($pair in @(@('environmentId','PROJECT_NAME'),@('sourceVersion','NQ_VERSION'),@('sourceManifestSha256','PACKAGE_MANIFEST_SHA256'),@('sourceCommit','SOURCE_SHA'))) { if ($request[$pair[0]] -cne $Config[$pair[1]]) { throw 'Handoff source/environment mismatch' } }
+    $base=Assert-SafePath (Join-Path $InstallRoot 'runtime/handoffs'); [void][IO.Directory]::CreateDirectory($base); Protect-Directory $base
+    $identityPath=Assert-SafePath (Join-Path $InstallRoot 'runtime/installation-id')
+    if (-not (Test-Path -LiteralPath $identityPath)) {
+        if ($request.action -cne 'CHECK') { throw 'Installation identity unavailable' }
+        Write-Text $identityPath ([Guid]::NewGuid().ToString()+"`n")
+    }
+    $identity=[IO.File]::ReadAllText($identityPath).Trim()
+    if ($identity -cnotmatch '^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$') { throw 'Invalid persisted installation identity' }
+    if ($request.action -ceq 'UPDATE') {
+        if ($request.installationId -cne $identity) { throw 'Handoff installation mismatch' }
+        $checkPath=Assert-SafePath (Join-Path $base ($request.checkRequestId+'/receipt.json')); Assert-Hash $checkPath $request.checkReceiptSha256
+        $check=Read-Handoff $checkPath -Receipt
+        if ($check.requestId -cne $request.checkRequestId -or $check.action -cne 'CHECK' -or $check.status -cne 'CHECKED' -or $check.resultCode -cne 'UPDATE_ELIGIBLE' -or $check.updateAvailable -cne 'true') { throw 'Original check does not permit update' }
+        foreach ($key in @('installationId','environmentId','sourceVersion','sourceManifestSha256','sourceCommit','targetVersion','targetManifestSha256','targetArtifactSha256','targetArchitecture','targetSourceCommit')) { if ($check[$key] -cne $request[$key]) { throw 'Original check identity mismatch' } }
+    }
+    $directory=Assert-SafePath (Join-Path $base $request.requestId)
+    # 全局宿主锁内拒绝任何已消费UUID，原回执保留只读；重启或同号异参不能重做。
+    if (Test-Path -LiteralPath $directory) { throw 'Handoff request already consumed; read original receipt' }
+    [void][IO.Directory]::CreateDirectory($directory); Protect-Directory $directory
+    Write-Text (Join-Path $directory 'request.json') $request.__raw
+    $script:Handoff=@{Request=$request;InstallationId=$identity;Directory=$directory;Available='UNKNOWN';TransactionId='NONE';Started=$false;Terminal=$false}
+    Write-HandoffReceipt 'UNKNOWN' 'AWAITING_VERIFICATION' 'NOT_CHECKED'
+}
+function Assert-HandoffTarget([hashtable]$Target) {
+    if (-not $script:Handoff) { return }
+    $request=$script:Handoff.Request
+    foreach ($pair in @(@('targetVersion','VERSION'),@('targetArtifactSha256','ARCHIVE_SHA256'),@('targetArchitecture','ARCH'),@('targetSourceCommit','SOURCE_SHA'))) { if ($request[$pair[0]] -cne $Target.Manifest[$pair[1]]) { throw 'Handoff target identity mismatch' } }
+    if ($request.targetManifestSha256 -cne $Target.Hash -or $request.targetManifestSha256 -cne $TrustedManifestSha256) { throw 'Handoff target trust mismatch' }
+}
+function Publish-HandoffSuccess {
+    # 更新事务已提交；交接回执只是证据传输，写入失败不能进入安装回滚或改写数据库事实。
+    try { Write-HandoffReceipt 'SUCCEEDED' 'UPDATE_SUCCESS' 'VERIFIED' }
+    catch { Write-Warning -WarningAction Continue 'UPDATE_SUCCESS; handoff receipt unavailable. Retain the original request identity and inspect the canonical transaction receipt.' }
+}
 function Diagnostic-Value([scriptblock]$ReadValue) { try { & $ReadValue } catch { return 'UNKNOWN' } }
 function Save-Phase([string]$Directory, [hashtable]$Record, [string]$Phase) { $Record.PHASE=$Phase; Write-Metadata (Join-Path $Directory 'phase.env') $Record }
 function Get-Transaction([string]$Id) {
@@ -463,7 +549,7 @@ function Recover-Transaction([hashtable]$Transaction) {
     Write-Metadata (Join-Path $Transaction.Directory 'rollback-receipt.env') $record
     $pendingPath=Join-Path $InstallRoot 'runtime/pending-update'; if (Test-Path -LiteralPath $pendingPath) { Remove-Item -LiteralPath $pendingPath -Force }
 }
-$lock = $null
+$lock = $null; $script:Handoff=$null
 try {
     foreach ($part in @('runtime','config','data','data/postgres','backups','logs','config/runtime.env','runtime/compose.yml','runtime/runtime.yml','runtime/package.env','runtime/VERSION','runtime/nexusquant.ps1','runtime/nexusquant.sh','runtime/pending-update','runtime/pending-restore.env','runtime/first-install.env','runtime/last-update')) { [void](Assert-SafePath (Join-Path $InstallRoot $part)) }
     [void](New-Item -ItemType Directory -Force -Path (Join-Path $InstallRoot 'runtime'))
@@ -540,19 +626,29 @@ try {
         }; Write-Host 'ROLLBACK_SUCCESS'; return
     }
     $config=Assert-Installed; $ProjectName=$config.PROJECT_NAME
+    Begin-Handoff $config
     if ($Action -eq 'check-update' -or $Action -eq 'update') {
         if (-not $TargetPackageRoot -or $TrustedManifestSha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'TargetPackageRoot and independently trusted TrustedManifestSha256 required' }
         $target=Read-Package $TargetPackageRoot $TrustedManifestSha256 $config.ARCH
+        Assert-HandoffTarget $target
         $version=[IO.File]::ReadAllText((Join-Path $InstallRoot 'runtime/VERSION')).Trim()
         if ($version -cne $config.NQ_VERSION) { throw 'Installed VERSION mismatch' }
         $available=[version]$target.Manifest.VERSION -gt [version]$version
-        if ($Action -eq 'check-update') { Write-Host ('Current: '+$version+'; available: '+$target.Manifest.VERSION+'; updateAvailable='+$available+'; AUTO_UPDATE=OFF'); return }
+        if ($script:Handoff) { $script:Handoff.Available=$available.ToString().ToLowerInvariant() }
+        if ($Action -eq 'check-update') {
+            $installedManifest=Read-Env (Join-Path $InstallRoot 'runtime/package.env')
+            $eligible=$available -and [int]$target.Manifest.SCHEMA_VERSION -ge [int]$config.SCHEMA_VERSION -and $target.Manifest.POSTGRES_CONFIG_DIGEST -ceq $installedManifest.POSTGRES_CONFIG_DIGEST
+            Write-HandoffReceipt 'CHECKED' $(if($eligible){'UPDATE_ELIGIBLE'}elseif($available){'UPDATE_INELIGIBLE'}else{'NO_NEWER_VERSION'}) 'NOT_CHECKED'
+            Write-Host ('Current: '+$version+'; available: '+$target.Manifest.VERSION+'; updateAvailable='+$available+'; AUTO_UPDATE=OFF'); return
+        }
         $installedManifest=Read-Env (Join-Path $InstallRoot 'runtime/package.env')
         if (-not $available -or [int]$target.Manifest.SCHEMA_VERSION -lt [int]$config.SCHEMA_VERSION -or $target.Manifest.POSTGRES_CONFIG_DIGEST -cne $installedManifest.POSTGRES_CONFIG_DIGEST) { throw 'Update requires newer version, monotonic schema and unchanged verified PG16 configuration digest' }
         Confirm-Choice -Confirmed:$ConfirmUpdate -Word 'UPDATE'; Ensure-Docker $false
+        if ($script:Handoff) { $script:Handoff.Started=$true }
         [void](Host-Preflight)
         $id=[DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')+'-'+[Guid]::NewGuid().ToString('N').Substring(0,8)
         $directory=Join-Path $InstallRoot ('runtime/transactions/'+$id); [void](New-Item -ItemType Directory -Path $directory)
+        if ($script:Handoff) { $script:Handoff.TransactionId=$id; Write-HandoffReceipt 'UNKNOWN' 'EXECUTION_PENDING' }
         Write-Text (Join-Path $directory 'target.env') $target.Text
         $record=@{FORMAT='1'; FROM_VERSION=$config.NQ_VERSION; TO_VERSION=$target.Manifest.VERSION; STARTED_AT=[DateTime]::UtcNow.ToString('o'); COMPLETED_AT='PENDING'; SOURCE_MANIFEST_SHA256=$config.PACKAGE_MANIFEST_SHA256; TARGET_MANIFEST_SHA256=$target.Hash; BACKUP_ID='NOT_CREATED'; BACKUP_MANIFEST_SHA256='NOT_CREATED'; QUIESCED_AT='NOT_QUIESCED'; SCHEMA_BEFORE=$config.SCHEMA_VERSION; SCHEMA_AFTER=$target.Manifest.SCHEMA_VERSION; SOURCE_BACKEND_IMAGE=$config.BACKEND_IMAGE; SOURCE_FRONTEND_IMAGE=$config.FRONTEND_IMAGE; SOURCE_POSTGRES_IMAGE=$config.POSTGRES_IMAGE; BACKEND_IMAGE=$target.Manifest.BACKEND_IMAGE; FRONTEND_IMAGE=$target.Manifest.FRONTEND_IMAGE; POSTGRES_IMAGE=$target.Manifest.POSTGRES_IMAGE; RESULT='PENDING'; ROLLBACK_RESULT='NOT_REQUIRED'}
         $quiesced=$false
@@ -577,6 +673,7 @@ try {
                 $record.COMPLETED_AT=[DateTime]::UtcNow.ToString('o'); $record.RESULT='UPDATE_FAILED_BEFORE_DB'; $record.ROLLBACK_RESULT='NOT_REQUIRED'; $record.SCHEMA_AFTER=$config.SCHEMA_VERSION
                 Write-Metadata (Join-Path $directory 'failure-receipt.env') $record
                 if ($quiesced) { Start-Runtime }
+                Write-HandoffReceipt 'FAILED' 'UPDATE_FAILED_BEFORE_DB' 'UNKNOWN'
                 throw 'Update failed before database change; previous database untouched'
             }
             $transaction=Get-Transaction $id
@@ -585,8 +682,10 @@ try {
                 Save-Phase $directory $record 'FAILED_ROLLBACK'; Write-Metadata (Join-Path $directory 'failure-receipt.env') $record
                 throw 'Update failed and automatic rollback failed; explicit rollback required, runtime remains blocked'
             }
+            Write-HandoffReceipt 'FAILED' 'UPDATE_FAILED_ROLLED_BACK' 'VERIFIED'
             throw 'Update failed; verified previous application and database restored'
         }
+        Publish-HandoffSuccess
         Write-Host 'UPDATE_SUCCESS'; return
     }
     try { Ensure-Docker ($Action -in @('start','restart')) } catch {
@@ -644,4 +743,7 @@ try {
             }
         }
     }
+} catch {
+    if ($script:Handoff -and -not $script:Handoff.Terminal -and -not $script:Handoff.Started) { Write-HandoffReceipt 'REJECTED' 'HANDOFF_VALIDATION_REJECTED' 'NOT_CHECKED' }
+    throw
 } finally { if ($lock) { $lock.Dispose() } }

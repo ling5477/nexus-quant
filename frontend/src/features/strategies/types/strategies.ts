@@ -1,3 +1,5 @@
+import type {ResultPage} from '@/api/result-page';
+
 export interface StrategyDefinitionListItem {
     strategyId: string;
     strategyCode: string;
@@ -30,6 +32,16 @@ export const defaultStrategyListFilters: StrategyListFilters = {
     enabled: 'all',
 };
 
+/** ID用于关联对象精确定位；名称筛选预留给有界业务选择器，不改变旧字段。 */
+export interface StrategyPageRequest extends StrategyListFilters {
+    strategyId?: string;
+    strategyName?: string;
+    limit: number;
+    offset: number;
+}
+
+export type StrategyDefinitionPage = ResultPage<StrategyDefinitionListItem>;
+
 export interface StrategyStatusUpdateRequest {
     enabled: boolean;
 }
@@ -48,6 +60,23 @@ export interface StrategyVersionItem {
     createdAt: string;
     updatedAt: string;
 }
+
+/** 目录仅传元信息，三份冻结快照通过所属策略和版本身份按需读取。 */
+export type StrategyVersionListItem = Omit<
+    StrategyVersionItem,
+    'paramSnapshotJson' | 'configSnapshotJson' | 'sourceSnapshotJson'
+>;
+
+export interface StrategyVersionPageRequest {
+    strategyVersionId?: string;
+    versionName?: string;
+    version?: number;
+    status?: string;
+    limit: number;
+    offset: number;
+}
+
+export type StrategyVersionPage = ResultPage<StrategyVersionListItem>;
 
 export interface StrategyVersionCreateRequest {
     versionName: string;

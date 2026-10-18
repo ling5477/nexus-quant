@@ -163,6 +163,15 @@
                     <skip>false</skip>
                     <mainClass>com.guidinglight.nexusquant.app.NexusQuantApplication</mainClass>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals><goal>build-info</goal></goals>
+                        <configuration>
+                            <!-- 排除变化的构建时钟，服务版本来自实际制品，不影响确定性发行构建。 -->
+                            <time>off</time>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
