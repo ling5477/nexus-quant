@@ -3,9 +3,15 @@ package com.guidinglight.nexusquant.app.smoke;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationInfo;
+import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -22,14 +28,45 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /** 使用真实PostgreSQL和两个独立JVM证明持久化交易对账恢复；输入来自明确的本机SIM夹具。 */
 class TradingRestartRecoveryPostgresIntegrationTest {
 
     private static final Duration PROCESS_TIMEOUT = Duration.ofSeconds(90);
     private static final String RESULT_MARKER = "NQ_F002_RESULT ";
+
+    static NavigableMap<MigrationVersion, String> releaseMigrationScripts(JsonNode manifest) {
+        var scripts = new TreeMap<MigrationVersion, String>();
+        var migration = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
+        assertTrue(manifest.path("groups").isArray(), "正式发行清单必须声明文件分组");
+        for (JsonNode group : manifest.path("groups")) {
+            if (!"INCLUDE_RUNTIME".equals(group.path("category").asText())) continue;
+            for (JsonNode path : group.path("paths")) {
+                var match = migration.matcher(path.asText());
+                if (match.matches()) {
+                    var version = MigrationVersion.fromVersion(match.group(2));
+                    assertNull(scripts.put(version, match.group(1)), "正式迁移版本不可重复");
+                }
+            }
+        }
+        assertFalse(scripts.isEmpty(), "正式发行清单缺少迁移，不能从数据库现状推导预期");
+        return scripts;
+    }
+
+    static void assertReleaseMigrationScripts(
+            Map<MigrationVersion, String> expected, MigrationInfo[] migrations) {
+        var actual = new TreeMap<MigrationVersion, String>();
+        for (MigrationInfo migration : migrations) {
+            assertNotNull(migration.getVersion(), "当前恢复合同只接受正式版本化迁移");
+            assertNull(actual.put(migration.getVersion(), migration.getScript()), "实际迁移版本不可重复");
+        }
+        assertEquals(expected, actual, "实际迁移集合必须逐项匹配正式发行清单");
+    }
 
     @Test
     void recoversDurableTradeAfterLedgerFailureAcrossDistinctJvmProcesses() throws Exception {
@@ -394,10 +431,15 @@ class TradingRestartRecoveryPostgresIntegrationTest {
                                 .baselineOnMigrate(false)
                                 .cleanDisabled(true)
                                 .load();
+                var expected = releaseMigrationScripts(
+                        new ObjectMapper().readTree(
+                                B0Processes.root().resolve("release/source-manifest.json").toFile()));
+                // 当前schema合同在迁移前核对解析集合；历史固定target夹具不使用此预期。
+                assertReleaseMigrationScripts(expected, flyway.info().all());
                 flyway.migrate();
                 flyway.validate();
-                // 此夹具迁移当前全部正式版本V27；历史target=1升级用例仍保持各自冻结目标。
-                assertEquals("27", flyway.info().current().getVersion().getVersion());
+                assertEquals(expected.lastKey(), flyway.info().current().getVersion());
+                assertReleaseMigrationScripts(expected, flyway.info().applied());
                 assertEquals(0, flyway.info().pending().length);
                 return new RestartDatabase(
                         caseId, maintenanceUrl, databaseUrl, user, password, databaseName);
