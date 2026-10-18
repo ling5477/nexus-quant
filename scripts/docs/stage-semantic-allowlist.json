@@ -133,6 +133,27 @@
       "category": "HISTORICAL_REFERENCE",
       "reason": "This source-adjacent README records the user-approved brand image transformation and preserved original asset.",
       "lineSha256": "c8bc1339638c84c5d6ea7e386a16fedc324efb6d73b4b68fa5c2ee1a16ab3c94"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/AccountFeeModelService.java",
+      "token": "FREEZE",
+      "category": "BUSINESS_DOMAIN_TERM",
+      "reason": "FEE_MODEL_FREEZE_TIME_INVALID is the existing fee observation freshness error code; FREEZE identifies a business snapshot time, not a development stage.",
+      "lineSha256": "d63d268eb232a50531b60da2fec3e2b3db709fb203eda5aee6b061cb7ec8d637"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/fee/FrozenDirectionalFeeModel.java",
+      "token": "B1",
+      "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
+      "reason": "B1 is the existing canonical JSON boolean-true encoding used by persisted directional fee snapshot digests; changing it would change stable business identity.",
+      "lineSha256": "2d69743072286f84f10d9416a04577a0510bb46f041c2931804df583694522ba"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/fee/FrozenDirectionalFeeModel.java",
+      "token": "B0",
+      "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
+      "reason": "B0 is the existing canonical JSON boolean-false encoding used by persisted directional fee snapshot digests; changing it would change stable business identity.",
+      "lineSha256": "2d69743072286f84f10d9416a04577a0510bb46f041c2931804df583694522ba"
     }
   ],
   "historyRegions": [

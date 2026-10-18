@@ -38,7 +38,7 @@ import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
 import com.guidinglight.nexusquant.scheduler.recovery.BinanceRecoveryService;
 import com.guidinglight.nexusquant.scheduler.recovery.BinanceRestReconcileService;
 import com.guidinglight.nexusquant.scheduler.recovery.OkxRestReconcileService;
-import com.guidinglight.nexusquant.scheduler.scheduling.JdbcTradingMaintenanceOperations;
+import com.guidinglight.nexusquant.scheduler.infra.JdbcTradingMaintenanceOperations;
 import com.guidinglight.nexusquant.scheduler.scheduling.SchedulerTradingMaintenanceService;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
 import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceOperations;

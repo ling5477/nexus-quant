@@ -1,10 +1,11 @@
 # V1 发布源码边界
 
-`source-manifest.json` 使用逐文件精确列表，目标版本为 `1.0.0`。清单与源码必须来自同一个完整 40 位 Git commit；没有工作区复制、通配符发现或导出时重写文件。新增文件默认 `REVIEW_REQUIRED` 并排除，后续安装器与文档必须经过审查后显式加入清单。
+`source-manifest.json` 使用逐文件精确列表，目标版本为 `1.0.0`。清单与源码必须来自同一个完整 40 位 Git commit；没有工作区复制、通配符发现或导出时重写文件。新增文件默认 `REVIEW_REQUIRED`，后续安装器与文档必须经过审查后显式加入清单。Java 主源码/正式资源与 frontend/src 的新增文件若未纳入，覆盖门禁拒绝导出；已审查的开发配置、开发页和未使用素材继续排除。发现范围不会自动将文件加入发行包，也不能通过改标 EXCLUDE_TEST 隐藏正式源码。
 
 ```powershell
 python scripts/release/release_source.py export --repo E:/Project/nexus-quant --commit <40-hex> --output E:/release-export --audit E:/release-audit.json
 python scripts/release/release_source.py verify --repo E:/Project/nexus-quant --commit <40-hex> --output E:/release-export
+python scripts/release/release_source.py coverage --repo E:/Project/nexus-quant --commit <40-hex>
 python scripts/release/verify_release_boundary.py --repo E:/Project/nexus-quant --commit <40-hex> --output E:/release-export
 python scripts/release/scan_release_secrets.py --repo E:/Project/nexus-quant --commit <40-hex> --output E:/release-export --gitleaks <verified-absolute-binary-path>
 python -m unittest discover -s scripts/release/tests -v

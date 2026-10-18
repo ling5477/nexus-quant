@@ -746,7 +746,7 @@
     "checkDescription": "check-update 核验已安装 VERSION、目标包和可信清单，显示当前版本、可用版本及是否需要更新；不会更新服务或数据库。",
     "updateStep": "2. 决定是否更新",
     "confirmDescription": "确认目标版本后运行 update，安装器仍会要求输入 UPDATE。没有决定更新时停在检查结果，不使用自动确认参数。",
-    "otherPlatform": "仅适用于已有 POSIX 安装器的使用范围；运行方式沿用安装文档，本轮未据此扩大平台支持声明。",
+    "otherPlatform": "仅适用于已有 POSIX 安装器的使用范围；运行方式沿用安装文档，不扩大平台支持声明。",
     "recovery": "更新会沿用安装器的前提检查、备份和事务恢复。数据库迁移后的回滚可能需要对应备份恢复，请遵守正式安装说明。",
     "fields": {
       "serviceArtifact": "服务制品",
@@ -756,7 +756,7 @@
       "packagedSchemaVersion": "安装包声明迁移版本"
     },
     "statuses": {
-      "INSTALLER_DECLARED": "安装器已提供（不等于本轮发行验收）",
+      "INSTALLER_DECLARED": "安装器已提供（尚需核验发行身份）",
       "UNAVAILABLE": "未提供",
       "INVALID": "无效"
     }

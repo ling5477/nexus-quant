@@ -20,6 +20,32 @@ EXCLUDES = {"EXCLUDE_TEST", "EXCLUDE_DEV_ONLY", "EXCLUDE_HISTORY", "EXCLUDE_GOVE
             "EXCLUDE_AGENT_TOOLING", "EXCLUDE_EVIDENCE", "EXCLUDE_CI_ONLY", "REVIEW_REQUIRED"}
 MAX_FILE = 32 * 1024 * 1024
 MAX_TOTAL = 512 * 1024 * 1024
+# 正式源码根必须逐文件纳入清单；仅保留既有、明确审查过的开发配置和未使用素材例外。
+DEVELOPMENT_RUNTIME_PATHS = {
+    "backend/nq-app/src/main/resources/application-ci.yml",
+    "backend/nq-app/src/main/resources/application-local.yml",
+    "backend/nq-app/src/main/resources/application-test.yml",
+    "frontend/src/assets/brand/README.md",
+    "frontend/src/assets/brand/login-earth-kline-approved.png",
+    "frontend/src/assets/brand/login-earth-kline-realistic-approved.png",
+    "frontend/src/assets/brand/nq-ribbon-icon-approved.png",
+    "frontend/src/assets/exchanges/README.md",
+    "frontend/src/nq-design-system/README.md",
+}
+
+
+def runtime_coverage(paths, included) -> dict:
+    # 发现范围只负责拒绝遗漏，不自动扩大导出集合；新增文件仍须审查并维护精确清单。
+    required = {path for path in paths
+                if (re.match(r"^backend/[^/]+/src/main/(?:java|resources)/", path)
+                    or path.startswith("frontend/src/"))
+                and path not in DEVELOPMENT_RUNTIME_PATHS
+                and not path.startswith("frontend/src/pages/dev/")}
+    migrations = {path for path in required if re.search(r"/db/migration/[^/]+\.sql$", path)}
+    selected = set(included)
+    return {"requiredRuntimeFiles": len(required), "requiredMigrationFiles": len(migrations),
+            "missingRuntimePaths": sorted(required - selected),
+            "missingMigrationPaths": sorted(migrations - selected)}
 
 
 def sha(raw: bytes) -> str:
@@ -185,6 +211,9 @@ def plan(repo: Path, commit: str) -> tuple[dict, dict[str, bytes], dict]:
             raise ValueError("MISSING_OR_FORBIDDEN_INCLUDE: " + path)
     if any(path not in entries for path in excluded):
         raise ValueError("STALE_EXCLUDED_PATH")
+    coverage = runtime_coverage(entries, included)
+    if coverage["missingRuntimePaths"]:
+        raise ValueError("REQUIRED_RUNTIME_NOT_INCLUDED: " + ", ".join(coverage["missingRuntimePaths"]))
     content = blobs(repo, [entries[path][1] for path in included])
     files = [{"path": path, "gitBlobId": entries[path][1], "sha256": sha(content[entries[path][1]]),
               "executable": entries[path][0] == "100755"} for path in sorted(included)]
@@ -196,7 +225,7 @@ def plan(repo: Path, commit: str) -> tuple[dict, dict[str, bytes], dict]:
     inventory = {path: classifications.get(path, "REVIEW_REQUIRED") for path in sorted(entries)}
     audit = {"sourceCommit": commit, "devTrackedFiles": len(entries), "unclassified": 0,
              "counts": dict(sorted(Counter(inventory.values()).items())), "paths": inventory,
-             "requiredFinalAssets": policy["requiredFinalAssets"]}
+             "requiredFinalAssets": policy["requiredFinalAssets"], "runtimeCoverage": coverage}
     return metadata, content, audit
 
 
@@ -268,22 +297,31 @@ def verify(repo: Path, commit: str, output: Path) -> tuple[dict, dict]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("export", "verify"))
+    parser.add_argument("action", choices=("export", "verify", "coverage"))
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--commit", required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--output", type=Path)
     parser.add_argument("--audit", type=Path)
     args = parser.parse_args()
+    if args.action != "coverage" and args.output is None:
+        parser.error("--output is required for export and verify")
     try:
         if args.audit:
             dest = args.audit.absolute()
-            if dest == args.output.absolute() or args.output.absolute() in dest.parents or args.repo.resolve() in dest.parents:
+            if (args.repo.resolve() in dest.parents or (args.output is not None
+                    and (dest == args.output.absolute() or args.output.absolute() in dest.parents))):
                 raise ValueError("UNSAFE_AUDIT_DESTINATION")
-        metadata, audit = (export if args.action == "export" else verify)(args.repo, args.commit, args.output)
+        if args.action == "coverage":
+            metadata, _, audit = plan(args.repo, args.commit)
+        else:
+            metadata, audit = (export if args.action == "export" else verify)(args.repo, args.commit, args.output)
         if args.audit:
             with args.audit.open("xb") as stream:
                 stream.write(canonical(audit) + b"\n")
-        print(json.dumps({k: v for k, v in metadata.items() if k != "files"}, sort_keys=True))
+        summary = {k: v for k, v in metadata.items() if k != "files"}
+        if args.action == "coverage":
+            summary["runtimeCoverage"] = audit["runtimeCoverage"]
+        print(json.dumps(summary, sort_keys=True))
         return 0
     except (OSError, ValueError, TypeError, KeyError, UnicodeError, subprocess.SubprocessError) as exc:
         print(f"RELEASE_SOURCE_FAILED_CLOSED: {type(exc).__name__}: {exc}", file=sys.stderr)

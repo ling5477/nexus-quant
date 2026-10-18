@@ -1,4 +1,4 @@
-package com.guidinglight.nexusquant.scheduler.scheduling;
+package com.guidinglight.nexusquant.scheduler.infra;
 
 import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceOperations;
 import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceService;

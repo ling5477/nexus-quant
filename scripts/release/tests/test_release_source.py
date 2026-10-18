@@ -122,6 +122,55 @@ class ReleaseSourceTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "DIRECTORY_SET_MISMATCH"):
             source.verify(self.repo, self.a, out)
 
+    def test_missing_export_file_rejected(self):
+        out = self.root / "out"
+        source.export(self.repo, self.a, out)
+        (out / "app.txt").unlink()
+        with self.assertRaisesRegex(ValueError, "OUTPUT_FILE_SET_MISMATCH"):
+            source.verify(self.repo, self.a, out)
+
+    def test_new_production_source_and_migration_must_be_reviewed_and_included(self):
+        required = ["backend/nq-core/src/main/java/example/NewService.java",
+                    "backend/nq-infra/src/main/resources/db/migration/V2__new_table.sql",
+                    "frontend/src/features/new-feature.ts"]
+        for path in required:
+            self.write(path, b"source")
+        b = self.commit("new production files", required)
+        with self.assertRaisesRegex(ValueError, "REQUIRED_RUNTIME_NOT_INCLUDED"):
+            source.export(self.repo, b, self.root / "missing")
+        self.policy["groups"][0]["paths"].extend(required)
+        self.save_policy()
+        reviewed = self.commit("review exact production paths", [source.MANIFEST])
+        metadata, audit = source.export(self.repo, reviewed, self.root / "reviewed")
+        self.assertEqual(4, metadata["fileCount"])
+        self.assertEqual({"requiredRuntimeFiles": 3, "requiredMigrationFiles": 1,
+                          "missingRuntimePaths": [], "missingMigrationPaths": []}, audit["runtimeCoverage"])
+
+    def test_production_path_cannot_be_hidden_in_exclusion_category(self):
+        path = "frontend/src/features/required.ts"
+        self.write(path, b"source")
+        self.policy["excludedPaths"]["EXCLUDE_TEST"] = [path]
+        self.save_policy()
+        b = self.commit("misclassified runtime", [path, source.MANIFEST])
+        with self.assertRaisesRegex(ValueError, "REQUIRED_RUNTIME_NOT_INCLUDED"):
+            source.plan(self.repo, b)
+
+    def test_reviewed_development_paths_stay_excluded(self):
+        paths = ["backend/nq-app/src/main/resources/application-local.yml",
+                 "frontend/src/pages/dev/DesignSystemDemoPage.tsx"]
+        for path in paths:
+            self.write(path, b"development")
+        b = self.commit("development paths", paths)
+        metadata, audit = source.export(self.repo, b, self.root / "out")
+        self.assertEqual(["app.txt"], [entry["path"] for entry in metadata["files"]])
+        self.assertEqual(0, audit["runtimeCoverage"]["requiredRuntimeFiles"])
+
+    def test_coverage_command_uses_exact_commit_without_export(self):
+        result = subprocess.run([sys.executable, str(Path(source.__file__)), "coverage", "--repo",
+                                 str(self.repo), "--commit", self.a], capture_output=True, check=True, timeout=30)
+        self.assertEqual(self.a, json.loads(result.stdout)["sourceCommit"])
+        self.assertEqual([], json.loads(result.stdout)["runtimeCoverage"]["missingRuntimePaths"])
+
     def test_nested_export_directories_are_valid(self):
         self.policy["groups"][0]["paths"] = ["nested/deep/app.txt"]
         self.write("nested/deep/app.txt", b"nested\n")
@@ -204,6 +253,51 @@ class ReleaseSourceTest(unittest.TestCase):
         b = self.commit("overlap", [source.MANIFEST])
         with self.assertRaisesRegex(ValueError, "CONFLICTING_CLASSIFICATION"):
             source.plan(self.repo, b)
+
+
+class ReleaseBusinessBoundaryTest(unittest.TestCase):
+    # 只复用Git夹具，避免再次收集父类的全部源导出测试。
+    setUp = ReleaseSourceTest.setUp
+    tearDown = ReleaseSourceTest.tearDown
+    run_git = ReleaseSourceTest.run_git
+    write = ReleaseSourceTest.write
+    save_policy = ReleaseSourceTest.save_policy
+    commit = ReleaseSourceTest.commit
+
+    def test_business_identifiers_pass_only_with_exact_reviewed_context(self):
+        repo = Path(__file__).resolve().parents[3]
+        names = set(boundary.RELEASE_DOCS) | {"frontend/package.json", "frontend/package-lock.json",
+                                            "frontend/tsconfig.node.json"}
+        guarded = {
+            "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/AccountFeeModelService.java": "FEE_MODEL_FREEZE_TIME_INVALID",
+            "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/fee/FrozenDirectionalFeeModel.java": 'out.append(node.booleanValue() ? "B1" : "B0")',
+        }
+        for path in names:
+            self.write(path, (repo / path).read_bytes())
+        for path, marker in guarded.items():
+            lines = [line for line in (repo / path).read_text(encoding="utf-8").splitlines() if marker in line]
+            self.write(path, ("\n".join(lines) + "\n").encode())
+        for path in (boundary.POLICY, boundary.RULES):
+            self.write(path, (repo / path).read_bytes())
+        names.update(guarded)
+        legal_names = {"LICENSE", "DISCLAIMER.md", "THIRD_PARTY_NOTICES.md"}
+        self.policy["groups"][0]["paths"].extend(sorted(names - legal_names))
+        self.policy["groups"].append({"category": "INCLUDE_RELEASE_DOC", "purpose": "原始法律文档夹具",
+                                       "paths": sorted(legal_names)})
+        self.policy["excludedPaths"]["EXCLUDE_DEV_ONLY"].extend([boundary.POLICY, boundary.RULES])
+        self.save_policy()
+        commit = self.commit("reviewed business identifiers", [*names, boundary.POLICY, boundary.RULES, source.MANIFEST])
+        output = self.root / "approved"
+        source.export(self.repo, commit, output)
+        self.assertEqual([], boundary.check(self.repo, commit, output)["errors"])
+        path = next(iter(guarded))
+        self.write(path, (self.repo / path).read_bytes().rstrip() + b" // Phase 99\n")
+        changed = self.commit("changed context must fail", [path])
+        changed_output = self.root / "changed"
+        source.export(self.repo, changed, changed_output)
+        errors = boundary.check(self.repo, changed, changed_output)["errors"]
+        self.assertTrue(any("STAGE_LEAKAGE" in error and "FREEZE" in error for error in errors))
+        self.assertTrue(any("STAGE_LEAKAGE" in error and "Phase 99" in error for error in errors))
 
 
 class ReleaseLegalTest(unittest.TestCase):
