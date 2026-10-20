@@ -102,7 +102,7 @@ class L5BoundedWorkloadTest {
                         try (var reader = fixture.checker(); var samplingReader = fixture.checker();
                              var sampler = Executors.newSingleThreadScheduledExecutor()) {
                             if (Boolean.getBoolean("nq.l5.deterministic")) reader.setNetworkTimeout(Runnable::run, 5000);
-                            assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
+                            assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                             assertEquals("f", value(reader, "SELECT has_table_privilege(current_user,'orders','UPDATE')"));
                             // 一次采样使用一致的只读 MVCC 快照，不锁业务行；HTTP 采样前立即提交。
                             samplingReader.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
@@ -330,9 +330,9 @@ class L5BoundedWorkloadTest {
         try (var owner = DriverManager.getConnection(fixture.url(), "postgres", ""); var s = owner.createStatement()) {
             s.execute("INSERT INTO strategy_definitions(strategy_id,strategy_code,strategy_name,strategy_type,exchange_code,account_id,trade_env,enabled,config_snapshot) "
                     + "SELECT 'l5-kill-strategy','l5-kill-strategy','L5 Kill fixture','TEST','OKX',account_id,'SIM',true,"
-                    + "'{\"symbol\":\"BTC-USDT\",\"side\":\"BUY\",\"orderType\":\"LIMIT\",\"price\":\"100\",\"quantity\":\"0.1\"}'::jsonb FROM accounts WHERE account_code='b0-account'");
+                    + "'{\"symbol\":\"BTC-USDT\",\"side\":\"BUY\",\"orderType\":\"LIMIT\",\"price\":\"100\",\"quantity\":\"0.1\"}'::jsonb FROM accounts WHERE account_id=(SELECT legacy_account_id FROM exchange_accounts WHERE account_alias='b0-sim')");
             s.execute("INSERT INTO strategy_schedules(schedule_job_id,strategy_id,cron_expr,timezone,enabled,dedup_scope,exchange_code,account_id,trade_env,created_at) "
-                    + "SELECT 'l5-kill-schedule','l5-kill-strategy','0 0 0 1 1 *','UTC',true,'SCHEDULE_WINDOW','OKX',account_id,'SIM',date_trunc('year',CURRENT_TIMESTAMP)-INTERVAL '1 year' FROM accounts WHERE account_code='b0-account'");
+                    + "SELECT 'l5-kill-schedule','l5-kill-strategy','0 0 0 1 1 *','UTC',true,'SCHEDULE_WINDOW','OKX',account_id,'SIM',date_trunc('year',CURRENT_TIMESTAMP)-INTERVAL '1 year' FROM accounts WHERE account_id=(SELECT legacy_account_id FROM exchange_accounts WHERE account_alias='b0-sim')");
         }
     }
 
@@ -702,9 +702,9 @@ class L5BoundedWorkloadTest {
             for (int index = 1; index <= 4; index++) {
                 s.execute("INSERT INTO strategy_definitions(strategy_id,strategy_code,strategy_name,strategy_type,exchange_code,account_id,trade_env,enabled,config_snapshot) "
                         + "SELECT 'l5-strategy-" + index + "','l5-strategy-" + index + "','L5 fixture','TEST','OKX',account_id,'SIM',true,"
-                        + "'{\"symbol\":\"BTC-USDT\",\"side\":\"BUY\",\"orderType\":\"LIMIT\",\"price\":\"100\",\"quantity\":\"" + (concurrentRun ? "0.1005" : "0.1") + "\"}'::jsonb FROM accounts WHERE account_code='b0-account'");
+                        + "'{\"symbol\":\"BTC-USDT\",\"side\":\"BUY\",\"orderType\":\"LIMIT\",\"price\":\"100\",\"quantity\":\"" + (concurrentRun ? "0.1005" : "0.1") + "\"}'::jsonb FROM accounts WHERE account_id=(SELECT legacy_account_id FROM exchange_accounts WHERE account_alias='b0-sim')");
                 s.execute("INSERT INTO strategy_schedules(schedule_job_id,strategy_id,cron_expr,timezone,enabled,dedup_scope,exchange_code,account_id,trade_env,created_at) "
-                        + "SELECT 'l5-schedule-" + index + "','l5-strategy-" + index + "','0 0 0 1 1 *','UTC',true,'SCHEDULE_WINDOW','OKX',account_id,'SIM',date_trunc('year',CURRENT_TIMESTAMP)-INTERVAL '2 years' FROM accounts WHERE account_code='b0-account'");
+                        + "SELECT 'l5-schedule-" + index + "','l5-strategy-" + index + "','0 0 0 1 1 *','UTC',true,'SCHEDULE_WINDOW','OKX',account_id,'SIM',date_trunc('year',CURRENT_TIMESTAMP)-INTERVAL '2 years' FROM accounts WHERE account_id=(SELECT legacy_account_id FROM exchange_accounts WHERE account_alias='b0-sim')");
             }
         }
     }

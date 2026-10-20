@@ -12,6 +12,7 @@ export interface AppApiError extends Error {
     code: string;
     traceId?: string;
     path?: string;
+    method?: string;
     fieldErrors: ApiFieldError[];
     raw?: unknown;
 }

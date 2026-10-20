@@ -1,24 +1,22 @@
 package com.guidinglight.nexusquant.research.application.paper.service;
 
+import com.guidinglight.nexusquant.research.application.paper.assembler.PaperStrategyEvaluationAssembler;
 import com.guidinglight.nexusquant.research.application.paper.model.PaperPortfolioSummary;
 import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation;
-
-import com.guidinglight.nexusquant.research.application.paper.assembler.PaperStrategyEvaluationAssembler;
-
 import com.guidinglight.nexusquant.research.domain.BacktestPublishRecord;
 import com.guidinglight.nexusquant.research.domain.port.BacktestPublishRecordRepository;
 import com.guidinglight.nexusquant.research.domain.publish.BacktestEvaluationView;
 import com.guidinglight.nexusquant.research.domain.publish.port.BacktestEvaluationQueryPort;
 
+import org.springframework.stereotype.Service;
+
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Set;
-
-import org.springframework.stereotype.Service;
 
 /**
  * PaperStrategyEvaluationService —— Paper 策略评估只读聚合编排。
@@ -44,12 +42,16 @@ public class PaperStrategyEvaluationService {
     public PaperStrategyEvaluationService(
             PaperPortfolioService portfolioService,
             BacktestPublishRecordRepository publishRecordRepository,
-            BacktestEvaluationQueryPort backtestEvaluationQueryPort
-    ) {
-        this.portfolioService = Objects.requireNonNull(portfolioService, "portfolioService must not be null");
-        this.publishRecordRepository = Objects.requireNonNull(publishRecordRepository, "publishRecordRepository must not be null");
-        this.backtestEvaluationQueryPort = Objects.requireNonNull(
-                backtestEvaluationQueryPort, "backtestEvaluationQueryPort must not be null");
+            BacktestEvaluationQueryPort backtestEvaluationQueryPort) {
+        this.portfolioService =
+                Objects.requireNonNull(portfolioService, "portfolioService must not be null");
+        this.publishRecordRepository =
+                Objects.requireNonNull(
+                        publishRecordRepository, "publishRecordRepository must not be null");
+        this.backtestEvaluationQueryPort =
+                Objects.requireNonNull(
+                        backtestEvaluationQueryPort,
+                        "backtestEvaluationQueryPort must not be null");
     }
 
     /**
@@ -58,8 +60,19 @@ public class PaperStrategyEvaluationService {
      */
     public PaperStrategyEvaluation evaluate() {
         List<PaperPortfolioSummary.RunRef> runRefs = portfolioService.listRunRefs();
-        Map<String, BacktestEvaluationView> backtestViewByPublishId = loadBacktestViewByPublishId(runRefs);
+        Map<String, BacktestEvaluationView> backtestViewByPublishId =
+                loadBacktestViewByPublishId(runRefs, null);
         return PaperStrategyEvaluationAssembler.assemble(runRefs, backtestViewByPublishId);
+    }
+
+    /** 与诊断共享已经授权的历史窗口；不重新选择另一批运行或全量扫描发布。 */
+    public PaperStrategyEvaluation evaluateLegacy(
+            long owner, List<PaperPortfolioSummary.RunRef> runRefs) {
+        if (owner <= 0 || runRefs == null || runRefs.size() > 200)
+            throw new IllegalArgumentException("INVALID_LEGACY_ANALYSIS_WINDOW");
+        var refs = List.copyOf(runRefs);
+        return PaperStrategyEvaluationAssembler.assembleWithoutCommonValuationUnit(
+                refs, loadBacktestViewByPublishId(refs, owner));
     }
 
     /**
@@ -67,7 +80,8 @@ public class PaperStrategyEvaluationService {
      * publish 一次 listAll() 建 publishId -&gt; backtestRunId 索引；再对去重 backtestRunId 一次批量读取视图；
      * 最后回填为 publishId -&gt; view。整体为固定数量批量查询，不随 run 数放大。
      */
-    private Map<String, BacktestEvaluationView> loadBacktestViewByPublishId(List<PaperPortfolioSummary.RunRef> runRefs) {
+    private Map<String, BacktestEvaluationView> loadBacktestViewByPublishId(
+            List<PaperPortfolioSummary.RunRef> runRefs, Long owner) {
         Map<String, BacktestEvaluationView> result = new LinkedHashMap<>();
         if (runRefs.isEmpty()) {
             return result;
@@ -86,7 +100,11 @@ public class PaperStrategyEvaluationService {
 
         Map<String, String> backtestRunIdByPublishId = new LinkedHashMap<>();
         Set<String> backtestRunIds = new LinkedHashSet<>();
-        for (BacktestPublishRecord record : publishRecordRepository.listAll()) {
+        var publishes =
+                owner == null
+                        ? publishRecordRepository.listAll()
+                        : publishRecordRepository.listVisibleByIds(owner, usedPublishIds);
+        for (BacktestPublishRecord record : publishes) {
             String publishId = record.publishRecordId();
             if (publishId == null || !usedPublishIds.contains(publishId)) {
                 continue;
@@ -101,7 +119,8 @@ public class PaperStrategyEvaluationService {
             return result;
         }
 
-        Map<String, BacktestEvaluationView> viewByRunId = backtestEvaluationQueryPort.findByBacktestRunIds(backtestRunIds);
+        Map<String, BacktestEvaluationView> viewByRunId =
+                backtestEvaluationQueryPort.findByBacktestRunIds(backtestRunIds);
         for (Map.Entry<String, String> entry : backtestRunIdByPublishId.entrySet()) {
             BacktestEvaluationView view = viewByRunId.get(entry.getValue());
             if (view != null) {

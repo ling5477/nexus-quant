@@ -1,5 +1,6 @@
 import {apiClient} from '@/api/client';
 import type {
+    ShadowRunCreationResultResponse,
     StrategyReleaseAdmissionPreviewResponse,
     StrategyReleaseShadowRunMaterializationResponse,
 } from '@/features/validation/types/strategy-releases';
@@ -11,6 +12,18 @@ export async function getStrategyReleaseAdmissionPreview(
     const encodedPublishRecordId = encodeURIComponent(publishRecordId.trim());
     const {data} = await apiClient.get<StrategyReleaseAdmissionPreviewResponse>(
         `/strategy-releases/${encodedPublishRecordId}/shadow-admission-preview`,
+    );
+    return data;
+}
+
+/** 仅按原发布与原命令头查询已提交结果，不重新评估准入，不自动重试 POST。 */
+export async function getShadowRunCreationResult(
+    publishRecordId: string,
+    idempotencyKey: string,
+): Promise<ShadowRunCreationResultResponse> {
+    const {data} = await apiClient.get<ShadowRunCreationResultResponse>(
+        `/strategy-releases/${encodeURIComponent(publishRecordId)}/shadow-run-creation-result`,
+        {headers: {'Idempotency-Key': idempotencyKey}},
     );
     return data;
 }

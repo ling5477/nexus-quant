@@ -141,7 +141,7 @@ class JdbcExactPilotScopeAuthorizationRepositoryTest {
 
     private static void assertRejected(Executable executable) {
         LiveControlException exception = assertThrows(LiveControlException.class, executable);
-        assertEquals("EXACT_PILOT_SCOPE_APPROVAL_REJECTED", exception.code());
+        assertEquals("EXACT_EXECUTION_SCOPE_APPROVAL_REJECTED", exception.code());
     }
 
     private static ExactPilotBinding.AuthoritativeFacts facts() {

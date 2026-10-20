@@ -61,7 +61,9 @@ class ExistingUserPasswordRotationPostgresTest {
         jdbc.execute("""
                 CREATE TABLE users(id bigint PRIMARY KEY, username varchar(64) UNIQUE NOT NULL,
                   enabled boolean NOT NULL, password_hash varchar(255) NOT NULL,
-                  created_at timestamptz NOT NULL, updated_at timestamptz NOT NULL);
+                  created_at timestamptz NOT NULL, updated_at timestamptz NOT NULL,
+                  must_change_password boolean NOT NULL DEFAULT true,
+                  password_changed_at timestamptz, auth_version bigint NOT NULL DEFAULT 1);
                 CREATE TABLE roles(id bigint PRIMARY KEY, role_code varchar(64) NOT NULL);
                 CREATE TABLE user_roles(user_id bigint REFERENCES users(id), role_id bigint REFERENCES roles(id),
                   PRIMARY KEY(user_id, role_id));
@@ -72,8 +74,8 @@ class ExistingUserPasswordRotationPostgresTest {
                 INSERT INTO roles VALUES(1,'ADMIN'),(2,'OPERATOR'),(3,'VIEWER');
                 """);
         oldHash = encoder.encode(OLD_PASSWORD);
-        jdbc.update("INSERT INTO users VALUES(2,'synthetic-owner',true,?,'2026-01-01T00:00:00Z','2026-01-01T00:00:00Z')", oldHash);
-        jdbc.update("INSERT INTO users VALUES(3,'other-user',true,?,'2026-01-01T00:00:00Z','2026-01-01T00:00:00Z')", oldHash);
+        jdbc.update("INSERT INTO users(id,username,enabled,password_hash,created_at,updated_at) VALUES(2,'synthetic-owner',true,?,'2026-01-01T00:00:00Z','2026-01-01T00:00:00Z')", oldHash);
+        jdbc.update("INSERT INTO users(id,username,enabled,password_hash,created_at,updated_at) VALUES(3,'other-user',true,?,'2026-01-01T00:00:00Z','2026-01-01T00:00:00Z')", oldHash);
         jdbc.execute("""
                 INSERT INTO user_roles VALUES(2,1),(2,2),(2,3);
                 INSERT INTO exchange_accounts VALUES(1,2);
@@ -91,7 +93,7 @@ class ExistingUserPasswordRotationPostgresTest {
     }
 
     @Test
-    void onlyPasswordAndUpdatedAtChangeWhileIdentityRolesAndOwnershipRemainExact() {
+    void passwordRotationInvalidatesPriorGenerationWhileIdentityRolesAndOwnershipRemainExact() {
         String before = unchangedFacts();
         Timestamp beforeTime = jdbc.queryForObject("SELECT updated_at FROM users WHERE id=2", Timestamp.class);
         service.rotate(2, "synthetic-owner", fingerprint(), NEW_PASSWORD.toCharArray());
@@ -103,6 +105,9 @@ class ExistingUserPasswordRotationPostgresTest {
         assertNotEquals(beforeTime, jdbc.queryForObject("SELECT updated_at FROM users WHERE id=2", Timestamp.class));
         assertEquals(2, jdbc.queryForObject("SELECT count(*) FROM users", Integer.class));
         assertEquals(oldHash, repository.findTarget(3).orElseThrow().passwordHash());
+        assertEquals(2L, jdbc.queryForObject("SELECT auth_version FROM users WHERE id=2", Long.class));
+        assertEquals(1L, jdbc.queryForObject("SELECT auth_version FROM users WHERE id=3", Long.class));
+        assertTrue(jdbc.queryForObject("SELECT password_changed_at = updated_at AND must_change_password FROM users WHERE id=2", Boolean.class));
     }
 
     @Test
@@ -124,6 +129,7 @@ class ExistingUserPasswordRotationPostgresTest {
         assertThrows(PasswordRotationException.class, () -> repository.updatePasswordHash(
                 2, "synthetic-owner", oldHash, encoder.encode(NEW_PASSWORD), Instant.now()));
         assertFalse(repository.findTarget(2).orElseThrow().enabled());
+        assertEquals(1L, jdbc.queryForObject("SELECT auth_version FROM users WHERE id=2", Long.class));
     }
 
     @Test
@@ -166,6 +172,7 @@ class ExistingUserPasswordRotationPostgresTest {
         }
         assertTrue(encoder.matches(NEW_PASSWORD, repository.findTarget(2).orElseThrow().passwordHash()));
         assertEquals(before, unchangedFacts());
+        assertEquals(2L, jdbc.queryForObject("SELECT auth_version FROM users WHERE id=2", Long.class));
         assertEquals(PasswordRotationException.Reason.STALE_AUTH_IDENTITY,
                 assertThrows(PasswordRotationException.class, () -> service.rotate(
                         2, "synthetic-owner", fingerprint(), NEW_PASSWORD.toCharArray())).reason());
@@ -178,7 +185,7 @@ class ExistingUserPasswordRotationPostgresTest {
     private String unchangedFacts() {
         return jdbc.queryForObject("""
                 SELECT jsonb_build_object(
-                  'users',(SELECT jsonb_agg(to_jsonb(u)-'password_hash'-'updated_at' ORDER BY id) FROM users u),
+                  'users',(SELECT jsonb_agg(to_jsonb(u)-'password_hash'-'updated_at'-'password_changed_at'-'auth_version' ORDER BY id) FROM users u),
                   'roles',(SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM roles r),
                   'user_roles',(SELECT jsonb_agg(to_jsonb(r) ORDER BY user_id,role_id) FROM user_roles r),
                   'accounts',(SELECT jsonb_agg(to_jsonb(a) ORDER BY exchange_account_id) FROM exchange_accounts a),

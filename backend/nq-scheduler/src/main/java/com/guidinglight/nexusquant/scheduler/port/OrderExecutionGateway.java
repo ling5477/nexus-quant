@@ -13,7 +13,7 @@ import java.util.List;
 public interface OrderExecutionGateway {
 
     /**
-     * 拉取待撮合订单（Gate B 仅包含 SENT/ACCEPTED）。
+     * 拉取待撮合订单（仅包含 SENT/ACCEPTED）。
      *
      * @param limit 最大返回条数
      * @return 待撮合订单

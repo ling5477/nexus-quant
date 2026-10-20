@@ -7,9 +7,9 @@ export interface InstrumentCatalogItem {
     baseAsset: string;
     quoteAsset: string;
     status: string;
-    tickSize: number | null;
-    stepSize: number | null;
-    minQuantity: number | null;
+    tickSize: number | string | null;
+    stepSize: number | string | null;
+    minQuantity: number | string | null;
     source: string;
     syncedAt: string;
     createdAt: string;

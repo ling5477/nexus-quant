@@ -16,7 +16,7 @@ import org.springframework.stereotype.Repository;
  * JdbcMarketdataBarRepository 提供 `marketdata_bars` 的幂等 upsert 实现。
  * <p>
  * Why:
- * RC1-5 首版需要明确固定 `(exchange_code, symbol, interval, open_time)` 的唯一键语义，
+ * 首版需要明确固定 `(exchange_code, symbol, interval, open_time)` 的唯一键语义，
  * 因此写侧直接用 Postgres `ON CONFLICT DO UPDATE` 收口插入/更新分支，并返回统计结果。
  */
 @Repository

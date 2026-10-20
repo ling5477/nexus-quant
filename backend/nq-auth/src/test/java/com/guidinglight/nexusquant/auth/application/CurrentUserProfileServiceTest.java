@@ -44,6 +44,19 @@ class CurrentUserProfileServiceTest {
         }
 
         @Override
+        public boolean createInitialAdminIfAbsent(SeedUserCommand command) { throw new UnsupportedOperationException(); }
+        @Override
+        public Optional<AuthUserProfile> findByUsernameForUpdate(String username) { throw new UnsupportedOperationException(); }
+        @Override
+        public boolean changePassword(Long id, long version, String hash) { throw new UnsupportedOperationException(); }
+
+        @Override public void createSession(com.guidinglight.nexusquant.auth.domain.AuthSession s, java.time.Instant cutoff) { throw new UnsupportedOperationException(); }
+        @Override public boolean isSessionActive(String id, String name, long version, java.time.Instant now, java.time.Instant cutoff) { throw new UnsupportedOperationException(); }
+        @Override public Optional<com.guidinglight.nexusquant.auth.domain.AuthSession> renewSession(String id, long userId, long version, java.time.Instant now, java.time.Instant cutoff) { throw new UnsupportedOperationException(); }
+        @Override public void revokeSession(String id, long userId) { throw new UnsupportedOperationException(); }
+        @Override public void revokeUserTokens(long userId, long version) { throw new UnsupportedOperationException(); }
+
+        @Override
         public void upsertSeedUser(SeedUserCommand command) {
             throw new UnsupportedOperationException("not required for CurrentUserProfileServiceTest");
         }

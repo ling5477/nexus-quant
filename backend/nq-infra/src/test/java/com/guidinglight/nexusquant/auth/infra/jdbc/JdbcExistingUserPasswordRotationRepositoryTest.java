@@ -52,14 +52,15 @@ class JdbcExistingUserPasswordRotationRepositoryTest {
                 2, "synthetic-owner", "synthetic-old-hash", "synthetic-new-hash", Instant.EPOCH);
         verify(connection).prepareStatement("""
                 UPDATE users
-                SET password_hash = ?, updated_at = ?
+                SET password_hash = ?, updated_at = ?, password_changed_at = ?, auth_version = auth_version + 1
                 WHERE id = ? AND username = ? AND enabled = TRUE AND password_hash = ?
                 """);
         verify(statement).setString(1, "synthetic-new-hash");
         verify(statement).setTimestamp(2, Timestamp.from(Instant.EPOCH));
-        verify(statement).setLong(3, 2);
-        verify(statement).setString(4, "synthetic-owner");
-        verify(statement).setString(5, "synthetic-old-hash");
+        verify(statement).setTimestamp(3, Timestamp.from(Instant.EPOCH));
+        verify(statement).setLong(4, 2);
+        verify(statement).setString(5, "synthetic-owner");
+        verify(statement).setString(6, "synthetic-old-hash");
         verify(statement).setQueryTimeout(15);
         verify(connection).commit();
         verify(connection, never()).rollback();

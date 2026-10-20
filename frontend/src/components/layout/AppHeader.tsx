@@ -4,20 +4,23 @@ import {
     MenuFoldOutlined,
     MenuUnfoldOutlined,
 } from '@ant-design/icons';
-import {Avatar, Button, Dropdown, Space, Tag, Tooltip, Typography} from 'antd';
-import {useEffect} from 'react';
+import {App, Avatar, Button, Dropdown, Space, Tag, Tooltip, Typography} from 'antd';
+import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {accountsApi} from '@/features/accounts/api/accounts';
-import {accountQueryKeys, authQueryKeys} from '@/api/query-keys';
+import {accountQueryKeys} from '@/api/query-keys';
 import type {ExchangeAccountSummary} from '@/features/accounts/types/accounts';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
+import {authApi} from '@/api/auth';
 import {useAccountContextStore} from '@/store/account-context-store';
-import {appEnv} from '@/utils/env';
 import {useTranslation} from 'react-i18next';
 import {LanguageSelect} from '@/i18n/LanguageSelect';
 import {ExchangeIcon} from '@/nq-design-system/brand/ExchangeBadge';
+import {resolveDefaultAccount} from '@/features/accounts/default-account';
+import {ObjectSearch} from './ObjectSearch';
+import {NotificationCenter} from '@/features/notifications/NotificationCenter';
 
 interface AppHeaderProps {
     collapsed: boolean;
@@ -27,16 +30,20 @@ interface AppHeaderProps {
 export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
     const {t} = useTranslation();
     const navigate = useNavigate();
+    const {message} = App.useApp();
     const queryClient = useQueryClient();
-    const accessToken = useAuthStore((state) => state.accessToken);
+    const accessToken = useAuthStore(selectSessionIdentity);
     const currentUser = useAuthStore((state) => state.currentUser);
     const clearAuth = useAuthStore((state) => state.clearAuth);
     const clearAccountContext = useAccountContextStore((state) => state.clearAccountContext);
-    const selectedExchangeAccountId = useAccountContextStore((state) => state.selectedExchangeAccountId);
+    const selectedExchangeAccountId = useAccountContextStore(
+        (state) => state.selectedExchangeAccountId,
+    );
     const accountAlias = useAccountContextStore((state) => state.accountAlias);
     const exchangeCode = useAccountContextStore((state) => state.exchangeCode);
     const tradeEnv = useAccountContextStore((state) => state.tradeEnv);
     const setSelectedAccount = useAccountContextStore((state) => state.setSelectedAccount);
+    const [requiresAccountChoice, setRequiresAccountChoice] = useState(false);
 
     const accountsQuery = useQuery({
         queryKey: accountQueryKeys.list(accessToken),
@@ -44,67 +51,105 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
         enabled: Boolean(accessToken),
     });
 
-    const defaultAccount = (accountsQuery.data ?? []).find((item) => item.exchangeAccountId === currentUser?.defaultExchangeAccountId)
-        ?? (accountsQuery.data ?? []).find((item) => item.isDefault)
-        ?? null;
+    const defaultAccount = resolveDefaultAccount(
+        currentUser?.defaultExchangeAccountId,
+        accountsQuery.data ?? [],
+    );
 
     useEffect(() => {
         if (selectedExchangeAccountId !== null) {
+            if (
+                accountsQuery.data &&
+                !accountsQuery.data.some(
+                    (account) =>
+                        account.exchangeAccountId === selectedExchangeAccountId &&
+                        account.status === 'ACTIVE',
+                )
+            ) {
+                clearAccountContext();
+                setRequiresAccountChoice(true);
+            } else if (accountsQuery.data) setRequiresAccountChoice(false);
             return;
         }
-        if (defaultAccount) {
+        if (defaultAccount && !requiresAccountChoice) {
             setSelectedAccount(defaultAccount);
             return;
         }
         if (!currentUser?.defaultExchangeAccountId) {
             clearAccountContext();
         }
-    }, [clearAccountContext, currentUser?.defaultExchangeAccountId, defaultAccount, selectedExchangeAccountId, setSelectedAccount]);
+    }, [
+        accountsQuery.data,
+        clearAccountContext,
+        currentUser?.defaultExchangeAccountId,
+        defaultAccount,
+        requiresAccountChoice,
+        selectedExchangeAccountId,
+        setSelectedAccount,
+    ]);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        // 服务端先撤销当前登录会话；撤销失败时保留错误并允许重试，不能假报已安全退出。
+        try { await authApi.logout(); } catch {
+            void message.error(t('sessionLifetime.logoutFailed'));
+            return;
+        }
         clearAuth('manual');
         clearAccountContext();
-        queryClient.removeQueries({queryKey: authQueryKeys.all});
+        // 业务查询并非都以认证前缀命名，退出必须取消并清理整个身份范围缓存。
+        await queryClient.cancelQueries();
+        queryClient.clear();
         navigate('/login', {replace: true});
     };
 
     const accountItems = (accountsQuery.data ?? []).map((item: ExchangeAccountSummary) => ({
         key: String(item.exchangeAccountId),
-        icon: <ExchangeIcon code={item.exchangeCode}/>,
-        label: `${item.exchangeCode} / ${item.tradeEnv} / ${item.accountAlias}${item.isDefault ? t('shell.default') : ''}`,
+        icon: <ExchangeIcon code={item.exchangeCode} />,
+        disabled: item.status !== 'ACTIVE',
+        label: `${item.accountAlias} · ${item.exchangeCode} · ${item.tradeEnv}${item.isDefault ? t('shell.default') : ''}`,
     }));
 
-    const accountLabel = selectedExchangeAccountId && exchangeCode && tradeEnv
-        ? `${exchangeCode} / ${tradeEnv} / ${accountAlias ?? '-'}（exchangeAccountId=${selectedExchangeAccountId}）`
-        : currentUser?.defaultExchangeAccountId && currentUser.defaultExchangeCode && currentUser.defaultTradeEnv
-            ? `${currentUser.defaultExchangeCode} / ${currentUser.defaultTradeEnv} / ${currentUser.defaultAccountAlias ?? '-'}（exchangeAccountId=${currentUser.defaultExchangeAccountId}）`
-            : t('shell.chooseAccount');
+    const accountLabel = requiresAccountChoice
+        ? t('preferences.accountUnavailable')
+        : selectedExchangeAccountId && exchangeCode && tradeEnv
+          ? `${accountAlias ?? '-'} · ${exchangeCode} · ${tradeEnv}`
+          : t('shell.chooseAccount');
 
     return (
         <header className="app-shell__header">
             <div className="app-shell__header-left">
                 <Button
                     type="text"
-                    icon={collapsed ? <MenuUnfoldOutlined/> : <MenuFoldOutlined/>}
+                    icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                     onClick={onToggleCollapsed}
                     aria-label={collapsed ? t('shell.expand') : t('shell.collapse')}
                 />
-                <div className="app-shell__context-title">
-                    <Typography.Text strong>{appEnv.appTitle}</Typography.Text>
-                    <br/>
-                    {/* 副标题保持中性描述，不声明 Gate 阶段，避免阶段推进后文案过期 */}
-                    <Typography.Text type="secondary" style={{fontSize: 12}}>{t('shell.subtitle')}</Typography.Text>
-                </div>
+                <ObjectSearch />
             </div>
             <div className="app-shell__header-right">
-                <LanguageSelect/>
-                <Tag color="cyan">{appEnv.envLabel}</Tag>
+                <NotificationCenter />
+                <span className="app-shell__timezone" title={t('workspace.timezoneAutomatic')}>
+                    {Intl.DateTimeFormat().resolvedOptions().timeZone} · {t('workspace.automatic')}
+                </span>
+                <LanguageSelect />
+                {/* 环境来自所选正式账户；显示上下文不代表具有LIVE调用许可。 */}
+                {(tradeEnv === 'SIM' || tradeEnv === 'LIVE') && (
+                    <Tag
+                        color={tradeEnv === 'LIVE' ? 'red' : 'cyan'}
+                        title={t('workspace.accountEnvironmentScope')}
+                    >
+                        {tradeEnv}
+                    </Tag>
+                )}
                 <Dropdown
                     menu={{
                         items: accountItems,
                         onClick: ({key}) => {
-                            const matched = (accountsQuery.data ?? []).find((item) => String(item.exchangeAccountId) === key);
-                            if (matched) {
+                            const matched = (accountsQuery.data ?? []).find(
+                                (item) => String(item.exchangeAccountId) === key,
+                            );
+                            if (matched?.status === 'ACTIVE') {
+                                setRequiresAccountChoice(false);
                                 setSelectedAccount(matched);
                             }
                         },
@@ -112,27 +157,43 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                     trigger={['click']}
                     disabled={accountItems.length === 0}
                 >
-                    <Button className="app-shell__account-selector" title={accountLabel} aria-label={accountLabel}>
-                        <ExchangeIcon code={selectedExchangeAccountId && exchangeCode && tradeEnv ? exchangeCode : currentUser?.defaultExchangeCode}/>
-                        <span className="app-shell__account-label">{accountLabel}</span> <DownOutlined/>
+                    <Button
+                        className="app-shell__account-selector"
+                        title={accountLabel}
+                        aria-label={accountLabel}
+                    >
+                        <ExchangeIcon
+                            code={
+                                selectedExchangeAccountId && exchangeCode && tradeEnv
+                                    ? exchangeCode
+                                    : currentUser?.defaultExchangeCode
+                            }
+                        />
+                        <span className="app-shell__account-label">{accountLabel}</span>{' '}
+                        <DownOutlined />
                     </Button>
                 </Dropdown>
-                <Button onClick={() => navigate('/accounts')}>
-                    {t('shell.accounts')}
-                </Button>
-                <Space size={8} wrap>
+                <Button onClick={() => navigate('/accounts')}>{t('shell.accounts')}</Button>
+                <Space className="app-shell__roles" size={8} wrap>
                     {currentUser?.roles.map((role) => (
                         <Tag key={role}>{role}</Tag>
                     ))}
                 </Space>
-                <span className="app-shell__user">
-                    <Avatar size={28}>{currentUser?.username?.slice(0, 1).toUpperCase() ?? '?'}</Avatar>
+                <span className="app-shell__user" title={currentUser?.roles.join(' · ')}>
+                    <Avatar size={28}>
+                        {currentUser?.username?.slice(0, 1).toUpperCase() ?? '?'}
+                    </Avatar>
                     <Typography.Text className="app-shell__username" title={currentUser?.username}>
                         {currentUser?.username ?? t('shell.anonymous')}
                     </Typography.Text>
                 </span>
                 <Tooltip title={t('shell.logout')}>
-                    <Button type="text" icon={<LogoutOutlined/>} aria-label={t('shell.logout')} onClick={handleLogout}/>
+                    <Button
+                        type="text"
+                        icon={<LogoutOutlined />}
+                        aria-label={t('shell.logout')}
+                        onClick={handleLogout}
+                    />
                 </Tooltip>
             </div>
         </header>

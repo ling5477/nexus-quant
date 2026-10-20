@@ -76,7 +76,7 @@ class OkxRealReadonlyPermissionProbePortTest {
         assertTrue(passed.readPermissionDetected());
         assertTrue(passed.tradePermissionDetected());
         assertFalse(passed.withdrawEnabledDetected());
-        assertEquals(CredentialPermissionExpectation.GATEY_PILOT_READINESS, passed.permissionExpectation());
+        assertEquals(CredentialPermissionExpectation.SCOPED_TRADE_READINESS, passed.permissionExpectation());
         assertTrue(passed.inherentOkxTradePermissionResidual());
         assertEquals(0, passed.retryCount());
 
@@ -193,7 +193,7 @@ class OkxRealReadonlyPermissionProbePortTest {
         return new OkxRealReadonlyPermissionProbePort(
                 executor,
                 "203.0.113.8",
-                CredentialPermissionExpectation.GATEY_PILOT_READINESS,
+                CredentialPermissionExpectation.SCOPED_TRADE_READINESS,
                 CLOCK
         );
     }
@@ -208,7 +208,7 @@ class OkxRealReadonlyPermissionProbePortTest {
     private static ExchangeCredentialPermissionProbeRequest gateYRequest() {
         return new ExchangeCredentialPermissionProbeRequest(
                 1L, 900001L, 7L, "OKX", "LIVE", "OKX_API_V5",
-                CredentialPermissionExpectation.GATEY_PILOT_READINESS, true, "trace-gatey-permission"
+                CredentialPermissionExpectation.SCOPED_TRADE_READINESS, true, "trace-gatey-permission"
         );
     }
 

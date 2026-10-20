@@ -1,41 +1,125 @@
 import {Navigate, createBrowserRouter} from 'react-router-dom';
+import {lazy} from 'react';
 
 import {ConsoleLayout} from '@/layouts/ConsoleLayout';
-import {AccountsPage} from '@/pages/accounts/AccountsPage';
-import {AdapterReadinessPage} from '@/pages/adapters/AdapterReadinessPage';
-import {BacktestDetailPage} from '@/pages/backtests/BacktestDetailPage';
-import {BacktestsPage} from '@/pages/backtests/BacktestsPage';
-import {DashboardPage} from '@/pages/dashboard/DashboardPage';
-import {DesignSystemDemoPage} from '@/pages/dev/DesignSystemDemoPage';
-import {EvaluationsPage} from '@/pages/evaluations/EvaluationsPage';
 import {AuthFailurePage} from '@/pages/exceptions/AuthFailurePage';
 import {ForbiddenPage} from '@/pages/exceptions/ForbiddenPage';
 import {SystemErrorPage} from '@/pages/exceptions/SystemErrorPage';
 import {WelcomePage} from '@/pages/exceptions/WelcomePage';
-import {InstrumentsPage} from '@/pages/instruments/InstrumentsPage';
+import {ForcePasswordChange} from '@/pages/login/ForcePasswordChange';
 import {LoginPage} from '@/pages/login/LoginPage';
-import {MarketdataPage} from '@/pages/marketdata/MarketdataPage';
 import {NotFoundPage} from '@/pages/not-found/NotFoundPage';
-import {PaperDiagnosticsPage} from '@/pages/paper-trading/PaperDiagnosticsPage';
-import {PaperPortfolioPage} from '@/pages/paper-trading/PaperPortfolioPage';
-import {PaperReviewsPage} from '@/pages/paper-trading/PaperReviewsPage';
 import {PaperTradingRouteShell} from '@/pages/paper-trading/PaperTradingRouteShell';
-import {PaperTradingRunsPage} from '@/pages/paper-trading/PaperTradingRunsPage';
-import {PublishesPage} from '@/pages/publishes/PublishesPage';
-import {ResearchPage} from '@/pages/research/ResearchPage';
-import {RuntimeReadinessPage} from '@/pages/runtime/RuntimeReadinessPage';
-import {SchedulerJobsPage} from '@/pages/scheduler/SchedulerJobsPage';
-import {RunsPage} from '@/pages/runs/RunsPage';
-import {ShadowRunDetailPage} from '@/pages/shadow-runs/ShadowRunDetailPage';
-import {ShadowRunListPage} from '@/pages/shadow-runs/ShadowRunListPage';
-import {SchedulesPage} from '@/pages/schedules/SchedulesPage';
-import {StrategiesPage} from '@/pages/strategies/StrategiesPage';
-import {StrategyValidationPage} from '@/pages/strategies/StrategyValidationPage';
-import {TradingWorkbenchPage} from '@/pages/trading/TradingWorkbenchPage';
 import {RequireAuth} from '@/router/RequireAuth';
 import {appNavItems} from '@/router/navigation';
 import type {RouteHandle} from '@/types/navigation';
 import {t} from '@/i18n';
+
+// 业务页面按路由加载；登录和认证异常路径保持即时可用，不提前装载全站图表与表单。
+const AccountsPage = lazy(() =>
+    import('@/pages/accounts/AccountsPage').then((module) => ({default: module.AccountsPage})),
+);
+const AdapterReadinessPage = lazy(() =>
+    import('@/pages/adapters/AdapterReadinessPage').then((module) => ({
+        default: module.AdapterReadinessPage,
+    })),
+);
+const BacktestDetailPage = lazy(() =>
+    import('@/pages/backtests/BacktestDetailPage').then((module) => ({
+        default: module.BacktestDetailPage,
+    })),
+);
+const BacktestsPage = lazy(() =>
+    import('@/pages/backtests/BacktestsPage').then((module) => ({default: module.BacktestsPage})),
+);
+const DashboardPage = lazy(() =>
+    import('@/pages/dashboard/DashboardPage').then((module) => ({default: module.DashboardPage})),
+);
+const EvaluationsPage = lazy(() =>
+    import('@/pages/evaluations/EvaluationsPage').then((module) => ({
+        default: module.EvaluationsPage,
+    })),
+);
+const InstrumentsPage = lazy(() =>
+    import('@/pages/instruments/InstrumentsPage').then((module) => ({
+        default: module.InstrumentsPage,
+    })),
+);
+const MarketdataPage = lazy(() =>
+    import('@/pages/marketdata/MarketdataPage').then((module) => ({
+        default: module.MarketdataPage,
+    })),
+);
+const PaperDiagnosticsPage = lazy(() =>
+    import('@/pages/paper-trading/PaperDiagnosticsPage').then((module) => ({
+        default: module.PaperDiagnosticsPage,
+    })),
+);
+const PaperPortfolioPage = lazy(() =>
+    import('@/pages/paper-trading/PaperPortfolioPage').then((module) => ({
+        default: module.PaperPortfolioPage,
+    })),
+);
+const PaperReviewsPage = lazy(() =>
+    import('@/pages/paper-trading/PaperReviewsPage').then((module) => ({
+        default: module.PaperReviewsPage,
+    })),
+);
+const PaperTradingRunsPage = lazy(() =>
+    import('@/pages/paper-trading/PaperTradingRunsPage').then((module) => ({
+        default: module.PaperTradingRunsPage,
+    })),
+);
+const PublishesPage = lazy(() =>
+    import('@/pages/publishes/PublishesPage').then((module) => ({default: module.PublishesPage})),
+);
+const ResearchPage = lazy(() =>
+    import('@/pages/research/ResearchPage').then((module) => ({default: module.ResearchPage})),
+);
+const RuntimeReadinessPage = lazy(() =>
+    import('@/pages/runtime/RuntimeReadinessPage').then((module) => ({
+        default: module.RuntimeReadinessPage,
+    })),
+);
+const SchedulerJobsPage = lazy(() =>
+    import('@/pages/scheduler/SchedulerJobsPage').then((module) => ({
+        default: module.SchedulerJobsPage,
+    })),
+);
+const RunsPage = lazy(() =>
+    import('@/pages/runs/RunsPage').then((module) => ({default: module.RunsPage})),
+);
+const ShadowRunDetailPage = lazy(() =>
+    import('@/pages/shadow-runs/ShadowRunDetailPage').then((module) => ({
+        default: module.ShadowRunDetailPage,
+    })),
+);
+const ShadowRunListPage = lazy(() =>
+    import('@/pages/shadow-runs/ShadowRunListPage').then((module) => ({
+        default: module.ShadowRunListPage,
+    })),
+);
+const SchedulesPage = lazy(() =>
+    import('@/pages/schedules/SchedulesPage').then((module) => ({default: module.SchedulesPage})),
+);
+const SettingsPage = lazy(() =>
+    import('@/pages/settings/SettingsPage').then((module) => ({default: module.SettingsPage})),
+);
+const StrategiesPage = lazy(() =>
+    import('@/pages/strategies/StrategiesPage').then((module) => ({
+        default: module.StrategiesPage,
+    })),
+);
+const StrategyValidationPage = lazy(() =>
+    import('@/pages/strategies/StrategyValidationPage').then((module) => ({
+        default: module.StrategyValidationPage,
+    })),
+);
+const TradingWorkbenchPage = lazy(() =>
+    import('@/pages/trading/TradingWorkbenchPage').then((module) => ({
+        default: module.TradingWorkbenchPage,
+    })),
+);
 
 function createHandle(menuKey: string): RouteHandle {
     const matched = appNavItems.find((item) => item.key === menuKey);
@@ -48,8 +132,12 @@ function createHandle(menuKey: string): RouteHandle {
     }
 
     return {
-        get title() {return matched.title;},
-        get breadcrumb() {return matched.label;},
+        get title() {
+            return matched.title;
+        },
+        get breadcrumb() {
+            return matched.label;
+        },
         menuKey: matched.key,
     };
 }
@@ -57,36 +145,43 @@ function createHandle(menuKey: string): RouteHandle {
 export const appRouter = createBrowserRouter([
     {
         path: '/login',
-        element: <LoginPage/>,
+        element: <LoginPage />,
         handle: {
-            get title() {return t('auth.submit');},
-            get breadcrumb() {return t('auth.submit');},
+            get title() {
+                return t('auth.submit');
+            },
+            get breadcrumb() {
+                return t('auth.submit');
+            },
         } satisfies RouteHandle,
     },
     {
-        element: <RequireAuth/>,
+        element: <RequireAuth />,
         children: [
+            {path: '/change-password', element: <ForcePasswordChange />},
             {
                 path: '/',
-                element: <ConsoleLayout/>,
+                element: <ConsoleLayout />,
+                errorElement: <SystemErrorPage />,
                 children: [
                     {
                         index: true,
-                        element: <Navigate to="/dashboard" replace/>,
+                        element: <Navigate to="/dashboard" replace />,
                     },
                     {
                         path: 'dashboard',
-                        element: <DashboardPage/>,
+                        element: <DashboardPage />,
                         handle: createHandle('dashboard'),
                     },
+                    {path: 'settings', element: <SettingsPage />, handle: createHandle('settings')},
                     {
                         path: 'accounts',
-                        element: <AccountsPage/>,
+                        element: <AccountsPage />,
                         handle: createHandle('accounts'),
                     },
                     {
                         path: 'trading',
-                        element: <TradingWorkbenchPage/>,
+                        element: <TradingWorkbenchPage />,
                         handle: createHandle('trading'),
                     },
                     {
@@ -94,119 +189,119 @@ export const appRouter = createBrowserRouter([
                         // `/trade-validation` 是历史路由 alias，不是正式入口；正式入口固定为 `/trading`。
                         // 退役计划：确认旧书签和历史 e2e 均迁移完成后，再删除该无状态重定向。
                         path: 'trade-validation',
-                        element: <TradingWorkbenchPage legacyAlias/>,
+                        element: <TradingWorkbenchPage legacyAlias />,
                         handle: createHandle('trading'),
                     },
                     {
                         path: 'instruments',
-                        element: <InstrumentsPage/>,
+                        element: <InstrumentsPage />,
                         handle: createHandle('instruments'),
                     },
                     {
                         path: 'marketdata',
-                        element: <MarketdataPage/>,
+                        element: <MarketdataPage />,
                         handle: createHandle('marketdata'),
                     },
                     {
                         path: 'adapter-readiness',
-                        element: <AdapterReadinessPage/>,
+                        element: <AdapterReadinessPage />,
                         handle: createHandle('adapter-readiness'),
                     },
                     {
                         path: 'runtime/readiness',
-                        element: <RuntimeReadinessPage/>,
+                        element: <RuntimeReadinessPage />,
                         handle: createHandle('runtime-readiness'),
                     },
                     {
                         path: 'system/scheduler',
-                        element: <SchedulerJobsPage/>,
+                        element: <SchedulerJobsPage />,
                         handle: createHandle('scheduler-jobs'),
                     },
                     {
                         path: 'strategies/validation',
-                        element: <StrategyValidationPage/>,
+                        element: <StrategyValidationPage />,
                         handle: createHandle('strategy-validation'),
                     },
                     {
                         path: 'strategies/shadow-runs',
-                        element: <ShadowRunListPage/>,
+                        element: <ShadowRunListPage />,
                         handle: createHandle('shadow-runs'),
                     },
                     {
                         path: 'strategies/shadow-runs/:shadowRunId',
-                        element: <ShadowRunDetailPage/>,
+                        element: <ShadowRunDetailPage />,
                         handle: createHandle('shadow-runs'),
                     },
                     {
                         path: 'strategies',
-                        element: <StrategiesPage/>,
+                        element: <StrategiesPage />,
                         handle: createHandle('strategies'),
                     },
                     {
                         path: 'schedules',
-                        element: <SchedulesPage/>,
+                        element: <SchedulesPage />,
                         handle: createHandle('schedules'),
                     },
                     {
                         path: 'runs',
-                        element: <RunsPage/>,
+                        element: <RunsPage />,
                         handle: createHandle('runs'),
                     },
                     {
                         path: 'research',
-                        element: <ResearchPage/>,
+                        element: <ResearchPage />,
                         handle: createHandle('research'),
                     },
                     {
                         path: 'backtests',
-                        element: <BacktestsPage/>,
+                        element: <BacktestsPage />,
                         handle: createHandle('backtests'),
                     },
                     {
                         // 回测详情可视化(权益/回撤/指标/快照),复用 backtests 菜单高亮。
                         path: 'backtests/:backtestConfigId',
-                        element: <BacktestDetailPage/>,
+                        element: <BacktestDetailPage />,
                         handle: createHandle('backtests'),
                     },
                     {
                         path: 'evaluations',
-                        element: <EvaluationsPage/>,
+                        element: <EvaluationsPage />,
                         handle: createHandle('evaluations'),
                     },
                     {
                         path: 'publishes',
-                        element: <PublishesPage/>,
+                        element: <PublishesPage />,
                         handle: createHandle('publishes'),
                     },
                     {
                         path: 'paper-trading',
-                        element: <PaperTradingRouteShell/>,
+                        element: <PaperTradingRouteShell />,
                         handle: createHandle('paper-trading'),
                         children: [
                             {
                                 index: true,
-                                element: <Navigate to="runs" replace/>,
+                                element: <Navigate to="runs" replace />,
                                 handle: createHandle('paper-trading'),
                             },
                             {
                                 path: 'runs',
-                                element: <PaperTradingRunsPage/>,
+                                element: <PaperTradingRunsPage />,
                                 handle: createHandle('paper-trading'),
                             },
                             {
                                 path: 'portfolio',
-                                element: <PaperPortfolioPage/>,
-                                handle: createHandle('paper-trading'),
+                                element: <PaperPortfolioPage />,
+                                handle: createHandle('paper-portfolio'),
                             },
                             {
                                 path: 'diagnostics',
-                                element: <PaperDiagnosticsPage/>,
-                                handle: createHandle('paper-trading'),
+                                element: <PaperDiagnosticsPage />,
+                                handle: createHandle('paper-diagnostics'),
                             },
                             {
                                 path: 'reviews',
-                                element: <PaperReviewsPage/>,
-                                handle: createHandle('paper-trading'),
+                                element: <PaperReviewsPage />,
+                                handle: createHandle('paper-reviews'),
                             },
                         ],
                     },
@@ -216,56 +311,63 @@ export const appRouter = createBrowserRouter([
     },
     {
         // Why:
-        // Design Tokens v2 自检路由,非业务页面、不在侧导航中,自带 v2 ConfigProvider 作用域,
-        // 不依赖登录/后端,便于本地与 build 后核对 v2 设计系统。后续做 v2 全局采用切片时可下线。
-        path: '/dev/design-system',
-        element: <DesignSystemDemoPage/>,
-        handle: {
-            title: 'Design System v2 自检',
-            breadcrumb: 'Design System v2',
-        } satisfies RouteHandle,
-    },
-    {
-        // Why:
         // 异常页(v2),AppShell/RequireAuth 之外的公开展示路由,自带 v2 作用域、不依赖后端。
         // 这里只承载异常的"原因 + 下一步"表现层;真实触发(会话过期跳转、403、错误边界、空态检测)
         // 接入这些页面属于后续切片,不在本批改动鉴权/错误处理逻辑。
         path: '/exception/auth',
-        element: <AuthFailurePage/>,
+        element: <AuthFailurePage />,
         handle: {
-            get title() {return t('exception.authFailure');},
-            get breadcrumb() {return t('exception.authFailure');},
+            get title() {
+                return t('exception.authFailure');
+            },
+            get breadcrumb() {
+                return t('exception.authFailure');
+            },
         } satisfies RouteHandle,
     },
     {
         path: '/exception/forbidden',
-        element: <ForbiddenPage/>,
+        element: <ForbiddenPage />,
         handle: {
-            get title() {return t('exception.forbidden');},
-            get breadcrumb() {return t('exception.forbidden');},
+            get title() {
+                return t('exception.forbidden');
+            },
+            get breadcrumb() {
+                return t('exception.forbidden');
+            },
         } satisfies RouteHandle,
     },
     {
         path: '/exception/error',
-        element: <SystemErrorPage/>,
+        element: <SystemErrorPage />,
         handle: {
-            get title() {return t('exception.system');},
-            get breadcrumb() {return t('exception.system');},
+            get title() {
+                return t('exception.system');
+            },
+            get breadcrumb() {
+                return t('exception.system');
+            },
         } satisfies RouteHandle,
     },
     {
         path: '/exception/welcome',
-        element: <WelcomePage/>,
+        element: <WelcomePage />,
         handle: {
-            get title() {return t('exception.welcome');},
-            get breadcrumb() {return t('exception.welcome');},
+            get title() {
+                return t('exception.welcome');
+            },
+            get breadcrumb() {
+                return t('exception.welcome');
+            },
         } satisfies RouteHandle,
     },
     {
         path: '*',
-        element: <NotFoundPage/>,
+        element: <NotFoundPage />,
         handle: {
-            get title() {return t('exception.notFound');},
+            get title() {
+                return t('exception.notFound');
+            },
             breadcrumb: '404',
         } satisfies RouteHandle,
     },

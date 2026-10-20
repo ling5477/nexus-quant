@@ -1,4 +1,5 @@
 import {useMemo} from 'react';
+import type {UseQueryResult} from '@tanstack/react-query';
 
 import {useConsistencyEvidenceOverview} from '@/features/validation/hooks/useConsistencyEvidenceOverview';
 import {useEvaluationArtifactPreviewOverview} from '@/features/validation/hooks/useEvaluationArtifactPreviewOverview';
@@ -19,6 +20,11 @@ import {
 import {useValidationOperationsRuntimeEvidenceOverview} from '@/features/validation/hooks/useValidationOperationsRuntimeEvidenceOverview';
 import type {StrategyValidationOverviewResponse, StrategyValidationQuery} from '@/features/validation/types/strategy-validation';
 import type {ShadowRunOverviewResponse} from '@/features/validation/types/shadow-runs';
+
+/** 刷新失败后不继续暴露旧快照；各诊断面板、总览和关联矩阵统一显示未知来源。 */
+function readableQuery<T>(query: UseQueryResult<T>) {
+    return {...query, data: query.isError ? undefined : query.data};
+}
 
 function firstText(...values: Array<string | null | undefined>): string | null {
     const matched = values.find((value) => Boolean(value?.trim()));
@@ -74,20 +80,20 @@ export function useStrategyValidationWorkspaceQueries(submittedQuery: StrategyVa
         || releaseAdmissionPreviewQuery.isFetching;
 
     return {
-        overviewQuery,
-        shadowValidationWorkflowQuery,
-        consistencyEvidenceQuery,
-        evaluationArtifactPreviewQuery,
-        incidentReplayReviewQuery,
-        runtimeEvidenceQuery,
-        incidentReplayQuery,
-        shadowOverviewQuery,
-        evaluationGateQuery,
-        paperShadowQuery,
-        shadowLivePreviewQuery,
-        releaseAdmissionPreviewQuery,
+        overviewQuery: readableQuery(overviewQuery),
+        shadowValidationWorkflowQuery: readableQuery(shadowValidationWorkflowQuery),
+        consistencyEvidenceQuery: readableQuery(consistencyEvidenceQuery),
+        evaluationArtifactPreviewQuery: readableQuery(evaluationArtifactPreviewQuery),
+        incidentReplayReviewQuery: readableQuery(incidentReplayReviewQuery),
+        runtimeEvidenceQuery: readableQuery(runtimeEvidenceQuery),
+        incidentReplayQuery: readableQuery(incidentReplayQuery),
+        shadowOverviewQuery: readableQuery(shadowOverviewQuery),
+        evaluationGateQuery: readableQuery(evaluationGateQuery),
+        paperShadowQuery: readableQuery(paperShadowQuery),
+        shadowLivePreviewQuery: readableQuery(shadowLivePreviewQuery),
+        releaseAdmissionPreviewQuery: readableQuery(releaseAdmissionPreviewQuery),
         selectedShadowRunId,
-        consistencyDrilldownQuery,
+        consistencyDrilldownQuery: readableQuery(consistencyDrilldownQuery),
         loading,
     };
 }

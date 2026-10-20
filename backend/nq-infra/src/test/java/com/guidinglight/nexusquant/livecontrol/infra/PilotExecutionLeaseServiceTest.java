@@ -41,18 +41,18 @@ class PilotExecutionLeaseServiceTest {
         PilotExecutionLease active = lease(PilotExecutionLease.Status.ACTIVE, NOW.minusSeconds(1));
         when(leases.findRecoverable(NOW)).thenReturn(List.of(active));
         when(leases.close(eq(active.id()), eq(PilotExecutionLease.Status.EXPIRED), eq(NOW),
-                eq("PILOT_STARTUP_RECOVERY"), any(), any())).thenReturn(lease(
+                eq("EXECUTION_STARTUP_RECOVERY"), any(), any())).thenReturn(lease(
                 PilotExecutionLease.Status.EXPIRED, NOW.minusSeconds(1)));
         when(kill.snapshot()).thenReturn(new KillSwitchSnapshot(
                 KillSwitchScope.GLOBAL_TRADING, KillSwitchStatus.DISENGAGED, 3,
-                "PILOT", "PILOT_EXECUTION_LEASE", NOW.minusSeconds(2), NOW, "trace"));
+                "PILOT", "CONTROLLED_EXECUTION_LEASE", NOW.minusSeconds(2), NOW, "trace"));
 
         new PilotExecutionLeaseService(
                 leases, sessions, kill, Clock.fixed(NOW, ZoneOffset.UTC)).recoverAtStartup();
 
         verify(leases).close(eq(active.id()), eq(PilotExecutionLease.Status.EXPIRED), eq(NOW),
-                eq("PILOT_STARTUP_RECOVERY"), any(), any());
-        verify(kill).engage(3, "PILOT_STARTUP_RECOVERY", "PILOT_RECOVERY", "pilot-startup-recovery");
+                eq("EXECUTION_STARTUP_RECOVERY"), any(), any());
+        verify(kill).engage(3, "EXECUTION_STARTUP_RECOVERY", "EXECUTION_RECOVERY", "pilot-startup-recovery");
     }
 
     @Test
@@ -63,7 +63,7 @@ class PilotExecutionLeaseServiceTest {
         PilotExecutionLease consumed = lease(PilotExecutionLease.Status.CONSUMED, NOW.plusSeconds(60));
         when(kill.snapshot()).thenReturn(new KillSwitchSnapshot(
                 KillSwitchScope.GLOBAL_TRADING, KillSwitchStatus.DISENGAGED, 7,
-                "PILOT_LEASE_" + consumed.id(), "PILOT_EXECUTION_LEASE", NOW.minusSeconds(2),
+                "EXECUTION_LEASE_" + consumed.id(), "CONTROLLED_EXECUTION_LEASE", NOW.minusSeconds(2),
                 consumed.expiresAt(), "trace"));
         var correlation = new ExactPilotBinding.Correlation("request", "trace", "idempotency");
 
@@ -71,10 +71,10 @@ class PilotExecutionLeaseServiceTest {
                 .suspendConsumedForRecovery(
                         new AuthenticatedLiveControlActor(consumed.createdBy()),
                         consumed,
-                        "PILOT_RECONCILIATION_REQUIRED",
+                        "EXECUTION_RECONCILIATION_REQUIRED",
                         correlation);
 
-        verify(kill).engage(7, "PILOT_RECONCILIATION_REQUIRED", "PILOT_RECOVERY", "trace");
+        verify(kill).engage(7, "EXECUTION_RECONCILIATION_REQUIRED", "EXECUTION_RECOVERY", "trace");
         verify(leases, never()).close(any(), any(), any(), any(), any(), any());
     }
 
@@ -90,7 +90,7 @@ class PilotExecutionLeaseServiceTest {
                 UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), 7);
         when(kill.snapshot()).thenReturn(new KillSwitchSnapshot(
                 KillSwitchScope.GLOBAL_TRADING, KillSwitchStatus.ENGAGED, 4,
-                "SAFE", "PILOT_RECOVERY", NOW, NOW, "trace"));
+                "SAFE", "EXECUTION_RECOVERY", NOW, NOW, "trace"));
         when(recoveries.decide(
                 eq(11L), eq(1L), eq(2L), eq("BTC-USDT"), any(), any(),
                 eq("request"), eq("trace"), eq(NOW)))

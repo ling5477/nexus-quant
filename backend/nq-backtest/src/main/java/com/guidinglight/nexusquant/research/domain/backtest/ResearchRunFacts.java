@@ -6,13 +6,89 @@ import java.util.List;
 
 /** 回测生成并冻结的研究输入；评估只读这些事实，不重新读取可变行情或配置。 */
 public record ResearchRunFacts(
-        String backtestRunId, String datasetId, String barContentSha256,
-        String strategyVersionId, String strategyChecksum, String symbol, String interval,
-        String datasetSnapshotJson, Assumptions assumptions, List<BarWindow> bars, Benchmark benchmark
-) {
-    public record Assumptions(BigDecimal initialCapital, BigDecimal feeRate, BigDecimal slippageBps,
-                              String executionTimingPolicy, String finalEquityPolicy,
-                              String executionSpecJson, BigDecimal requestedInitialCapital) {
+        String backtestRunId,
+        String datasetId,
+        String barContentSha256,
+        String strategyVersionId,
+        String strategyChecksum,
+        String symbol,
+        String interval,
+        String datasetSnapshotJson,
+        Assumptions assumptions,
+        List<BarWindow> bars,
+        Benchmark benchmark,
+        DiscountAssetFacts discountAsset) {
+    /** 历史事实没有优惠资产资料，重读继续保留null，不反推过去的资金拆分。 */
+    public ResearchRunFacts(
+            String backtestRunId,
+            String datasetId,
+            String barContentSha256,
+            String strategyVersionId,
+            String strategyChecksum,
+            String symbol,
+            String interval,
+            String datasetSnapshotJson,
+            Assumptions assumptions,
+            List<BarWindow> bars,
+            Benchmark benchmark) {
+        this(
+                backtestRunId,
+                datasetId,
+                barContentSha256,
+                strategyVersionId,
+                strategyChecksum,
+                symbol,
+                interval,
+                datasetSnapshotJson,
+                assumptions,
+                bars,
+                benchmark,
+                null);
+    }
+
+    /** 预算在初始化价上守恒，末尾估值只读取冻结来源的当时可见点；两组换算事实独立保存。 */
+    public record DiscountAssetFacts(
+            String assetCurrency,
+            String quoteCurrency,
+            BigDecimal budgetFraction,
+            BigDecimal initialUnits,
+            BigDecimal initialQuoteValue,
+            BigDecimal initialCash,
+            ConversionFacts initialConversion,
+            BigDecimal remainingUnits,
+            BigDecimal finalQuoteValue,
+            ConversionFacts finalConversion,
+            String priceSnapshotSha256,
+            String priceSnapshotJson) {
+        public DiscountAssetFacts {
+            budgetFraction = inputDecimal(budgetFraction);
+            initialUnits = decimal(initialUnits);
+            initialQuoteValue = decimal(initialQuoteValue);
+            initialCash = decimal(initialCash);
+            remainingUnits = decimal(remainingUnits);
+            finalQuoteValue = decimal(finalQuoteValue);
+        }
+    }
+
+    public record ConversionFacts(
+            BigDecimal quotePerAsset,
+            String observedAt,
+            String visibleAt,
+            String sourceSha256,
+            String sourceJson) {
+        public ConversionFacts {
+            quotePerAsset = decimal(quotePerAsset);
+        }
+    }
+
+    public record Assumptions(
+            BigDecimal initialCapital,
+            BigDecimal feeRate,
+            BigDecimal slippageBps,
+            String executionTimingPolicy,
+            String finalEquityPolicy,
+            String executionSpecJson,
+            BigDecimal requestedInitialCapital) {
         public Assumptions {
             initialCapital = decimal(initialCapital);
             // 费率和原始资本允许更高输入精度；保留原值，不能把舍入后的假设冒充输入身份。
@@ -21,12 +97,109 @@ public record ResearchRunFacts(
             requestedInitialCapital = inputDecimal(requestedInitialCapital);
         }
     }
-    public record BarWindow(String startTime, String endTime, String snapshotTime) { }
-    public record Benchmark(String status, String reason, String benchmarkType, String valuationPolicy,
-                            String startTime, String endTime, String entryTime,
-                            BigDecimal entryPrice, BigDecimal endPrice, BigDecimal initialCapital,
-                            BigDecimal quantity, BigDecimal fee, BigDecimal slippage,
-                            BigDecimal finalEquity, BigDecimal benchmarkReturn) {
+
+    public record BarWindow(String startTime, String endTime, String snapshotTime) {}
+
+    public record Benchmark(
+            String status,
+            String reason,
+            String benchmarkType,
+            String valuationPolicy,
+            String startTime,
+            String endTime,
+            String entryTime,
+            BigDecimal entryPrice,
+            BigDecimal endPrice,
+            BigDecimal initialCapital,
+            BigDecimal quantity,
+            BigDecimal fee,
+            BigDecimal slippage,
+            BigDecimal finalEquity,
+            BigDecimal benchmarkReturn,
+            String feeCurrency,
+            BigDecimal feeNativeAmount,
+            String feePaymentStatus,
+            DiscountAssetFacts discountAsset) {
+        /** 旧基准没有原币资料，保持原quote费用及持仓口径，不伪造历史支付币种。 */
+        public Benchmark(
+                String status,
+                String reason,
+                String benchmarkType,
+                String valuationPolicy,
+                String startTime,
+                String endTime,
+                String entryTime,
+                BigDecimal entryPrice,
+                BigDecimal endPrice,
+                BigDecimal initialCapital,
+                BigDecimal quantity,
+                BigDecimal fee,
+                BigDecimal slippage,
+                BigDecimal finalEquity,
+                BigDecimal benchmarkReturn) {
+            this(
+                    status,
+                    reason,
+                    benchmarkType,
+                    valuationPolicy,
+                    startTime,
+                    endTime,
+                    entryTime,
+                    entryPrice,
+                    endPrice,
+                    initialCapital,
+                    quantity,
+                    fee,
+                    slippage,
+                    finalEquity,
+                    benchmarkReturn,
+                    null,
+                    null,
+                    null,
+                    null);
+        }
+
+        public Benchmark(
+                String status,
+                String reason,
+                String benchmarkType,
+                String valuationPolicy,
+                String startTime,
+                String endTime,
+                String entryTime,
+                BigDecimal entryPrice,
+                BigDecimal endPrice,
+                BigDecimal initialCapital,
+                BigDecimal quantity,
+                BigDecimal fee,
+                BigDecimal slippage,
+                BigDecimal finalEquity,
+                BigDecimal benchmarkReturn,
+                String feeCurrency,
+                BigDecimal feeNativeAmount,
+                String feePaymentStatus) {
+            this(
+                    status,
+                    reason,
+                    benchmarkType,
+                    valuationPolicy,
+                    startTime,
+                    endTime,
+                    entryTime,
+                    entryPrice,
+                    endPrice,
+                    initialCapital,
+                    quantity,
+                    fee,
+                    slippage,
+                    finalEquity,
+                    benchmarkReturn,
+                    feeCurrency,
+                    feeNativeAmount,
+                    feePaymentStatus,
+                    null);
+        }
+
         public Benchmark {
             entryPrice = decimal(entryPrice);
             endPrice = decimal(endPrice);
@@ -36,12 +209,15 @@ public record ResearchRunFacts(
             slippage = decimal(slippage);
             finalEquity = decimal(finalEquity);
             benchmarkReturn = decimal(benchmarkReturn);
+            feeNativeAmount = decimal(feeNativeAmount);
         }
     }
+
     // 数值和 scale 都固定，JSONB 的指数或尾零规范化不能改变读回对象的相等性。
     public static BigDecimal decimal(BigDecimal value) {
         return value == null ? null : value.setScale(18, RoundingMode.HALF_UP);
     }
+
     public static BigDecimal inputDecimal(BigDecimal value) {
         if (value == null) return null;
         BigDecimal canonical = value.stripTrailingZeros();

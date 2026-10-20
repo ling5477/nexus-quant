@@ -3,7 +3,14 @@ package com.guidinglight.nexusquant.research.infra.backtest.jdbc;
 import com.guidinglight.nexusquant.research.domain.BacktestRun;
 import com.guidinglight.nexusquant.research.domain.BacktestRunStatus;
 import com.guidinglight.nexusquant.research.domain.port.BacktestRunRepository;
+import com.guidinglight.nexusquant.research.domain.port.ResearchFeeSourcePort;
+import com.guidinglight.nexusquant.research.infra.ResearchFeeReadScope;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.AdmissionMutationCoordinator;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,17 +20,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Repository;
-
 /**
  * JdbcBacktestRunRepository 是 backtest_runs 表的 JDBC 实现。
  */
 @Repository
 public class JdbcBacktestRunRepository implements BacktestRunRepository {
 
-    private static final String BASE_SELECT = """
+    private static final String BASE_SELECT =
+            """
             SELECT backtest_run_id, backtest_config_id, research_config_id, source_strategy_id, status,
                    strategy_snapshot::text AS strategy_snapshot,
                    strategy_version_id,
@@ -40,12 +44,19 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
     private static final RowMapper<BacktestRun> ROW_MAPPER = JdbcBacktestRunRepository::mapRow;
 
     private final JdbcTemplate jdbcTemplate;
+    private ResearchFeeReadScope feeScope =
+            new ResearchFeeReadScope(ResearchFeeSourcePort.disabled());
+
+    /** 手工构造默认拒绝私有来源；正式装配在SQL中统一隔离详情及列表。 */
+    @Autowired
+    private void bindFeeReadScope(ResearchFeeReadScope scope) {
+        this.feeScope = scope;
+    }
+
     private final AdmissionMutationCoordinator admissionMutationCoordinator;
 
     public JdbcBacktestRunRepository(
-            JdbcTemplate jdbcTemplate,
-            AdmissionMutationCoordinator admissionMutationCoordinator
-    ) {
+            JdbcTemplate jdbcTemplate, AdmissionMutationCoordinator admissionMutationCoordinator) {
         this.jdbcTemplate = jdbcTemplate;
         this.admissionMutationCoordinator = admissionMutationCoordinator;
     }
@@ -82,17 +93,18 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
                 backtestRun.failureCode(),
                 backtestRun.failureMessage(),
                 Timestamp.from(backtestRun.createdAt()),
-                Timestamp.from(backtestRun.updatedAt())
-        );
+                Timestamp.from(backtestRun.updatedAt()));
     }
 
     @Override
     public Optional<BacktestRun> findByBacktestRunId(String backtestRunId) {
-        List<BacktestRun> rows = jdbcTemplate.query(
-                BASE_SELECT + " WHERE backtest_run_id = ?",
-                ROW_MAPPER,
-                backtestRunId
-        );
+        List<BacktestRun> rows =
+                jdbcTemplate.query(
+                        BASE_SELECT
+                                + " WHERE backtest_run_id = ? AND "
+                                + feeScope.configuration("config_snapshot_json"),
+                        ROW_MAPPER,
+                        backtestRunId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
@@ -110,6 +122,8 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
             sql.append(hasWhere ? " AND" : " WHERE").append(" backtest_config_id = ?");
             args.add(backtestConfigId);
         }
+        sql.append(args.isEmpty() ? " WHERE " : " AND ")
+                .append(feeScope.configuration("config_snapshot_json"));
         sql.append(" ORDER BY requested_at DESC, backtest_run_id DESC");
         return jdbcTemplate.query(sql.toString(), ROW_MAPPER, args.toArray());
     }
@@ -123,15 +137,17 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
             String failureCode,
             String failureMessage,
             String summaryJson,
-            Instant updatedAt
-    ) {
-        List<String> publishIds = jdbcTemplate.query(
-                "SELECT publish_record_id FROM backtest_publish_records WHERE backtest_run_id = ?",
-                (resultSet, rowNum) -> resultSet.getString("publish_record_id"),
-                backtestRunId
-        );
-        return admissionMutationCoordinator.withLockedAdmissionStates(publishIds, () -> jdbcTemplate.update(
-                """
+            Instant updatedAt) {
+        List<String> publishIds =
+                jdbcTemplate.query(
+                        "SELECT publish_record_id FROM backtest_publish_records WHERE backtest_run_id = ?",
+                        (resultSet, rowNum) -> resultSet.getString("publish_record_id"),
+                        backtestRunId);
+        return admissionMutationCoordinator.withLockedAdmissionStates(
+                publishIds,
+                () ->
+                        jdbcTemplate.update(
+                                        """
                         UPDATE backtest_runs
                         SET status = ?,
                             started_at = ?,
@@ -145,16 +161,16 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
                             updated_at = ?
                         WHERE backtest_run_id = ?
                         """,
-                status.name(),
-                toTimestamp(startedAt),
-                toTimestamp(finishedAt),
-                failureCode,
-                failureMessage,
-                summaryJson,
-                summaryJson,
-                Timestamp.from(updatedAt),
-                backtestRunId
-        ) > 0);
+                                        status.name(),
+                                        toTimestamp(startedAt),
+                                        toTimestamp(finishedAt),
+                                        failureCode,
+                                        failureMessage,
+                                        summaryJson,
+                                        summaryJson,
+                                        Timestamp.from(updatedAt),
+                                        backtestRunId)
+                                > 0);
     }
 
     private static BacktestRun mapRow(ResultSet resultSet, int rowNum) throws SQLException {
@@ -180,13 +196,10 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
                 resultSet.getString("failure_message"),
                 resultSet.getString("summary_json"),
                 resultSet.getTimestamp("created_at").toInstant(),
-                resultSet.getTimestamp("updated_at").toInstant()
-        );
+                resultSet.getTimestamp("updated_at").toInstant());
     }
 
     private static Timestamp toTimestamp(Instant value) {
         return value == null ? null : Timestamp.from(value);
     }
 }
-
-

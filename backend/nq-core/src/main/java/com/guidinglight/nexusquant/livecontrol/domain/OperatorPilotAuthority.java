@@ -28,7 +28,7 @@ public record OperatorPilotAuthority(
         Instant createdAt,
         String canonicalDigest
 ) {
-    public static final String DIGEST_SCHEMA = "operator-pilot-authority.v1";
+    public static final String DIGEST_SCHEMA = "operator-execution-authority.v1";
     public static final String REQUIRED_INSTRUMENT = "BTC-USDT";
     public static final BigDecimal HARD_CAP = new BigDecimal("10.00000000");
     private static final String ZERO_DIGEST = "0".repeat(64);

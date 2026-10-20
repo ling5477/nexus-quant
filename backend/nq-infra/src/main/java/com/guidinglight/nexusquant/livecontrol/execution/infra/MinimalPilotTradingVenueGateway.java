@@ -48,7 +48,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  */
 public final class MinimalPilotTradingVenueGateway implements TradingVenueGateway {
 
-    public static final String SOURCE = "GATEY_MINIMAL_LIVE_PILOT";
+    public static final String SOURCE = "CONTROLLED_LIVE_EXECUTION";
     private static final Duration CLAIM_LEASE = Duration.ofMinutes(1);
     private static final Logger LOGGER = LoggerFactory.getLogger(MinimalPilotTradingVenueGateway.class);
 
@@ -83,7 +83,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         PilotInvocation invocation = requirePlaceInvocation(request);
         PilotExecutionLease lease = lease(invocation.leaseId());
         ExactPilotBinding binding = binding(lease);
-        if (!orderMatches(order, request, binding)) throw rejected("PILOT_ORDER_SCOPE_MISMATCH");
+        if (!orderMatches(order, request, binding)) throw rejected("EXECUTION_ORDER_SCOPE_MISMATCH");
         ExecutionIntent intent = intents.createOrGet(ExecutionIntentCanonicalEncoder.place(
                 invocation.intentId(), binding.sessionId(), order.symbol(), order.side(),
                 order.qty(), order.price(), order.orderId()));
@@ -164,7 +164,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
                 SpotProviderRequests.Venue.OKX_SPOT, binding.order().exchangeInstrumentId(), context);
         SpotProviderResults.OrderObservation observation = provider.readOrderStatus(orderQuery);
         if (observation.state() == SpotProviderResults.OrderState.UNKNOWN || observation.error() != null) {
-            throw rejected("PILOT_RECONCILIATION_ORDER_UNKNOWN");
+            throw rejected("EXECUTION_RECONCILIATION_ORDER_UNKNOWN");
         }
         reconcileIntentObservation(place.intentId(), observation);
         SpotProviderResults.FillPage fillPage;
@@ -182,7 +182,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
                     binding.pilotWindowStart(), binding.pilotWindowEnd(), 100));
         }
         if (fillPage.error() != null || !fillPage.complete()) {
-            throw rejected("PILOT_RECONCILIATION_FILLS_INCOMPLETE");
+            throw rejected("EXECUTION_RECONCILIATION_FILLS_INCOMPLETE");
         }
         BigDecimal total = fillPage.fills().stream()
                 .map(SpotProviderResults.FillReference::quantity)
@@ -200,9 +200,9 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
     private ExecutionIntent claimAndMarkSend(ExecutionIntent intent) {
         UUID token = UUID.randomUUID();
         ExecutionIntent claimed = intents.claim(intent.intentId(), "gatey-minimal-pilot", token, CLAIM_LEASE)
-                .orElseThrow(() -> rejected("PILOT_INTENT_CLAIM_REJECTED"));
+                .orElseThrow(() -> rejected("EXECUTION_INTENT_CLAIM_REJECTED"));
         return intents.markSendStarted(claimed.intentId(), claimed.version(), token)
-                .orElseThrow(() -> rejected("PILOT_INTENT_SEND_REJECTED"));
+                .orElseThrow(() -> rejected("EXECUTION_INTENT_SEND_REJECTED"));
     }
 
     private ExecutionIntent appendPlaceReceipt(
@@ -237,7 +237,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
                 UUID.randomUUID(), intent.intentId(),
                 value.state() == SpotProviderResults.OrderState.NOT_FOUND
                         ? ExecutionReceiptOutcome.QUERY_NOT_FOUND : ExecutionReceiptOutcome.QUERY_CONFIRMED,
-                null, value.exchangeOrderId(), value.error() == null ? "PILOT_QUERY" : value.error().category().name(),
+                null, value.exchangeOrderId(), value.error() == null ? "EXECUTION_QUERY" : value.error().category().name(),
                 value.state().name(), canonicalReceiptTime(value.observedAt()));
         return intents.appendReceiptAndTransition(
                 intent.intentId(), intent.version(), intent.claimToken(), receipt, ExecutionIntentState.RECONCILED);
@@ -248,24 +248,24 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
             SpotProviderResults.OrderObservation observation
     ) {
         ExecutionIntent intent = intents.find(intentId)
-                .orElseThrow(() -> rejected("PILOT_INTENT_NOT_FOUND"));
+                .orElseThrow(() -> rejected("EXECUTION_INTENT_NOT_FOUND"));
         return switch (intent.state()) {
             case SEND_STARTED -> appendQueryReceipt(
                     intents.markAmbiguousForRecovery(
                                     intent.intentId(), intent.version(), intent.claimToken())
-                            .orElseThrow(() -> rejected("PILOT_INTENT_RECOVERY_CAS_CONFLICT")),
+                            .orElseThrow(() -> rejected("EXECUTION_INTENT_RECOVERY_CAS_CONFLICT")),
                     observation);
             case UNKNOWN -> appendQueryReceipt(intent, observation);
             case SEND_SUCCEEDED, FAILED, CANCELLED, RECONCILED -> intent;
-            case CREATED, CLAIMED -> throw rejected("PILOT_INTENT_RECOVERY_STATE_INVALID");
+            case CREATED, CLAIMED -> throw rejected("EXECUTION_INTENT_RECOVERY_STATE_INVALID");
         };
     }
 
     private ExecutionIntent requireQueryOnlyRecoveryState(UUID intentId) {
         ExecutionIntent intent = intents.find(intentId)
-                .orElseThrow(() -> rejected("PILOT_INTENT_NOT_FOUND"));
+                .orElseThrow(() -> rejected("EXECUTION_INTENT_NOT_FOUND"));
         if (intent.state() == ExecutionIntentState.CREATED || intent.state() == ExecutionIntentState.CLAIMED) {
-            throw rejected("PILOT_INTENT_RECOVERY_STATE_INVALID");
+            throw rejected("EXECUTION_INTENT_RECOVERY_STATE_INVALID");
         }
         return intent;
     }
@@ -281,7 +281,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         if (observation.error() != null) {
             LOGGER.warn("pilot_reconciliation_clock_unavailable category={} audit_code={}",
                     observation.error().category(), observation.error().auditCode());
-            throw rejected("PILOT_RECONCILIATION_CLOCK_UNAVAILABLE");
+            throw rejected("EXECUTION_RECONCILIATION_CLOCK_UNAVAILABLE");
         }
         var refreshed = new SpotProviderRequests.RequestContext(
                 base.sessionId(), base.referenceId(), base.traceId(), base.correlationId(),
@@ -290,7 +290,7 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
                         observation.observedSkew(), base.clock().maximumSkew(),
                         base.clock().maximumObservationAge()));
         if (!refreshed.clock().healthyAt(requestTimestamp)) {
-            throw rejected("PILOT_RECONCILIATION_CLOCK_UNAVAILABLE");
+            throw rejected("EXECUTION_RECONCILIATION_CLOCK_UNAVAILABLE");
         }
         return refreshed;
     }
@@ -326,8 +326,8 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
         ClockFact fact = jdbc.queryForObject("""
                 SELECT observation.observed_at,observation.observed_skew_ms,
                        scope.maximum_tolerated_skew_ms,scope.clock_maximum_age_ms
-                FROM pilot_prerequisite_observations observation
-                JOIN pilot_scope_bindings scope ON scope.pilot_scope_id=observation.pilot_scope_id
+                FROM execution_prerequisite_observations observation
+                JOIN execution_scope_bindings scope ON scope.execution_scope_id=observation.execution_scope_id
                 WHERE observation.observation_set_id=? AND observation.observation_type='CLOCK_SYNC'
                 """, (row, ignored) -> new ClockFact(
                 row.getTimestamp(1).toInstant(), row.getLong(2), row.getLong(3), row.getLong(4)),
@@ -342,38 +342,38 @@ public final class MinimalPilotTradingVenueGateway implements TradingVenueGatewa
     }
 
     private PilotExecutionLease lease(UUID leaseId) {
-        return leases.find(leaseId).orElseThrow(() -> rejected("PILOT_LEASE_NOT_FOUND"));
+        return leases.find(leaseId).orElseThrow(() -> rejected("EXECUTION_LEASE_NOT_FOUND"));
     }
 
     private ExactPilotBinding binding(PilotExecutionLease lease) {
         return bindings.find(lease.liveSessionId(), lease.bindingId())
                 .filter(value -> value.bindingDigest().equals(lease.bindingDigest()))
-                .orElseThrow(() -> rejected("PILOT_BINDING_NOT_FOUND"));
+                .orElseThrow(() -> rejected("EXECUTION_BINDING_NOT_FOUND"));
     }
 
     private LeasePlace findLeasePlace(String clientOrderId) {
         List<LeasePlace> values = jdbc.query("""
                 SELECT link.lease_id,intent.intent_id
-                FROM pilot_execution_lease_intents link
+                FROM controlled_execution_lease_intents link
                 JOIN execution_intents intent ON intent.intent_id=link.intent_id
                 WHERE link.action='PLACE' AND intent.client_order_id=?
                 """, (row, ignored) -> new LeasePlace(
                 row.getObject(1, UUID.class), row.getObject(2, UUID.class)), clientOrderId);
-        if (values.size() != 1) throw rejected("PILOT_PLACE_IDENTITY_NOT_FOUND");
+        if (values.size() != 1) throw rejected("EXECUTION_PLACE_IDENTITY_NOT_FOUND");
         return values.getFirst();
     }
 
     static PilotInvocation requirePlaceInvocation(PlaceOrderRequest request) {
         if (!SOURCE.equals(request.source()) || request.strategyRunId() != null
                 || request.executionScopeId() == null) {
-            throw rejected("PILOT_PROVIDER_SCOPE_REQUIRED");
+            throw rejected("EXECUTION_PROVIDER_SCOPE_REQUIRED");
         }
         String[] values = request.executionScopeId().split("\\|", -1);
-        if (values.length != 2) throw rejected("PILOT_PROVIDER_SCOPE_REQUIRED");
+        if (values.length != 2) throw rejected("EXECUTION_PROVIDER_SCOPE_REQUIRED");
         try {
             return new PilotInvocation(UUID.fromString(values[0]), UUID.fromString(values[1]));
         } catch (IllegalArgumentException failure) {
-            throw rejected("PILOT_PROVIDER_SCOPE_REQUIRED");
+            throw rejected("EXECUTION_PROVIDER_SCOPE_REQUIRED");
         }
     }
 

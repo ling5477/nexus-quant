@@ -51,7 +51,7 @@ class B5QualificationResumeTest {
                     assertNotEquals(a.process.pid(), b.process.pid());
                     proof.put("postgres", value(reader, "SHOW server_version"));
                     assertTrue(proof.path("postgres").asText().startsWith("16."));
-                    assertEquals("50", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
+                    assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                     a.send("SET_B5_VENUE b0t4");
                     if (row.startsWith("DUPLICATE")) {
                         a.send("ARM_B5_BEFORE_INSERT"); b.send("ARM_B5_BEFORE_INSERT");

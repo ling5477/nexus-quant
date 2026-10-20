@@ -19,7 +19,8 @@ public class CredentialPermissionProbeRequestBody {
     @Schema(description = "必须为 true；仅允许 dry run / no-real-exchange probe")
     private Boolean dryRun;
 
-    @Schema(description = "严格 allowlist：PAPER/READ_ONLY_DIAGNOSTIC 或 GATEY_PILOT_READINESS；LIVE 拒绝")
+    @Schema(description = "严格 allowlist：PAPER/READ_ONLY_DIAGNOSTIC 或 SCOPED_TRADE_READINESS；LIVE 及退休阶段值拒绝",
+            allowableValues = {"PAPER", "READ_ONLY_DIAGNOSTIC", "SCOPED_TRADE_READINESS"})
     private String mode;
 
     @Schema(description = "必须为 true；表示调用方确认 dry-run/no-mutation safety gate")

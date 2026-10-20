@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
  * JdbcAuditLogRepository 提供审计日志落库实现。
  * <p>
  * Why:
- * Gate B 要求关键决策点可复盘，审计日志必须结构化落库并携带 trace_id。
+ * 要求关键决策点可复盘，审计日志必须结构化落库并携带 trace_id。
  */
 @Repository
 public class JdbcAuditLogRepository implements AuditLogRepository {

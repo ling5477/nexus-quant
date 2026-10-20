@@ -176,6 +176,32 @@ class ValidationReviewOperationsServiceTest {
         assertEquals(0, repository.transitionCalls);
     }
 
+    @Test
+    void shouldReadOriginalEventWithoutReplacingItWithLaterCaseOrAnotherActor() {
+        repository.current = currentFor(ValidationReviewAction.CLOSE);
+        repository.original = new ValidationReviewEvent(
+                UUID.randomUUID(), CASE_ID, ValidationReviewCase.LOCAL_TENANT_KEY,
+                ValidationReviewEventType.ACKNOWLEDGED, ValidationReviewState.OPEN,
+                ValidationReviewState.ACKNOWLEDGED, 1L, 11L, "original", "hash", "request", "trace",
+                JsonNodeFactory.instance.objectNode(), NOW.minusSeconds(40));
+        ValidationReviewActor owner = new ValidationReviewActor(11L, Set.of("OPERATOR"));
+        ValidationReviewEvent result = service.originalEvent(owner, CASE_ID, "original").orElseThrow();
+        assertEquals(ValidationReviewState.ACKNOWLEDGED, result.toState());
+        assertEquals(1L, result.caseVersion());
+        assertEquals(ValidationReviewState.RESOLVED, repository.current.state());
+        assertEquals("OWNED", repository.lastEventScope);
+        assertTrue(service.originalEvent(owner, CASE_ID, "not-recorded").isEmpty());
+        assertTrue(service.originalEvent(
+                new ValidationReviewActor(99L, Set.of("ADMIN")), CASE_ID, "original").isEmpty());
+        assertEquals("TENANT", repository.lastEventScope);
+        assertThrows(ValidationReviewException.class, () -> service.originalEvent(
+                new ValidationReviewActor(12L, Set.of("OPERATOR")), CASE_ID, "original"));
+        assertThrows(ValidationReviewException.class, () -> service.originalEvent(
+                new ValidationReviewActor(11L, Set.of("VIEWER")), CASE_ID, "original"));
+        assertThrows(IllegalArgumentException.class, () -> service.originalEvent(owner, CASE_ID, " "));
+        assertEquals(0, repository.transitionCalls);
+    }
+
     private static ValidationReviewCase currentFor(ValidationReviewAction action) {
         ValidationReviewCase open = openCase();
         ValidationReviewStateMachine machine = new ValidationReviewStateMachine();
@@ -210,6 +236,8 @@ class ValidationReviewOperationsServiceTest {
         private int transitionCalls;
         private boolean visible = true;
         private boolean replay;
+        private ValidationReviewEvent original;
+        private String lastEventScope;
 
         @Override
         public ValidationReviewCase createCase(ValidationReviewCase reviewCase) {
@@ -264,14 +292,16 @@ class ValidationReviewOperationsServiceTest {
         public Optional<ValidationReviewEvent> findOwnedEventByIdempotencyKey(
                 String tenantKey, long ownerId, UUID reviewCaseId, String idempotencyKey
         ) {
-            return Optional.empty();
+            lastEventScope = "OWNED";
+            return Optional.ofNullable(original).filter(event -> event.idempotencyKey().equals(idempotencyKey));
         }
 
         @Override
         public Optional<ValidationReviewEvent> findTenantEventByIdempotencyKey(
                 String tenantKey, UUID reviewCaseId, String idempotencyKey
         ) {
-            return Optional.empty();
+            lastEventScope = "TENANT";
+            return Optional.ofNullable(original).filter(event -> event.idempotencyKey().equals(idempotencyKey));
         }
 
         @Override

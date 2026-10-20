@@ -326,7 +326,8 @@ try {
     Assert-ProductionConfigCapabilityRejected 'R06-prod-local-profile-mixing' {
         param($initializer)
         $source = Get-Content -Raw -LiteralPath $initializer
-        $from = '!APPROVED_PRODUCTION_PROFILES.equals(effectiveProfiles)'
+        # 生产组合改由统一谓词校验；仍把两处边界弱化为仅含 prod，证明混入 local 会被回归拒绝。
+        $from = '!approvedProfiles(effectiveProfiles)'
         Assert-Condition ($source.Contains($from)) 'R06 mutation target missing'
         [IO.File]::WriteAllText($initializer, $source.Replace($from, '!effectiveProfiles.contains(PROD_PROFILE)'))
     }

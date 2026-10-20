@@ -2,18 +2,33 @@ package com.guidinglight.nexusquant.research.application.eval;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.guidinglight.nexusquant.research.application.BacktestRunService;
+import com.guidinglight.nexusquant.research.application.ResearchConfigService;
+import com.guidinglight.nexusquant.research.application.backtest.command.BacktestConfigCreateRequest;
+import com.guidinglight.nexusquant.research.application.backtest.command.BacktestRunStartRequest;
+import com.guidinglight.nexusquant.research.application.command.ResearchConfigCreateRequest;
+import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
+import com.guidinglight.nexusquant.research.domain.BacktestConfig;
+import com.guidinglight.nexusquant.research.domain.BacktestRun;
+import com.guidinglight.nexusquant.research.domain.BacktestRunStatus;
+import com.guidinglight.nexusquant.research.domain.ResearchConfig;
+import com.guidinglight.nexusquant.research.domain.SourceStrategySnapshot;
 import com.guidinglight.nexusquant.research.domain.backtest.SimOrder;
 import com.guidinglight.nexusquant.research.domain.backtest.SimOrderStatus;
 import com.guidinglight.nexusquant.research.domain.backtest.SimPnlSnapshot;
 import com.guidinglight.nexusquant.research.domain.backtest.SimPosition;
 import com.guidinglight.nexusquant.research.domain.backtest.SimTrade;
 import com.guidinglight.nexusquant.research.domain.eval.BacktestEvaluationReport;
-import com.guidinglight.nexusquant.research.domain.eval.EvaluationStatus;
-import com.guidinglight.nexusquant.research.domain.eval.EvaluationMetricCalculator;
 import com.guidinglight.nexusquant.research.domain.eval.DrawdownCalculator;
+import com.guidinglight.nexusquant.research.domain.eval.EvaluationMetricCalculator;
+import com.guidinglight.nexusquant.research.domain.eval.EvaluationStatus;
 import com.guidinglight.nexusquant.research.domain.eval.SharpeCalculator;
 import com.guidinglight.nexusquant.research.domain.eval.TradeOutcomeCalculator;
 import com.guidinglight.nexusquant.research.domain.eval.port.BacktestEvaluationReportRepository;
@@ -21,21 +36,13 @@ import com.guidinglight.nexusquant.research.domain.eval.port.SimOrderQueryReposi
 import com.guidinglight.nexusquant.research.domain.eval.port.SimPnlSnapshotQueryRepository;
 import com.guidinglight.nexusquant.research.domain.eval.port.SimPositionQueryRepository;
 import com.guidinglight.nexusquant.research.domain.eval.port.SimTradeQueryRepository;
-import com.guidinglight.nexusquant.research.domain.BacktestConfig;
-import com.guidinglight.nexusquant.research.domain.BacktestRun;
-import com.guidinglight.nexusquant.research.domain.BacktestRunStatus;
-import com.guidinglight.nexusquant.research.domain.ResearchConfig;
-import com.guidinglight.nexusquant.research.domain.SourceStrategySnapshot;
 import com.guidinglight.nexusquant.research.domain.port.BacktestConfigRepository;
 import com.guidinglight.nexusquant.research.domain.port.BacktestRunRepository;
 import com.guidinglight.nexusquant.research.domain.port.ResearchConfigRepository;
+import com.guidinglight.nexusquant.research.domain.port.ResearchFeeSourcePort;
 import com.guidinglight.nexusquant.research.domain.port.SourceStrategySnapshotRepository;
-import com.guidinglight.nexusquant.research.application.backtest.command.BacktestConfigCreateRequest;
-import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
-import com.guidinglight.nexusquant.research.application.BacktestRunService;
-import com.guidinglight.nexusquant.research.application.backtest.command.BacktestRunStartRequest;
-import com.guidinglight.nexusquant.research.application.command.ResearchConfigCreateRequest;
-import com.guidinglight.nexusquant.research.application.ResearchConfigService;
+
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -46,17 +53,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import org.junit.jupiter.api.Test;
+import java.util.concurrent.atomic.AtomicInteger;
 
 class BacktestEvaluationServiceTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-    private final Clock fixedClock = Clock.fixed(Instant.parse("2026-03-24T20:00:00Z"), ZoneOffset.UTC);
+    private final ObjectMapper objectMapper =
+            new ObjectMapper().registerModule(new JavaTimeModule());
+    private final Clock fixedClock =
+            Clock.fixed(Instant.parse("2026-03-24T20:00:00Z"), ZoneOffset.UTC);
 
     @Test
     void shouldEvaluateSucceededRunAndUpsertReport() {
-        Scenario scenario = createScenario(BacktestRunStatus.SUCCEEDED, new BigDecimal("100000"), true);
+        Scenario scenario =
+                createScenario(BacktestRunStatus.SUCCEEDED, new BigDecimal("100000"), true);
 
         BacktestEvaluationReport first = scenario.service.evaluate(scenario.run.backtestRunId());
         BacktestEvaluationReport second = scenario.service.evaluate(scenario.run.backtestRunId());
@@ -78,80 +87,267 @@ class BacktestEvaluationServiceTest {
 
     @Test
     void shouldRejectEvaluateForNonSucceededRun() {
-        Scenario scenario = createScenario(BacktestRunStatus.FAILED, new BigDecimal("100000"), true);
+        Scenario scenario =
+                createScenario(BacktestRunStatus.FAILED, new BigDecimal("100000"), true);
 
-        assertThrows(IllegalStateException.class, () -> scenario.service.evaluate(scenario.run.backtestRunId()));
-        assertEquals(EvaluationStatus.FAILED, scenario.reportRepository.findByBacktestRunId(scenario.run.backtestRunId()).orElseThrow().evaluationStatus());
+        assertThrows(
+                IllegalStateException.class,
+                () -> scenario.service.evaluate(scenario.run.backtestRunId()));
+        assertEquals(
+                EvaluationStatus.FAILED,
+                scenario.reportRepository
+                        .findByBacktestRunId(scenario.run.backtestRunId())
+                        .orElseThrow()
+                        .evaluationStatus());
+    }
+
+    @Test
+    void passesExactFrozenNumbersToFeeValidationBeforeEvaluating() throws Exception {
+        var scenario =
+                createScenario(
+                        BacktestRunStatus.SUCCEEDED,
+                        new BigDecimal("100000"),
+                        true,
+                        "{\"number\":9007199254740993.123456789012345678,\"slippageBps\":0.123456789012345678}");
+        var calls = new AtomicInteger();
+        var oracle =
+                new ObjectMapper().reader().with(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
+        var validator =
+                new ResearchFeeSourcePort() {
+                    public String prepareConfiguration(String spec) {
+                        return spec;
+                    }
+
+                    public String freezeRunConfiguration(
+                            String config, String dataset, Instant at) {
+                        return config;
+                    }
+
+                    public Long currentReadOwner() {
+                        return -1L;
+                    }
+
+                    public void validateFrozenExecution(String spec, String dataset) {
+                        try {
+                            JsonNode node = oracle.readTree(spec);
+                            assertEquals(
+                                    0,
+                                    new BigDecimal("9007199254740993.123456789012345678")
+                                            .compareTo(node.path("number").decimalValue()));
+                            assertEquals(
+                                    0,
+                                    new BigDecimal("0.123456789012345678")
+                                            .compareTo(node.path("slippageBps").decimalValue()));
+                            calls.incrementAndGet();
+                        } catch (JsonProcessingException ex) {
+                            throw new AssertionError(ex);
+                        }
+                    }
+                };
+        var field = BacktestEvaluationService.class.getDeclaredField("feeSource");
+        field.setAccessible(true);
+        field.set(scenario.service, validator);
+        assertEquals(
+                EvaluationStatus.SUCCEEDED,
+                scenario.service.evaluate(scenario.run.backtestRunId()).evaluationStatus());
+        assertEquals(1, calls.get());
+    }
+
+    /** 新守卫拒绝旧歧义成交的重算，但不能覆盖已经成功的原冻结报告。 */
+    @Test
+    void shouldPreserveSucceededReportWhenHistoricalTradeOrderIsUnavailable() {
+        Scenario scenario =
+                createScenario(BacktestRunStatus.SUCCEEDED, new BigDecimal("100000"), true);
+        BacktestEvaluationReport original = scenario.service.evaluate(scenario.run.backtestRunId());
+        duplicateLastTradeTime(scenario);
+        var error =
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> scenario.service.evaluate(scenario.run.backtestRunId()));
+        assertTrue(error.getMessage().contains("RESEARCH_TRADE_ORDER_UNAVAILABLE"));
+        assertEquals(
+                original,
+                scenario.reportRepository
+                        .findByBacktestRunId(scenario.run.backtestRunId())
+                        .orElseThrow());
+    }
+
+    @Test
+    void shouldPreserveSucceededReportWhenHistoricalValuationOrderIsUnavailable() {
+        Scenario scenario =
+                createScenario(BacktestRunStatus.SUCCEEDED, new BigDecimal("100000"), true);
+        BacktestEvaluationReport original = scenario.service.evaluate(scenario.run.backtestRunId());
+        var rows = scenario.pnlRepository.storage;
+        var row = rows.get(1);
+        rows.set(
+                1,
+                new SimPnlSnapshot(
+                        row.simPnlSnapshotId(),
+                        row.backtestRunId(),
+                        rows.getFirst().snapshotTime(),
+                        row.cashBalance(),
+                        row.positionMarketValue(),
+                        row.realizedPnl(),
+                        row.unrealizedPnl(),
+                        row.totalFee(),
+                        row.totalSlippage(),
+                        row.equity(),
+                        row.netPnl(),
+                        row.createdAt()));
+        var error =
+                assertThrows(
+                        IllegalStateException.class,
+                        () -> scenario.service.evaluate(scenario.run.backtestRunId()));
+        assertTrue(error.getMessage().contains("RESEARCH_VALUATION_ORDER_UNAVAILABLE"));
+        assertEquals(
+                original,
+                scenario.reportRepository
+                        .findByBacktestRunId(scenario.run.backtestRunId())
+                        .orElseThrow());
+    }
+
+    @Test
+    void shouldKeepOriginalFailedReportContractWhenNoSucceededReportExists() {
+        Scenario scenario =
+                createScenario(BacktestRunStatus.SUCCEEDED, new BigDecimal("100000"), true);
+        duplicateLastTradeTime(scenario);
+        assertThrows(
+                IllegalStateException.class,
+                () -> scenario.service.evaluate(scenario.run.backtestRunId()));
+        assertEquals(
+                EvaluationStatus.FAILED,
+                scenario.reportRepository
+                        .findByBacktestRunId(scenario.run.backtestRunId())
+                        .orElseThrow()
+                        .evaluationStatus());
+    }
+
+    private static void duplicateLastTradeTime(Scenario scenario) {
+        var rows = scenario.tradeRepository.storage;
+        var row = rows.get(1);
+        rows.set(
+                1,
+                new SimTrade(
+                        row.simTradeId(),
+                        row.simOrderId(),
+                        row.backtestRunId(),
+                        row.symbol(),
+                        row.side(),
+                        row.quantity(),
+                        row.tradePrice(),
+                        row.feeAmount(),
+                        row.slippageAmount(),
+                        rows.getFirst().tradedAt(),
+                        row.createdAt(),
+                        row.updatedAt()));
     }
 
     @Test
     void shouldRejectWhenSnapshotsMissingOrInitialCapitalInvalid() {
-        Scenario missingSnapshotScenario = createScenario(BacktestRunStatus.SUCCEEDED, new BigDecimal("100000"), false);
-        assertThrows(IllegalStateException.class, () -> missingSnapshotScenario.service.evaluate(missingSnapshotScenario.run.backtestRunId()));
+        Scenario missingSnapshotScenario =
+                createScenario(BacktestRunStatus.SUCCEEDED, new BigDecimal("100000"), false);
+        assertThrows(
+                IllegalStateException.class,
+                () ->
+                        missingSnapshotScenario.service.evaluate(
+                                missingSnapshotScenario.run.backtestRunId()));
 
-        Scenario invalidCapitalScenario = createScenario(BacktestRunStatus.SUCCEEDED, BigDecimal.ZERO, true);
-        assertThrows(IllegalStateException.class, () -> invalidCapitalScenario.service.evaluate(invalidCapitalScenario.run.backtestRunId()));
+        Scenario invalidCapitalScenario =
+                createScenario(BacktestRunStatus.SUCCEEDED, BigDecimal.ZERO, true);
+        assertThrows(
+                IllegalStateException.class,
+                () ->
+                        invalidCapitalScenario.service.evaluate(
+                                invalidCapitalScenario.run.backtestRunId()));
     }
 
-    private Scenario createScenario(BacktestRunStatus runStatus, BigDecimal initialCapital, boolean withSnapshots) {
-        InMemoryResearchConfigRepository researchConfigRepository = new InMemoryResearchConfigRepository();
-        InMemoryBacktestConfigRepository backtestConfigRepository = new InMemoryBacktestConfigRepository();
-        InMemoryBacktestRunRepository backtestRunRepository = new InMemoryBacktestRunRepository();
-        SourceStrategySnapshotRepository sourceStrategySnapshotRepository = strategyId -> Optional.of(new SourceStrategySnapshot(
-                strategyId, "buy-hold-fixture", "Buy Hold Fixture", "BUY_AND_HOLD_FIXTURE", "BINANCE", 1001L, "SIM", true, "{}", 1
-        ));
-        ResearchConfigService researchConfigService = new ResearchConfigService(
-                researchConfigRepository,
-                sourceStrategySnapshotRepository,
-                objectMapper,
-                fixedClock
-        );
-        BacktestConfigService backtestConfigService = new BacktestConfigService(
-                backtestConfigRepository,
-                researchConfigService,
-                objectMapper,
-                fixedClock
-        );
-        BacktestRunService backtestRunService = new BacktestRunService(
-                backtestRunRepository,
-                backtestConfigService,
-                researchConfigService,
-                fixedClock
-        );
+    private Scenario createScenario(
+            BacktestRunStatus runStatus, BigDecimal initialCapital, boolean withSnapshots) {
+        return createScenario(runStatus, initialCapital, withSnapshots, "{}");
+    }
 
-        ResearchConfig researchConfig = researchConfigService.create(new ResearchConfigCreateRequest(
-                "str-eval-1", "Eval Research", null, "{}", "{}", "{\"symbol\":\"BTCUSDT\",\"interval\":\"1m\"}"
-        ));
+    private Scenario createScenario(
+            BacktestRunStatus runStatus,
+            BigDecimal initialCapital,
+            boolean withSnapshots,
+            String executionSpec) {
+        InMemoryResearchConfigRepository researchConfigRepository =
+                new InMemoryResearchConfigRepository();
+        InMemoryBacktestConfigRepository backtestConfigRepository =
+                new InMemoryBacktestConfigRepository();
+        InMemoryBacktestRunRepository backtestRunRepository = new InMemoryBacktestRunRepository();
+        SourceStrategySnapshotRepository sourceStrategySnapshotRepository =
+                strategyId ->
+                        Optional.of(
+                                new SourceStrategySnapshot(
+                                        strategyId,
+                                        "buy-hold-fixture",
+                                        "Buy Hold Fixture",
+                                        "BUY_AND_HOLD_FIXTURE",
+                                        "BINANCE",
+                                        1001L,
+                                        "SIM",
+                                        true,
+                                        "{}",
+                                        1));
+        ResearchConfigService researchConfigService =
+                new ResearchConfigService(
+                        researchConfigRepository,
+                        sourceStrategySnapshotRepository,
+                        objectMapper,
+                        fixedClock);
+        BacktestConfigService backtestConfigService =
+                new BacktestConfigService(
+                        backtestConfigRepository, researchConfigService, objectMapper, fixedClock);
+        BacktestRunService backtestRunService =
+                new BacktestRunService(
+                        backtestRunRepository,
+                        backtestConfigService,
+                        researchConfigService,
+                        fixedClock);
+
+        ResearchConfig researchConfig =
+                researchConfigService.create(
+                        new ResearchConfigCreateRequest(
+                                "str-eval-1",
+                                "Eval Research",
+                                null,
+                                "{}",
+                                "{}",
+                                "{\"symbol\":\"BTCUSDT\",\"interval\":\"1m\"}"));
         BacktestConfig backtestConfig;
         if (initialCapital.compareTo(BigDecimal.ZERO) > 0) {
-            backtestConfig = backtestConfigService.create(new BacktestConfigCreateRequest(
-                    researchConfig.researchConfigId(),
-                    "Eval Backtest",
-                    null,
-                    Instant.parse("2025-01-01T00:00:00Z"),
-                    Instant.parse("2025-01-01T00:01:59Z"),
-                    initialCapital,
-                    "{}",
-                    "{}"
-            ));
+            backtestConfig =
+                    backtestConfigService.create(
+                            new BacktestConfigCreateRequest(
+                                    researchConfig.researchConfigId(),
+                                    "Eval Backtest",
+                                    null,
+                                    Instant.parse("2025-01-01T00:00:00Z"),
+                                    Instant.parse("2025-01-01T00:01:59Z"),
+                                    initialCapital,
+                                    executionSpec,
+                                    "{}"));
         } else {
-            backtestConfig = new BacktestConfig(
-                    "bcf-invalid-capital",
-                    researchConfig.researchConfigId(),
-                    "Eval Backtest",
-                    null,
-                    Instant.parse("2025-01-01T00:00:00Z"),
-                    Instant.parse("2025-01-01T00:01:59Z"),
-                    initialCapital,
-                    "{}",
-                    "{}",
-                    "{\"startTime\":\"2025-01-01T00:00:00Z\",\"endTime\":\"2025-01-01T00:01:59Z\",\"initialCapital\":\"0\",\"executionSpec\":{},\"evaluationSpec\":{}}",
-                    fixedClock.instant(),
-                    fixedClock.instant()
-            );
+            backtestConfig =
+                    new BacktestConfig(
+                            "bcf-invalid-capital",
+                            researchConfig.researchConfigId(),
+                            "Eval Backtest",
+                            null,
+                            Instant.parse("2025-01-01T00:00:00Z"),
+                            Instant.parse("2025-01-01T00:01:59Z"),
+                            initialCapital,
+                            "{}",
+                            "{}",
+                            "{\"startTime\":\"2025-01-01T00:00:00Z\",\"endTime\":\"2025-01-01T00:01:59Z\",\"initialCapital\":\"0\",\"executionSpec\":{},\"evaluationSpec\":{}}",
+                            fixedClock.instant(),
+                            fixedClock.instant());
             backtestConfigRepository.insert(backtestConfig);
         }
-        BacktestRun createdRun = backtestRunService.create(new BacktestRunStartRequest(backtestConfig.backtestConfigId()));
+        BacktestRun createdRun =
+                backtestRunService.create(
+                        new BacktestRunStartRequest(backtestConfig.backtestConfigId()));
         backtestRunRepository.updateExecution(
                 createdRun.backtestRunId(),
                 runStatus,
@@ -160,28 +356,46 @@ class BacktestEvaluationServiceTest {
                 null,
                 null,
                 "{}",
-                Instant.parse("2025-01-01T00:01:59Z")
-        );
+                Instant.parse("2025-01-01T00:01:59Z"));
 
-        InMemorySimOrderQueryRepository simOrderQueryRepository = new InMemorySimOrderQueryRepository();
-        InMemorySimTradeQueryRepository simTradeQueryRepository = new InMemorySimTradeQueryRepository();
-        InMemorySimPositionQueryRepository simPositionQueryRepository = new InMemorySimPositionQueryRepository();
-        InMemorySimPnlSnapshotQueryRepository simPnlSnapshotQueryRepository = new InMemorySimPnlSnapshotQueryRepository();
-        populateFacts(createdRun.backtestRunId(), simOrderQueryRepository, simTradeQueryRepository, simPositionQueryRepository, simPnlSnapshotQueryRepository, withSnapshots);
-
-        InMemoryBacktestEvaluationReportRepository reportRepository = new InMemoryBacktestEvaluationReportRepository();
-        BacktestEvaluationService service = new BacktestEvaluationService(
-                backtestRunService,
-                backtestConfigService,
+        InMemorySimOrderQueryRepository simOrderQueryRepository =
+                new InMemorySimOrderQueryRepository();
+        InMemorySimTradeQueryRepository simTradeQueryRepository =
+                new InMemorySimTradeQueryRepository();
+        InMemorySimPositionQueryRepository simPositionQueryRepository =
+                new InMemorySimPositionQueryRepository();
+        InMemorySimPnlSnapshotQueryRepository simPnlSnapshotQueryRepository =
+                new InMemorySimPnlSnapshotQueryRepository();
+        populateFacts(
+                createdRun.backtestRunId(),
                 simOrderQueryRepository,
                 simTradeQueryRepository,
                 simPositionQueryRepository,
                 simPnlSnapshotQueryRepository,
-                new EvaluationMetricCalculator(new DrawdownCalculator(), new SharpeCalculator(), new TradeOutcomeCalculator()),
+                withSnapshots);
+
+        InMemoryBacktestEvaluationReportRepository reportRepository =
+                new InMemoryBacktestEvaluationReportRepository();
+        BacktestEvaluationService service =
+                new BacktestEvaluationService(
+                        backtestRunService,
+                        backtestConfigService,
+                        simOrderQueryRepository,
+                        simTradeQueryRepository,
+                        simPositionQueryRepository,
+                        simPnlSnapshotQueryRepository,
+                        new EvaluationMetricCalculator(
+                                new DrawdownCalculator(),
+                                new SharpeCalculator(),
+                                new TradeOutcomeCalculator()),
+                        reportRepository,
+                        fixedClock);
+        return new Scenario(
+                service,
                 reportRepository,
-                fixedClock
-        );
-        return new Scenario(service, reportRepository, createdRun);
+                createdRun,
+                simTradeQueryRepository,
+                simPnlSnapshotQueryRepository);
     }
 
     private void populateFacts(
@@ -190,70 +404,114 @@ class BacktestEvaluationServiceTest {
             InMemorySimTradeQueryRepository simTradeQueryRepository,
             InMemorySimPositionQueryRepository simPositionQueryRepository,
             InMemorySimPnlSnapshotQueryRepository simPnlSnapshotQueryRepository,
-            boolean withSnapshots
-    ) {
-        simOrderQueryRepository.storage.add(new SimOrder(
-                "so-1", backtestRunId, "BTCUSDT", "BUY", "MARKET",
-                BigDecimal.ONE, new BigDecimal("43010"),
-                SimOrderStatus.FILLED, Instant.parse("2025-01-01T00:00:59Z"),
-                Instant.parse("2025-01-01T00:00:59Z"), null, Instant.parse("2025-01-01T00:00:59Z")
-        ));
-        simOrderQueryRepository.storage.add(new SimOrder(
-                "so-2", backtestRunId, "BTCUSDT", "SELL", "MARKET",
-                BigDecimal.ONE, new BigDecimal("43110"),
-                SimOrderStatus.FILLED, Instant.parse("2025-01-01T00:01:59Z"),
-                Instant.parse("2025-01-01T00:01:59Z"), null, Instant.parse("2025-01-01T00:01:59Z")
-        ));
-        simTradeQueryRepository.storage.add(new SimTrade(
-                "st-1", "so-1", backtestRunId, "BTCUSDT", "BUY", BigDecimal.ONE,
-                new BigDecimal("43010"), new BigDecimal("43.01"), new BigDecimal("43.01"),
-                Instant.parse("2025-01-01T00:00:59Z"), Instant.parse("2025-01-01T00:00:59Z"), Instant.parse("2025-01-01T00:00:59Z")
-        ));
-        simTradeQueryRepository.storage.add(new SimTrade(
-                "st-2", "so-2", backtestRunId, "BTCUSDT", "SELL", BigDecimal.ONE,
-                new BigDecimal("43110"), new BigDecimal("43.11"), new BigDecimal("43.11"),
-                Instant.parse("2025-01-01T00:01:59Z"), Instant.parse("2025-01-01T00:01:59Z"), Instant.parse("2025-01-01T00:01:59Z")
-        ));
-        simPositionQueryRepository.storage.add(new SimPosition(
-                "sp-1", backtestRunId, "BTCUSDT", BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("100"),
-                Instant.parse("2025-01-01T00:00:59Z"), Instant.parse("2025-01-01T00:01:59Z")
-        ));
+            boolean withSnapshots) {
+        simOrderQueryRepository.storage.add(
+                new SimOrder(
+                        "so-1",
+                        backtestRunId,
+                        "BTCUSDT",
+                        "BUY",
+                        "MARKET",
+                        BigDecimal.ONE,
+                        new BigDecimal("43010"),
+                        SimOrderStatus.FILLED,
+                        Instant.parse("2025-01-01T00:00:59Z"),
+                        Instant.parse("2025-01-01T00:00:59Z"),
+                        null,
+                        Instant.parse("2025-01-01T00:00:59Z")));
+        simOrderQueryRepository.storage.add(
+                new SimOrder(
+                        "so-2",
+                        backtestRunId,
+                        "BTCUSDT",
+                        "SELL",
+                        "MARKET",
+                        BigDecimal.ONE,
+                        new BigDecimal("43110"),
+                        SimOrderStatus.FILLED,
+                        Instant.parse("2025-01-01T00:01:59Z"),
+                        Instant.parse("2025-01-01T00:01:59Z"),
+                        null,
+                        Instant.parse("2025-01-01T00:01:59Z")));
+        simTradeQueryRepository.storage.add(
+                new SimTrade(
+                        "st-1",
+                        "so-1",
+                        backtestRunId,
+                        "BTCUSDT",
+                        "BUY",
+                        BigDecimal.ONE,
+                        new BigDecimal("43010"),
+                        new BigDecimal("43.01"),
+                        new BigDecimal("43.01"),
+                        Instant.parse("2025-01-01T00:00:59Z"),
+                        Instant.parse("2025-01-01T00:00:59Z"),
+                        Instant.parse("2025-01-01T00:00:59Z")));
+        simTradeQueryRepository.storage.add(
+                new SimTrade(
+                        "st-2",
+                        "so-2",
+                        backtestRunId,
+                        "BTCUSDT",
+                        "SELL",
+                        BigDecimal.ONE,
+                        new BigDecimal("43110"),
+                        new BigDecimal("43.11"),
+                        new BigDecimal("43.11"),
+                        Instant.parse("2025-01-01T00:01:59Z"),
+                        Instant.parse("2025-01-01T00:01:59Z"),
+                        Instant.parse("2025-01-01T00:01:59Z")));
+        simPositionQueryRepository.storage.add(
+                new SimPosition(
+                        "sp-1",
+                        backtestRunId,
+                        "BTCUSDT",
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        new BigDecimal("100"),
+                        Instant.parse("2025-01-01T00:00:59Z"),
+                        Instant.parse("2025-01-01T00:01:59Z")));
         if (withSnapshots) {
-            simPnlSnapshotQueryRepository.storage.add(new SimPnlSnapshot(
-                    "pnl-1", backtestRunId, Instant.parse("2025-01-01T00:00:59Z"),
-                    new BigDecimal("56903.980000000000000000"),
-                    new BigDecimal("43010.000000000000000000"),
-                    BigDecimal.ZERO.setScale(18),
-                    BigDecimal.ZERO.setScale(18),
-                    new BigDecimal("43.010000000000000000"),
-                    new BigDecimal("43.010000000000000000"),
-                    new BigDecimal("99913.980000000000000000"),
-                    new BigDecimal("-86.020000000000000000"),
-                    Instant.parse("2025-01-01T00:00:59Z")
-            ));
-            simPnlSnapshotQueryRepository.storage.add(new SimPnlSnapshot(
-                    "pnl-2", backtestRunId, Instant.parse("2025-01-01T00:01:59Z"),
-                    new BigDecimal("99927.760000000000000000"),
-                    BigDecimal.ZERO.setScale(18),
-                    new BigDecimal("100.000000000000000000"),
-                    BigDecimal.ZERO.setScale(18),
-                    new BigDecimal("86.120000000000000000"),
-                    new BigDecimal("86.120000000000000000"),
-                    new BigDecimal("99927.760000000000000000"),
-                    new BigDecimal("-72.240000000000000000"),
-                    Instant.parse("2025-01-01T00:01:59Z")
-            ));
+            simPnlSnapshotQueryRepository.storage.add(
+                    new SimPnlSnapshot(
+                            "pnl-1",
+                            backtestRunId,
+                            Instant.parse("2025-01-01T00:00:59Z"),
+                            new BigDecimal("56903.980000000000000000"),
+                            new BigDecimal("43010.000000000000000000"),
+                            BigDecimal.ZERO.setScale(18),
+                            BigDecimal.ZERO.setScale(18),
+                            new BigDecimal("43.010000000000000000"),
+                            new BigDecimal("43.010000000000000000"),
+                            new BigDecimal("99913.980000000000000000"),
+                            new BigDecimal("-86.020000000000000000"),
+                            Instant.parse("2025-01-01T00:00:59Z")));
+            simPnlSnapshotQueryRepository.storage.add(
+                    new SimPnlSnapshot(
+                            "pnl-2",
+                            backtestRunId,
+                            Instant.parse("2025-01-01T00:01:59Z"),
+                            new BigDecimal("99927.760000000000000000"),
+                            BigDecimal.ZERO.setScale(18),
+                            new BigDecimal("100.000000000000000000"),
+                            BigDecimal.ZERO.setScale(18),
+                            new BigDecimal("86.120000000000000000"),
+                            new BigDecimal("86.120000000000000000"),
+                            new BigDecimal("99927.760000000000000000"),
+                            new BigDecimal("-72.240000000000000000"),
+                            Instant.parse("2025-01-01T00:01:59Z")));
         }
     }
 
     private record Scenario(
             BacktestEvaluationService service,
             InMemoryBacktestEvaluationReportRepository reportRepository,
-            BacktestRun run
-    ) {
-    }
+            BacktestRun run,
+            InMemorySimTradeQueryRepository tradeRepository,
+            InMemorySimPnlSnapshotQueryRepository pnlRepository) {}
 
-    private static final class InMemoryResearchConfigRepository implements ResearchConfigRepository {
+    private static final class InMemoryResearchConfigRepository
+            implements ResearchConfigRepository {
         private final Map<String, ResearchConfig> storage = new LinkedHashMap<>();
 
         @Override
@@ -272,7 +530,8 @@ class BacktestEvaluationServiceTest {
         }
     }
 
-    private static final class InMemoryBacktestConfigRepository implements BacktestConfigRepository {
+    private static final class InMemoryBacktestConfigRepository
+            implements BacktestConfigRepository {
         private final Map<String, BacktestConfig> storage = new LinkedHashMap<>();
 
         @Override
@@ -292,7 +551,9 @@ class BacktestEvaluationServiceTest {
 
         @Override
         public List<BacktestConfig> listByResearchConfigId(String researchConfigId) {
-            return storage.values().stream().filter(item -> item.researchConfigId().equals(researchConfigId)).toList();
+            return storage.values().stream()
+                    .filter(item -> item.researchConfigId().equals(researchConfigId))
+                    .toList();
         }
     }
 
@@ -315,21 +576,43 @@ class BacktestEvaluationServiceTest {
         }
 
         @Override
-        public boolean updateExecution(String backtestRunId, BacktestRunStatus status, Instant startedAt, Instant finishedAt, String failureCode, String failureMessage, String summaryJson, Instant updatedAt) {
+        public boolean updateExecution(
+                String backtestRunId,
+                BacktestRunStatus status,
+                Instant startedAt,
+                Instant finishedAt,
+                String failureCode,
+                String failureMessage,
+                String summaryJson,
+                Instant updatedAt) {
             BacktestRun current = storage.get(backtestRunId);
             if (current == null) {
                 return false;
             }
-            storage.put(backtestRunId, new BacktestRun(
-                    current.backtestRunId(), current.backtestConfigId(), current.researchConfigId(), current.sourceStrategyId(),
-                    current.strategySnapshot(), current.backtestConfigSnapshot(), status, current.requestedAt(), startedAt, finishedAt,
-                    failureCode, failureMessage, summaryJson, current.createdAt(), updatedAt
-            ));
+            storage.put(
+                    backtestRunId,
+                    new BacktestRun(
+                            current.backtestRunId(),
+                            current.backtestConfigId(),
+                            current.researchConfigId(),
+                            current.sourceStrategyId(),
+                            current.strategySnapshot(),
+                            current.backtestConfigSnapshot(),
+                            status,
+                            current.requestedAt(),
+                            startedAt,
+                            finishedAt,
+                            failureCode,
+                            failureMessage,
+                            summaryJson,
+                            current.createdAt(),
+                            updatedAt));
             return true;
         }
     }
 
-    private static final class InMemoryBacktestEvaluationReportRepository implements BacktestEvaluationReportRepository {
+    private static final class InMemoryBacktestEvaluationReportRepository
+            implements BacktestEvaluationReportRepository {
         private final Map<String, BacktestEvaluationReport> storage = new LinkedHashMap<>();
 
         @Override
@@ -348,7 +631,9 @@ class BacktestEvaluationServiceTest {
 
         @Override
         public List<SimOrder> listByBacktestRunId(String backtestRunId) {
-            return storage.stream().filter(item -> item.backtestRunId().equals(backtestRunId)).toList();
+            return storage.stream()
+                    .filter(item -> item.backtestRunId().equals(backtestRunId))
+                    .toList();
         }
     }
 
@@ -357,29 +642,33 @@ class BacktestEvaluationServiceTest {
 
         @Override
         public List<SimTrade> listByBacktestRunId(String backtestRunId) {
-            return storage.stream().filter(item -> item.backtestRunId().equals(backtestRunId)).toList();
+            return storage.stream()
+                    .filter(item -> item.backtestRunId().equals(backtestRunId))
+                    .toList();
         }
     }
 
-    private static final class InMemorySimPositionQueryRepository implements SimPositionQueryRepository {
+    private static final class InMemorySimPositionQueryRepository
+            implements SimPositionQueryRepository {
         private final List<SimPosition> storage = new ArrayList<>();
 
         @Override
         public List<SimPosition> listByBacktestRunId(String backtestRunId) {
-            return storage.stream().filter(item -> item.backtestRunId().equals(backtestRunId)).toList();
+            return storage.stream()
+                    .filter(item -> item.backtestRunId().equals(backtestRunId))
+                    .toList();
         }
     }
 
-    private static final class InMemorySimPnlSnapshotQueryRepository implements SimPnlSnapshotQueryRepository {
+    private static final class InMemorySimPnlSnapshotQueryRepository
+            implements SimPnlSnapshotQueryRepository {
         private final List<SimPnlSnapshot> storage = new ArrayList<>();
 
         @Override
         public List<SimPnlSnapshot> listByBacktestRunId(String backtestRunId) {
-            return storage.stream().filter(item -> item.backtestRunId().equals(backtestRunId)).toList();
+            return storage.stream()
+                    .filter(item -> item.backtestRunId().equals(backtestRunId))
+                    .toList();
         }
     }
 }
-
-
-
-

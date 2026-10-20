@@ -97,7 +97,7 @@ class ExactPilotScopeAuthorizationServiceTest {
                         new AuthenticatedLiveControlActor(CREATOR), bindingCommand,
                         approval(NOW.minusSeconds(1), NOW.plusSeconds(120))));
 
-        assertEquals("EXACT_PILOT_SCOPE_AUTHORIZATION_REJECTED", exception.code());
+        assertEquals("EXACT_EXECUTION_SCOPE_AUTHORIZATION_REJECTED", exception.code());
         verify(authority, never()).resolveForCreation(any(), any(), any());
         verify(authorizationRepository, never()).recordApproved(any(), any(), any(), any(), any(), any());
     }
@@ -111,7 +111,7 @@ class ExactPilotScopeAuthorizationServiceTest {
                         new AuthenticatedLiveControlActor(CREATOR),
                         new AuthenticatedLiveControlActor(APPROVER)));
 
-        assertEquals("EXACT_PILOT_SCOPE_AUTHORIZATION_REJECTED", exception.code());
+        assertEquals("EXACT_EXECUTION_SCOPE_AUTHORIZATION_REJECTED", exception.code());
         verify(authority, never()).resolveForCreation(any(), any(), any());
     }
 
@@ -136,7 +136,7 @@ class ExactPilotScopeAuthorizationServiceTest {
                 () -> service.authorizeAndApprove(
                         new AuthenticatedLiveControlActor(CREATOR),
                         new AuthenticatedLiveControlActor(APPROVER), bindingCommand, command));
-        assertEquals("EXACT_PILOT_SCOPE_AUTHORIZATION_REJECTED", exception.code());
+        assertEquals("EXACT_EXECUTION_SCOPE_AUTHORIZATION_REJECTED", exception.code());
     }
 
     private static ExactPilotScopeAuthorizationCommand approval(Instant approvedAt, Instant expiresAt) {

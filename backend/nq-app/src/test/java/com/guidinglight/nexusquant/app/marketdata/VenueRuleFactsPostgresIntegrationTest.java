@@ -31,7 +31,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 /**
- * VenueRuleFactsPostgresIntegrationTest 在显式本地 disposable PostgreSQL 上验证 V1->V34、V33->V34 和
+ * VenueRuleFactsPostgresIntegrationTest 在显式本地 disposable PostgreSQL 上验证正式基线安装、重复迁移和
  * repository UPSERT。测试强制 localhost/127.0.0.1/::1，且只创建并删除随机 gatew3_* schema；默认 Maven
  * 未提供 properties 时跳过，绝不连接生产数据库。
  */
@@ -43,7 +43,7 @@ class VenueRuleFactsPostgresIntegrationTest {
     private static final String PASSWORD_PROPERTY = "nq.venue-rules.postgres.password";
 
     @Test
-    void freshDatabaseShouldMigrateFromV1ToV34AndSupportRepositoryLifecycle() {
+    void freshBaselineShouldSupportRepositoryLifecycle() {
         PostgresConfig config = requireLocalDisposableConfig();
         String schema = randomSchema("fresh");
         long startedNanos = System.nanoTime();
@@ -52,13 +52,13 @@ class VenueRuleFactsPostgresIntegrationTest {
             Duration elapsed = Duration.ofNanos(System.nanoTime() - startedNanos);
             JdbcTemplate jdbc = jdbc(config, schema);
 
-            assertEquals("34", currentFlywayVersion(jdbc));
+            assertEquals("1", currentFlywayVersion(jdbc));
             assertColumnPrecision(jdbc);
             assertConstraintsCommentsAndExistingLookupIndexes(jdbc);
             assertRepositoryLifecycle(jdbc);
             System.out.printf(
                     Locale.ROOT,
-                    "gatew3_postgres_migration path=V1-V34 local_disposable=true elapsed_ms=%d flyway_version=34%n",
+                    "gatew3_postgres_migration path=V1 local_disposable=true elapsed_ms=%d flyway_version=1%n",
                     elapsed.toMillis()
             );
         } finally {
@@ -67,11 +67,11 @@ class VenueRuleFactsPostgresIntegrationTest {
     }
 
     @Test
-    void existingV33DatabaseShouldUpgradeToV34WithoutBackfillingLegacyFacts() {
+    void baselineRerunShouldPreserveUnknownVenueRuleFacts() {
         PostgresConfig config = requireLocalDisposableConfig();
         String schema = randomSchema("upgrade");
         try {
-            migrate(config, schema, MigrationVersion.fromVersion("33"));
+            migrate(config, schema, MigrationVersion.fromVersion("1"));
             JdbcTemplate jdbc = jdbc(config, schema);
             jdbc.update(
                     """
@@ -94,7 +94,8 @@ class VenueRuleFactsPostgresIntegrationTest {
             Duration elapsed = Duration.ofNanos(System.nanoTime() - startedNanos);
             JdbcTemplate upgraded = jdbc(config, schema);
             String relationFileAfter = relationFile(upgraded);
-            assertEquals("34", currentFlywayVersion(upgraded));
+            assertEquals(relationFileBefore, relationFileAfter);
+            assertEquals("1", currentFlywayVersion(upgraded));
             assertEquals(new BigDecimal("0.000000000001000000"), upgraded.queryForObject(
                     "SELECT tick_size FROM instrument_catalog WHERE exchange_symbol = 'LEGACY-USDT'",
                     BigDecimal.class
@@ -118,8 +119,8 @@ class VenueRuleFactsPostgresIntegrationTest {
             assertConstraintRejections(upgraded);
             System.out.printf(
                     Locale.ROOT,
-                    "gatew3_postgres_migration path=V33-V34 local_disposable=true elapsed_ms=%d "
-                            + "flyway_version=34 rows=1 table_bytes_before=%d relation_file_changed=%s%n",
+                    "gatew3_postgres_migration path=V1-rerun local_disposable=true elapsed_ms=%d "
+                            + "flyway_version=1 rows=1 table_bytes_before=%d relation_file_changed=%s%n",
                     elapsed.toMillis(),
                     tableBytesBefore,
                     !relationFileBefore.equals(relationFileAfter)
@@ -271,7 +272,7 @@ class VenueRuleFactsPostgresIntegrationTest {
                 "uq_instrument_catalog_exchange_internal_symbol"
         )) {
             assertEquals(1, jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM pg_constraint WHERE conname = ?",
+                    "SELECT COUNT(*) FROM pg_constraint WHERE connamespace = current_schema()::regnamespace AND conname = ?",
                     Integer.class,
                     constraint
             ));
@@ -371,7 +372,7 @@ class VenueRuleFactsPostgresIntegrationTest {
     }
 
     private static String withCurrentSchema(String url, String schema) {
-        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema;
+        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
     }
 
     private static String currentFlywayVersion(JdbcTemplate jdbc) {

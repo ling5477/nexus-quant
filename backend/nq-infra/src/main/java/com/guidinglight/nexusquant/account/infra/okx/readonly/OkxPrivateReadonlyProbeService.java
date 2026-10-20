@@ -72,7 +72,7 @@ public final class OkxPrivateReadonlyProbeService {
     /**
      * 唯一 callable capability：精确 credential reference + production read-only diagnostic。
      *
-     * <p>当前 Gate 要求 durable kill 持续 ENGAGED；metadata policy 通过后才进入既有 JIT executor，
+     * <p>安全边界要求 durable kill 持续 ENGAGED；metadata policy 通过后才进入既有 JIT executor，
      * 并只调用 account/config 与 balance 两个 typed GET operation。</p>
      */
     public ScopedPrivateReadonlyProbeObservation probeScopedDiagnostic(ScopedPrivateReadonlyProbeRequest request) {

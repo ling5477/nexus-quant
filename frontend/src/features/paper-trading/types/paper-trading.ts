@@ -52,18 +52,25 @@ export interface StrategySimDecision {
     strategyVersionId: string;
     inputSha256: string;
     signalOpenTime: string;
-    executionOpenTime: string;
+    executionOpenTime: string | null;
     status: string;
     reason: string;
     side: string | null;
     quantity: string | null;
-    executionPrice: string;
+    executionPrice: string | null;
+    /** 旧标量与完整方向合同互斥；没有全局费率时保持空值，不能补零。 */
+    feeRate?: string | null;
+    feeModelJson?: string | null;
+    /** 持久原收费选择；只在高级明细解释，不能用当前余额重新推断支付币种。 */
+    feeChargeJson?: string | null;
     strategyRunId?: string | null;
     orderId: string | null;
 }
 
 export interface StrategySimFacts {
-    exactValues?: Partial<Record<'cash' | 'positionQuantity' | 'markPrice' | 'equity' | 'pnl', string>>;
+    exactValues?: Partial<
+        Record<'cash' | 'positionQuantity' | 'markPrice' | 'equity' | 'pnl', string>
+    >;
     canonicalAccountId: number;
     markAsOf?: string | null;
     ledgerAsOf?: string | null;
@@ -76,13 +83,49 @@ export interface StrategySimFacts {
     cash: string;
     positionQuantity: string;
     markPrice: string;
-    equity: string;
-    pnl: string;
+    equity: string | null;
+    pnl: string | null;
+    discountAsset?: SimDiscountAsset | null;
     orders: Array<Record<string, unknown>>;
     trades: Array<Record<string, unknown>>;
     ledgerEntries: Array<Record<string, unknown>>;
     riskEvents?: Array<Record<string, unknown>>;
     positions?: Array<Record<string, unknown>>;
+}
+
+/** 余额继续按原币显示；PRICE_UNAVAILABLE只表示估值缺失，不能把真实余额变成零。 */
+export interface SimDiscountAsset {
+    status: string;
+    assetCurrency: string;
+    budgetFraction: string;
+    initialQuantity: string;
+    initialQuoteValue: string;
+    initialCash: string;
+    balance: string;
+    reserved: string;
+    available: string;
+    quoteValue: string | null;
+    conversionPrice: string | null;
+    observedAt: string | null;
+    visibleAt: string | null;
+    valuationAt: string | null;
+    priceSourceSha256: string | null;
+    datasetId: string;
+    snapshotId: string;
+    snapshotSha256: string;
+}
+
+export interface FrozenSimFeeCharge {
+    currency: string;
+    amount: string;
+    quoteValue: string;
+    paymentStatus: string;
+    positiveReserve: string;
+    observedAt?: string | null;
+    visibleAt?: string | null;
+    quotePerAsset?: string | null;
+    sourceSha256?: string | null;
+    sourceJson?: string | null;
 }
 
 export interface PaperTradingOrderItem {
@@ -169,6 +212,12 @@ export interface EquityCurveSnapshotItem {
     drawdown: string | number;
     source: string;
     createdAt: string;
+    valuationCurrency: string | null;
+    valuationTime: string | null;
+    valuationSource: string | null;
+    valuationMethod: string | null;
+    valuationStatus: 'UNKNOWN' | 'PARTIAL' | 'VERIFIED';
+    valuationDetails: string | null;
 }
 
 export interface PositionCurveSnapshotItem {
@@ -713,8 +762,8 @@ interface PaperStrategyEvaluationOverview {
     evaluatedRunCount: number;
     comparableRunCount: number;
     sampleInsufficientStrategyCount: number;
-    profitableStrategyCount: number;
-    lossStrategyCount: number;
+    profitableStrategyCount: number | null;
+    lossStrategyCount: number | null;
     highRiskStrategyCount: number;
     backtestDeviationStrategyCount: number;
     topCompositeScore: number | null;

@@ -72,7 +72,7 @@ class B5AuthorityProcessTest {
                         proof.put("externalVenueInput", "okx");
                         proof.put("nqPid", a.process.pid()).put("restartPid", b.process.pid());
                         assertNotEquals(a.process.pid(), b.process.pid());
-                        assertEquals("51", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
+                        assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                         if (fault) {
                             a.send("ARM_B4_TX AUTHORITY " + (wire ? "WIRE" : row));
                             if (wire) proxy.send("ARM " + row);

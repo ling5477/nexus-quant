@@ -13,10 +13,10 @@ import org.flywaydb.core.api.output.MigrateResult;
 import org.junit.jupiter.api.Test;
 
 /**
- * GateV-1 Flyway/PostgreSQL runtime assembly integration test。
+ * 正式基线的 Flyway/PostgreSQL 运行装配验证。
  *
  * <p>Why：nq-app 持有 production Flyway PostgreSQL database plugin；该测试在显式配置的
- * PostgreSQL 中创建唯一随机 schema，从空 schema 回放 V1..V33，并只清理该随机 schema。
+ * PostgreSQL 中创建唯一随机 schema，从空 schema 安装正式 V1，并只清理该随机 schema。
  * 它不 clean public/shared schema，不启动 Spring context、scheduler、adapter 或 credential 路径。
  */
 class ValidationReviewFlywayPostgresIntegrationTest {
@@ -27,7 +27,7 @@ class ValidationReviewFlywayPostgresIntegrationTest {
     private static final String PASSWORD_PROPERTY = "nq.postgres.smoke.password";
 
     @Test
-    void shouldMigrateEmptyPostgresSchemaThroughGateVVersion33() {
+    void shouldInstallAndValidateSingleReleaseBaseline() {
         SmokeConfig config = SmokeConfig.fromSystemProperties();
         if (!config.required()) {
             assumeTrue(config.configured(), "PostgreSQL Flyway integration is disabled");
@@ -42,15 +42,18 @@ class ValidationReviewFlywayPostgresIntegrationTest {
                 .defaultSchema(schema)
                 .createSchemas(true)
                 .cleanDisabled(false)
-                .target("33")
+                .target("1")
                 .load();
         try {
             MigrateResult result = flyway.migrate();
             MigrationInfo current = flyway.info().current();
 
             assertNotNull(current);
-            assertEquals("33", current.getVersion().getVersion());
-            assertEquals(33, result.migrationsExecuted);
+            assertEquals("1", current.getVersion().getVersion());
+            assertEquals(1, result.migrationsExecuted);
+            flyway.validate();
+            assertEquals(0, flyway.info().pending().length);
+            assertEquals(0, flyway.migrate().migrationsExecuted);
             assertEquals("Success", result.success ? "Success" : "Failure");
         } finally {
             flyway.clean();
@@ -63,7 +66,7 @@ class ValidationReviewFlywayPostgresIntegrationTest {
                 .locations("filesystem:../nq-infra/src/main/resources/db/migration")
                 .load();
         publicFlyway.migrate();
-        assertEquals("42", publicFlyway.info().current().getVersion().getVersion());
+        assertEquals("1", publicFlyway.info().current().getVersion().getVersion());
     }
 
     private record SmokeConfig(String url, String user, String password, boolean required) {

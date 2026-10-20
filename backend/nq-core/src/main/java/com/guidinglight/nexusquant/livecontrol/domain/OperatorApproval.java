@@ -22,7 +22,7 @@ public record OperatorApproval(
 ) {
     public static final String REQUIRED_ROLE = "LIVE_APPROVER";
     public static final String LEGACY_SCOPE_SCHEMA = "approval-scope.v1";
-    public static final String PILOT_SCOPE_SCHEMA = "pilot-scope.v1";
+    public static final String PILOT_SCOPE_SCHEMA = "execution-scope.v1";
 
     /** V39 source-compatible constructor；V40 JDBC 会显式持久化真实 legacy schema label。 */
     public OperatorApproval(

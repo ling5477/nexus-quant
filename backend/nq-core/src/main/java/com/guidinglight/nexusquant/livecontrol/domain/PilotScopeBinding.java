@@ -38,8 +38,8 @@ public record PilotScopeBinding(
         long createdBy,
         Instant createdAt
 ) {
-    public static final String SCHEMA_VERSION = "pilot-scope.v1";
-    public static final String OPERATOR_PILOT_SCHEMA_VERSION = "pilot-scope.operator-pilot.v1";
+    public static final String SCHEMA_VERSION = "execution-scope.v1";
+    public static final String OPERATOR_CONTROLLED_EXECUTION_SCHEMA_VERSION = "execution-scope.operator.v1";
     public static final String SIGNED_TIMESTAMP_SOURCE = "NTP_DISCIPLINED_SYSTEM_CLOCK";
 
     public PilotScopeBinding {

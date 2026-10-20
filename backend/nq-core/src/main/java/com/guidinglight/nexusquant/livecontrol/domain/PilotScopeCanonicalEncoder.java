@@ -5,7 +5,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * `pilot-scope.v1` byte-stable encoder；字段顺序由受控实盘执行合同冻结。
+ * `execution-scope.v1` byte-stable encoder；字段顺序由受控实盘执行合同冻结。
  */
 public final class PilotScopeCanonicalEncoder {
 
@@ -32,13 +32,13 @@ public final class PilotScopeCanonicalEncoder {
                 ",\"releaseAdmissionRevision\":" + session.releaseAdmissionRevision() +
                 ",\"riskLimitSetId\":" + CanonicalDigestSupport.quote(session.riskLimitSetId().toString()) +
                 ",\"riskLimitSetDigest\":" + CanonicalDigestSupport.quote(session.riskLimitSetDigest())
-                : ",\"authorityType\":\"OPERATOR_PILOT\"" +
-                ",\"operatorPilotAuthorityId\":" +
-                CanonicalDigestSupport.quote(session.operatorPilotAuthorityId().toString()) +
-                ",\"operatorPilotAuthorityDigest\":" +
-                CanonicalDigestSupport.quote(session.operatorPilotAuthorityDigest());
+                : ",\"authorityType\":\"OPERATOR_CONTROLLED_EXECUTION\"" +
+                ",\"operatorExecutionAuthorityId\":" +
+                CanonicalDigestSupport.quote(session.operatorExecutionAuthorityId().toString()) +
+                ",\"operatorExecutionAuthorityDigest\":" +
+                CanonicalDigestSupport.quote(session.operatorExecutionAuthorityDigest());
         String schema = session.authorityType() == LiveSessionAuthorityType.STRATEGY
-                ? PilotScopeBinding.SCHEMA_VERSION : PilotScopeBinding.OPERATOR_PILOT_SCHEMA_VERSION;
+                ? PilotScopeBinding.SCHEMA_VERSION : PilotScopeBinding.OPERATOR_CONTROLLED_EXECUTION_SCHEMA_VERSION;
         return "{" +
                 "\"schemaVersion\":" + CanonicalDigestSupport.quote(schema) +
                 ",\"sessionId\":" + CanonicalDigestSupport.quote(session.id().toString()) +

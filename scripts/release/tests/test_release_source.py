@@ -1,0 +1,362 @@
+"""使用独立 Git fixture 证明身份隔离、默认排除、确定性与路径拒绝。"""
+from pathlib import Path
+import copy
+import importlib.util
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+
+spec = importlib.util.spec_from_file_location("release_source", Path(__file__).resolve().parents[1] / "release_source.py")
+source = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(source)
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import scan_release_secrets as secrets
+import verify_release_boundary as boundary
+
+
+class ReleaseSourceTest(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+        self.repo = self.root / "repo"
+        self.repo.mkdir()
+        self.run_git("init", "-q")
+        self.run_git("config", "user.name", "Release Fixture")
+        self.run_git("config", "user.email", "fixture@example.invalid")
+        self.run_git("config", "core.autocrlf", "false")
+        self.policy = {"schemaVersion": 1, "targetVersion": "1.0.0",
+                       "sourceIdentity": "exact-40-hex-git-commit;git-blobs-only",
+                       "treeHashAlgorithm": "sha256-canonical-json-v1",
+                       "groups": [{"category": "INCLUDE_RUNTIME", "purpose": "fixture", "paths": ["app.txt"]}],
+                       "excludedPaths": {"EXCLUDE_DEV_ONLY": [source.MANIFEST]}, "resourceExceptions": [],
+                       "forbiddenCategories": sorted(source.EXCLUDES), "requiredFinalAssets": []}
+        self.write("app.txt", b"commit A\n")
+        self.save_policy()
+        self.a = self.commit("A", ["app.txt", source.MANIFEST])
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def run_git(self, *args, data=None):
+        return subprocess.run(["git", "-C", str(self.repo), *args], input=data,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, timeout=30).stdout
+
+    def write(self, path, raw):
+        dest = self.repo / path
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(raw)
+
+    def save_policy(self):
+        self.write(source.MANIFEST, source.canonical(self.policy) + b"\n")
+
+    def commit(self, message, paths):
+        self.run_git("add", "--", *paths)
+        self.run_git("commit", "-qm", message)
+        return self.run_git("rev-parse", "HEAD").decode().strip()
+
+    def test_exact_commit_ignores_dirty_untracked_and_working_b(self):
+        self.write("app.txt", b"working B\n")
+        self.write("secret-untracked.txt", b"SYNTHETIC_SECRET_NOT_A_CREDENTIAL")
+        self.write(".gitignore", b"ignored-secret.txt\n")
+        self.write("ignored-secret.txt", b"SYNTHETIC_IGNORED_SECRET")
+        self.policy["groups"][0]["paths"].append("secret-untracked.txt")
+        self.save_policy()
+        out = self.root / "out"
+        source.export(self.repo, self.a, out)
+        self.assertEqual((out / "app.txt").read_bytes(), b"commit A\n")
+        self.assertFalse((out / "secret-untracked.txt").exists())
+        self.assertFalse((out / "ignored-secret.txt").exists())
+        source.verify(self.repo, self.a, out)
+
+    def test_new_tracked_test_history_and_runtime_default_excluded(self):
+        new = ["docs/gates/fake.md", "backend/nq-app/src/test/FakeTest.java", "new-runtime.txt"]
+        for path in new:
+            self.write(path, b"excluded")
+        b = self.commit("B", new)
+        out = self.root / "out"
+        _, audit = source.export(self.repo, b, out)
+        self.assertTrue(all(not (out / p).exists() for p in new))
+        self.assertTrue(all(audit["paths"][p] == "REVIEW_REQUIRED" for p in new))
+        self.assertEqual(audit["unclassified"], 0)
+
+    def test_reproducible_and_fixed_tree_hash(self):
+        a, _ = source.export(self.repo, self.a, self.root / "a")
+        b, _ = source.export(self.repo, self.a, self.root / "b")
+        self.assertEqual(a, b)
+        self.assertEqual((self.root / "a" / source.METADATA).read_bytes(), (self.root / "b" / source.METADATA).read_bytes())
+        self.assertEqual(source.canonical({"z": 1, "a": "值"}), '{"a":"值","z":1}'.encode())
+        payload = {k: a[k] for k in ["sourceCommit", "targetVersion", "manifestSha256", "files"]}
+        self.assertEqual(a["releaseTreeSha256"], source.sha(source.canonical(payload)))
+
+    def test_manifest_drift_changes_both_hashes(self):
+        a, _, _ = source.plan(self.repo, self.a)
+        self.policy["groups"][0]["purpose"] = "reviewed purpose changed"
+        self.save_policy()
+        b = self.commit("manifest", [source.MANIFEST])
+        changed, _, _ = source.plan(self.repo, b)
+        self.assertNotEqual(a["manifestSha256"], changed["manifestSha256"])
+        self.assertNotEqual(a["releaseTreeSha256"], changed["releaseTreeSha256"])
+
+    def test_tampered_extra_or_metadata_fail(self):
+        out = self.root / "out"
+        source.export(self.repo, self.a, out)
+        (out / "extra.txt").write_bytes(b"extra")
+        with self.assertRaisesRegex(ValueError, "OUTPUT_FILE_SET"):
+            source.verify(self.repo, self.a, out)
+        (out / "extra.txt").unlink()
+        (out / "app.txt").write_bytes(b"tampered")
+        with self.assertRaisesRegex(ValueError, "CONTENT_MISMATCH"):
+            source.verify(self.repo, self.a, out)
+        (out / "app.txt").write_bytes(b"commit A\n")
+        (out / source.METADATA).write_bytes(b"{}")
+        with self.assertRaisesRegex(ValueError, "METADATA_MISMATCH"):
+            source.verify(self.repo, self.a, out)
+
+    def test_unexpected_empty_directory_rejected(self):
+        out = self.root / "out"
+        source.export(self.repo, self.a, out)
+        (out / "unexpected-empty").mkdir()
+        with self.assertRaisesRegex(ValueError, "DIRECTORY_SET_MISMATCH"):
+            source.verify(self.repo, self.a, out)
+
+    def test_missing_export_file_rejected(self):
+        out = self.root / "out"
+        source.export(self.repo, self.a, out)
+        (out / "app.txt").unlink()
+        with self.assertRaisesRegex(ValueError, "OUTPUT_FILE_SET_MISMATCH"):
+            source.verify(self.repo, self.a, out)
+
+    def test_new_production_source_and_migration_must_be_reviewed_and_included(self):
+        required = ["backend/nq-core/src/main/java/example/NewService.java",
+                    "backend/nq-infra/src/main/resources/db/migration/V2__new_table.sql",
+                    "frontend/src/features/new-feature.ts"]
+        for path in required:
+            self.write(path, b"source")
+        b = self.commit("new production files", required)
+        with self.assertRaisesRegex(ValueError, "REQUIRED_RUNTIME_NOT_INCLUDED"):
+            source.export(self.repo, b, self.root / "missing")
+        self.policy["groups"][0]["paths"].extend(required)
+        self.save_policy()
+        reviewed = self.commit("review exact production paths", [source.MANIFEST])
+        metadata, audit = source.export(self.repo, reviewed, self.root / "reviewed")
+        self.assertEqual(4, metadata["fileCount"])
+        self.assertEqual({"requiredRuntimeFiles": 3, "requiredMigrationFiles": 1,
+                          "missingRuntimePaths": [], "missingMigrationPaths": []}, audit["runtimeCoverage"])
+
+    def test_production_path_cannot_be_hidden_in_exclusion_category(self):
+        path = "frontend/src/features/required.ts"
+        self.write(path, b"source")
+        self.policy["excludedPaths"]["EXCLUDE_TEST"] = [path]
+        self.save_policy()
+        b = self.commit("misclassified runtime", [path, source.MANIFEST])
+        with self.assertRaisesRegex(ValueError, "REQUIRED_RUNTIME_NOT_INCLUDED"):
+            source.plan(self.repo, b)
+
+    def test_reviewed_development_paths_stay_excluded(self):
+        paths = ["backend/nq-app/src/main/resources/application-local.yml",
+                 "frontend/src/pages/dev/DesignSystemDemoPage.tsx"]
+        for path in paths:
+            self.write(path, b"development")
+        b = self.commit("development paths", paths)
+        metadata, audit = source.export(self.repo, b, self.root / "out")
+        self.assertEqual(["app.txt"], [entry["path"] for entry in metadata["files"]])
+        self.assertEqual(0, audit["runtimeCoverage"]["requiredRuntimeFiles"])
+
+    def test_coverage_command_uses_exact_commit_without_export(self):
+        result = subprocess.run([sys.executable, str(Path(source.__file__)), "coverage", "--repo",
+                                 str(self.repo), "--commit", self.a], capture_output=True, check=True, timeout=30)
+        self.assertEqual(self.a, json.loads(result.stdout)["sourceCommit"])
+        self.assertEqual([], json.loads(result.stdout)["runtimeCoverage"]["missingRuntimePaths"])
+
+    def test_nested_export_directories_are_valid(self):
+        self.policy["groups"][0]["paths"] = ["nested/deep/app.txt"]
+        self.write("nested/deep/app.txt", b"nested\n")
+        self.policy["excludedPaths"]["EXCLUDE_DEV_ONLY"].append("app.txt")
+        self.save_policy()
+        b = self.commit("nested", ["nested/deep/app.txt", source.MANIFEST])
+        out = self.root / "out"
+        source.export(self.repo, b, out)
+        source.verify(self.repo, b, out)
+
+    def test_commit_identity_and_existing_output_rejected(self):
+        for bad in ["HEAD", self.a[:12], self.a.upper(), self.run_git("rev-parse", "HEAD^{tree}").decode().strip()]:
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                source.plan(self.repo, bad)
+        with self.assertRaisesRegex(ValueError, "MUST_NOT_EXIST"):
+            source.export(self.repo, self.a, self.repo)
+
+    def test_traversal_duplicate_case_and_windows_unsafe(self):
+        for bad in ["/absolute", "../escape", "a/../b", "a//b", "C:/x", "a\\b", "a/CON.txt", "a.", "e\u0301.txt"]:
+            with self.subTest(path=bad), self.assertRaises(ValueError):
+                source.safe_path(bad)
+        for paths in [["a", "a"], ["A/x", "a/y"], ["x", "x/y"]]:
+            with self.subTest(paths=paths), self.assertRaises(ValueError):
+                source.check_names(paths)
+
+    def test_replace_ref_cannot_override_exact_source(self):
+        self.write("app.txt", b"replaced B\n")
+        b = self.commit("B", ["app.txt"])
+        self.run_git("replace", self.a, b)
+        out = self.root / "out"
+        source.export(self.repo, self.a, out)
+        self.assertEqual((out / "app.txt").read_bytes(), b"commit A\n")
+
+    def test_protocol_marker_exception_does_not_hide_added_material(self):
+        runtime = Path(__file__).resolve().parents[3] / secrets.SIGNER
+        raw = runtime.read_bytes().replace(b"\r\n", b"\n")
+        out = self.root / "scan"
+        path = out / secrets.SIGNER
+        path.parent.mkdir(parents=True)
+        path.write_bytes(raw)
+        finding = {"File": str(path.absolute()), "RuleID": "private-key", "StartLine": 22, "EndLine": 23}
+        self.assertTrue(secrets.protocol_only(finding, out))
+        for changed in [raw + b"SYNTHETIC_KEY_MATERIAL", raw.replace(secrets.DELIMITERS[0], secrets.DELIMITERS[0] + b"\nSYNTHETIC_KEY_MATERIAL")]:
+            path.write_bytes(changed)
+            self.assertFalse(secrets.protocol_only(finding, out))
+        path.write_bytes(raw)
+        for key, value in [("RuleID", "generic-api-key"), ("StartLine", 21), ("EndLine", 24), ("File", str(out / "other.java"))]:
+            self.assertFalse(secrets.protocol_only({**finding, key: value}, out))
+
+    def test_forbidden_and_duplicate_manifest_fail(self):
+        self.write("docs/gates/fake.md", b"history")
+        self.policy["groups"][0]["paths"].append("docs/gates/fake.md")
+        self.save_policy()
+        b = self.commit("forbidden", ["docs/gates/fake.md", source.MANIFEST])
+        with self.assertRaisesRegex(ValueError, "FORBIDDEN_INCLUDE"):
+            source.plan(self.repo, b)
+        self.policy["groups"][0]["paths"] = ["app.txt", "app.txt"]
+        self.save_policy()
+        b = self.commit("duplicate", [source.MANIFEST])
+        with self.assertRaisesRegex(ValueError, "DUPLICATE_PATH"):
+            source.plan(self.repo, b)
+
+    def test_git_symlink_mode_rejected_without_os_symlink_permission(self):
+        oid = self.run_git("hash-object", "-w", "--stdin", data=b"outside").decode().strip()
+        self.run_git("update-index", "--add", "--cacheinfo", "120000," + oid + ",link")
+        self.run_git("commit", "-qm", "symlink")
+        b = self.run_git("rev-parse", "HEAD").decode().strip()
+        with self.assertRaisesRegex(ValueError, "SPECIAL_GIT_FILE"):
+            source.plan(self.repo, b)
+
+    def test_missing_include_and_classification_overlap_fail(self):
+        self.policy["groups"][0]["paths"].append("missing.txt")
+        self.save_policy()
+        b = self.commit("missing", [source.MANIFEST])
+        with self.assertRaisesRegex(ValueError, "MISSING_OR_FORBIDDEN"):
+            source.plan(self.repo, b)
+        self.policy["groups"][0]["paths"] = ["app.txt"]
+        self.policy["excludedPaths"]["EXCLUDE_TEST"] = ["app.txt"]
+        self.save_policy()
+        b = self.commit("overlap", [source.MANIFEST])
+        with self.assertRaisesRegex(ValueError, "CONFLICTING_CLASSIFICATION"):
+            source.plan(self.repo, b)
+
+
+class ReleaseBusinessBoundaryTest(unittest.TestCase):
+    # 只复用Git夹具，避免再次收集父类的全部源导出测试。
+    setUp = ReleaseSourceTest.setUp
+    tearDown = ReleaseSourceTest.tearDown
+    run_git = ReleaseSourceTest.run_git
+    write = ReleaseSourceTest.write
+    save_policy = ReleaseSourceTest.save_policy
+    commit = ReleaseSourceTest.commit
+
+    def test_business_identifiers_pass_only_with_exact_reviewed_context(self):
+        repo = Path(__file__).resolve().parents[3]
+        names = set(boundary.RELEASE_DOCS) | {"frontend/package.json", "frontend/package-lock.json",
+                                            "frontend/tsconfig.node.json"}
+        guarded = {
+            "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/AccountFeeModelService.java": "FEE_MODEL_FREEZE_TIME_INVALID",
+            "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/fee/FrozenDirectionalFeeModel.java": 'out.append(node.booleanValue() ? "B1" : "B0")',
+        }
+        for path in names:
+            self.write(path, (repo / path).read_bytes())
+        for path, marker in guarded.items():
+            lines = [line for line in (repo / path).read_text(encoding="utf-8").splitlines() if marker in line]
+            self.write(path, ("\n".join(lines) + "\n").encode())
+        for path in (boundary.POLICY, boundary.RULES):
+            self.write(path, (repo / path).read_bytes())
+        names.update(guarded)
+        legal_names = {"LICENSE", "DISCLAIMER.md", "THIRD_PARTY_NOTICES.md"}
+        self.policy["groups"][0]["paths"].extend(sorted(names - legal_names))
+        self.policy["groups"].append({"category": "INCLUDE_RELEASE_DOC", "purpose": "原始法律文档夹具",
+                                       "paths": sorted(legal_names)})
+        self.policy["excludedPaths"]["EXCLUDE_DEV_ONLY"].extend([boundary.POLICY, boundary.RULES])
+        self.save_policy()
+        commit = self.commit("reviewed business identifiers", [*names, boundary.POLICY, boundary.RULES, source.MANIFEST])
+        output = self.root / "approved"
+        source.export(self.repo, commit, output)
+        self.assertEqual([], boundary.check(self.repo, commit, output)["errors"])
+        path = next(iter(guarded))
+        self.write(path, (self.repo / path).read_bytes().rstrip() + b" // Phase 99\n")
+        changed = self.commit("changed context must fail", [path])
+        changed_output = self.root / "changed"
+        source.export(self.repo, changed, changed_output)
+        errors = boundary.check(self.repo, changed, changed_output)["errors"]
+        self.assertTrue(any("STAGE_LEAKAGE" in error and "FREEZE" in error for error in errors))
+        self.assertTrue(any("STAGE_LEAKAGE" in error and "Phase 99" in error for error in errors))
+
+
+class ReleaseLegalTest(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="nq-release-legal-")
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        repo = Path(__file__).resolve().parents[3]
+        self.names = set(boundary.RELEASE_DOCS)
+        self.names.add("frontend/package-lock.json")
+        for path in self.names:
+            (self.root / path).parent.mkdir(parents=True, exist_ok=True)
+            (self.root / path).write_bytes((repo / path).read_bytes())
+
+    def test_legal_docs_and_links_are_complete(self):
+        self.assertEqual([], boundary.legal_errors(self.root, self.names))
+
+    def test_missing_disclaimer_fails(self):
+        (self.root / "DISCLAIMER.md").unlink()
+        self.names.remove("DISCLAIMER.md")
+        self.assertIn("MISSING_RELEASE_DOC: DISCLAIMER.md", boundary.legal_errors(self.root, self.names))
+
+    def test_missing_third_party_notices_fails(self):
+        (self.root / "THIRD_PARTY_NOTICES.md").unlink()
+        self.names.remove("THIRD_PARTY_NOTICES.md")
+        self.assertIn("MISSING_RELEASE_DOC: THIRD_PARTY_NOTICES.md", boundary.legal_errors(self.root, self.names))
+
+    def test_notice_unicode_and_license_tamper_fail(self):
+        path = self.root / "THIRD_PARTY_NOTICES.md"
+        original = path.read_bytes()
+        for old, new, error in (("(с)".encode(), b"(c)", "LIGHTWEIGHT_CHARTS_NOTICE_MISMATCH"),
+                                (b"Version 2.0, January 2004", b"SYNTHETIC LICENSE", "LIGHTWEIGHT_CHARTS_LICENSE_MISMATCH")):
+            with self.subTest(error=error):
+                path.write_bytes(original.replace(old, new))
+                self.assertIn(error, boundary.legal_errors(self.root, self.names))
+
+    def test_locked_dependency_upgrade_fails(self):
+        path = self.root / "frontend/package-lock.json"
+        lock = json.loads(path.read_bytes())
+        lock["packages"]["node_modules/lightweight-charts"]["version"] = "5.2.1"
+        path.write_text(json.dumps(lock), encoding="utf-8")
+        self.assertIn("LIGHTWEIGHT_CHARTS_LOCK_IDENTITY_MISMATCH", boundary.legal_errors(self.root, self.names))
+
+    def test_license_domain_clause_tamper_fails(self):
+        with (self.root / "LICENSE").open("ab") as stream:
+            stream.write(b"\nSYNTHETIC FINANCIAL CLAUSE\n")
+        self.assertIn("NONSTANDARD_APACHE_LICENSE", boundary.legal_errors(self.root, self.names))
+
+    def test_broken_install_link_fails(self):
+        path = self.root / "INSTALL.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("(DISCLAIMER.md)", "(missing.md)"), encoding="utf-8")
+        self.assertIn("MISSING_LEGAL_LINK: INSTALL.md:DISCLAIMER.md", boundary.legal_errors(self.root, self.names))
+
+    def test_pending_wording_in_extensionless_release_file_fails(self):
+        path = "legacy-note"
+        self.names.add(path)
+        (self.root / path).write_bytes(b"LICENSE_PENDING_USER_DECISION")
+        self.assertIn("PENDING_LICENSE: " + path, boundary.legal_errors(self.root, self.names))
+
+
+if __name__ == "__main__":
+    unittest.main()

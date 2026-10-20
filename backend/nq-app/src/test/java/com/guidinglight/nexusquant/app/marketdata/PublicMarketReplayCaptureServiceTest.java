@@ -1,28 +1,5 @@
 package com.guidinglight.nexusquant.app.marketdata;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
-import com.guidinglight.nexusquant.security.token.model.TokenClaims;
-import com.sun.net.httpserver.HttpServer;
-import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.mock.env.MockEnvironment;
-
-import java.net.URI;
-import java.net.InetSocketAddress;
-import java.net.http.HttpClient;
-import java.nio.charset.StandardCharsets;
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,15 +8,44 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
+import com.sun.net.httpserver.HttpServer;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.env.MockEnvironment;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+
 class PublicMarketReplayCaptureServiceTest {
     private static final Instant START = Instant.parse("2026-09-20T00:00:00Z");
     private static final Instant END = Instant.parse("2026-09-23T00:00:00Z");
     private static final Instant OBSERVED = Instant.parse("2026-09-25T12:22:36Z");
     private final ObjectMapper mapper = new ObjectMapper();
-    private final PublicMarketReplayCaptureService service = new PublicMarketReplayCaptureService(
-            HttpClient.newHttpClient(), URI.create("http://127.0.0.1:1"), mapper,
-            mock(JdbcTemplate.class), mock(TransactionTemplate.class),
-            Clock.fixed(OBSERVED, ZoneOffset.UTC));
+    private final PublicMarketReplayCaptureService service =
+            new PublicMarketReplayCaptureService(
+                    HttpClient.newHttpClient(),
+                    URI.create("http://127.0.0.1:1"),
+                    mapper,
+                    mock(JdbcTemplate.class),
+                    mock(TransactionTemplate.class),
+                    Clock.fixed(OBSERVED, ZoneOffset.UTC));
 
     @Test
     void captureUsesCanonicalUsernameAndFailsClosedWithoutAnActor() {
@@ -48,11 +54,22 @@ class PublicMarketReplayCaptureServiceTest {
         var controller = new PublicMarketReplayCaptureController(capture, auth);
         var request = new PublicMarketReplayCaptureController.CaptureRequest(START, END);
         when(auth.currentUser()).thenReturn(Optional.empty());
-        assertEquals("PUBLIC_CAPTURE_ACTOR_UNAVAILABLE", assertThrows(IllegalStateException.class,
-                () -> controller.capture(request)).getMessage());
+        assertEquals(
+                "PUBLIC_CAPTURE_ACTOR_UNAVAILABLE",
+                assertThrows(IllegalStateException.class, () -> controller.capture(request))
+                        .getMessage());
 
-        when(auth.currentUser()).thenReturn(Optional.of(new TokenClaims("user-2", "c1-admin",
-                List.of("ADMIN"), START, END, "test", "redacted-id")));
+        when(auth.currentUser())
+                .thenReturn(
+                        Optional.of(
+                                new TokenClaims(
+                                        "user-2",
+                                        "c1-admin",
+                                        List.of("ADMIN"),
+                                        START,
+                                        END,
+                                        "test",
+                                        "redacted-id")));
         controller.capture(request);
         verify(capture).capture(START, END, "c1-admin");
     }
@@ -60,14 +77,16 @@ class PublicMarketReplayCaptureServiceTest {
     @Test
     void manualProfileWiresCaptureApiWithExplicitOutboundFlag() {
         try (var context = new AnnotationConfigApplicationContext()) {
-            context.setEnvironment(new MockEnvironment()
-                    .withProperty("nq.public-marketdata.outbound.enabled", "true"));
+            context.setEnvironment(
+                    new MockEnvironment()
+                            .withProperty("nq.public-marketdata.outbound.enabled", "true"));
             context.getEnvironment().setActiveProfiles("public-marketdata-manual");
             context.registerBean(ObjectMapper.class, () -> new ObjectMapper());
             context.registerBean(JdbcTemplate.class, () -> mock(JdbcTemplate.class));
             context.registerBean(TransactionTemplate.class, () -> mock(TransactionTemplate.class));
             context.registerBean(GatewayAuthFacade.class, () -> mock(GatewayAuthFacade.class));
-            context.register(PublicMarketReplayCaptureService.class,
+            context.register(
+                    PublicMarketReplayCaptureService.class,
                     PublicMarketReplayCaptureController.class);
             context.refresh();
             assertTrue(context.containsBeanDefinition("publicMarketReplayCaptureService"));
@@ -80,7 +99,8 @@ class PublicMarketReplayCaptureServiceTest {
         byte[] raw = raw();
         var first = service.parse(raw, START, END, OBSERVED);
         var replay = service.parse(raw, START, END, OBSERVED);
-        assertEquals("100ed4ea22667255c3f0be4ec5ff68b92a60fa0e851bb5f83cb7336f778c21af",
+        assertEquals(
+                "100ed4ea22667255c3f0be4ec5ff68b92a60fa0e851bb5f83cb7336f778c21af",
                 first.rawSha256());
         assertEquals(first.normalizedSha256(), replay.normalizedSha256());
         assertEquals(first.consumed().sha256(), replay.consumed().sha256());
@@ -91,9 +111,11 @@ class PublicMarketReplayCaptureServiceTest {
         assertTrue(OBSERVED.isAfter(Instant.parse(bars.get(0).path("availableAt").asText())));
 
         ObjectNode revised = (ObjectNode) mapper.readTree(raw);
-        ((ArrayNode) revised.path("data").get(0)).set(4, mapper.getNodeFactory().textNode("86209.2"));
-        var laterCapture = service.parse(revised.toString().getBytes(StandardCharsets.UTF_8),
-                START, END, OBSERVED);
+        ((ArrayNode) revised.path("data").get(0))
+                .set(4, mapper.getNodeFactory().textNode("86209.2"));
+        var laterCapture =
+                service.parse(
+                        revised.toString().getBytes(StandardCharsets.UTF_8), START, END, OBSERVED);
         assertNotEquals(first.rawSha256(), laterCapture.rawSha256());
         assertNotEquals(first.normalizedSha256(), laterCapture.normalizedSha256());
         assertNotEquals(first.consumed().sha256(), laterCapture.consumed().sha256());
@@ -101,6 +123,9 @@ class PublicMarketReplayCaptureServiceTest {
 
     @Test
     void malformedHistoricalWindowsFailClosed() throws Exception {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.validateWindow(START.plusNanos(500000), END.plusNanos(500000)));
         ObjectNode gap = (ObjectNode) mapper.readTree(raw());
         ((ArrayNode) gap.path("data")).remove(0);
         assertThrows(IllegalStateException.class, () -> parse(gap));
@@ -124,51 +149,141 @@ class PublicMarketReplayCaptureServiceTest {
         ObjectNode invalidOhlc = (ObjectNode) mapper.readTree(raw());
         ((ArrayNode) invalidOhlc.path("data").get(0)).set(2, mapper.getNodeFactory().textNode("1"));
         assertThrows(IllegalStateException.class, () -> parse(invalidOhlc));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> service.validateWindow(START, START.plusSeconds(101 * 3600L)));
+    }
+
+    @Test
+    void productionConstructorRejectsDisabledCiAndUnknownProfileBeforeReadingOrWriting() {
+        for (String reason : List.of("disabled", "offline", "ci", "test-profile")) {
+            var environment =
+                    new MockEnvironment()
+                            .withProperty("nq.public-marketdata.outbound.enabled", "true");
+            environment.setActiveProfiles("prod", "public-marketdata-manual");
+            if (reason.equals("disabled"))
+                environment.withProperty("nq.public-marketdata.outbound.enabled", "false");
+            if (reason.equals("offline"))
+                environment.withProperty("nq.env-safety.no-outbound", "true");
+            if (reason.equals("ci")) environment.withProperty("nq.env-safety.ci", "true");
+            if (reason.equals("test-profile"))
+                environment.setActiveProfiles("test", "public-marketdata-manual");
+            var instance =
+                    new PublicMarketReplayCaptureService(
+                            mapper,
+                            mock(JdbcTemplate.class),
+                            mock(TransactionTemplate.class),
+                            environment,
+                            "http://127.0.0.1:1");
+            assertEquals(
+                    "PUBLIC_CAPTURE_OUTBOUND_DISABLED",
+                    assertThrows(
+                                    IllegalStateException.class,
+                                    () -> instance.capture(START, END, "test"))
+                            .getMessage());
+        }
+    }
+
+    @Test
+    void invalidOriginDoesNotEchoAccidentallyConfiguredCredentials() {
+        for (String value :
+                List.of(
+                        "https://user:test-secret@bad host",
+                        "https://user:test-secret@example.org",
+                        "file:///tmp/data")) {
+            var failure =
+                    assertThrows(
+                            IllegalArgumentException.class,
+                            () ->
+                                    new PublicMarketReplayCaptureService(
+                                            mapper,
+                                            mock(JdbcTemplate.class),
+                                            mock(TransactionTemplate.class),
+                                            new MockEnvironment(),
+                                            value));
+            assertEquals("PUBLIC_CAPTURE_ORIGIN_INVALID", failure.getMessage());
+            assertEquals(null, failure.getCause());
+        }
     }
 
     @Test
     void missingUnavailableAndStalePublicRulesRejectBeforePersistence() throws Exception {
         ObjectNode missing = (ObjectNode) mapper.readTree(ruleRaw());
         ((ArrayNode) missing.path("data")).removeAll();
-        assertThrows(IllegalStateException.class, () -> captureWithRule(
-                missing.toString().getBytes(StandardCharsets.UTF_8), Clock.fixed(OBSERVED, ZoneOffset.UTC)));
+        assertThrows(
+                IllegalStateException.class,
+                () ->
+                        captureWithRule(
+                                missing.toString().getBytes(StandardCharsets.UTF_8),
+                                Clock.fixed(OBSERVED, ZoneOffset.UTC)));
 
         ObjectNode unavailable = (ObjectNode) mapper.readTree(ruleRaw());
         ((ObjectNode) unavailable.path("data").get(0)).put("state", "suspend");
-        assertEquals("PUBLIC_RULE_NOT_TRADABLE", assertThrows(IllegalStateException.class,
-                () -> captureWithRule(unavailable.toString().getBytes(StandardCharsets.UTF_8),
-                        Clock.fixed(OBSERVED, ZoneOffset.UTC))).getMessage());
+        assertEquals(
+                "PUBLIC_RULE_NOT_TRADABLE",
+                assertThrows(
+                                IllegalStateException.class,
+                                () ->
+                                        captureWithRule(
+                                                unavailable
+                                                        .toString()
+                                                        .getBytes(StandardCharsets.UTF_8),
+                                                Clock.fixed(OBSERVED, ZoneOffset.UTC)))
+                        .getMessage());
 
         AtomicInteger calls = new AtomicInteger();
-        Clock stale = new Clock() {
-            @Override public ZoneOffset getZone() { return ZoneOffset.UTC; }
-            @Override public Clock withZone(java.time.ZoneId zone) { return this; }
-            @Override public Instant instant() {
-                return calls.incrementAndGet() == 4 ? OBSERVED.minusSeconds(600) : OBSERVED;
-            }
-        };
-        assertEquals("PUBLIC_RULE_STALE", assertThrows(IllegalStateException.class,
-                () -> captureWithRule(ruleRaw(), stale)).getMessage());
+        Clock stale =
+                new Clock() {
+                    @Override
+                    public ZoneOffset getZone() {
+                        return ZoneOffset.UTC;
+                    }
+
+                    @Override
+                    public Clock withZone(ZoneId zone) {
+                        return this;
+                    }
+
+                    @Override
+                    public Instant instant() {
+                        return calls.incrementAndGet() == 4 ? OBSERVED.minusSeconds(600) : OBSERVED;
+                    }
+                };
+        assertEquals(
+                "PUBLIC_RULE_STALE",
+                assertThrows(IllegalStateException.class, () -> captureWithRule(ruleRaw(), stale))
+                        .getMessage());
     }
 
     private void captureWithRule(byte[] rule, Clock clock) throws Exception {
         byte[] candles = raw();
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        server.createContext("/api/v5/market/history-candles", exchange -> {
-            exchange.sendResponseHeaders(200, candles.length);
-            try (var output = exchange.getResponseBody()) { output.write(candles); }
-        });
-        server.createContext("/api/v5/public/instruments", exchange -> {
-            exchange.sendResponseHeaders(200, rule.length);
-            try (var output = exchange.getResponseBody()) { output.write(rule); }
-        });
+        server.createContext(
+                "/api/v5/market/history-candles",
+                exchange -> {
+                    exchange.sendResponseHeaders(200, candles.length);
+                    try (var output = exchange.getResponseBody()) {
+                        output.write(candles);
+                    }
+                });
+        server.createContext(
+                "/api/v5/public/instruments",
+                exchange -> {
+                    exchange.sendResponseHeaders(200, rule.length);
+                    try (var output = exchange.getResponseBody()) {
+                        output.write(rule);
+                    }
+                });
         server.start();
         try {
-            var bounded = new PublicMarketReplayCaptureService(HttpClient.newHttpClient(),
-                    URI.create("http://127.0.0.1:" + server.getAddress().getPort()), mapper,
-                    mock(JdbcTemplate.class), mock(TransactionTemplate.class), clock);
+            var bounded =
+                    new PublicMarketReplayCaptureService(
+                            HttpClient.newHttpClient(),
+                            URI.create("http://127.0.0.1:" + server.getAddress().getPort()),
+                            mapper,
+                            mock(JdbcTemplate.class),
+                            mock(TransactionTemplate.class),
+                            clock);
             bounded.capture(START, END, "test");
         } finally {
             server.stop(0);
@@ -176,19 +291,24 @@ class PublicMarketReplayCaptureServiceTest {
     }
 
     private byte[] ruleRaw() throws Exception {
-        try (var stream = getClass().getResourceAsStream(
-                "/public-market-replay/okx-btc-usdt-public-instrument-20260925.json")) {
+        try (var stream =
+                getClass()
+                        .getResourceAsStream(
+                                "/public-market-replay/okx-btc-usdt-public-instrument-20260925.json")) {
             return stream.readAllBytes();
         }
     }
 
     private PublicMarketReplayCaptureService.ParsedCapture parse(ObjectNode payload) {
-        return service.parse(payload.toString().getBytes(StandardCharsets.UTF_8), START, END, OBSERVED);
+        return service.parse(
+                payload.toString().getBytes(StandardCharsets.UTF_8), START, END, OBSERVED);
     }
 
     private byte[] raw() throws Exception {
-        try (var stream = getClass().getResourceAsStream(
-                "/public-market-replay/okx-btc-usdt-1h-20260920-20260923.json")) {
+        try (var stream =
+                getClass()
+                        .getResourceAsStream(
+                                "/public-market-replay/okx-btc-usdt-1h-20260920-20260923.json")) {
             return stream.readAllBytes();
         }
     }

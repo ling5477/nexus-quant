@@ -3,6 +3,9 @@ package com.guidinglight.nexusquant.auth.api.web;
 import com.guidinglight.nexusquant.account.application.service.ExchangeAccountQueryService;
 import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.auth.api.dto.AuthLoginRequestBody;
+import com.guidinglight.nexusquant.auth.api.dto.PasswordChangeRequest;
+import com.guidinglight.nexusquant.auth.application.service.PasswordChangeService;
+import org.springframework.http.HttpStatus;
 import com.guidinglight.nexusquant.auth.api.dto.AuthLoginResponse;
 import com.guidinglight.nexusquant.auth.api.dto.CurrentUserResponse;
 import com.guidinglight.nexusquant.auth.application.port.AuthService;
@@ -33,6 +36,7 @@ import java.util.Objects;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordChangeService passwordChangeService;
     private final GatewayAuthFacade gatewayAuthFacade;
     private final CurrentUserProfileService currentUserProfileService;
     private final ExchangeAccountQueryService exchangeAccountQueryService;
@@ -41,8 +45,10 @@ public class AuthController {
             AuthService authService,
             GatewayAuthFacade gatewayAuthFacade,
             CurrentUserProfileService currentUserProfileService,
-            ExchangeAccountQueryService exchangeAccountQueryService
+            ExchangeAccountQueryService exchangeAccountQueryService,
+            PasswordChangeService passwordChangeService
     ) {
+        this.passwordChangeService = Objects.requireNonNull(passwordChangeService, "passwordChangeService");
         this.authService = Objects.requireNonNull(authService, "authService must not be null");
         this.gatewayAuthFacade = Objects.requireNonNull(gatewayAuthFacade, "gatewayAuthFacade must not be null");
         this.currentUserProfileService = Objects.requireNonNull(
@@ -65,16 +71,44 @@ public class AuthController {
     })
     public AuthLoginResponse login(@Valid @RequestBody AuthLoginRequestBody request) {
         var loginResponse = authService.login(new LoginRequest(request.username(), request.password()));
+        return response(loginResponse);
+    }
+
+    @PostMapping("/renew")
+    @Operation(summary = "续期当前活跃会话", description = "需要尚未过期的Bearer令牌；空闲、注销、改密或达到最长时限后不可续期。")
+    public AuthLoginResponse renew() {
+        var claims = gatewayAuthFacade.currentUser()
+                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("authentication required"));
+        return response(authService.renew(claims));
+    }
+
+    private AuthLoginResponse response(com.guidinglight.nexusquant.auth.application.result.LoginResponse loginResponse) {
         return new AuthLoginResponse(
                 loginResponse.accessToken(),
                 loginResponse.tokenType(),
                 loginResponse.expiresIn(),
                 loginResponse.expiresAt(),
                 loginResponse.username(),
-                loginResponse.roles()
+                loginResponse.roles(),
+                loginResponse.mustChangePassword(),
+                loginResponse.sessionId(), loginResponse.idleExpiresAt(), loginResponse.sessionExpiresAt(), loginResponse.serverTime()
         );
     }
 
+    @PostMapping("/change-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changePassword(@Valid @RequestBody PasswordChangeRequest request) {
+        var user = gatewayAuthFacade.currentUser()
+                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("authentication required"));
+        passwordChangeService.changePassword(user.username(), user.authVersion(), request.currentPassword(), request.newPassword());
+    }
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout() {
+        var claims = gatewayAuthFacade.currentUser()
+                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("authentication required"));
+        authService.logout(claims);
+    }
     @GetMapping("/me")
     @Operation(
             summary = "当前用户",
@@ -99,7 +133,8 @@ public class AuthController {
                 defaultAccount == null ? null : defaultAccount.exchangeAccountId(),
                 defaultAccount == null ? null : defaultAccount.exchangeCode(),
                 defaultAccount == null ? null : defaultAccount.tradeEnv(),
-                defaultAccount == null ? null : defaultAccount.accountAlias()
+                defaultAccount == null ? null : defaultAccount.accountAlias(),
+                userProfile.mustChangePassword()
         );
     }
 }

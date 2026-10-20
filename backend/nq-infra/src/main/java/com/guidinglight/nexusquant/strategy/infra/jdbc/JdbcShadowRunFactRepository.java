@@ -21,6 +21,12 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatusUpdateResult;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.AdmissionMutationCoordinator;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -31,12 +37,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
-
 /**
  * Shadow Run 本地事实 JDBC adapter。
  *
@@ -46,9 +46,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
 
-    private static final String RUN_SELECT = """
+    private static final String RUN_SELECT =
+            """
             SELECT id, strategy_version_id, dataset_id, evaluation_id, publish_id, artifact_digest, paper_run_id,
-                   status, window_start, window_end, side_effect_policy::text AS side_effect_policy,
+                   status, window_start, window_end, window_start_nanosecond_remainder,
+                   window_end_nanosecond_remainder, side_effect_policy::text AS side_effect_policy,
                    no_order_submission, no_credential_access, no_private_endpoint, no_ledger_mutation,
                    no_account_mutation, no_external_private_io, authorization_boundary, request_id,
                    idempotency_key, trace_id, blockers::text AS blockers, warnings::text AS warnings,
@@ -57,19 +59,22 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
             FROM shadow_runs
             """;
 
-    private static final String EVENT_SELECT = """
+    private static final String EVENT_SELECT =
+            """
             SELECT id, shadow_run_id, event_type, from_status, to_status, reason_code, message,
                    metadata::text AS metadata, request_id, trace_id, created_at
             FROM shadow_run_events
             """;
 
-    private static final String SNAPSHOT_SELECT = """
+    private static final String SNAPSHOT_SELECT =
+            """
             SELECT id, shadow_run_id, snapshot_type, sequence_no, source, schema_version, checksum,
                    payload::text AS payload, captured_at, trace_id, created_at
             FROM shadow_run_snapshots
             """;
 
-    private static final String REPORT_SELECT = """
+    private static final String REPORT_SELECT =
+            """
             SELECT id, shadow_run_id, paper_run_id, comparison_status, metric_delta::text AS metric_delta,
                    divergence_reasons::text AS divergence_reasons, limitations::text AS limitations,
                    generated_at, trace_id, created_at
@@ -87,15 +92,13 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
             JdbcShadowRunIllegalTransitionAuditWriter illegalTransitionAuditWriter,
-            AdmissionMutationCoordinator admissionMutationCoordinator
-    ) {
+            AdmissionMutationCoordinator admissionMutationCoordinator) {
         this(
                 jdbcTemplate,
                 objectMapper,
                 new ShadowRunStateMachine(),
                 illegalTransitionAuditWriter,
-                admissionMutationCoordinator
-        );
+                admissionMutationCoordinator);
     }
 
     JdbcShadowRunFactRepository(
@@ -103,19 +106,18 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
             ObjectMapper objectMapper,
             ShadowRunStateMachine stateMachine,
             JdbcShadowRunIllegalTransitionAuditWriter illegalTransitionAuditWriter,
-            AdmissionMutationCoordinator admissionMutationCoordinator
-    ) {
+            AdmissionMutationCoordinator admissionMutationCoordinator) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.stateMachine = Objects.requireNonNull(stateMachine, "stateMachine must not be null");
-        this.illegalTransitionAuditWriter = Objects.requireNonNull(
-                illegalTransitionAuditWriter,
-                "illegalTransitionAuditWriter must not be null"
-        );
-        this.admissionMutationCoordinator = Objects.requireNonNull(
-                admissionMutationCoordinator,
-                "admissionMutationCoordinator must not be null"
-        );
+        this.illegalTransitionAuditWriter =
+                Objects.requireNonNull(
+                        illegalTransitionAuditWriter,
+                        "illegalTransitionAuditWriter must not be null");
+        this.admissionMutationCoordinator =
+                Objects.requireNonNull(
+                        admissionMutationCoordinator,
+                        "admissionMutationCoordinator must not be null");
     }
 
     @Override
@@ -123,8 +125,7 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
         Objects.requireNonNull(run, "run must not be null");
         return admissionMutationCoordinator.withLockedAdmissionStates(
                 run.publishId() == null ? List.of() : List.of(run.publishId()),
-                () -> createUnderAdmissionLock(run)
-        );
+                () -> createUnderAdmissionLock(run));
     }
 
     private ShadowRun createUnderAdmissionLock(ShadowRun run) {
@@ -132,13 +133,14 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 """
                         INSERT INTO shadow_runs (
                             id, strategy_version_id, dataset_id, evaluation_id, publish_id, artifact_digest, paper_run_id,
-                            status, window_start, window_end, side_effect_policy,
+                            status, window_start, window_end, window_start_nanosecond_remainder,
+                            window_end_nanosecond_remainder, side_effect_policy,
                             no_order_submission, no_credential_access, no_private_endpoint,
                             no_ledger_mutation, no_account_mutation, no_external_private_io,
                             authorization_boundary, request_id, idempotency_key, trace_id,
                             blockers, warnings, next_steps, version,
                             created_at, updated_at, started_at, stopped_at, completed_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSONB),
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSONB),
                                   ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                                   CAST(? AS JSONB), CAST(? AS JSONB), CAST(? AS JSONB), ?,
                                   ?, ?, ?, ?, ?)
@@ -152,8 +154,10 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 run.artifactDigest(),
                 run.paperRunId(),
                 run.status().name(),
-                toTimestamp(run.windowStart()),
-                toTimestamp(run.windowEnd()),
+                ShadowRunWindowPrecision.timestamp(run.windowStart()),
+                ShadowRunWindowPrecision.timestamp(run.windowEnd()),
+                ShadowRunWindowPrecision.remainder(run.windowStart()),
+                ShadowRunWindowPrecision.remainder(run.windowEnd()),
                 writeJson(run.sideEffectPolicy()),
                 run.noOrderSubmission(),
                 run.noCredentialAccess(),
@@ -173,31 +177,29 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 Timestamp.from(run.updatedAt()),
                 toTimestamp(run.startedAt()),
                 toTimestamp(run.stoppedAt()),
-                toTimestamp(run.completedAt())
-        );
-        ShadowRun persisted = findByIdempotencyKey(run.idempotencyKey())
-                .orElseThrow(() -> new IllegalStateException("failed to create or load shadow run"));
+                toTimestamp(run.completedAt()));
+        ShadowRun persisted =
+                findByIdempotencyKey(run.idempotencyKey())
+                        .orElseThrow(
+                                () ->
+                                        new IllegalStateException(
+                                                "failed to create or load shadow run"));
         requireSameReleaseProvenance(run, persisted);
         return persisted;
     }
 
     @Override
     public Optional<ShadowRun> findById(UUID shadowRunId) {
-        List<ShadowRun> rows = jdbcTemplate.query(
-                RUN_SELECT + " WHERE id = ?",
-                runRowMapper(),
-                shadowRunId
-        );
+        List<ShadowRun> rows =
+                jdbcTemplate.query(RUN_SELECT + " WHERE id = ?", runRowMapper(), shadowRunId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
     @Override
     public Optional<ShadowRun> findByIdempotencyKey(String idempotencyKey) {
-        List<ShadowRun> rows = jdbcTemplate.query(
-                RUN_SELECT + " WHERE idempotency_key = ?",
-                runRowMapper(),
-                idempotencyKey
-        );
+        List<ShadowRun> rows =
+                jdbcTemplate.query(
+                        RUN_SELECT + " WHERE idempotency_key = ?", runRowMapper(), idempotencyKey);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
@@ -213,19 +215,18 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                         + whereClause.sql()
                         + " ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
                 runRowMapper(),
-                args.toArray()
-        );
+                args.toArray());
     }
 
     @Override
     public long countRuns(ShadowRunListQuery query) {
         Objects.requireNonNull(query, "query must not be null");
         SqlWhereClause whereClause = runWhereClause(query);
-        Long total = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM shadow_runs" + whereClause.sql(),
-                Long.class,
-                whereClause.args().toArray()
-        );
+        Long total =
+                jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM shadow_runs" + whereClause.sql(),
+                        Long.class,
+                        whereClause.args().toArray());
         return total == null ? 0L : total;
     }
 
@@ -249,8 +250,7 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 writeJson(event.metadata()),
                 event.requestId(),
                 event.traceId(),
-                Timestamp.from(event.createdAt())
-        );
+                Timestamp.from(event.createdAt()));
     }
 
     @Override
@@ -273,8 +273,7 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 writeJson(snapshot.payload()),
                 Timestamp.from(snapshot.capturedAt()),
                 snapshot.traceId(),
-                Timestamp.from(snapshot.createdAt())
-        );
+                Timestamp.from(snapshot.createdAt()));
     }
 
     @Override
@@ -282,11 +281,11 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
         Objects.requireNonNull(report, "report must not be null");
         return admissionMutationCoordinator.withLockedAdmissionStates(
                 publishIdsForShadow(report.shadowRunId()),
-                () -> createConsistencyReportUnderAdmissionLock(report)
-        );
+                () -> createConsistencyReportUnderAdmissionLock(report));
     }
 
-    private ShadowConsistencyReport createConsistencyReportUnderAdmissionLock(ShadowConsistencyReport report) {
+    private ShadowConsistencyReport createConsistencyReportUnderAdmissionLock(
+            ShadowConsistencyReport report) {
         jdbcTemplate.update(
                 """
                         INSERT INTO shadow_consistency_reports (
@@ -303,8 +302,7 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 writeJson(report.limitations()),
                 Timestamp.from(report.generatedAt()),
                 report.traceId(),
-                Timestamp.from(report.createdAt())
-        );
+                Timestamp.from(report.createdAt()));
         return report;
     }
 
@@ -317,20 +315,18 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
             String reasonCode,
             String message,
             String requestId,
-            String traceId
-    ) {
+            String traceId) {
         return admissionMutationCoordinator.withLockedAdmissionStates(
                 publishIdsForShadow(shadowRunId),
-                () -> updateStatusUnderAdmissionLock(
-                        shadowRunId,
-                        toStatus,
-                        expectedVersion,
-                        reasonCode,
-                        message,
-                        requestId,
-                        traceId
-                )
-        );
+                () ->
+                        updateStatusUnderAdmissionLock(
+                                shadowRunId,
+                                toStatus,
+                                expectedVersion,
+                                reasonCode,
+                                message,
+                                requestId,
+                                traceId));
     }
 
     private ShadowRunStatusUpdateResult updateStatusUnderAdmissionLock(
@@ -340,23 +336,28 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
             String reasonCode,
             String message,
             String requestId,
-            String traceId
-    ) {
-        ShadowRun current = findById(shadowRunId)
-                .orElseThrow(() -> new IllegalArgumentException("shadow run not found: " + shadowRunId));
+            String traceId) {
+        ShadowRun current =
+                findById(shadowRunId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "shadow run not found: " + shadowRunId));
         if (current.version() != expectedVersion) {
             throw new ShadowRunOptimisticLockException(shadowRunId, expectedVersion);
         }
         try {
             stateMachine.transition(current.status(), toStatus);
         } catch (ShadowRunStateTransitionException ex) {
-            illegalTransitionAuditWriter.writeIllegalTransitionAttempt(current, toStatus, ex, message, requestId, traceId);
+            illegalTransitionAuditWriter.writeIllegalTransitionAttempt(
+                    current, toStatus, ex, message, requestId, traceId);
             throw ex;
         }
 
         Instant updatedAt = Instant.now();
-        int updated = jdbcTemplate.update(
-                """
+        int updated =
+                jdbcTemplate.update(
+                        """
                         UPDATE shadow_runs
                         SET status = ?,
                             version = version + 1,
@@ -368,43 +369,42 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                           AND status = ?
                           AND version = ?
                         """,
-                toStatus.name(),
-                Timestamp.from(updatedAt),
-                toStatus.name(),
-                Timestamp.from(updatedAt),
-                toStatus.name(),
-                Timestamp.from(updatedAt),
-                toStatus.name(),
-                Timestamp.from(updatedAt),
-                shadowRunId,
-                current.status().name(),
-                expectedVersion
-        );
+                        toStatus.name(),
+                        Timestamp.from(updatedAt),
+                        toStatus.name(),
+                        Timestamp.from(updatedAt),
+                        toStatus.name(),
+                        Timestamp.from(updatedAt),
+                        toStatus.name(),
+                        Timestamp.from(updatedAt),
+                        shadowRunId,
+                        current.status().name(),
+                        expectedVersion);
         if (updated != 1) {
             throw new ShadowRunOptimisticLockException(shadowRunId, expectedVersion);
         }
-        appendEvent(new ShadowRunEvent(
-                UUID.randomUUID(),
-                shadowRunId,
-                eventTypeFor(toStatus),
-                current.status(),
-                toStatus,
-                reasonCode,
-                message,
-                objectMapper.createObjectNode(),
-                requestId,
-                traceId,
-                updatedAt
-        ));
-        return new ShadowRunStatusUpdateResult(shadowRunId, current.status(), toStatus, expectedVersion, expectedVersion + 1);
+        appendEvent(
+                new ShadowRunEvent(
+                        UUID.randomUUID(),
+                        shadowRunId,
+                        eventTypeFor(toStatus),
+                        current.status(),
+                        toStatus,
+                        reasonCode,
+                        message,
+                        objectMapper.createObjectNode(),
+                        requestId,
+                        traceId,
+                        updatedAt));
+        return new ShadowRunStatusUpdateResult(
+                shadowRunId, current.status(), toStatus, expectedVersion, expectedVersion + 1);
     }
 
     private List<String> publishIdsForShadow(UUID shadowRunId) {
         return jdbcTemplate.query(
                 "SELECT publish_id FROM shadow_runs WHERE id = ? AND publish_id IS NOT NULL",
                 (resultSet, rowNum) -> resultSet.getString("publish_id"),
-                shadowRunId
-        );
+                shadowRunId);
     }
 
     @Override
@@ -412,26 +412,38 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
         return jdbcTemplate.query(
                 EVENT_SELECT + " WHERE shadow_run_id = ? ORDER BY created_at ASC, id ASC",
                 eventRowMapper(),
-                shadowRunId
-        );
+                shadowRunId);
+    }
+
+    @Override
+    public List<ShadowRunEvent> listCreationEvents(UUID shadowRunId) {
+        Objects.requireNonNull(shadowRunId, "shadowRunId must not be null");
+        // 两条已足以证明 CREATED 重复，避免恢复查询随着生命周期事件数量无界增长。
+        return jdbcTemplate.query(
+                EVENT_SELECT
+                        + " WHERE shadow_run_id = ? AND event_type = 'CREATED'"
+                        + " ORDER BY created_at ASC, id ASC LIMIT 2",
+                eventRowMapper(),
+                shadowRunId);
     }
 
     @Override
     public List<ShadowRunSnapshot> listSnapshots(UUID shadowRunId) {
         return jdbcTemplate.query(
-                SNAPSHOT_SELECT + " WHERE shadow_run_id = ? ORDER BY snapshot_type ASC, sequence_no ASC",
+                SNAPSHOT_SELECT
+                        + " WHERE shadow_run_id = ? ORDER BY snapshot_type ASC, sequence_no ASC",
                 snapshotRowMapper(),
-                shadowRunId
-        );
+                shadowRunId);
     }
 
     @Override
     public Optional<ShadowConsistencyReport> findLatestReport(UUID shadowRunId) {
-        List<ShadowConsistencyReport> rows = jdbcTemplate.query(
-                REPORT_SELECT + " WHERE shadow_run_id = ? ORDER BY generated_at DESC, created_at DESC, id DESC LIMIT 1",
-                reportRowMapper(),
-                shadowRunId
-        );
+        List<ShadowConsistencyReport> rows =
+                jdbcTemplate.query(
+                        REPORT_SELECT
+                                + " WHERE shadow_run_id = ? ORDER BY generated_at DESC, created_at DESC, id DESC LIMIT 1",
+                        reportRowMapper(),
+                        shadowRunId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
@@ -523,8 +535,12 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 rs.getString("artifact_digest"),
                 rs.getString("paper_run_id"),
                 ShadowRunStatus.fromDatabase(rs.getString("status")),
-                toInstant(rs.getTimestamp("window_start")),
-                toInstant(rs.getTimestamp("window_end")),
+                ShadowRunWindowPrecision.restore(
+                        rs.getTimestamp("window_start"),
+                        rs.getInt("window_start_nanosecond_remainder")),
+                ShadowRunWindowPrecision.restore(
+                        rs.getTimestamp("window_end"),
+                        rs.getInt("window_end_nanosecond_remainder")),
                 readJson(rs.getString("side_effect_policy")),
                 rs.getBoolean("no_order_submission"),
                 rs.getBoolean("no_credential_access"),
@@ -544,8 +560,7 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 rs.getTimestamp("updated_at").toInstant(),
                 toInstant(rs.getTimestamp("started_at")),
                 toInstant(rs.getTimestamp("stopped_at")),
-                toInstant(rs.getTimestamp("completed_at"))
-        );
+                toInstant(rs.getTimestamp("completed_at")));
     }
 
     private ShadowRunEvent mapEvent(ResultSet rs, int rowNum) throws SQLException {
@@ -562,8 +577,7 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 readJson(rs.getString("metadata")),
                 rs.getString("request_id"),
                 rs.getString("trace_id"),
-                rs.getTimestamp("created_at").toInstant()
-        );
+                rs.getTimestamp("created_at").toInstant());
     }
 
     private ShadowRunSnapshot mapSnapshot(ResultSet rs, int rowNum) throws SQLException {
@@ -578,8 +592,7 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 readJson(rs.getString("payload")),
                 rs.getTimestamp("captured_at").toInstant(),
                 rs.getString("trace_id"),
-                rs.getTimestamp("created_at").toInstant()
-        );
+                rs.getTimestamp("created_at").toInstant());
     }
 
     private ShadowConsistencyReport mapReport(ResultSet rs, int rowNum) throws SQLException {
@@ -593,8 +606,7 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
                 readJson(rs.getString("limitations")),
                 rs.getTimestamp("generated_at").toInstant(),
                 rs.getString("trace_id"),
-                rs.getTimestamp("created_at").toInstant()
-        );
+                rs.getTimestamp("created_at").toInstant());
     }
 
     private JsonNode readJson(String value) {
@@ -621,6 +633,5 @@ public class JdbcShadowRunFactRepository implements ShadowRunFactRepository {
         return value == null ? null : value.toInstant();
     }
 
-    private record SqlWhereClause(String sql, List<Object> args) {
-    }
+    private record SqlWhereClause(String sql, List<Object> args) {}
 }

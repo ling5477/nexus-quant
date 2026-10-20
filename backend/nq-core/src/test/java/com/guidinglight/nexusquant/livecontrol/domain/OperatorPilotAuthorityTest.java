@@ -29,11 +29,11 @@ class OperatorPilotAuthorityTest {
         LiveSession session = LiveSession.createOperatorPilot(
                 UUID.randomUUID(), 2, 1, authority.id(), authority.canonicalDigest(), 2,
                 "BTC-USDT", authority.maxNotional(), NOW, NOW.plusSeconds(120), 2, NOW);
-        assertEquals(LiveSessionAuthorityType.OPERATOR_PILOT, session.authorityType());
+        assertEquals(LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION, session.authorityType());
         assertNull(session.strategyReleaseId());
         assertNull(session.riskLimitSetId());
         assertTrue(session.hasCanonicalApprovalScopeHash());
-        assertEquals(LiveSession.OPERATOR_PILOT_APPROVAL_SCOPE_SCHEMA,
+        assertEquals(LiveSession.OPERATOR_CONTROLLED_EXECUTION_APPROVAL_SCOPE_SCHEMA,
                 session.approvalScopeSchemaVersion());
     }
 
@@ -86,7 +86,7 @@ class OperatorPilotAuthorityTest {
                 new BigDecimal("10"), NOW, NOW.plusSeconds(120), 2, NOW);
         assertEquals(LiveSessionAuthorityType.STRATEGY, strategy.authorityType());
         assertEquals(LiveSession.APPROVAL_SCOPE_SCHEMA, strategy.approvalScopeSchemaVersion());
-        assertFalse(LiveSessionApprovalScopeEncoder.encode(strategy).contains("operatorPilotAuthorityId"));
+        assertFalse(LiveSessionApprovalScopeEncoder.encode(strategy).contains("operatorExecutionAuthorityId"));
     }
 
     private static OperatorPilotAuthority authority(BigDecimal maxNotional) {

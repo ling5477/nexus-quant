@@ -99,16 +99,12 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
 
     @Test
     void legacyProfileAndKeysCannotCreateReadOnlyComponents() {
-        try (AnnotationConfigApplicationContext context = context(
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> context(
                 "gatew-okx-readonly",
                 LEGACY_PREFIX,
                 true,
                 false
-        )) {
-            assertTrue(context.getBeansOfType(OkxPrivateReadTransport.class).isEmpty());
-            assertTrue(context.getBeansOfType(OkxPrivateCredentialExecutor.class).isEmpty());
-            assertTrue(context.getBeansOfType(OkxPrivateReadonlyProbeService.class).isEmpty());
-        }
+        ));
     }
 
     @Test
@@ -140,25 +136,20 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
 
     @Test
     void conflictingReadonlyProfilesCreateNoPrivateComponents() {
-        try (AnnotationConfigApplicationContext context = context(
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> context(
                 new String[]{"okx-private-readonly-diagnostics", "scoped-okx-private-readonly"},
-                STABLE_PREFIX, true, false)) {
-            assertPrivateBeansAbsent(context);
-            assertFalse(context.getBean(ReadOnlyRuntimeDiagnosticEndpoint.class).read().providerObservationEnabled());
-        }
+                STABLE_PREFIX, true, false));
     }
 
     @Test
     void conflictingEnableKeysFailClosed() {
-        try (AnnotationConfigApplicationContext context = context(
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException.class, () -> context(
                 "okx-private-readonly-diagnostics",
                 STABLE_PREFIX,
                 true,
                 false,
                 Map.of(LEGACY_PREFIX + ".enabled", false)
-        )) {
-            assertPrivateBeansAbsent(context);
-        }
+        ));
     }
 
     @Test
@@ -260,6 +251,7 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
         properties.putAll(overrides);
         context.getEnvironment().getPropertySources().addFirst(new MapPropertySource("readonly-diagnostics-test", properties));
         context.register(
+                com.guidinglight.nexusquant.app.config.RetiredRuntimeConfigurationGuard.class,
                 OkxPrivateReadOnlyDiagnosticsConfiguration.class,
                 OkxAccountFactsController.class,
                 ExchangeAdapterConfiguration.class,
@@ -268,8 +260,13 @@ class OkxPrivateReadOnlyDiagnosticsConfigurationTest {
         if (scoped) {
             context.register(ReadOnlyProviderObservationConfiguration.class);
         }
-        context.refresh();
-        return context;
+        try {
+            context.refresh();
+            return context;
+        } catch (RuntimeException failure) {
+            context.close();
+            throw failure;
+        }
     }
 
     private static void assertPrivateBeansAbsent(AnnotationConfigApplicationContext context) {

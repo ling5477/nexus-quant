@@ -1,53 +1,53 @@
 package com.guidinglight.nexusquant.scheduler.recovery;
 
-import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
-
-import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
-import com.guidinglight.nexusquant.observability.operational.OperationalObservation;
-import com.guidinglight.nexusquant.observability.operational.SafeOperationalObservation;
-import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Operation.OKX_RECONCILE;
 import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Operation.LEDGER_RECOVERY;
+import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Operation.OKX_RECONCILE;
 import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Signal.ATTEMPT;
-import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Signal.SUCCESS;
 import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Signal.FAILURE;
+import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Signal.SUCCESS;
 import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Signal.UNRESOLVED;
 
+import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderSnapshot;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterResultCategory;
 import com.guidinglight.nexusquant.adapter.api.model.AdapterTradeReport;
+import com.guidinglight.nexusquant.adapter.okx.model.OkxFeeCost;
 import com.guidinglight.nexusquant.adapter.okx.trading.OkxExchangeAdapter;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
-import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
-import com.guidinglight.nexusquant.trading.domain.OrderRecord;
-import com.guidinglight.nexusquant.trading.domain.OrderCancelFinality;
-import com.guidinglight.nexusquant.trading.domain.port.OrderCancelFinalityRepository;
-import com.guidinglight.nexusquant.trading.application.service.OrderCommandService;
-import com.guidinglight.nexusquant.trading.application.service.OrderLifecycleService;
 import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
 import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
+import com.guidinglight.nexusquant.observability.operational.OperationalObservation;
+import com.guidinglight.nexusquant.observability.operational.SafeOperationalObservation;
 import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
+import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
 import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
-
-import java.time.Clock;
-import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
+import com.guidinglight.nexusquant.trading.application.service.OrderCommandService;
+import com.guidinglight.nexusquant.trading.application.service.OrderLifecycleService;
+import com.guidinglight.nexusquant.trading.domain.OrderCancelFinality;
+import com.guidinglight.nexusquant.trading.domain.OrderRecord;
 import com.guidinglight.nexusquant.trading.domain.TradingVenue;
-import com.guidinglight.nexusquant.adapter.api.model.AdapterOrderQuery;
+import com.guidinglight.nexusquant.trading.domain.port.OrderCancelFinalityRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * OkxRestReconcileService 负责交易所适配契约的 REST-only 同步器。
@@ -61,8 +61,7 @@ import org.springframework.stereotype.Component;
         prefix = "nq.runtime.trading-components",
         name = "enabled",
         havingValue = "true",
-        matchIfMissing = false
-)
+        matchIfMissing = false)
 public class OkxRestReconcileService {
 
     private static final String SOURCE = "nq-scheduler.okx-rest-reconcile";
@@ -95,9 +94,16 @@ public class OkxRestReconcileService {
             TradeRepository tradeRepository,
             TradeLedgerGateway tradeLedgerGateway,
             EventPublisherPort eventPublisherPort,
-            AuditLogRepository auditLogRepository
-    ) {
-        this(orderCommandService, orderLifecycleService, okxExchangeAdapter, tradeRepository, tradeLedgerGateway, eventPublisherPort, auditLogRepository, OperationalObservation.NOOP);
+            AuditLogRepository auditLogRepository) {
+        this(
+                orderCommandService,
+                orderLifecycleService,
+                okxExchangeAdapter,
+                tradeRepository,
+                tradeLedgerGateway,
+                eventPublisherPort,
+                auditLogRepository,
+                OperationalObservation.NOOP);
     }
 
     public OkxRestReconcileService(
@@ -108,26 +114,47 @@ public class OkxRestReconcileService {
             TradeLedgerGateway tradeLedgerGateway,
             EventPublisherPort eventPublisherPort,
             AuditLogRepository auditLogRepository,
-            OperationalObservation observation
-    ) {
-        this(orderCommandService, orderLifecycleService, okxExchangeAdapter, tradeRepository, tradeLedgerGateway,
-                eventPublisherPort, auditLogRepository, observation, finality -> false);
+            OperationalObservation observation) {
+        this(
+                orderCommandService,
+                orderLifecycleService,
+                okxExchangeAdapter,
+                tradeRepository,
+                tradeLedgerGateway,
+                eventPublisherPort,
+                auditLogRepository,
+                observation,
+                finality -> false);
     }
 
     @Autowired
-    public OkxRestReconcileService(OrderCommandService orderCommandService, OrderLifecycleService orderLifecycleService,
-            OkxExchangeAdapter okxExchangeAdapter, TradeRepository tradeRepository, TradeLedgerGateway tradeLedgerGateway,
-            EventPublisherPort eventPublisherPort, AuditLogRepository auditLogRepository, OperationalObservation observation,
+    public OkxRestReconcileService(
+            OrderCommandService orderCommandService,
+            OrderLifecycleService orderLifecycleService,
+            OkxExchangeAdapter okxExchangeAdapter,
+            TradeRepository tradeRepository,
+            TradeLedgerGateway tradeLedgerGateway,
+            EventPublisherPort eventPublisherPort,
+            AuditLogRepository auditLogRepository,
+            OperationalObservation observation,
             OrderCancelFinalityRepository cancelFinality) {
         this.cancelFinality = Objects.requireNonNull(cancelFinality);
         this.observation = new SafeOperationalObservation(observation);
-        this.orderCommandService = Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
-        this.orderLifecycleService = Objects.requireNonNull(orderLifecycleService, "orderLifecycleService must not be null");
-        this.okxExchangeAdapter = Objects.requireNonNull(okxExchangeAdapter, "okxExchangeAdapter must not be null");
-        this.tradeRepository = Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
-        this.tradeLedgerGateway = Objects.requireNonNull(tradeLedgerGateway, "tradeLedgerGateway must not be null");
-        this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
-        this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
+        this.orderCommandService =
+                Objects.requireNonNull(orderCommandService, "orderCommandService must not be null");
+        this.orderLifecycleService =
+                Objects.requireNonNull(
+                        orderLifecycleService, "orderLifecycleService must not be null");
+        this.okxExchangeAdapter =
+                Objects.requireNonNull(okxExchangeAdapter, "okxExchangeAdapter must not be null");
+        this.tradeRepository =
+                Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
+        this.tradeLedgerGateway =
+                Objects.requireNonNull(tradeLedgerGateway, "tradeLedgerGateway must not be null");
+        this.eventPublisherPort =
+                Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
+        this.auditLogRepository =
+                Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
         this.clock = Clock.systemUTC();
     }
 
@@ -159,18 +186,18 @@ public class OkxRestReconcileService {
 
     private int reconcileObservedFacts(int limit) {
         int newTrades = 0;
-        for (OrderRecord order : orderCommandService.reserveReconciliationCandidates("OKX",
-                List.of(
-                        OrderStatus.SENT,
-                        OrderStatus.ACCEPTED,
-                        OrderStatus.PARTIALLY_FILLED,
-                        OrderStatus.CANCEL_REQUESTED,
-                        OrderStatus.CANCEL_REJECTED,
-                        OrderStatus.FILLED,
-                        OrderStatus.CANCELLED
-                ),
-                limit
-        )) {
+        for (OrderRecord order :
+                orderCommandService.reserveReconciliationCandidates(
+                        "OKX",
+                        List.of(
+                                OrderStatus.SENT,
+                                OrderStatus.ACCEPTED,
+                                OrderStatus.PARTIALLY_FILLED,
+                                OrderStatus.CANCEL_REQUESTED,
+                                OrderStatus.CANCEL_REJECTED,
+                                OrderStatus.FILLED,
+                                OrderStatus.CANCELLED),
+                        limit)) {
             if (order.canonicalVenue() != TradingVenue.OKX) {
                 continue;
             }
@@ -216,9 +243,7 @@ public class OkxRestReconcileService {
                         "order_id", order.orderId(),
                         "status", order.status().name(),
                         "external_order_id", String.valueOf(order.externalOrderId()),
-                        "new_trades", newTrades
-                )
-        );
+                        "new_trades", newTrades));
         return newTrades;
     }
 
@@ -232,11 +257,20 @@ public class OkxRestReconcileService {
             return 0;
         }
         // 查询前冻结身份和版本；fills/OCC 期间发生任何推进都使这次取消证据失效。
-        AdapterOrderSnapshot snapshot = order.strategyRunId() == null ? null : okxExchangeAdapter.getOrder(
-                new AdapterOrderQuery(order.accountId(), order.venue(), order.symbol(), order.clientOrderId(),
-                        order.externalOrderId(), order.traceId()));
+        AdapterOrderSnapshot snapshot =
+                order.strategyRunId() == null
+                        ? null
+                        : okxExchangeAdapter.getOrder(
+                                new AdapterOrderQuery(
+                                        order.accountId(),
+                                        order.venue(),
+                                        order.symbol(),
+                                        order.clientOrderId(),
+                                        order.externalOrderId(),
+                                        order.traceId()));
         int newTrades = reconcileFills(order, limit);
-        OrderRecord corrected = orderLifecycleService.reconcileCancelledExecution(order.orderId(), order.traceId());
+        OrderRecord corrected =
+                orderLifecycleService.reconcileCancelledExecution(order.orderId(), order.traceId());
         if (isFinalCancelledSnapshot(order, snapshot)) {
             cancelFinality.finish(new OrderCancelFinality(order, snapshot.executedQuantity()));
         }
@@ -249,14 +283,13 @@ public class OkxRestReconcileService {
                         "order_id", order.orderId(),
                         "status", corrected.status().name(),
                         "external_order_id", order.externalOrderId(),
-                        "new_trades", newTrades
-                )
-        );
+                        "new_trades", newTrades));
         return newTrades;
     }
 
     private boolean isFinalCancelledSnapshot(OrderRecord order, AdapterOrderSnapshot snapshot) {
-        return snapshot != null && snapshot.resultCategory() == AdapterResultCategory.SUCCESS
+        return snapshot != null
+                && snapshot.resultCategory() == AdapterResultCategory.SUCCESS
                 && "CANCELLED".equals(snapshot.externalStatus())
                 && Objects.equals(snapshot.accountId(), order.accountId())
                 && Objects.equals(snapshot.exchangeCode(), order.venue())
@@ -264,20 +297,23 @@ public class OkxRestReconcileService {
                 && Objects.equals(snapshot.symbol(), order.symbol())
                 && Objects.equals(snapshot.clientOrderId(), order.clientOrderId())
                 && Objects.equals(snapshot.exchangeOrderId(), order.externalOrderId())
-                && snapshot.origQuantity() != null && snapshot.origQuantity().compareTo(order.qty()) == 0
-                && snapshot.executedQuantity() != null && snapshot.executedQuantity().signum() >= 0
+                && snapshot.origQuantity() != null
+                && snapshot.origQuantity().compareTo(order.qty()) == 0
+                && snapshot.executedQuantity() != null
+                && snapshot.executedQuantity().signum() >= 0
                 && snapshot.executedQuantity().compareTo(order.qty()) < 0;
     }
 
     private int reconcileSingleOrder(OrderRecord currentOrder, int limit) {
-        AdapterOrderSnapshot snapshot = okxExchangeAdapter.getOrder(new AdapterOrderQuery(
-                currentOrder.accountId(),
-                currentOrder.venue(),
-                currentOrder.symbol(),
-                currentOrder.clientOrderId(),
-                currentOrder.externalOrderId(),
-                currentOrder.traceId()
-        ));
+        AdapterOrderSnapshot snapshot =
+                okxExchangeAdapter.getOrder(
+                        new AdapterOrderQuery(
+                                currentOrder.accountId(),
+                                currentOrder.venue(),
+                                currentOrder.symbol(),
+                                currentOrder.clientOrderId(),
+                                currentOrder.externalOrderId(),
+                                currentOrder.traceId()));
         if (snapshot.resultCategory() == AdapterResultCategory.NOT_FOUND) {
             observation.record(OKX_RECONCILE, UNRESOLVED, 1);
             auditLogRepository.append(
@@ -288,32 +324,43 @@ public class OkxRestReconcileService {
                     Map.of(
                             "order_id", currentOrder.orderId(),
                             "client_order_id", currentOrder.clientOrderId(),
-                            "exchange_order_id", String.valueOf(currentOrder.externalOrderId())
-                    )
-            );
+                            "exchange_order_id", String.valueOf(currentOrder.externalOrderId())));
             return 0;
         }
         if (snapshot.resultCategory() != AdapterResultCategory.SUCCESS) {
             throw new IllegalStateException(
-                    "okx getOrder failed, category=" + snapshot.resultCategory()
-                            + ", code=" + (snapshot.error() == null ? "UNKNOWN" : snapshot.error().code())
-            );
+                    "okx getOrder failed, category="
+                            + snapshot.resultCategory()
+                            + ", code="
+                            + (snapshot.error() == null ? "UNKNOWN" : snapshot.error().code()));
         }
         OrderRecord updatedOrder = currentOrder;
-        if (updatedOrder.externalOrderId() == null && snapshot.exchangeOrderId() != null && !snapshot.exchangeOrderId().isBlank()) {
-            updatedOrder = orderCommandService.linkExternalOrderId(
-                    updatedOrder.orderId(),
-                    snapshot.exchangeOrderId(),
-                    updatedOrder.traceId()
-            );
+        if (updatedOrder.externalOrderId() == null
+                && snapshot.exchangeOrderId() != null
+                && !snapshot.exchangeOrderId().isBlank()) {
+            updatedOrder =
+                    orderCommandService.linkExternalOrderId(
+                            updatedOrder.orderId(),
+                            snapshot.exchangeOrderId(),
+                            updatedOrder.traceId());
         }
         OrderRecord statusCandidate = updatedOrder;
-        int newTrades = reconcileFills(updatedOrder, limit,
-                () -> alignOrderStatus(statusCandidate, snapshot.externalStatus(), statusCandidate.traceId()));
-        updatedOrder = orderCommandService.findByOrderId(updatedOrder.orderId()).orElse(updatedOrder);
+        int newTrades =
+                reconcileFills(
+                        updatedOrder,
+                        limit,
+                        () ->
+                                alignOrderStatus(
+                                        statusCandidate,
+                                        snapshot.externalStatus(),
+                                        statusCandidate.traceId()));
+        updatedOrder =
+                orderCommandService.findByOrderId(updatedOrder.orderId()).orElse(updatedOrder);
         // 查询和记账期间 CANCEL ACK 也可能先提交；不能只依据扫描时的旧状态选择纠正入口。
         if (updatedOrder.status() == OrderStatus.CANCELLED) {
-            updatedOrder = orderLifecycleService.reconcileCancelledExecution(updatedOrder.orderId(), updatedOrder.traceId());
+            updatedOrder =
+                    orderLifecycleService.reconcileCancelledExecution(
+                            updatedOrder.orderId(), updatedOrder.traceId());
         }
         auditLogRepository.append(
                 "RECONCILE",
@@ -324,9 +371,7 @@ public class OkxRestReconcileService {
                         "order_id", updatedOrder.orderId(),
                         "status", updatedOrder.status().name(),
                         "external_order_id", String.valueOf(updatedOrder.externalOrderId()),
-                        "new_trades", newTrades
-                )
-        );
+                        "new_trades", newTrades));
         return newTrades;
     }
 
@@ -334,9 +379,11 @@ public class OkxRestReconcileService {
         // Why:
         // reconcile 与 cancel 命令可能并发触发，同一个 order 在本方法执行前后已被其它链路推进到终态。
         // 这里先读最新状态，避免用过期快照做二次迁移导致非法状态跳转（例如 CANCELLED -> CANCEL_REQUESTED）。
-        OrderStatus currentStatus = orderCommandService.findByOrderId(order.orderId())
-                .map(OrderRecord::status)
-                .orElse(order.status());
+        OrderStatus currentStatus =
+                orderCommandService
+                        .findByOrderId(order.orderId())
+                        .map(OrderRecord::status)
+                        .orElse(order.status());
         OrderStatus targetStatus = OrderStatus.valueOf(targetStatusName);
         if (currentStatus == targetStatus) {
             return;
@@ -348,52 +395,76 @@ public class OkxRestReconcileService {
         // 旧链路里 cancel reject 可能把订单停留在 CANCEL_REQUESTED。
         // 当交易所事实回报为“仍存活/已成交/已拒绝”时，先显式落到 CANCEL_REJECTED，再继续对齐，
         // 避免直接 CANCEL_REQUESTED -> ACCEPTED/PARTIALLY_FILLED 的非法迁移。
-        if (currentStatus == OrderStatus.CANCEL_REQUESTED && targetStatus != OrderStatus.CANCELLED) {
+        if (currentStatus == OrderStatus.CANCEL_REQUESTED
+                && targetStatus != OrderStatus.CANCELLED) {
             try {
-                orderLifecycleService.reconcileExternalStatus(order.orderId(), OrderStatus.CANCEL_REJECTED, "RECONCILE_CANCEL_REJECTED", traceId);
+                orderLifecycleService.reconcileExternalStatus(
+                        order.orderId(),
+                        OrderStatus.CANCEL_REJECTED,
+                        "RECONCILE_CANCEL_REJECTED",
+                        traceId);
             } catch (IllegalStateException ex) {
-                OrderStatus latestStatus = orderCommandService.findByOrderId(order.orderId())
-                        .map(OrderRecord::status)
-                        .orElse(currentStatus);
+                OrderStatus latestStatus =
+                        orderCommandService
+                                .findByOrderId(order.orderId())
+                                .map(OrderRecord::status)
+                                .orElse(currentStatus);
                 if (latestStatus == targetStatus || isTerminalStatus(latestStatus)) {
                     return;
                 }
                 throw ex;
             }
             if (targetStatus != OrderStatus.CANCEL_REJECTED) {
-                orderLifecycleService.reconcileExternalStatus(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
+                orderLifecycleService.reconcileExternalStatus(
+                        order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
             }
             return;
         }
         if (targetStatus == OrderStatus.PARTIALLY_FILLED && currentStatus == OrderStatus.SENT) {
-            orderLifecycleService.reconcileExternalStatus(order.orderId(), OrderStatus.ACCEPTED, "RECONCILE_CONFIRM_ACCEPTED", traceId);
-            orderLifecycleService.reconcileExternalStatus(order.orderId(), OrderStatus.PARTIALLY_FILLED, "RECONCILE_PARTIAL_FILL", traceId);
+            orderLifecycleService.reconcileExternalStatus(
+                    order.orderId(), OrderStatus.ACCEPTED, "RECONCILE_CONFIRM_ACCEPTED", traceId);
+            orderLifecycleService.reconcileExternalStatus(
+                    order.orderId(),
+                    OrderStatus.PARTIALLY_FILLED,
+                    "RECONCILE_PARTIAL_FILL",
+                    traceId);
             return;
         }
-        if (targetStatus == OrderStatus.CANCELLED && currentStatus != OrderStatus.CANCEL_REQUESTED) {
+        if (targetStatus == OrderStatus.CANCELLED
+                && currentStatus != OrderStatus.CANCEL_REQUESTED) {
             try {
-                orderLifecycleService.reconcileExternalStatus(order.orderId(), OrderStatus.CANCEL_REQUESTED, "RECONCILE_CANCEL_REQUESTED", traceId);
+                orderLifecycleService.reconcileExternalStatus(
+                        order.orderId(),
+                        OrderStatus.CANCEL_REQUESTED,
+                        "RECONCILE_CANCEL_REQUESTED",
+                        traceId);
             } catch (IllegalStateException ex) {
-                OrderStatus latestStatus = orderCommandService.findByOrderId(order.orderId())
-                        .map(OrderRecord::status)
-                        .orElse(currentStatus);
+                OrderStatus latestStatus =
+                        orderCommandService
+                                .findByOrderId(order.orderId())
+                                .map(OrderRecord::status)
+                                .orElse(currentStatus);
                 if (latestStatus == OrderStatus.CANCELLED || isTerminalStatus(latestStatus)) {
                     return;
                 }
                 throw ex;
             }
-            orderLifecycleService.reconcileExternalStatus(order.orderId(), OrderStatus.CANCELLED, "RECONCILE_CANCELLED", traceId);
+            orderLifecycleService.reconcileExternalStatus(
+                    order.orderId(), OrderStatus.CANCELLED, "RECONCILE_CANCELLED", traceId);
             return;
         }
-        orderLifecycleService.reconcileExternalStatus(order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
+        orderLifecycleService.reconcileExternalStatus(
+                order.orderId(), targetStatus, "RECONCILE_STATUS_ALIGN", traceId);
     }
 
     private boolean isTerminalStatus(OrderStatus status) {
-        return status == OrderStatus.FILLED || status == OrderStatus.CANCELLED || status == OrderStatus.REJECTED;
+        return status == OrderStatus.FILLED
+                || status == OrderStatus.CANCELLED
+                || status == OrderStatus.REJECTED;
     }
 
     private int reconcileFills(OrderRecord order, int limit) {
-        return reconcileFills(order, limit, () -> { });
+        return reconcileFills(order, limit, () -> {});
     }
 
     private int reconcileFills(OrderRecord order, int limit, Runnable alignValidatedStatus) {
@@ -403,9 +474,10 @@ public class OkxRestReconcileService {
         if (limit <= 0) {
             throw new IllegalArgumentException("limit must be positive");
         }
-        List<AdapterTradeReport> tradeReports = List.copyOf(
-                okxExchangeAdapter.listTradeReports(order.symbol(), order.externalOrderId(), order.traceId())
-        );
+        List<AdapterTradeReport> tradeReports =
+                List.copyOf(
+                        okxExchangeAdapter.listTradeReports(
+                                order.symbol(), order.externalOrderId(), order.traceId()));
         if (tradeReports.size() > limit) {
             auditRecoveryBoundaryFailure(order, "VENUE_REPORT_LIMIT_EXCEEDED");
             throw new IllegalStateException("per-order venue report recovery limit exceeded");
@@ -414,8 +486,11 @@ public class OkxRestReconcileService {
         try {
             durableTrades = tradeRepository.findAllByOrderId(order.orderId(), limit);
         } catch (IllegalStateException ex) {
-            auditRecoveryBoundaryFailure(order, "TRADE_ORDER_ENVIRONMENT_MISMATCH".equals(ex.getMessage())
-                    ? "TRADE_ORDER_ENVIRONMENT_MISMATCH" : "DURABLE_TRADE_LIMIT_EXCEEDED");
+            auditRecoveryBoundaryFailure(
+                    order,
+                    "TRADE_ORDER_ENVIRONMENT_MISMATCH".equals(ex.getMessage())
+                            ? "TRADE_ORDER_ENVIRONMENT_MISMATCH"
+                            : "DURABLE_TRADE_LIMIT_EXCEEDED");
             throw ex;
         }
         // 先验证完整 durable 集合与本次报告的并集；不能把分页响应当成累计量，也不能先写入 overfill。
@@ -424,30 +499,36 @@ public class OkxRestReconcileService {
         var durableByFill = new HashMap<String, PaperTradeRecord>();
         for (PaperTradeRecord trade : durableTrades) {
             validateTradeOrderIdentity(order, trade);
-            if (trade.qty() == null || trade.qty().signum() <= 0
+            if (trade.qty() == null
+                    || trade.qty().signum() <= 0
                     || durableByFill.putIfAbsent(trade.exchangeTradeId(), trade) != null) {
-                failRecoveryIdentityMismatch(order, trade, "INVALID_DURABLE_FILL_QUANTITY_OR_IDENTITY");
+                failRecoveryIdentityMismatch(
+                        order, trade, "INVALID_DURABLE_FILL_QUANTITY_OR_IDENTITY");
             }
             quantities.put(trade.exchangeTradeId(), trade.qty());
         }
         for (AdapterTradeReport report : tradeReports) {
             validateVenueReportOrderIdentity(order, report);
-            if (report.quantity().signum() <= 0) failRecoveryIdentityMismatch(order, null, "INVALID_FILL_QUANTITY");
-            AdapterTradeReport previous = uniqueReports.putIfAbsent(report.exchangeTradeId(), report);
-            if (previous != null && (previous.price().compareTo(report.price()) != 0
-                    || previous.quantity().compareTo(report.quantity()) != 0
-                    || normalizedFee(previous).compareTo(normalizedFee(report)) != 0
-                    || !Objects.equals(previous.feeAsset(), report.feeAsset())
-                    || !Objects.equals(previous.tradeTs(), report.tradeTs()))) {
+            if (report.quantity().signum() <= 0)
+                failRecoveryIdentityMismatch(order, null, "INVALID_FILL_QUANTITY");
+            AdapterTradeReport previous =
+                    uniqueReports.putIfAbsent(report.exchangeTradeId(), report);
+            if (previous != null
+                    && (previous.price().compareTo(report.price()) != 0
+                            || previous.quantity().compareTo(report.quantity()) != 0
+                            || normalizedFee(previous).compareTo(normalizedFee(report)) != 0
+                            || !Objects.equals(previous.feeAsset(), report.feeAsset())
+                            || !Objects.equals(previous.tradeTs(), report.tradeTs()))) {
                 failRecoveryIdentityMismatch(order, null, "CONFLICTING_DUPLICATE_VENUE_FILL");
             }
             PaperTradeRecord durable = durableByFill.get(report.exchangeTradeId());
             if (durable != null) validateTradeVenueReportIdentity(order, durable, report);
             quantities.putIfAbsent(report.exchangeTradeId(), report.quantity());
         }
-        BigDecimal executed = quantities.values().stream()
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        if (order.qty() == null || order.qty().signum() <= 0 || executed.compareTo(order.qty()) > 0) {
+        BigDecimal executed = quantities.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (order.qty() == null
+                || order.qty().signum() <= 0
+                || executed.compareTo(order.qty()) > 0) {
             auditRecoveryBoundaryFailure(order, "RECONCILIATION_OVERFILL");
             throw new IllegalStateException("RECONCILIATION_OVERFILL: " + order.orderId());
         }
@@ -460,7 +541,9 @@ public class OkxRestReconcileService {
             if (!reportTradeIds.add(tradeReport.exchangeTradeId())) {
                 failRecoveryIdentityMismatch(order, null, "DUPLICATE_VENUE_EXCHANGE_TRADE_ID");
             }
-            var existingTrade = tradeRepository.findByExchangeAndExchangeTradeId("OKX", tradeReport.exchangeTradeId());
+            var existingTrade =
+                    tradeRepository.findByExchangeAndExchangeTradeId(
+                            "OKX", tradeReport.exchangeTradeId());
             if (existingTrade.isPresent()) {
                 ensureLedgerConvergence(order, existingTrade.orElseThrow(), tradeReport, true);
                 auditLogRepository.append(
@@ -468,32 +551,39 @@ public class OkxRestReconcileService {
                         "OKX_FILL_DEDUP_HIT",
                         order.orderId(),
                         order.traceId(),
-                        Map.of("exchange_trade_id", tradeReport.exchangeTradeId(), "order_id", order.orderId())
-                );
+                        Map.of(
+                                "exchange_trade_id",
+                                tradeReport.exchangeTradeId(),
+                                "order_id",
+                                order.orderId()));
                 continue;
             }
-            // Why: OKX fills 的 fee 常以负数表示“扣减”，而账本入参要求传入非负费用金额。
-            // 这里统一转成绝对值，保留“费用大小”语义，避免 reconcile 在成交已落库后因参数校验中断。
-            BigDecimal normalizedFee = tradeReport.fee() == null ? BigDecimal.ZERO : tradeReport.fee().abs();
-            PaperTradeRecord trade = new PaperTradeRecord(
-                    "trd-" + UUID.randomUUID(),
-                    order.orderId(),
-                    order.accountId(),
-                    tradeReport.symbol(),
-                    "OKX",
-                    tradeReport.exchangeOrderId(),
-                    tradeReport.exchangeTradeId(),
-                    tradeReport.price(),
-                    tradeReport.quantity(),
-                    normalizedFee,
-                    tradeReport.feeAsset(),
-                    order.traceId(),
-                    tradeReport.tradeTs()
-            );
+            // OKX原金额反转后按正式费用精度保存；返佣保留负成本，缺失金额拒绝写入而非补零。
+            BigDecimal normalizedFee = normalizedFee(tradeReport);
+            PaperTradeRecord trade =
+                    new PaperTradeRecord(
+                            "trd-" + UUID.randomUUID(),
+                            order.orderId(),
+                            order.accountId(),
+                            tradeReport.symbol(),
+                            "OKX",
+                            tradeReport.exchangeOrderId(),
+                            tradeReport.exchangeTradeId(),
+                            tradeReport.price(),
+                            tradeReport.quantity(),
+                            normalizedFee,
+                            tradeReport.feeAsset(),
+                            order.traceId(),
+                            tradeReport.tradeTs());
             tradeRepository.insertWithRequiredEvent(trade);
             // void 写入契约允许并发幂等命中；后续记账只能使用真实 durable Trade 的内部身份。
-            PaperTradeRecord durable = tradeRepository.findByExchangeAndExchangeTradeId("OKX", tradeReport.exchangeTradeId())
-                    .orElseThrow(() -> new IllegalStateException("DURABLE_TRADE_MISSING_AFTER_APPLY"));
+            PaperTradeRecord durable =
+                    tradeRepository
+                            .findByExchangeAndExchangeTradeId("OKX", tradeReport.exchangeTradeId())
+                            .orElseThrow(
+                                    () ->
+                                            new IllegalStateException(
+                                                    "DURABLE_TRADE_MISSING_AFTER_APPLY"));
             boolean inserted = durable.tradeId().equals(trade.tradeId());
             ensureLedgerConvergence(order, durable, tradeReport, !inserted);
             if (inserted) newTrades++;
@@ -518,8 +608,7 @@ public class OkxRestReconcileService {
             OrderRecord order,
             PaperTradeRecord trade,
             AdapterTradeReport tradeReport,
-            boolean recovery
-    ) {
+            boolean recovery) {
         if (!recovery) return replayLedgerFacts(order, trade, tradeReport, false);
         observation.record(LEDGER_RECOVERY, ATTEMPT, 1);
         try {
@@ -534,8 +623,10 @@ public class OkxRestReconcileService {
     }
 
     private LedgerPostingResult replayLedgerFacts(
-            OrderRecord order, PaperTradeRecord trade, AdapterTradeReport tradeReport, boolean recovery
-    ) {
+            OrderRecord order,
+            PaperTradeRecord trade,
+            AdapterTradeReport tradeReport,
+            boolean recovery) {
         validateTradeOrderIdentity(order, trade);
         if (tradeReport != null) {
             validateTradeVenueReportIdentity(order, trade, tradeReport);
@@ -581,7 +672,8 @@ public class OkxRestReconcileService {
         if (report.accountId() != null && !Objects.equals(report.accountId(), order.accountId())) {
             failRecoveryIdentityMismatch(order, null, "REPORT_ACCOUNT_ID_MISMATCH");
         }
-        if (report.clientOrderId() != null && !Objects.equals(report.clientOrderId(), order.clientOrderId())) {
+        if (report.clientOrderId() != null
+                && !Objects.equals(report.clientOrderId(), order.clientOrderId())) {
             failRecoveryIdentityMismatch(order, null, "REPORT_CLIENT_ORDER_ID_MISMATCH");
         }
         if (report.exchangeTradeId() == null || report.exchangeTradeId().isBlank()) {
@@ -593,10 +685,7 @@ public class OkxRestReconcileService {
     }
 
     private void validateTradeVenueReportIdentity(
-            OrderRecord order,
-            PaperTradeRecord trade,
-            AdapterTradeReport report
-    ) {
+            OrderRecord order, PaperTradeRecord trade, AdapterTradeReport report) {
         validateVenueReportOrderIdentity(order, report);
         if (!Objects.equals(trade.exchange(), report.exchangeCode())) {
             failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_EXCHANGE_MISMATCH");
@@ -616,28 +705,31 @@ public class OkxRestReconcileService {
         if (trade.qty().compareTo(report.quantity()) != 0) {
             failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_QUANTITY_MISMATCH");
         }
-        if (trade.fee() == null || trade.fee().compareTo(normalizedFee(report)) != 0
+        if (trade.fee() == null
+                || trade.fee().compareTo(normalizedFee(report)) != 0
                 || !Objects.equals(trade.feeCurrency(), report.feeAsset())) {
             failRecoveryIdentityMismatch(order, trade, "TRADE_REPORT_FEE_MISMATCH");
         }
     }
 
     private BigDecimal normalizedFee(AdapterTradeReport report) {
-        return report.fee() == null ? BigDecimal.ZERO : report.fee().abs();
+        return OkxFeeCost.amount(report.fee());
     }
 
-    private void failRecoveryIdentityMismatch(OrderRecord order, PaperTradeRecord trade, String reason) {
+    private void failRecoveryIdentityMismatch(
+            OrderRecord order, PaperTradeRecord trade, String reason) {
         auditLogRepository.append(
                 "RECONCILE",
                 "OKX_LEDGER_RECOVERY_IDENTITY_MISMATCH",
                 order.orderId(),
                 order.traceId(),
                 Map.of(
-                        "order_id", order.orderId(),
-                        "trade_id", trade == null ? "UNKNOWN" : String.valueOf(trade.tradeId()),
-                        "reason", reason
-                )
-        );
+                        "order_id",
+                        order.orderId(),
+                        "trade_id",
+                        trade == null ? "UNKNOWN" : String.valueOf(trade.tradeId()),
+                        "reason",
+                        reason));
         throw new IllegalStateException("ledger recovery identity mismatch: " + reason);
     }
 
@@ -647,27 +739,28 @@ public class OkxRestReconcileService {
                 "OKX_LEDGER_RECOVERY_INCOMPLETE",
                 order.orderId(),
                 order.traceId(),
-                Map.of("order_id", order.orderId(), "reason", reason)
-        );
+                Map.of("order_id", order.orderId(), "reason", reason));
     }
 
-    private LedgerPostingResult postLedger(OrderRecord order, PaperTradeRecord trade, boolean recovery) {
+    private LedgerPostingResult postLedger(
+            OrderRecord order, PaperTradeRecord trade, boolean recovery) {
         LedgerPostingResult postingResult;
         try {
-            postingResult = tradeLedgerGateway.postTrade(new TradeLedgerRequest(
-                    trade.tradeId(),
-                    trade.orderId(),
-                    trade.accountId(),
-                    trade.symbol(),
-                    OrderSide.valueOf(order.side()),
-                    trade.price(),
-                    trade.qty(),
-                    trade.fee(),
-                    trade.feeCurrency(),
-                    trade.traceId(),
-                    trade.ts(),
-                    order.tradeEnv()
-            ));
+            postingResult =
+                    tradeLedgerGateway.postTrade(
+                            new TradeLedgerRequest(
+                                    trade.tradeId(),
+                                    trade.orderId(),
+                                    trade.accountId(),
+                                    trade.symbol(),
+                                    OrderSide.valueOf(order.side()),
+                                    trade.price(),
+                                    trade.qty(),
+                                    trade.fee(),
+                                    trade.feeCurrency(),
+                                    trade.traceId(),
+                                    trade.ts(),
+                                    order.tradeEnv()));
         } catch (RuntimeException ex) {
             auditLedgerFailure(order, trade.tradeId(), ex.getClass().getSimpleName());
             throw ex;
@@ -681,8 +774,7 @@ public class OkxRestReconcileService {
                     "OKX_LEDGER_RECOVERY_COMPLETED",
                     order.orderId(),
                     order.traceId(),
-                    Map.of("trade_id", trade.tradeId(), "order_id", order.orderId())
-            );
+                    Map.of("trade_id", trade.tradeId(), "order_id", order.orderId()));
         }
         return postingResult;
     }
@@ -693,8 +785,6 @@ public class OkxRestReconcileService {
                 "OKX_LEDGER_POST_FAILED",
                 order.orderId(),
                 order.traceId(),
-                Map.of("trade_id", tradeId, "reason", reason)
-        );
+                Map.of("trade_id", tradeId, "reason", reason));
     }
-
 }

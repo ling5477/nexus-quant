@@ -22,8 +22,7 @@ public record PaperStrategyEvaluation(
         Overview overview,
         List<StrategyEvaluation> strategyEvaluations,
         List<PublishEvaluation> publishEvaluations,
-        Rankings rankings
-) {
+        Rankings rankings) {
 
     /** Paper 内部评级（非真实投资评级）。 */
     public enum RatingLabel {
@@ -57,13 +56,12 @@ public record PaperStrategyEvaluation(
             int evaluatedRunCount,
             int comparableRunCount,
             int sampleInsufficientStrategyCount,
-            int profitableStrategyCount,
-            int lossStrategyCount,
+            Integer profitableStrategyCount,
+            Integer lossStrategyCount,
             int highRiskStrategyCount,
             int backtestDeviationStrategyCount,
             Integer topCompositeScore,
-            Integer worstCompositeScore
-    ) {}
+            Integer worstCompositeScore) {}
 
     /**
      * Paper vs Backtest 偏差（strategy / publish 维度）。
@@ -77,8 +75,7 @@ public record PaperStrategyEvaluation(
             BigDecimal paperMaxDrawdown,
             BigDecimal drawdownDeviation,
             DeviationLevel deviationLevel,
-            String deviationExplanation
-    ) {}
+            String deviationExplanation) {}
 
     public record StrategyEvaluation(
             String strategyVersionId,
@@ -113,8 +110,7 @@ public record PaperStrategyEvaluation(
             EvaluationConfidence evaluationConfidence,
             String primaryWeakness,
             List<String> warnings,
-            BacktestDeviation backtestDeviation
-    ) {}
+            BacktestDeviation backtestDeviation) {}
 
     public record PublishEvaluation(
             String publishId,
@@ -135,8 +131,7 @@ public record PaperStrategyEvaluation(
             RatingLabel ratingLabel,
             EvaluationConfidence evaluationConfidence,
             List<String> warnings,
-            BacktestDeviation backtestDeviation
-    ) {}
+            BacktestDeviation backtestDeviation) {}
 
     /** 各维度排行（值为 strategyVersionId / publishId 键，已截断到上限）。 */
     public record Rankings(
@@ -146,6 +141,5 @@ public record PaperStrategyEvaluation(
             List<String> worstDrawdownStrategies,
             List<String> sampleInsufficientStrategies,
             List<String> highDeviationStrategies,
-            List<String> highRiskStrategies
-    ) {}
+            List<String> highRiskStrategies) {}
 }

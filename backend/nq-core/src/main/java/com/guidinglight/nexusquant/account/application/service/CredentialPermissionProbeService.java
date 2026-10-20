@@ -364,7 +364,7 @@ public class CredentialPermissionProbeService {
         return Boolean.TRUE.equals(command.paperSafetyConfirmed())
                 && Boolean.TRUE.equals(command.dryRun())
                 && (permissionExpectation == CredentialPermissionExpectation.READ_ONLY_DIAGNOSTIC
-                || permissionExpectation == CredentialPermissionExpectation.GATEY_PILOT_READINESS);
+                || permissionExpectation == CredentialPermissionExpectation.SCOPED_TRADE_READINESS);
     }
 
     private String eventTypeFor(String finalStatus) {

@@ -1,21 +1,25 @@
 package com.guidinglight.nexusquant.research.application;
 
+import com.guidinglight.nexusquant.research.application.backtest.command.BacktestRunStartRequest;
+import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;
 import com.guidinglight.nexusquant.research.domain.BacktestRun;
 import com.guidinglight.nexusquant.research.domain.BacktestRunStatus;
 import com.guidinglight.nexusquant.research.domain.ResearchConfig;
 import com.guidinglight.nexusquant.research.domain.port.BacktestRunRepository;
-import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
-import com.guidinglight.nexusquant.research.application.backtest.command.BacktestRunStartRequest;
+import com.guidinglight.nexusquant.research.domain.port.ResearchFeeSourcePort;
+
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 /**
  * BacktestRunService 提供研究配置 / 回测执行的回测运行创建与查询能力。
@@ -31,34 +35,40 @@ public class BacktestRunService {
     private final BacktestConfigService backtestConfigService;
     private final ResearchConfigService researchConfigService;
     private final Clock clock;
+    private ResearchFeeSourcePort feeSource = ResearchFeeSourcePort.disabled();
+
+    /** 独立构造默认拒绝私有来源；正式容器才注入认证和不可变观察的解析合同。 */
+    @Autowired
+    private void bindFeeSource(ObjectProvider<ResearchFeeSourcePort> provider) {
+        feeSource = provider.getIfAvailable(ResearchFeeSourcePort::disabled);
+    }
 
     @Autowired
     public BacktestRunService(
             BacktestRunRepository backtestRunRepository,
             BacktestConfigService backtestConfigService,
-            ResearchConfigService researchConfigService
-    ) {
-        this(backtestRunRepository, backtestConfigService, researchConfigService, Clock.systemUTC());
+            ResearchConfigService researchConfigService) {
+        this(
+                backtestRunRepository,
+                backtestConfigService,
+                researchConfigService,
+                Clock.systemUTC());
     }
 
     public BacktestRunService(
             BacktestRunRepository backtestRunRepository,
             BacktestConfigService backtestConfigService,
             ResearchConfigService researchConfigService,
-            Clock clock
-    ) {
-        this.backtestRunRepository = Objects.requireNonNull(
-                backtestRunRepository,
-                "backtestRunRepository must not be null"
-        );
-        this.backtestConfigService = Objects.requireNonNull(
-                backtestConfigService,
-                "backtestConfigService must not be null"
-        );
-        this.researchConfigService = Objects.requireNonNull(
-                researchConfigService,
-                "researchConfigService must not be null"
-        );
+            Clock clock) {
+        this.backtestRunRepository =
+                Objects.requireNonNull(
+                        backtestRunRepository, "backtestRunRepository must not be null");
+        this.backtestConfigService =
+                Objects.requireNonNull(
+                        backtestConfigService, "backtestConfigService must not be null");
+        this.researchConfigService =
+                Objects.requireNonNull(
+                        researchConfigService, "researchConfigService must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
@@ -70,47 +80,60 @@ public class BacktestRunService {
      * Batch 4-A 后，新 run 只能从 ACTIVE research/backtest config 创建；DISABLED 与 ARCHIVED
      * 仍可按 ID 查询用于历史追溯，但不能继续产生新的回测事实。
      */
+    @Transactional(isolation = Isolation.REPEATABLE_READ, timeout = 10)
     public BacktestRun create(BacktestRunStartRequest request) {
         Objects.requireNonNull(request, "request must not be null");
-        BacktestConfig backtestConfig = backtestConfigService.getByBacktestConfigId(
-                requireText(request.backtestConfigId(), "backtestConfigId")
-        );
-        ResearchConfig researchConfig = researchConfigService.getByResearchConfigId(backtestConfig.researchConfigId());
+        BacktestConfig backtestConfig =
+                backtestConfigService.getByBacktestConfigId(
+                        requireText(request.backtestConfigId(), "backtestConfigId"));
+        ResearchConfig researchConfig =
+                researchConfigService.getByResearchConfigId(backtestConfig.researchConfigId());
         ensureActiveConfig(backtestConfig, researchConfig);
         Instant now = Instant.now(clock);
-        BacktestRun backtestRun = new BacktestRun(
-                "brn-" + UUID.randomUUID(),
-                backtestConfig.backtestConfigId(),
-                researchConfig.researchConfigId(),
-                researchConfig.sourceStrategyId(),
-                researchConfig.strategySnapshot(),
-                backtestConfig.strategyVersionId(),
-                backtestConfig.strategyVersionSnapshotJson(),
-                backtestConfig.paramSnapshotJson(),
-                backtestConfig.configSnapshot(),
-                backtestConfig.configSnapshotJson(),
-                backtestConfig.datasetSnapshotJson(),
-                BacktestRunStatus.CREATED,
-                now,
-                null,
-                null,
-                null,
-                null,
-                "{}",
-                now,
-                now
-        );
+        // 新运行再次检查来源有效期；完整快照只冻结一次，后续执行和发布不得改用最新费率。
+        String frozenConfiguration =
+                feeSource.freezeRunConfiguration(
+                        backtestConfig.configSnapshotJson(),
+                        backtestConfig.datasetSnapshotJson(),
+                        now);
+        BacktestRun backtestRun =
+                new BacktestRun(
+                        "brn-" + UUID.randomUUID(),
+                        backtestConfig.backtestConfigId(),
+                        researchConfig.researchConfigId(),
+                        researchConfig.sourceStrategyId(),
+                        researchConfig.strategySnapshot(),
+                        backtestConfig.strategyVersionId(),
+                        backtestConfig.strategyVersionSnapshotJson(),
+                        backtestConfig.paramSnapshotJson(),
+                        frozenConfiguration,
+                        frozenConfiguration,
+                        backtestConfig.datasetSnapshotJson(),
+                        BacktestRunStatus.CREATED,
+                        now,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "{}",
+                        now,
+                        now);
         backtestRunRepository.insert(backtestRun);
         return backtestRun;
     }
 
+    @Transactional(isolation = Isolation.REPEATABLE_READ, timeout = 10)
     public BacktestRun start(BacktestRunStartRequest request) {
         return create(request);
     }
 
     public BacktestRun getByBacktestRunId(String backtestRunId) {
-        return backtestRunRepository.findByBacktestRunId(requireText(backtestRunId, "backtestRunId"))
-                .orElseThrow(() -> new IllegalArgumentException("backtest run not found: " + backtestRunId));
+        return backtestRunRepository
+                .findByBacktestRunId(requireText(backtestRunId, "backtestRunId"))
+                .orElseThrow(
+                        () ->
+                                new IllegalArgumentException(
+                                        "backtest run not found: " + backtestRunId));
     }
 
     /**
@@ -138,13 +161,11 @@ public class BacktestRunService {
     private void ensureActiveConfig(BacktestConfig backtestConfig, ResearchConfig researchConfig) {
         if (!backtestConfig.isActive()) {
             throw new IllegalStateException(
-                    "backtest config is not active: " + backtestConfig.backtestConfigId()
-            );
+                    "backtest config is not active: " + backtestConfig.backtestConfigId());
         }
         if (!researchConfig.isActive()) {
             throw new IllegalStateException(
-                    "research config is not active: " + researchConfig.researchConfigId()
-            );
+                    "research config is not active: " + researchConfig.researchConfigId());
         }
     }
 
@@ -155,6 +176,3 @@ public class BacktestRunService {
         return value.trim();
     }
 }
-
-
-

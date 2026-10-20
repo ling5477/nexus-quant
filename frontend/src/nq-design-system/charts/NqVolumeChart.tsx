@@ -1,17 +1,13 @@
 import {t} from '@/i18n';
 import {useTranslation} from 'react-i18next';
-import { useEffect, useMemo, useRef } from 'react';
-import {
-  HistogramSeries,
-  createChart,
-  type IChartApi,
-} from 'lightweight-charts';
+import {useEffect, useMemo, useRef} from 'react';
+import {HistogramSeries, createChart, type IChartApi} from 'lightweight-charts';
 
-import { DataFreshness } from '../status/DataFreshness';
-import { DEFAULT_MARKET_CONVENTION } from '../tokens/nq-tokens';
-import { nqLwcOptions } from '../theme/nqLwcOptions';
-import { chartErrorText, toHistogramData } from './chartData';
-import type { NqChartBaseProps } from './types';
+import {DataFreshness} from '../status/DataFreshness';
+import {DEFAULT_MARKET_CONVENTION} from '../tokens/nq-tokens';
+import {nqLwcOptions} from '../theme/nqLwcOptions';
+import {chartErrorText, toHistogramData} from './chartData';
+import type {NqChartBaseProps} from './types';
 
 import './nq-charts.css';
 
@@ -21,76 +17,115 @@ import './nq-charts.css';
  * 约束：成交量柱颜色使用 market convention 的 up/down，不复用 success / danger。
  */
 export function NqVolumeChart({
-  bars,
-  height = 160,
-  loading = false,
-  error = null,
-  stale = false,
-  staleDetail,
-  sourceLabel = t('chart.volumeSource'),
-  convention = DEFAULT_MARKET_CONVENTION,
-  title = t('chart.volume'),
-  emptyText = t('chart.volumeEmpty'),
-  className,
+    bars,
+    height = 160,
+    loading = false,
+    error = null,
+    stale = false,
+    staleDetail,
+    sourceLabel = t('chart.volumeSource'),
+    convention = DEFAULT_MARKET_CONVENTION,
+    title = t('chart.volume'),
+    emptyText = t('chart.volumeEmpty'),
+    className,
+    visibleRange,
+    onVisibleRangeChange,
 }: NqChartBaseProps) {
     useTranslation();
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-  const data = useMemo(() => toHistogramData(bars, convention), [bars, convention]);
-  const errorText = chartErrorText(error);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const chartRef = useRef<IChartApi | null>(null);
+    const rangeChangeRef = useRef(onVisibleRangeChange);
+    rangeChangeRef.current = onVisibleRangeChange;
+    const data = useMemo(() => toHistogramData(bars, convention), [bars, convention]);
+    const errorText = chartErrorText(error);
 
-  useEffect(() => {
-    const element = containerRef.current;
+    useEffect(() => {
+        const element = containerRef.current;
 
-    if (!element || errorText || loading || data.length === 0) {
-      return;
-    }
+        if (!element || errorText || loading || data.length === 0) {
+            return;
+        }
 
-    const chart = createChart(element, {
-      ...nqLwcOptions(),
-      height,
-      width: Math.max(element.clientWidth, 1),
-    });
-    chartRef.current = chart;
+        const chart = createChart(element, {
+            ...nqLwcOptions(),
+            height: Math.max(height - 34, 120),
+            width: Math.max(element.clientWidth, 1),
+        });
+        chartRef.current = chart;
 
-    const volumeSeries = chart.addSeries(HistogramSeries, {
-      priceFormat: {type: 'volume'},
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
-    volumeSeries.setData(data);
-    chart.timeScale().fitContent();
+        const volumeSeries = chart.addSeries(HistogramSeries, {
+            priceFormat: {type: 'volume'},
+            priceLineVisible: false,
+            lastValueVisible: false,
+        });
+        volumeSeries.setData(data);
+        let fittedVisibleContent = element.clientWidth > 0;
+        if (fittedVisibleContent) chart.timeScale().fitContent();
+        const onRangeChange = (range: {from: number; to: number} | null) =>
+            rangeChangeRef.current?.(range);
+        chart.timeScale().subscribeVisibleLogicalRangeChange(onRangeChange);
 
-    const observer = new ResizeObserver(([entry]) => {
-      chart.resize(Math.max(Math.floor(entry.contentRect.width), 1), height);
-    });
-    observer.observe(element);
+        const observer = new ResizeObserver(([entry]) => {
+            const width = Math.floor(entry.contentRect.width);
+            // 隐藏分区的零宽度不能改变时间轴；首次可见时再适配数据，后续保留用户缩放。
+            if (width <= 0) return;
+            chart.resize(width, Math.max(height - 34, 120));
+            if (!fittedVisibleContent) {
+                chart.timeScale().fitContent();
+                fittedVisibleContent = true;
+            }
+        });
+        observer.observe(element);
 
-    return () => {
-      observer.disconnect();
-      chart.remove();
-      chartRef.current = null;
-    };
-  }, [data, errorText, height, loading]);
+        return () => {
+            observer.disconnect();
+            chart.timeScale().unsubscribeVisibleLogicalRangeChange(onRangeChange);
+            chart.remove();
+            chartRef.current = null;
+        };
+    }, [data, errorText, height, loading]);
 
-  return (
-    <div
-      className={className ? `nq-chart ${className}` : 'nq-chart'}
-      style={{height}}
-      data-testid="nq-volume-chart"
-    >
-      <div className="nq-chart__header">
-        <span className="nq-chart__title">{title}</span>
-        {stale ? (
-          <span className="nq-chart__stale">
-            <DataFreshness source={sourceLabel} state="stale" detail={staleDetail} inline/>
-          </span>
-        ) : null}
-      </div>
-      <div ref={containerRef} className="nq-chart__canvas" style={{height: height - 34}}/>
-      {loading ? <div className="nq-chart__state">{t('chart.volumeLoading')}</div> : null}
-      {!loading && !errorText && data.length === 0 ? <div className="nq-chart__state">{emptyText}</div> : null}
-      {errorText ? <div className="nq-chart__state nq-chart__state--error">{errorText}</div> : null}
-    </div>
-  );
+    useEffect(() => {
+        const scale = chartRef.current?.timeScale(),
+            current = scale?.getVisibleLogicalRange();
+        if (
+            visibleRange &&
+            scale &&
+            (!current ||
+                Math.abs(current.from - visibleRange.from) > 1e-6 ||
+                Math.abs(current.to - visibleRange.to) > 1e-6)
+        ) {
+            scale.setVisibleLogicalRange(visibleRange);
+        }
+    }, [visibleRange, data, loading, errorText, height]);
+
+    return (
+        <div
+            className={className ? `nq-chart ${className}` : 'nq-chart'}
+            style={{minHeight: height}}
+            data-testid="nq-volume-chart"
+        >
+            <div className="nq-chart__header">
+                <span className="nq-chart__title">{title}</span>
+                {stale ? (
+                    <span className="nq-chart__stale">
+                        <DataFreshness
+                            source={sourceLabel}
+                            state="stale"
+                            detail={staleDetail}
+                            inline
+                        />
+                    </span>
+                ) : null}
+            </div>
+            <div ref={containerRef} className="nq-chart__canvas" style={{height: height - 34}} />
+            {loading ? <div className="nq-chart__state">{t('chart.volumeLoading')}</div> : null}
+            {!loading && !errorText && data.length === 0 ? (
+                <div className="nq-chart__state">{emptyText}</div>
+            ) : null}
+            {errorText ? (
+                <div className="nq-chart__state nq-chart__state--error">{errorText}</div>
+            ) : null}
+        </div>
+    );
 }

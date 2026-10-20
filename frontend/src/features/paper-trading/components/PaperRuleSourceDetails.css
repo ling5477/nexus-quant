@@ -1,0 +1,30 @@
+.paper-rule-source {
+    margin: 12px 0;
+    min-width: 0;
+    color: var(--ant-color-text-secondary, #8fa6ba);
+}
+.paper-rule-source > summary {
+    cursor: pointer;
+    width: fit-content;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    padding: 4px 0;
+}
+.paper-rule-source > summary:focus-visible,
+.paper-rule-source pre:focus-visible {
+    outline: 2px solid var(--ant-color-primary, #398dff);
+    outline-offset: 3px;
+}
+.paper-rule-source p {
+    margin: 8px 0;
+}
+.paper-rule-source pre {
+    max-height: 360px;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding: 12px;
+    border: 1px solid var(--ant-color-border-secondary, #20374a);
+    border-radius: 6px;
+    font-size: 12px;
+}

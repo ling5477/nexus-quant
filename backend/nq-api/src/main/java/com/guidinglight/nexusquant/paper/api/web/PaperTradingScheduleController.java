@@ -39,9 +39,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaperTradingScheduleController {
 
     private final PaperTradingApiService apiService;
+    private final PaperRunReadAccess readAccess;
 
-    public PaperTradingScheduleController(PaperTradingApiService apiService) {
+    public PaperTradingScheduleController(PaperTradingApiService apiService, PaperRunReadAccess readAccess) {
         this.apiService = Objects.requireNonNull(apiService, "apiService must not be null");
+        this.readAccess = Objects.requireNonNull(readAccess);
     }
 
     @GetMapping
@@ -52,7 +54,9 @@ public class PaperTradingScheduleController {
             @RequestParam(required = false) String status
     ) {
         TraceIdContext.getOrCreate();
-        return apiService.listSchedules(paperRunId, status).stream()
+        var schedules = apiService.listSchedules(paperRunId, status);
+        var readable = readAccess.readableIds(schedules.stream().map(schedule -> schedule.paperRunId()).toList());
+        return schedules.stream().filter(schedule -> readable.contains(schedule.paperRunId()))
                 .map(PaperRunScheduleResponse::from)
                 .toList();
     }

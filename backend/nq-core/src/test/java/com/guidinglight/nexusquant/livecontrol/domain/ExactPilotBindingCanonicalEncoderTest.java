@@ -31,7 +31,7 @@ class ExactPilotBindingCanonicalEncoderTest {
         assertTrue(canonical.indexOf("\"sourceCommit\"") < canonical.indexOf("\"serverIdentity\""));
         assertTrue(canonical.indexOf("\"ownerId\"") < canonical.indexOf("\"instrumentId\""));
         assertTrue(canonical.indexOf("\"price\"") < canonical.indexOf("\"instrumentSnapshotIdentity\""));
-        assertTrue(canonical.indexOf("\"riskPolicyVersion\"") < canonical.indexOf("\"pilotWindowStart\""));
+        assertTrue(canonical.indexOf("\"riskPolicyVersion\"") < canonical.indexOf("\"executionWindowStart\""));
         assertTrue(canonical.endsWith("\"bindingExpiresAt\":\"2026-08-22T01:07:03.123456Z\"}"));
         assertTrue(canonical.contains("\"price\":\"100.00000000\""));
         assertTrue(canonical.contains("\"quantity\":\"0.10000000\""));

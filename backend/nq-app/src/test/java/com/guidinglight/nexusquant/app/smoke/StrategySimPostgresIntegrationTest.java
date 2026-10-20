@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
@@ -64,10 +65,13 @@ import java.security.MessageDigest;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.Duration;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.HexFormat;
@@ -97,6 +101,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
+import org.springframework.scheduling.config.Task;
+import org.springframework.scheduling.support.ScheduledMethodRunnable;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -131,15 +138,16 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class StrategySimPostgresIntegrationTest {
     private static final AtomicReference<ClosedBarMarketFeed.Observation> schedulerObservation = new AtomicReference<>();
     private static String schema;
-    private static String independentSchema;
-    private static String counterfactualSchema;
+    private static String independentDatabaseUrl;
+    private static String counterfactualDatabaseUrl;
     private static String baseUrl;
     private static String databaseUser;
     private static String databasePassword;
     private static DriverManagerDataSource admin;
+    private static final List<ReleaseBaselineTestDatabase> ownedDatabases = new ArrayList<>();
 
     @DynamicPropertySource
-    static void database(DynamicPropertyRegistry registry) {
+    static void database(DynamicPropertyRegistry registry) throws Exception {
         baseUrl = System.getProperty("nq.strategy-sim.pg.url", "");
         if (!baseUrl.startsWith("jdbc:postgresql://127.0.0.1:"))
             throw new IllegalArgumentException("disposable loopback PostgreSQL URL required");
@@ -147,31 +155,25 @@ class StrategySimPostgresIntegrationTest {
         databasePassword = System.getProperty("nq.strategy-sim.pg.password", "disposable");
         if (databaseUser.isBlank() || databasePassword.isBlank())
             throw new IllegalArgumentException("disposable PostgreSQL credentials required");
-        schema = "strategy_sim_sim_" + UUID.randomUUID().toString().replace("-", "");
-        admin = new DriverManagerDataSource(baseUrl, databaseUser, databasePassword);
-        JdbcTemplate jdbc = new JdbcTemplate(admin);
-        jdbc.execute("CREATE SCHEMA " + schema);
-        Flyway flyway = Flyway.configure().dataSource(admin).schemas(schema)
-                .locations("classpath:db/migration").load();
-        flyway.migrate();
-        flyway.validate();
-        registry.add("spring.datasource.url", () -> baseUrl + "?currentSchema=" + schema);
+        var database = ReleaseBaselineTestDatabase.create("nq.strategy-sim.pg");
+        ownedDatabases.add(database);
+        baseUrl = database.url();
+        schema = "public";
+        admin = database.source();
+        // 当前实现消费新增费用与决策字段；仅初始化本夹具的独立库，不修改历史迁移。
+        var currentSchema = Flyway.configure().dataSource(database.source())
+                .locations("classpath:db/migration").cleanDisabled(true).target("27").load();
+        currentSchema.migrate();
+        currentSchema.validate();
+        registry.add("spring.datasource.url", () -> baseUrl);
         registry.add("spring.datasource.username", () -> databaseUser);
         registry.add("spring.datasource.password", () -> databasePassword);
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
     }
 
     @AfterAll
-    static void cleanup() {
-        if (admin != null && schema != null) {
-            new JdbcTemplate(admin).execute("DROP SCHEMA " + schema + " CASCADE");
-        }
-        if (admin != null && independentSchema != null) {
-            new JdbcTemplate(admin).execute("DROP SCHEMA " + independentSchema + " CASCADE");
-        }
-        if (admin != null && counterfactualSchema != null) {
-            new JdbcTemplate(admin).execute("DROP SCHEMA " + counterfactualSchema + " CASCADE");
-        }
+    static void cleanup() throws Exception {
+        for (var database : ownedDatabases) database.close();
         ExchangeNoOutboundGuard.restoreDefault();
     }
 
@@ -543,7 +545,27 @@ class StrategySimPostgresIntegrationTest {
     void springSchedulerClosesContinuousSimEconomicFactsWithoutManualMatching() throws Exception {
         var processors = applicationContext.getBeansOfType(ScheduledAnnotationBeanPostProcessor.class);
         assertEquals(1, processors.size());
-        assertEquals(1, processors.values().iterator().next().getScheduledTasks().size());
+        // Spring 6.2通过已知包装记录执行结果；解包后仍按目标实例和方法精确核对，未知包装直接失败。
+        // JVM资源采样也是合法定时任务，不能把全部任务数误当成交易调度入口数。
+        long dispatcherTasks = processors.values().iterator().next().getScheduledTasks().stream()
+                .map(task -> task.getTask().getRunnable())
+                .map(runnable -> {
+                    if (runnable instanceof ScheduledMethodRunnable method) return method;
+                    assertEquals(Task.class.getName() + "$OutcomeTrackingRunnable", runnable.getClass().getName());
+                    Object delegate = ReflectionTestUtils.getField(runnable, "runnable");
+                    assertTrue(delegate instanceof ScheduledMethodRunnable,
+                            "调度结果包装必须委托真实的Spring方法任务");
+                    return (ScheduledMethodRunnable) delegate;
+                })
+                .filter(task -> task.getTarget() == schedulerDispatcher
+                        && task.getMethod().getName().equals("scheduledTick"))
+                .count();
+        assertEquals(1, dispatcherTasks);
+        // 固定任务控制在应用就绪时持久化，不依赖用户创建策略计划；开关开启后才能推进独立SIM。
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT count(*) FROM scheduled_job_controls WHERE job_key='CONTINUOUS_SIM_POLL'", Integer.class));
+        assertEquals(1, jdbc.queryForObject(
+                "SELECT count(*) FROM scheduled_job_controls WHERE job_key='PAPER_MATCHING'", Integer.class));
         Fixture fixture = seedPublicHourly();
         jdbc.update("""
                 UPDATE kill_switch_states SET status='DISENGAGED', version=version+1,
@@ -648,7 +670,7 @@ class StrategySimPostgresIntegrationTest {
                     .profiles("ci-app-smoke").web(WebApplicationType.NONE)
                     .initializers(new NqAppContextPostgresSmokeTest.NoOutboundInitializer())
                     .properties(Map.ofEntries(
-                            Map.entry("spring.datasource.url", baseUrl + "?currentSchema=" + schema),
+                            Map.entry("spring.datasource.url", baseUrl + "?currentSchema=" + schema + ",public"),
                             Map.entry("spring.datasource.username", databaseUser),
                             Map.entry("spring.datasource.password", databasePassword),
                             Map.entry("spring.flyway.enabled", "false"),
@@ -665,7 +687,7 @@ class StrategySimPostgresIntegrationTest {
                             Map.entry("nq.security.issuer", "nexus-quant-strategy-sim-synthetic"),
                             Map.entry("nq.security.secret", "strategy-sim-synthetic-secret-123456789"),
                             Map.entry("nq.security.access-token-ttl", "PT30M")))
-                    .run("--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema,
+                    .run("--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema + ",public",
                             "--spring.datasource.username=" + databaseUser,
                             "--spring.datasource.password=" + databasePassword,
                             "--spring.flyway.enabled=false")) {
@@ -1113,7 +1135,11 @@ class StrategySimPostgresIntegrationTest {
         sim.advance(created.paperRunId());
         assertEquals("ACCEPTED", sim.advance(created.paperRunId()).status());
         assertEquals("NO_LATER_TRADABLE_EVENT", sim.advance(created.paperRunId()).reason());
-        assertEquals(0, new BigDecimal("104").compareTo(sim.facts(created.paperRunId()).markPrice()));
+        var facts = sim.facts(created.paperRunId());
+        // 未撮合订单的下一开盘不是已发生的执行事件；估值只能使用已可见信号收盘。
+        assertEquals(0, facts.trades().size());
+        assertEquals(0, new BigDecimal("103").compareTo(facts.markPrice()));
+        assertEquals(Instant.parse("2026-09-25T00:04:00Z"), facts.markAsOf());
     }
 
     @Test
@@ -1260,7 +1286,7 @@ class StrategySimPostgresIntegrationTest {
         try {
             ProcessBuilder builder = new ProcessBuilder(executable, "-cp", classpath,
                     StrategySimRestartProbeMain.class.getName(), mode, baseUrl, schema, paperRunId);
-            builder.environment().put("SPRING_DATASOURCE_URL", baseUrl + "?currentSchema=" + schema);
+            builder.environment().put("SPRING_DATASOURCE_URL", baseUrl + "?currentSchema=" + schema + ",public");
             builder.environment().put("SPRING_DATASOURCE_USERNAME", databaseUser);
             builder.environment().put("SPRING_DATASOURCE_PASSWORD", databasePassword);
             builder.redirectErrorStream(true).redirectOutput(log.toFile());
@@ -1359,8 +1385,8 @@ class StrategySimPostgresIntegrationTest {
         var publish = publishing.publish(new BacktestPublishRequest(backtest.backtestRunId(),
                 "Public capture SMA publish", version.strategyVersionId()));
         assertEquals("SUCCEEDED", publish.publishStatus().name());
-        independentSchema = cloneFrozenPublicReplayInput(publish.publishRecordId());
-        counterfactualSchema = cloneFrozenPublicReplayInput(publish.publishRecordId());
+        independentDatabaseUrl = cloneFrozenPublicReplayInput(publish.publishRecordId());
+        counterfactualDatabaseUrl = cloneFrozenPublicReplayInput(publish.publishRecordId());
         // 隔离随机 schema 的 SIM 风控开关只为本测试短暂打开，外部运行状态不受影响。
         jdbc.update("""
                 UPDATE kill_switch_states SET status='DISENGAGED', version=version+1,
@@ -1474,7 +1500,7 @@ class StrategySimPostgresIntegrationTest {
         var replayPublish = publishing.publish(new BacktestPublishRequest(replayBacktest.backtestRunId(),
                 "Public capture SMA replay", version.strategyVersionId()));
         assertEquals("SUCCEEDED", replayPublish.publishStatus().name());
-        var replay = runIndependentReplay(publish.publishRecordId(), capture.barCount(), independentSchema);
+        var replay = runIndependentReplay(publish.publishRecordId(), capture.barCount(), independentDatabaseUrl);
         var replayCreated = replay.created();
         var replayFacts = replay.facts();
         assertEquals(created.strategyVersionId(), replayCreated.strategyVersionId());
@@ -1604,7 +1630,7 @@ class StrategySimPostgresIntegrationTest {
     private ReplayResult runCounterfactualReplay(String publishId, String originalSummary,
             List<HistoricalBar> changedBars, int barCount) {
         JdbcTemplate isolated = new JdbcTemplate(new DriverManagerDataSource(
-                baseUrl + "?currentSchema=" + counterfactualSchema, databaseUser, databasePassword));
+                counterfactualDatabaseUrl, databaseUser, databasePassword));
         String backtestId = isolated.queryForObject(
                 "SELECT backtest_run_id FROM backtest_publish_records WHERE publish_record_id=?",
                 String.class, publishId);
@@ -1625,7 +1651,7 @@ class StrategySimPostgresIntegrationTest {
                 UPDATE backtest_runs SET summary_json=?::jsonb,dataset_snapshot_json=?::jsonb
                 WHERE backtest_run_id=?
                 """, summary.toString(), dataset.toString(), backtestId);
-        var replay = runIndependentReplay(publishId, barCount, counterfactualSchema);
+        var replay = runIndependentReplay(publishId, barCount, counterfactualDatabaseUrl);
         assertTrue(!replay.created().barContentSha256().equals(
                 read(originalSummary).path("barContentSha256").asText()));
         return replay;
@@ -1792,51 +1818,40 @@ class StrategySimPostgresIntegrationTest {
         }
     }
 
-    private String cloneFrozenPublicReplayInput(String publishId) {
-        String targetSchema = "strategy_sim_independent_" + UUID.randomUUID().toString().replace("-", "");
-        new JdbcTemplate(admin).execute("CREATE SCHEMA " + targetSchema);
-        Flyway independentFlyway = Flyway.configure().dataSource(admin).schemas(targetSchema)
-                .initSql("SET search_path TO " + targetSchema + "," + schema + ",public")
-                .locations("classpath:db/migration").load();
-        independentFlyway.migrate();
-        independentFlyway.validate();
-        JdbcTemplate isolation = new JdbcTemplate(new DriverManagerDataSource(
-                baseUrl + "?currentSchema=" + targetSchema + "," + schema + ",public",
-                databaseUser, databasePassword));
-        // B 仅取得 A 尚未创建 SIM run 时的冻结输入；不能复制任何已执行的订单或账本。
+    private String cloneFrozenPublicReplayInput(String publishId) throws Exception {
+        var database = ReleaseBaselineTestDatabase.create("nq.strategy-sim.pg");
+        ownedDatabases.add(database);
+        // 当前实现消费新增费用与决策字段；仅初始化本夹具的独立库，不修改历史迁移。
+        var currentSchema = Flyway.configure().dataSource(database.source())
+                .locations("classpath:db/migration").cleanDisabled(true).target("27").load();
+        currentSchema.migrate();
+        currentSchema.validate();
+        JdbcTemplate isolation = new JdbcTemplate(database.source());
+        // B 只取得冻结研究输入；两个 public schema 属于不同数据库，不能共享 canonical 写入。
         for (String table : List.of("accounts", "marketdata_datasets", "marketdata_bars",
                 "marketdata_dataset_coverage", "public_market_captures", "strategy_definitions",
                 "strategy_versions", "research_configs", "backtest_configs", "backtest_runs",
                 "sim_orders", "sim_trades", "sim_positions", "sim_pnl_snapshots",
                 "backtest_eval_reports", "backtest_publish_records")) {
-            isolation.update("INSERT INTO " + targetSchema + "." + table
-                    + " SELECT * FROM " + schema + "." + table);
+            String rows = jdbc.queryForObject("SELECT coalesce(jsonb_agg(to_jsonb(t)), '[]'::jsonb)::text FROM " + table + " t", String.class);
+            isolation.update("INSERT INTO " + table + " SELECT * FROM jsonb_populate_recordset(NULL::" + table + ", CAST(? AS jsonb))", rows);
         }
-        isolation.execute("SELECT setval('" + targetSchema + ".accounts_account_id_seq',"
-                + "(SELECT max(account_id) FROM " + targetSchema + ".accounts))");
+        isolation.execute("SELECT setval('accounts_account_id_seq',(SELECT max(account_id) FROM accounts))");
         assertEquals(jdbc.queryForObject("SELECT count(*) FROM backtest_publish_records", Integer.class),
-                isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                        + ".backtest_publish_records", Integer.class));
-        assertEquals(1, isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                        + ".backtest_publish_records WHERE publish_record_id=?",
-                Integer.class, publishId));
-        assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                + ".strategy_sim_decisions", Integer.class));
-        assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                + ".orders", Integer.class));
-        assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                + ".trades", Integer.class));
-        assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + targetSchema
-                + ".ledger_entries", Integer.class));
-        return targetSchema;
+                isolation.queryForObject("SELECT count(*) FROM backtest_publish_records", Integer.class));
+        assertEquals(1, isolation.queryForObject("SELECT count(*) FROM backtest_publish_records WHERE publish_record_id=?", Integer.class, publishId));
+        for (String table : List.of("strategy_sim_decisions", "orders", "trades", "ledger_entries")) {
+            assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + table, Integer.class));
+        }
+        return database.url();
     }
 
-    private ReplayResult runIndependentReplay(String publishId, int barCount, String targetSchema) {
+    private ReplayResult runIndependentReplay(String publishId, int barCount, String targetDatabaseUrl) {
         try (ConfigurableApplicationContext context = new SpringApplicationBuilder(NexusQuantApplication.class)
                 .profiles("ci-app-smoke").web(WebApplicationType.NONE)
                 .initializers(new NqAppContextPostgresSmokeTest.NoOutboundInitializer())
                 .properties(Map.ofEntries(
-                        Map.entry("spring.datasource.url", baseUrl + "?currentSchema=" + targetSchema),
+                        Map.entry("spring.datasource.url", targetDatabaseUrl),
                         Map.entry("spring.datasource.username", databaseUser),
                         Map.entry("spring.datasource.password", databasePassword),
                         Map.entry("spring.flyway.enabled", "false"),
@@ -1854,14 +1869,16 @@ class StrategySimPostgresIntegrationTest {
                         Map.entry("nq.security.issuer", "nexus-quant-strategy-sim-synthetic"),
                         Map.entry("nq.security.secret", "strategy-sim-synthetic-secret-123456789"),
                         Map.entry("nq.security.access-token-ttl", "PT30M")))
-                .run("--spring.datasource.url=" + baseUrl + "?currentSchema=" + targetSchema,
+                .run("--spring.datasource.url=" + targetDatabaseUrl,
                         "--spring.datasource.username=" + databaseUser,
                         "--spring.datasource.password=" + databasePassword)) {
             JdbcTemplate isolated = context.getBean(JdbcTemplate.class);
             StrategySimRunService isolatedSim = context.getBean(StrategySimRunService.class);
             PaperTradingRunService isolatedRuns = context.getBean(PaperTradingRunService.class);
             PaperMatchingService isolatedMatching = context.getBean(PaperMatchingService.class);
-            assertEquals(targetSchema, isolated.queryForObject("SELECT current_schema()", String.class));
+            assertEquals("public", isolated.queryForObject("SELECT current_schema()", String.class));
+            assertEquals(URI.create(targetDatabaseUrl.substring("jdbc:".length())).getPath().substring(1),
+                    isolated.queryForObject("SELECT current_database()", String.class));
             assertEquals(1, isolated.queryForObject("""
                     SELECT count(*) FROM backtest_publish_records WHERE publish_record_id=?
                     """, Integer.class, publishId));
@@ -2137,7 +2154,7 @@ class StrategySimPostgresIntegrationTest {
         try (ConfigurableApplicationContext web = new SpringApplicationBuilder(NexusQuantApplication.class, SchedulerFeedConfiguration.class, ProductUxRiskConfiguration.class)
                 .profiles("ci-app-smoke", "public-marketdata-manual").web(WebApplicationType.SERVLET)
                 .initializers(new NqAppContextPostgresSmokeTest.NoOutboundInitializer())
-                .run("--server.port=18889", "--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema,
+                .run("--server.port=18889", "--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema + ",public",
                         "--spring.datasource.username=" + databaseUser, "--spring.datasource.password=" + databasePassword,
                         "--spring.flyway.enabled=false", "--spring.sql.init.mode=never",
                         "--nq.runtime.trading-components.enabled=true", "--nq.strategy-sim.enabled=true",
@@ -2152,11 +2169,15 @@ class StrategySimPostgresIntegrationTest {
             String token = login.path("accessToken").asText();
             assertTrue(!token.isBlank());
             String createJson = "{\"publishId\":\"" + fixture.publishId() + "\",\"budget\":\"100\"}";
-            String filled = c3Http("POST", "/api/paper-trading/strategy-sim/runs/continuous", createJson, token).path("paperRunId").asText();
+            UUID creationOperationId = UUID.randomUUID();
+            String filled = c3Http("POST", "/api/paper-trading/strategy-sim/runs/continuous",
+                    createJson, token, creationOperationId).path("paperRunId").asText();
             c3Http("POST", "/api/scheduler/jobs/CONTINUOUS_SIM_POLL/run-once", "{}", token);
             c3Http("POST", "/api/scheduler/jobs/PAPER_MATCHING/run-once", "{}", token);
             assertEquals(1, sim.facts(filled).trades().size());
-            c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + filled + "/continuous/stop", "{}", token);
+            UUID pauseOperationId = UUID.randomUUID();
+            c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + filled + "/continuous/stop",
+                    "{}", token, pauseOperationId);
             String noSignal = c3Http("POST", "/api/paper-trading/strategy-sim/runs", createJson, token).path("paperRunId").asText();
             c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + noSignal + "/start", "{}", token);
             assertEquals("NO_SIGNAL", c3Http("POST", "/api/paper-trading/strategy-sim/runs/" + noSignal + "/advance", "{}", token).path("status").asText());
@@ -2208,15 +2229,24 @@ class StrategySimPostgresIntegrationTest {
         }
     }
 
-    private com.fasterxml.jackson.databind.JsonNode c3Http(String method, String path, String json, String token) throws Exception {
-        var builder = java.net.http.HttpRequest.newBuilder(URI.create("http://127.0.0.1:18889" + path))
-                .timeout(java.time.Duration.ofSeconds(20)).header("Content-Type", "application/json");
+    private JsonNode c3Http(String method, String path, String json, String token) throws Exception {
+        return c3Http(method, path, json, token, null);
+    }
+
+    /** 连续命令由调用点保存原UUID；通用HTTP助手不能在重发时偷偷生成另一个身份。 */
+    private JsonNode c3Http(String method, String path, String json, String token, UUID operationId)
+            throws Exception {
+        var builder = HttpRequest.newBuilder(URI.create("http://127.0.0.1:18889" + path))
+                .timeout(Duration.ofSeconds(20)).header("Content-Type", "application/json");
         if (token != null) builder.header("Authorization", "Bearer " + token);
-        builder.method(method, json == null ? java.net.http.HttpRequest.BodyPublishers.noBody()
-                : java.net.http.HttpRequest.BodyPublishers.ofString(json));
-        var response = HttpClient.newHttpClient().send(builder.build(), java.net.http.HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, response.statusCode(), path + " failed");
-        return mapper.readTree(response.body());
+        if (operationId != null) builder.header("Idempotency-Key", operationId.toString());
+        builder.method(method, json == null ? HttpRequest.BodyPublishers.noBody()
+                : HttpRequest.BodyPublishers.ofString(json));
+        try (var http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()) {
+            var response = http.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, response.statusCode(), path + " failed");
+            return mapper.readTree(response.body());
+        }
     }
 
     private Fixture seed() {
@@ -2292,7 +2322,7 @@ class StrategySimPostgresIntegrationTest {
             assumptions.put("rulePolicy", "CURRENTLY_OBSERVED_PUBLIC_RULES");
             summary.put("datasetProvider", "public-capture");
             summary.put("costAndRuleSha256", PublicReplayAssumptionIdentity.sha256(assumptions));
-            dataset = "{\"provider\":\"public-capture\",\"source\":\"OKX_PUBLIC_CAPTURE\","
+            dataset = "{\"provider\":\"public-capture\",\"source\":\"OKX_PUBLIC_CAPTURE\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\","
                     + "\"interval\":\"1h\",\"barCount\":" + bars.size() + ",\"capture\":{"
                     + "\"consumedSha256\":\"" + identity.sha256() + "\","
                     + "\"replayVisibilityVersion\":\"CLOSED_HOURLY_BOUNDARY_V1\","

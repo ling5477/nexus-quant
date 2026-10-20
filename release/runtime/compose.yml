@@ -1,0 +1,81 @@
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:?verified PG16 image digest required}
+    mem_limit: ${POSTGRES_MEMORY:?runtime profile required}
+    cpus: ${POSTGRES_CPUS:?runtime profile required}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nexus_quant
+      POSTGRES_USER: nexusquant
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?installer configuration required}
+    volumes:
+      - ${NQ_HOME:?installer directory required}/data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U nexusquant -d nexus_quant']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    logging: &logging
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+  backend:
+    image: ${BACKEND_IMAGE:?verified backend image digest required}
+    mem_limit: ${BACKEND_MEMORY:?runtime profile required}
+    cpus: ${BACKEND_CPUS:?runtime profile required}
+    restart: unless-stopped
+    depends_on:
+      postgres: {condition: service_healthy}
+    environment:
+      NQ_PROFILE: prod,public-marketdata-manual
+      # 使用安装器已核验的包身份；不把Maven服务版本当作产品包版本。
+      NQ_VERSION: ${NQ_VERSION:?installer package version required}
+      SOURCE_SHA: ${SOURCE_SHA:?installer source commit required}
+      RELEASE_SOURCE_HASH: ${RELEASE_SOURCE_HASH:?installer release source required}
+      PACKAGE_MANIFEST_SHA256: ${PACKAGE_MANIFEST_SHA256:?installer package manifest required}
+      SCHEMA_VERSION: ${SCHEMA_VERSION:?installer package schema required}
+      JAVA_TOOL_OPTIONS: '-XX:MaxRAMPercentage=65 -XX:InitialRAMPercentage=20'
+      NQ_PROD_DB_URL: jdbc:postgresql://postgres:5432/nexus_quant
+      NQ_PROD_DB_USER: nexusquant
+      NQ_PROD_DB_PASSWORD: ${DB_PASSWORD}
+      NQ_SECURITY_SECRET: ${JWT_SECRET:?installer secret required}
+      NQ_ACCOUNT_CREDENTIALS_MASTER_KEY: ${CREDENTIALS_KEY:?installer secret required}
+      NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED: 'true'
+      NQ_PUBLIC_MARKETDATA_BASE_URL: https://www.okx.com
+      NQ_NO_OUTBOUND: 'false'
+      NQ_LIVE_ENABLED: 'false'
+      NQ_REAL_EXCHANGE_ENABLED: 'false'
+      NQ_REAL_PROVIDER_ENABLED: 'false'
+      NQ_REAL_CLIENT_ENABLED: 'false'
+      NQ_AI_ENABLED: 'false'
+      NQ_DH_RUNTIME_ENABLED: 'false'
+      NQ_OKX_RECOVERY_ENABLED: 'false'
+      NQ_OKX_WS_ENABLED: 'false'
+      NQ_BINANCE_WS_ENABLED: 'false'
+      NQ_CONTINUOUS_SIM_ENABLED: 'true'
+      SPRING_CONFIG_ADDITIONAL_LOCATION: file:/opt/nexusquant/runtime.yml
+    volumes:
+      - ./runtime.yml:/opt/nexusquant/runtime.yml:ro
+    ports:
+      - 127.0.0.1:${BACKEND_PORT:-18888}:8080
+    healthcheck:
+      test: [CMD, curl, -fsS, --max-time, '3', http://127.0.0.1:8080/actuator/health]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+    logging: *logging
+  frontend:
+    image: ${FRONTEND_IMAGE:?verified frontend image digest required}
+    mem_limit: ${FRONTEND_MEMORY:?runtime profile required}
+    cpus: ${FRONTEND_CPUS:?runtime profile required}
+    restart: unless-stopped
+    depends_on:
+      backend: {condition: service_healthy}
+    ports:
+      - 127.0.0.1:${FRONTEND_PORT:-18080}:8080
+    healthcheck:
+      test: [CMD, wget, -q, --spider, http://127.0.0.1:8080/]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logging

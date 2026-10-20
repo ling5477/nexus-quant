@@ -1,15 +1,25 @@
 package com.guidinglight.nexusquant.research.application.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.cfg.JsonNodeFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.guidinglight.nexusquant.research.application.ResearchConfigService;
+import com.guidinglight.nexusquant.research.application.backtest.command.BacktestConfigCreateRequest;
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;
 import com.guidinglight.nexusquant.research.domain.ResearchConfig;
 import com.guidinglight.nexusquant.research.domain.StrategyVersionSnapshotView;
 import com.guidinglight.nexusquant.research.domain.port.BacktestConfigRepository;
+import com.guidinglight.nexusquant.research.domain.port.ResearchFeeSourcePort;
 import com.guidinglight.nexusquant.research.domain.port.StrategyVersionSnapshotQueryPort;
-import com.guidinglight.nexusquant.research.application.ResearchConfigService;
-import com.guidinglight.nexusquant.research.application.backtest.command.BacktestConfigCreateRequest;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -17,11 +27,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import java.util.UUID;
 
 /**
  * BacktestConfigService 提供研究与回测契约的回测配置管理能力。
@@ -37,25 +44,43 @@ public class BacktestConfigService {
     private final StrategyVersionSnapshotQueryPort strategyVersionSnapshotQueryPort;
     private final ResearchConfigService researchConfigService;
     private final ObjectMapper objectMapper;
+    private final ObjectReader snapshotReader;
     private final Clock clock;
+    private ResearchFeeSourcePort feeSource = ResearchFeeSourcePort.disabled();
+
+    /**
+     * 独立构造默认拒绝私有来源；正式容器才注入认证和不可变观察的解析合同。
+     */
+    @Autowired
+    private void bindFeeSource(ObjectProvider<ResearchFeeSourcePort> provider) {
+        feeSource = provider.getIfAvailable(ResearchFeeSourcePort::disabled);
+    }
 
     @Autowired
     public BacktestConfigService(
             BacktestConfigRepository backtestConfigRepository,
             StrategyVersionSnapshotQueryPort strategyVersionSnapshotQueryPort,
             ResearchConfigService researchConfigService,
-            ObjectMapper objectMapper
-    ) {
-        this(backtestConfigRepository, strategyVersionSnapshotQueryPort, researchConfigService, objectMapper, Clock.systemUTC());
+            ObjectMapper objectMapper) {
+        this(
+                backtestConfigRepository,
+                strategyVersionSnapshotQueryPort,
+                researchConfigService,
+                objectMapper,
+                Clock.systemUTC());
     }
 
     public BacktestConfigService(
             BacktestConfigRepository backtestConfigRepository,
             ResearchConfigService researchConfigService,
             ObjectMapper objectMapper,
-            Clock clock
-    ) {
-        this(backtestConfigRepository, id -> Optional.empty(), researchConfigService, objectMapper, clock);
+            Clock clock) {
+        this(
+                backtestConfigRepository,
+                id -> Optional.empty(),
+                researchConfigService,
+                objectMapper,
+                clock);
     }
 
     public BacktestConfigService(
@@ -63,21 +88,24 @@ public class BacktestConfigService {
             StrategyVersionSnapshotQueryPort strategyVersionSnapshotQueryPort,
             ResearchConfigService researchConfigService,
             ObjectMapper objectMapper,
-            Clock clock
-    ) {
-        this.backtestConfigRepository = Objects.requireNonNull(
-                backtestConfigRepository,
-                "backtestConfigRepository must not be null"
-        );
-        this.strategyVersionSnapshotQueryPort = Objects.requireNonNull(
-                strategyVersionSnapshotQueryPort,
-                "strategyVersionSnapshotQueryPort must not be null"
-        );
-        this.researchConfigService = Objects.requireNonNull(
-                researchConfigService,
-                "researchConfigService must not be null"
-        );
+            Clock clock) {
+        this.backtestConfigRepository =
+                Objects.requireNonNull(
+                        backtestConfigRepository, "backtestConfigRepository must not be null");
+        this.strategyVersionSnapshotQueryPort =
+                Objects.requireNonNull(
+                        strategyVersionSnapshotQueryPort,
+                        "strategyVersionSnapshotQueryPort must not be null");
+        this.researchConfigService =
+                Objects.requireNonNull(
+                        researchConfigService, "researchConfigService must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        // 参数、执行和评估快照中的JSON数字须保留原精度；不修改共享解析器，也不重写历史快照。
+        this.snapshotReader =
+                objectMapper
+                        .reader()
+                        .with(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+                        .without(JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES);
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
@@ -88,40 +116,55 @@ public class BacktestConfigService {
      * 避免产生孤儿配置并破坏后续回测运行血缘。Batch 4-A 后，只有 ACTIVE research_config
      * 可派生新的 backtest_config；DISABLED/ARCHIVED 仍可按 ID 读取用于历史追溯，但不能产生新运行输入。
      */
+    @Transactional(isolation = Isolation.REPEATABLE_READ, timeout = 10)
     public BacktestConfig create(BacktestConfigCreateRequest request) {
         validateCreateRequest(request);
-        ResearchConfig researchConfig = researchConfigService.getByResearchConfigId(request.researchConfigId());
+        // 来源及所有者由服务端校验；两个配置快照必须保存同一份解析后的执行合同。
+        request =
+                new BacktestConfigCreateRequest(
+                        request.researchConfigId(),
+                        request.name(),
+                        request.description(),
+                        request.startTime(),
+                        request.endTime(),
+                        request.initialCapital(),
+                        feeSource.prepareConfiguration(request.executionSpec()),
+                        request.evaluationSpec());
+        ResearchConfig researchConfig =
+                researchConfigService.getByResearchConfigId(request.researchConfigId());
         ensureActiveResearchConfig(researchConfig);
         Instant now = Instant.now(clock);
-        BacktestConfig backtestConfig = new BacktestConfig(
-                "bcf-" + UUID.randomUUID(),
-                researchConfig.researchConfigId(),
-                requireText(request.name(), "name"),
-                normalizeNullableText(request.description()),
-                request.startTime(),
-                request.endTime(),
-                request.initialCapital().stripTrailingZeros(),
-                normalizeJson(request.executionSpec()),
-                normalizeJson(request.evaluationSpec()),
-                null,
-                "{}",
-                "{}",
-                buildConfigSnapshot(request),
-                null,
-                "{}",
-                buildConfigSnapshot(request),
-                now,
-                now
-        );
+        BacktestConfig backtestConfig =
+                new BacktestConfig(
+                        "bcf-" + UUID.randomUUID(),
+                        researchConfig.researchConfigId(),
+                        requireText(request.name(), "name"),
+                        normalizeNullableText(request.description()),
+                        request.startTime(),
+                        request.endTime(),
+                        request.initialCapital().stripTrailingZeros(),
+                        normalizeJson(request.executionSpec()),
+                        normalizeJson(request.evaluationSpec()),
+                        null,
+                        "{}",
+                        "{}",
+                        buildConfigSnapshot(request),
+                        null,
+                        "{}",
+                        buildConfigSnapshot(request),
+                        now,
+                        now);
         backtestConfigRepository.insert(backtestConfig);
         return backtestConfig;
     }
 
     public BacktestConfig getByBacktestConfigId(String backtestConfigId) {
-        return backtestConfigRepository.findByBacktestConfigId(requireText(backtestConfigId, "backtestConfigId"))
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "backtest config not found: " + backtestConfigId
-                ));
+        return backtestConfigRepository
+                .findByBacktestConfigId(requireText(backtestConfigId, "backtestConfigId"))
+                .orElseThrow(
+                        () ->
+                                new IllegalArgumentException(
+                                        "backtest config not found: " + backtestConfigId));
     }
 
     /**
@@ -153,11 +196,12 @@ public class BacktestConfigService {
      * 不覆盖首次归档时间、操作者或原因。
      *
      * @param backtestConfigId 回测配置 ID
-     * @param archivedBy 归档操作者标识，空值归一为 `system`
-     * @param archiveReason 归档原因，可空，不得包含密钥、token 等敏感信息
+     * @param archivedBy       归档操作者标识，空值归一为 `system`
+     * @param archiveReason    归档原因，可空，不得包含密钥、token 等敏感信息
      * @return 归档后的回测配置详情
      */
-    public BacktestConfig archive(String backtestConfigId, String archivedBy, String archiveReason) {
+    public BacktestConfig archive(
+            String backtestConfigId, String archivedBy, String archiveReason) {
         String normalizedId = requireText(backtestConfigId, "backtestConfigId");
         String normalizedActor = normalizeArchiveActor(archivedBy);
         String normalizedReason = normalizeArchiveReason(archiveReason);
@@ -166,12 +210,9 @@ public class BacktestConfigService {
             return current;
         }
         Instant now = Instant.now(clock);
-        boolean updated = backtestConfigRepository.archive(
-                normalizedId,
-                now,
-                normalizedActor,
-                normalizedReason
-        );
+        boolean updated =
+                backtestConfigRepository.archive(
+                        normalizedId, now, normalizedActor, normalizedReason);
         if (!updated) {
             BacktestConfig latest = getByBacktestConfigId(normalizedId);
             if (latest.isArchived()) {
@@ -188,22 +229,23 @@ public class BacktestConfigService {
      * 行情数据集需要把“配置选择的数据集”和“当时的数据集状态”同时固化；
      * 此方法只更新 backtest_config，不启动回测，也不改变 executionSpec，避免把 dataset 绑定扩展成回测算法变更。
      *
-     * @param backtestConfigId 回测配置 ID
-     * @param datasetId marketdata dataset ID
+     * @param backtestConfigId    回测配置 ID
+     * @param datasetId           marketdata dataset ID
      * @param datasetSnapshotJson 绑定时的数据集快照 JSON
      * @return 更新后的回测配置
      */
-    public BacktestConfig bindDataset(String backtestConfigId, String datasetId, String datasetSnapshotJson) {
+    public BacktestConfig bindDataset(
+            String backtestConfigId, String datasetId, String datasetSnapshotJson) {
         String normalizedConfigId = requireText(backtestConfigId, "backtestConfigId");
         getByBacktestConfigId(normalizedConfigId);
         String normalizedDatasetId = requireText(datasetId, "datasetId");
         String normalizedSnapshot = normalizeJson(datasetSnapshotJson);
-        boolean updated = backtestConfigRepository.bindDataset(
-                normalizedConfigId,
-                normalizedDatasetId,
-                normalizedSnapshot,
-                Instant.now(clock)
-        );
+        boolean updated =
+                backtestConfigRepository.bindDataset(
+                        normalizedConfigId,
+                        normalizedDatasetId,
+                        normalizedSnapshot,
+                        Instant.now(clock));
         if (!updated) {
             throw new IllegalArgumentException("backtest config not found: " + normalizedConfigId);
         }
@@ -216,7 +258,7 @@ public class BacktestConfigService {
      * 策略版本要求回测配置成为 backtest run的稳定输入边界；这里仅更新配置事实，
      * 不启动回测、不改策略算法、不改回测算法。run 创建时会复制这些快照，保证历史运行可复盘。
      *
-     * @param backtestConfigId 回测配置 ID
+     * @param backtestConfigId  回测配置 ID
      * @param strategyVersionId 策略版本 ID
      * @return 更新后的回测配置
      */
@@ -224,15 +266,21 @@ public class BacktestConfigService {
         String normalizedConfigId = requireText(backtestConfigId, "backtestConfigId");
         getByBacktestConfigId(normalizedConfigId);
         String normalizedVersionId = requireText(strategyVersionId, "strategyVersionId");
-        StrategyVersionSnapshotView snapshot = strategyVersionSnapshotQueryPort.findById(normalizedVersionId)
-                .orElseThrow(() -> new IllegalArgumentException("strategy version not found: " + normalizedVersionId));
-        boolean updated = backtestConfigRepository.bindStrategyVersion(
-                normalizedConfigId,
-                normalizedVersionId,
-                strategyVersionSnapshotJson(snapshot),
-                normalizeJson(snapshot.paramSnapshotJson()),
-                Instant.now(clock)
-        );
+        StrategyVersionSnapshotView snapshot =
+                strategyVersionSnapshotQueryPort
+                        .findById(normalizedVersionId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "strategy version not found: "
+                                                        + normalizedVersionId));
+        boolean updated =
+                backtestConfigRepository.bindStrategyVersion(
+                        normalizedConfigId,
+                        normalizedVersionId,
+                        strategyVersionSnapshotJson(snapshot),
+                        normalizeJson(snapshot.paramSnapshotJson()),
+                        Instant.now(clock));
         if (!updated) {
             throw new IllegalArgumentException("backtest config not found: " + normalizedConfigId);
         }
@@ -248,7 +296,8 @@ public class BacktestConfigService {
         if (!request.endTime().isAfter(request.startTime())) {
             throw new IllegalArgumentException("endTime must be after startTime");
         }
-        if (request.initialCapital() == null || request.initialCapital().compareTo(BigDecimal.ZERO) <= 0) {
+        if (request.initialCapital() == null
+                || request.initialCapital().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("initialCapital must be positive");
         }
         normalizeJson(request.executionSpec());
@@ -258,8 +307,7 @@ public class BacktestConfigService {
     private void ensureActiveResearchConfig(ResearchConfig researchConfig) {
         if (!researchConfig.isActive()) {
             throw new IllegalStateException(
-                    "research config is not active: " + researchConfig.researchConfigId()
-            );
+                    "research config is not active: " + researchConfig.researchConfigId());
         }
     }
 
@@ -268,9 +316,15 @@ public class BacktestConfigService {
             ObjectNode snapshot = objectMapper.createObjectNode();
             snapshot.put("startTime", request.startTime().toString());
             snapshot.put("endTime", request.endTime().toString());
-            snapshot.put("initialCapital", request.initialCapital().stripTrailingZeros().toPlainString());
-            snapshot.set("executionSpec", objectMapper.readTree(normalizeJson(request.executionSpec())));
-            snapshot.set("evaluationSpec", objectMapper.readTree(normalizeJson(request.evaluationSpec())));
+            snapshot.put(
+                    "initialCapital",
+                    request.initialCapital().stripTrailingZeros().toPlainString());
+            snapshot.set(
+                    "executionSpec",
+                    snapshotReader.readTree(normalizeJson(request.executionSpec())));
+            snapshot.set(
+                    "evaluationSpec",
+                    snapshotReader.readTree(normalizeJson(request.evaluationSpec())));
             return snapshot.toString();
         } catch (JsonProcessingException ex) {
             throw new IllegalStateException("failed to build backtest config snapshot", ex);
@@ -285,9 +339,15 @@ public class BacktestConfigService {
             node.put("version", snapshot.version());
             node.put("versionName", snapshot.versionName());
             node.put("status", snapshot.status());
-            node.set("paramSnapshotJson", objectMapper.readTree(normalizeJson(snapshot.paramSnapshotJson())));
-            node.set("configSnapshotJson", objectMapper.readTree(normalizeJson(snapshot.configSnapshotJson())));
-            node.set("sourceSnapshotJson", objectMapper.readTree(normalizeJson(snapshot.sourceSnapshotJson())));
+            node.set(
+                    "paramSnapshotJson",
+                    snapshotReader.readTree(normalizeJson(snapshot.paramSnapshotJson())));
+            node.set(
+                    "configSnapshotJson",
+                    snapshotReader.readTree(normalizeJson(snapshot.configSnapshotJson())));
+            node.set(
+                    "sourceSnapshotJson",
+                    snapshotReader.readTree(normalizeJson(snapshot.sourceSnapshotJson())));
             node.put("checksum", snapshot.checksum());
             return node.toString();
         } catch (JsonProcessingException ex) {
@@ -300,7 +360,7 @@ public class BacktestConfigService {
             return "{}";
         }
         try {
-            return objectMapper.readTree(value.trim()).toString();
+            return snapshotReader.readTree(value.trim()).toString();
         } catch (JsonProcessingException ex) {
             throw new IllegalArgumentException("invalid json payload", ex);
         }
@@ -317,7 +377,8 @@ public class BacktestConfigService {
     private String normalizeArchiveActor(String value) {
         String normalized = value == null || value.isBlank() ? "system" : value.trim();
         if (normalized.length() > 128) {
-            throw new IllegalArgumentException("archivedBy length must be less than or equal to 128");
+            throw new IllegalArgumentException(
+                    "archivedBy length must be less than or equal to 128");
         }
         return normalized;
     }
@@ -328,7 +389,8 @@ public class BacktestConfigService {
         }
         String normalized = value.trim();
         if (normalized.length() > 1024) {
-            throw new IllegalArgumentException("archiveReason length must be less than or equal to 1024");
+            throw new IllegalArgumentException(
+                    "archiveReason length must be less than or equal to 1024");
         }
         String lower = normalized.toLowerCase(Locale.ROOT);
         if (lower.contains("token")
@@ -341,7 +403,8 @@ public class BacktestConfigService {
                 || normalized.contains("私钥")
                 || normalized.contains("密钥")
                 || normalized.contains("助记词")) {
-            throw new IllegalArgumentException("archiveReason must not contain sensitive credential material");
+            throw new IllegalArgumentException(
+                    "archiveReason must not contain sensitive credential material");
         }
         return normalized;
     }
@@ -353,6 +416,3 @@ public class BacktestConfigService {
         return value.trim();
     }
 }
-
-
-

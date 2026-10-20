@@ -4,14 +4,15 @@ import com.guidinglight.nexusquant.research.domain.backtest.SimTrade;
 import com.guidinglight.nexusquant.research.domain.backtest.port.SimTradeRepository;
 import com.guidinglight.nexusquant.research.domain.eval.port.SimTradeQueryRepository;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.util.List;
-
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.List;
 
 /**
  * JdbcSimTradeRepository 是 sim_trades 表的 JDBC 实现。
@@ -33,8 +34,11 @@ public class JdbcSimTradeRepository implements SimTradeRepository, SimTradeQuery
                 """
                         INSERT INTO sim_trades (
                             sim_trade_id, sim_order_id, backtest_run_id, symbol, side, quantity, trade_price,
-                            fee_amount, slippage_amount, traded_at, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            fee_amount, slippage_amount, traded_at, created_at, updated_at,
+                            fee_currency, fee_native_amount, fee_payment_status, fee_valuation_scale,
+                            fee_conversion_price, fee_price_observed_at, fee_price_visible_at,
+                            fee_price_source_sha256, fee_price_source_json, execution_sequence
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                 simTrade.simTradeId(),
                 simTrade.simOrderId(),
@@ -47,8 +51,17 @@ public class JdbcSimTradeRepository implements SimTradeRepository, SimTradeQuery
                 simTrade.slippageAmount(),
                 Timestamp.from(simTrade.tradedAt()),
                 Timestamp.from(simTrade.createdAt()),
-                Timestamp.from(simTrade.updatedAt())
-        );
+                Timestamp.from(simTrade.updatedAt()),
+                simTrade.feeCurrency(),
+                simTrade.feeNativeAmount(),
+                simTrade.feePaymentStatus(),
+                simTrade.feeValuationScale(),
+                simTrade.feeConversionPrice(),
+                timestamp(simTrade.feePriceObservedAt()),
+                timestamp(simTrade.feePriceVisibleAt()),
+                simTrade.feePriceSourceSha256(),
+                simTrade.feePriceSourceJson(),
+                simTrade.executionSequence());
     }
 
     @Override
@@ -56,14 +69,16 @@ public class JdbcSimTradeRepository implements SimTradeRepository, SimTradeQuery
         return jdbcTemplate.query(
                 """
                         SELECT sim_trade_id, sim_order_id, backtest_run_id, symbol, side, quantity, trade_price,
-                               fee_amount, slippage_amount, traded_at, created_at, updated_at
+                               fee_amount, slippage_amount, traded_at, created_at, updated_at,
+                               fee_currency, fee_native_amount, fee_payment_status, fee_valuation_scale,
+                               fee_conversion_price, fee_price_observed_at, fee_price_visible_at,
+                               fee_price_source_sha256, fee_price_source_json, execution_sequence
                         FROM sim_trades
                         WHERE backtest_run_id = ?
-                        ORDER BY traded_at ASC, sim_trade_id ASC
+                        ORDER BY traded_at ASC, execution_sequence ASC NULLS LAST
                         """,
                 ROW_MAPPER,
-                backtestRunId
-        );
+                backtestRunId);
     }
 
     private static SimTrade mapRow(ResultSet resultSet, int rowNum) throws SQLException {
@@ -79,9 +94,24 @@ public class JdbcSimTradeRepository implements SimTradeRepository, SimTradeQuery
                 resultSet.getBigDecimal("slippage_amount"),
                 resultSet.getTimestamp("traded_at").toInstant(),
                 resultSet.getTimestamp("created_at").toInstant(),
-                resultSet.getTimestamp("updated_at").toInstant()
-        );
+                resultSet.getTimestamp("updated_at").toInstant(),
+                resultSet.getString("fee_currency"),
+                resultSet.getBigDecimal("fee_native_amount"),
+                resultSet.getString("fee_payment_status"),
+                resultSet.getObject("fee_valuation_scale", Integer.class),
+                resultSet.getBigDecimal("fee_conversion_price"),
+                instant(resultSet.getTimestamp("fee_price_observed_at")),
+                instant(resultSet.getTimestamp("fee_price_visible_at")),
+                resultSet.getString("fee_price_source_sha256"),
+                resultSet.getString("fee_price_source_json"),
+                resultSet.getObject("execution_sequence", Long.class));
+    }
+
+    private static Timestamp timestamp(Instant value) {
+        return value == null ? null : Timestamp.from(value);
+    }
+
+    private static Instant instant(Timestamp value) {
+        return value == null ? null : value.toInstant();
     }
 }
-
-

@@ -7,16 +7,84 @@
 }
 
 .nq-dashboard__heading,
+.nq-dashboard__account,
+.nq-dashboard__sim-heading,
 .nq-dashboard__metrics,
-.nq-dashboard__workspaces { grid-column: 1 / -1; }
+.nq-dashboard__workspaces {
+    grid-column: 1 / -1;
+}
 
-.nq-dashboard__activity { grid-column: 1; grid-row: 3; min-width: 0; }
-.nq-dashboard__runtime { grid-column: 2; grid-row: 3; min-width: 0; }
-.nq-dashboard__runtime .nq-status-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.nq-dashboard__activity .ant-space { flex-wrap: wrap; }
-.nq-dashboard__workspaces .ant-card-hoverable { height: 100%; }
+.nq-dashboard__activity {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+.nq-dashboard__runtime {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+.nq-dashboard__runtime .nq-status-strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.nq-dashboard__activity .ant-space {
+    flex-wrap: wrap;
+}
+.nq-dashboard__workspaces .ant-card-hoverable {
+    height: 100%;
+}
+.nq-dashboard__account {
+    min-width: 0;
+}
+.nq-dashboard__sim-heading {
+    margin: 4px 0 -4px !important;
+}
+.nq-account-range {
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.nq-account-range .ant-form-item-label {
+    white-space: nowrap;
+}
+.nq-account-range .ant-picker {
+    width: 214px;
+}
+.nq-account-coverage {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+.nq-account-metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.nq-account-metrics .nq-metric-card__value {
+    font-size: clamp(16px, 1.35vw, 22px);
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+@media (max-width: 800px) {
+    .nq-dashboard__runtime .nq-status-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .nq-account-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .nq-account-range {
+        display: flex;
+        flex-direction: column;
+    }
+    .nq-account-range .ant-form-item {
+        margin-inline-end: 0;
+    }
+}
 
 @media (max-width: 1199px) {
-    .nq-dashboard { grid-template-columns: minmax(0, 1fr); }
-    .nq-dashboard__runtime, .nq-dashboard__activity { grid-column: 1; grid-row: auto; }
+    .nq-dashboard {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .nq-dashboard__runtime,
+    .nq-dashboard__activity {
+        grid-column: 1;
+        grid-row: auto;
+    }
 }

@@ -12,10 +12,14 @@
 
     <artifactId>nq-auth</artifactId>
     <name>nq-auth</name>
-    <description>Gate A skeleton module: nq-auth</description>
+    <description>NexusQuant module: nq-auth</description>
     <packaging>jar</packaging>
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.guidinglight.nexusquant</groupId>
             <artifactId>nq-common</artifactId>

@@ -5,5 +5,5 @@ package com.guidinglight.nexusquant.livecontrol.domain;
  */
 public enum LiveSessionAuthorityType {
     STRATEGY,
-    OPERATOR_PILOT
+    OPERATOR_CONTROLLED_EXECUTION
 }

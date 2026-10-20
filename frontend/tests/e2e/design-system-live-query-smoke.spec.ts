@@ -2,11 +2,11 @@ import {expect, test} from 'playwright/test';
 
 test.describe('design system live query smoke (B0.3)', () => {
     test('useLiveQuery polling / 手动刷新 / disabled / error 状态归一化', async ({page}) => {
-        // Why: /dev/design-system 是公开自检路由,不依赖登录/后端;
+        // Why: 独立组件测试入口不属于正式路由,不依赖登录/后端;
         // 模拟源为本地 fake(无 WebSocket/SSE/真实后端),smoke 只验证 useLiveQuery 状态归一化。
         // 多次状态切换累计耗时较长,放宽单测超时。
         test.setTimeout(60_000);
-        await page.goto('/dev/design-system');
+        await page.goto('/tests/e2e/fixtures/design-system.html');
 
         const status = page.getByLabel('live status');
         const freshness = page.getByTitle(/^模拟行情源:/);

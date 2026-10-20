@@ -2,41 +2,6 @@
   "schemaVersion": 1,
   "exceptions": [
     {
-      "path": "README.md",
-      "token": "GateAUDIT",
-      "category": "HISTORICAL_REFERENCE",
-      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
-      "lineSha256": "820d1399bae3e9d797ec7f35da5b541296b9f49cb898067682e5fba37bb3c908"
-    },
-    {
-      "path": "README.md",
-      "token": "GateAUDIT",
-      "category": "HISTORICAL_REFERENCE",
-      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
-      "lineSha256": "f0f4c0079e21c7a027baac3ea31c117c85b1ec9323c14e439f1a27eff2599df8"
-    },
-    {
-      "path": "README.md",
-      "token": "GateY",
-      "category": "HISTORICAL_REFERENCE",
-      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
-      "lineSha256": "32a64222c38c3afc274261856beacd1626c6732762b2b83c7c40bb7aebd3b689"
-    },
-    {
-      "path": "README.md",
-      "token": "GateY",
-      "category": "HISTORICAL_REFERENCE",
-      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
-      "lineSha256": "820d1399bae3e9d797ec7f35da5b541296b9f49cb898067682e5fba37bb3c908"
-    },
-    {
-      "path": "README.md",
-      "token": "GateY",
-      "category": "HISTORICAL_REFERENCE",
-      "reason": "This current entry cites frozen GateAUDIT or GateY acceptance and historical qualification identity while deferring current authority to STATUS.",
-      "lineSha256": "bb665e213caa7749bf6a19d748b8a5c8802f8ada14e88517aec303659bcbf038"
-    },
-    {
       "path": "backend/nq-contracts/src/main/java/com/guidinglight/nexusquant/contracts/model/LedgerRefType.java",
       "token": "FREEZE",
       "category": "BUSINESS_DOMAIN_TERM",
@@ -84,13 +49,6 @@
       "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
       "reason": "The materialization writer persists this policy version; existing readers and tests consume its exact identity.",
       "lineSha256": "629935dd8eefe23bab103363f95aa38d2276d89db3d542fa332896275aa57cdd"
-    },
-    {
-      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/jdbc/JdbcExecutionIntentRepository.java",
-      "token": "gate_y43",
-      "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
-      "reason": "The SQL function name is defined in immutable Flyway V43 and asserted by migration contract tests.",
-      "lineSha256": "017a1359879461739479aaf723efec0bb861f9ac272385312c22bf589c091f27"
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/infra/MinimalLivePilotControlService.java",
@@ -175,6 +133,27 @@
       "category": "HISTORICAL_REFERENCE",
       "reason": "This source-adjacent README records the user-approved brand image transformation and preserved original asset.",
       "lineSha256": "c8bc1339638c84c5d6ea7e386a16fedc324efb6d73b4b68fa5c2ee1a16ab3c94"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/application/service/AccountFeeModelService.java",
+      "token": "FREEZE",
+      "category": "BUSINESS_DOMAIN_TERM",
+      "reason": "FEE_MODEL_FREEZE_TIME_INVALID is the existing fee observation freshness error code; FREEZE identifies a business snapshot time, not a development stage.",
+      "lineSha256": "d63d268eb232a50531b60da2fec3e2b3db709fb203eda5aee6b061cb7ec8d637"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/fee/FrozenDirectionalFeeModel.java",
+      "token": "B1",
+      "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
+      "reason": "B1 is the existing canonical JSON boolean-true encoding used by persisted directional fee snapshot digests; changing it would change stable business identity.",
+      "lineSha256": "2d69743072286f84f10d9416a04577a0510bb46f041c2931804df583694522ba"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/account/domain/fee/FrozenDirectionalFeeModel.java",
+      "token": "B0",
+      "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
+      "reason": "B0 is the existing canonical JSON boolean-false encoding used by persisted directional fee snapshot digests; changing it would change stable business identity.",
+      "lineSha256": "2d69743072286f84f10d9416a04577a0510bb46f041c2931804df583694522ba"
     }
   ],
   "historyRegions": [
@@ -200,7 +179,7 @@
       "regionIndex": 3,
       "category": "HISTORICAL_REFERENCE",
       "reason": "Accepted API implementation records and candidate notes retain historical identifiers; exact region digest prevents silent new exclusions.",
-      "sha256": "ce5fb76835fd8bdcf01fc347b9d2b353b11e014a3862ccb3006154dfaab66aeb"
+      "sha256": "456f1a33cbdda4a5437db4163fc17452f63f88bf4fd4e30a66be2281745537b0"
     },
     {
       "path": "docs/current/DB_SCHEMA.md",

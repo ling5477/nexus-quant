@@ -1,19 +1,39 @@
 package com.guidinglight.nexusquant.research.application.backtest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.cfg.JsonNodeFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionContext;
-import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionRequest;
-import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionResult;
+import com.guidinglight.nexusquant.account.domain.fee.SpotCommissionTerms.LiquidityRole;
+import com.guidinglight.nexusquant.account.domain.fee.SpotCommissionTerms.Side;
 import com.guidinglight.nexusquant.marketdata.application.model.FixtureMarketdataDataset;
+import com.guidinglight.nexusquant.marketdata.application.service.DiscountAssetPriceService;
 import com.guidinglight.nexusquant.marketdata.application.service.FixtureMarketdataRegistry;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
+import com.guidinglight.nexusquant.marketdata.domain.DiscountAssetPriceSnapshot;
+import com.guidinglight.nexusquant.marketdata.domain.DiscountAssetPriceSnapshot.Point;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalDatasetSpec;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
+import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
+import com.guidinglight.nexusquant.research.application.BacktestRunService;
+import com.guidinglight.nexusquant.research.application.ResearchConfigService;
+import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
+import com.guidinglight.nexusquant.research.domain.BacktestConfig;
+import com.guidinglight.nexusquant.research.domain.BacktestRun;
+import com.guidinglight.nexusquant.research.domain.BacktestRunStatus;
+import com.guidinglight.nexusquant.research.domain.ResearchConfig;
+import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionContext;
+import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionRequest;
+import com.guidinglight.nexusquant.research.domain.backtest.BacktestExecutionResult;
+import com.guidinglight.nexusquant.research.domain.backtest.BacktestSignalPolicy;
+import com.guidinglight.nexusquant.research.domain.backtest.BuyAndHoldCalculator;
+import com.guidinglight.nexusquant.research.domain.backtest.ExecutionPricingPolicy;
+import com.guidinglight.nexusquant.research.domain.backtest.FeeModel;
+import com.guidinglight.nexusquant.research.domain.backtest.ResearchRunFacts;
 import com.guidinglight.nexusquant.research.domain.backtest.SignalIntent;
 import com.guidinglight.nexusquant.research.domain.backtest.SignalIntentType;
 import com.guidinglight.nexusquant.research.domain.backtest.SimOrder;
@@ -21,25 +41,21 @@ import com.guidinglight.nexusquant.research.domain.backtest.SimOrderStatus;
 import com.guidinglight.nexusquant.research.domain.backtest.SimPnlSnapshot;
 import com.guidinglight.nexusquant.research.domain.backtest.SimPosition;
 import com.guidinglight.nexusquant.research.domain.backtest.SimTrade;
-import com.guidinglight.nexusquant.research.domain.backtest.BacktestSignalPolicy;
-import com.guidinglight.nexusquant.research.domain.backtest.ExecutionPricingPolicy;
-import com.guidinglight.nexusquant.research.domain.backtest.FeeModel;
 import com.guidinglight.nexusquant.research.domain.backtest.SlippageModel;
-import com.guidinglight.nexusquant.research.domain.backtest.ResearchRunFacts;
-import com.guidinglight.nexusquant.research.domain.backtest.BuyAndHoldCalculator;
-import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
-import com.guidinglight.nexusquant.research.domain.BacktestConfig;
-import com.guidinglight.nexusquant.research.domain.BacktestRun;
-import com.guidinglight.nexusquant.research.domain.BacktestRunStatus;
-import com.guidinglight.nexusquant.research.domain.ResearchConfig;
-import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
-import com.guidinglight.nexusquant.research.application.BacktestRunService;
-import com.guidinglight.nexusquant.research.application.ResearchConfigService;
-import com.guidinglight.nexusquant.strategy.domain.SpotBarIdentity;
+import com.guidinglight.nexusquant.research.domain.port.ResearchFeeSourcePort;
 import com.guidinglight.nexusquant.strategy.domain.PublicReplayAssumptionIdentity;
 import com.guidinglight.nexusquant.strategy.domain.PublicReplayRuleIdentity;
+import com.guidinglight.nexusquant.strategy.domain.SpotBarIdentity;
+import com.guidinglight.nexusquant.strategy.domain.SpotFeeExecutionSpec;
+import com.guidinglight.nexusquant.strategy.domain.SpotFeeModel;
+import com.guidinglight.nexusquant.strategy.domain.SpotFeeModel.Charge;
+import com.guidinglight.nexusquant.strategy.domain.SpotFeeModel.Policy;
 import com.guidinglight.nexusquant.strategy.domain.SpotSmaTargetStrategy;
 import com.guidinglight.nexusquant.strategy.domain.SpotTargetSizer;
+
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -51,9 +67,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 /**
  * BacktestExecutionService 提供研究与回测契约的模拟执行事实链主链。
@@ -76,7 +89,22 @@ public class BacktestExecutionService {
     private final FeeModel feeModel;
     private final SlippageModel slippageModel;
     private final ObjectMapper objectMapper;
+    private final ObjectReader snapshotReader;
     private final Clock clock;
+    private ResearchFeeSourcePort feeSource = ResearchFeeSourcePort.disabled();
+    private DiscountAssetPriceService discountPriceService;
+
+    /** 独立构造默认拒绝私有来源；正式容器才注入认证和不可变观察的解析合同。 */
+    @Autowired
+    private void bindFeeSource(ObjectProvider<ResearchFeeSourcePort> provider) {
+        feeSource = provider.getIfAvailable(ResearchFeeSourcePort::disabled);
+    }
+
+    /** 无行情来源装配时优惠路径明确拒绝，旧标量及收到资产路径继续独立运行。 */
+    @Autowired
+    private void bindDiscountPriceSource(ObjectProvider<DiscountAssetPriceService> provider) {
+        discountPriceService = provider.getIfAvailable();
+    }
 
     /**
      * 显式指定运行时构造器，避免测试注入 Clock 的辅助构造器干扰 Spring 自动装配。
@@ -96,8 +124,7 @@ public class BacktestExecutionService {
             ExecutionPricingPolicy executionPricingPolicy,
             FeeModel feeModel,
             SlippageModel slippageModel,
-            ObjectMapper objectMapper
-    ) {
+            ObjectMapper objectMapper) {
         this(
                 historicalMarketDataPort,
                 fixtureMarketdataRegistry,
@@ -110,8 +137,7 @@ public class BacktestExecutionService {
                 feeModel,
                 slippageModel,
                 objectMapper,
-                Clock.systemUTC()
-        );
+                Clock.systemUTC());
     }
 
     BacktestExecutionService(
@@ -126,40 +152,41 @@ public class BacktestExecutionService {
             FeeModel feeModel,
             SlippageModel slippageModel,
             ObjectMapper objectMapper,
-            Clock clock
-    ) {
-        this.historicalMarketDataPort = Objects.requireNonNull(
-                historicalMarketDataPort,
-                "historicalMarketDataPort must not be null"
-        );
-        this.fixtureMarketdataRegistry = Objects.requireNonNull(
-                fixtureMarketdataRegistry,
-                "fixtureMarketdataRegistry must not be null"
-        );
-        this.backtestRunService = Objects.requireNonNull(backtestRunService, "backtestRunService must not be null");
-        this.backtestConfigService = Objects.requireNonNull(
-                backtestConfigService,
-                "backtestConfigService must not be null"
-        );
-        this.researchConfigService = Objects.requireNonNull(
-                researchConfigService,
-                "researchConfigService must not be null"
-        );
-        this.backtestExecutionPersistenceService = Objects.requireNonNull(
-                backtestExecutionPersistenceService,
-                "backtestExecutionPersistenceService must not be null"
-        );
-        this.backtestSignalPolicy = Objects.requireNonNull(
-                backtestSignalPolicy,
-                "backtestSignalPolicy must not be null"
-        );
-        this.executionPricingPolicy = Objects.requireNonNull(
-                executionPricingPolicy,
-                "executionPricingPolicy must not be null"
-        );
+            Clock clock) {
+        this.historicalMarketDataPort =
+                Objects.requireNonNull(
+                        historicalMarketDataPort, "historicalMarketDataPort must not be null");
+        this.fixtureMarketdataRegistry =
+                Objects.requireNonNull(
+                        fixtureMarketdataRegistry, "fixtureMarketdataRegistry must not be null");
+        this.backtestRunService =
+                Objects.requireNonNull(backtestRunService, "backtestRunService must not be null");
+        this.backtestConfigService =
+                Objects.requireNonNull(
+                        backtestConfigService, "backtestConfigService must not be null");
+        this.researchConfigService =
+                Objects.requireNonNull(
+                        researchConfigService, "researchConfigService must not be null");
+        this.backtestExecutionPersistenceService =
+                Objects.requireNonNull(
+                        backtestExecutionPersistenceService,
+                        "backtestExecutionPersistenceService must not be null");
+        this.backtestSignalPolicy =
+                Objects.requireNonNull(
+                        backtestSignalPolicy, "backtestSignalPolicy must not be null");
+        this.executionPricingPolicy =
+                Objects.requireNonNull(
+                        executionPricingPolicy, "executionPricingPolicy must not be null");
         this.feeModel = Objects.requireNonNull(feeModel, "feeModel must not be null");
-        this.slippageModel = Objects.requireNonNull(slippageModel, "slippageModel must not be null");
+        this.slippageModel =
+                Objects.requireNonNull(slippageModel, "slippageModel must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        // 执行事实必须引用原冻结数值，不能经double舍入后生成另一份假设身份；共享解析器保持原配置。
+        this.snapshotReader =
+                objectMapper
+                        .reader()
+                        .with(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+                        .without(JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES);
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
@@ -173,12 +200,16 @@ public class BacktestExecutionService {
     public BacktestExecutionResult startRun(String backtestRunId) {
         BacktestRun currentRun = backtestRunService.getByBacktestRunId(backtestRunId);
         if (currentRun.status() != BacktestRunStatus.CREATED) {
-            throw new IllegalStateException("backtest run is not in CREATED status: " + currentRun.status());
+            throw new IllegalStateException(
+                    "backtest run is not in CREATED status: " + currentRun.status());
         }
-        BacktestConfig backtestConfig = backtestConfigService.getByBacktestConfigId(currentRun.backtestConfigId());
-        ResearchConfig researchConfig = researchConfigService.getByResearchConfigId(currentRun.researchConfigId());
+        BacktestConfig backtestConfig =
+                backtestConfigService.getByBacktestConfigId(currentRun.backtestConfigId());
+        ResearchConfig researchConfig =
+                researchConfigService.getByResearchConfigId(currentRun.researchConfigId());
         Instant executionStartedAt = Instant.now(clock);
-        backtestExecutionPersistenceService.markPreparing(currentRun.backtestRunId(), executionStartedAt);
+        backtestExecutionPersistenceService.markPreparing(
+                currentRun.backtestRunId(), executionStartedAt);
 
         BacktestExecutionRequest executionRequest = null;
         BacktestExecutionContext executionContext = null;
@@ -191,70 +222,116 @@ public class BacktestExecutionService {
         List<String> decisionReasons = new ArrayList<>();
         try {
             executionRequest = buildExecutionRequest(currentRun, backtestConfig, researchConfig);
+            // 在任何模拟订单和账务事实前复核完整来源；可重算摘要不能代替持久观察的原始身份。
+            feeSource.validateFrozenExecution(
+                    executionRequest.executionSpecJson(), currentRun.datasetSnapshotJson());
             if ("public-capture".equals(executionRequest.datasetSpec().provider())) {
-                validatePublicCaptureAssumptions(currentRun.datasetSnapshotJson(),
-                        executionRequest.executionSpecJson());
+                validatePublicCaptureAssumptions(
+                        currentRun.datasetSnapshotJson(), executionRequest.executionSpecJson());
             }
-            executionContext = new BacktestExecutionContext(
-                    currentRun.backtestRunId(),
-                    executionRequest.datasetSpec().symbol(),
-                    executionRequest.initialCapital()
-            );
-            boolean frozenVersion = currentRun.strategyVersionId() != null
-                    && !currentRun.strategyVersionId().isBlank();
-            if ("public-capture".equals(executionRequest.datasetSpec().provider()) && !frozenVersion) {
+            executionContext =
+                    new BacktestExecutionContext(
+                            currentRun.backtestRunId(),
+                            executionRequest.datasetSpec().symbol(),
+                            executionRequest.initialCapital());
+            boolean frozenVersion =
+                    currentRun.strategyVersionId() != null
+                            && !currentRun.strategyVersionId().isBlank();
+            if ("public-capture".equals(executionRequest.datasetSpec().provider())
+                    && !frozenVersion) {
                 throw new IllegalStateException("PUBLIC_CAPTURE_REQUIRES_FROZEN_STRATEGY_VERSION");
             }
-            HistoricalMarketDataQuery query = frozenVersion
-                    ? new HistoricalMarketDataQuery(executionRequest.datasetSpec(),
-                            executionRequest.datasetSpec().exchangeCode(), "SPOT",
-                            executionRequest.datasetSpec().symbol(), executionRequest.datasetSpec().interval(),
-                            executionRequest.startTime(), executionRequest.endTime(), 0, 500)
-                    : new HistoricalMarketDataQuery(executionRequest.datasetSpec(),
-                            executionRequest.datasetSpec().exchangeCode(), executionRequest.datasetSpec().symbol(),
-                            executionRequest.datasetSpec().interval(), executionRequest.startTime(),
-                            executionRequest.endTime());
+            HistoricalMarketDataQuery query =
+                    frozenVersion
+                            ? new HistoricalMarketDataQuery(
+                                    executionRequest.datasetSpec(),
+                                    executionRequest.datasetSpec().exchangeCode(),
+                                    "SPOT",
+                                    executionRequest.datasetSpec().symbol(),
+                                    executionRequest.datasetSpec().interval(),
+                                    executionRequest.startTime(),
+                                    executionRequest.endTime(),
+                                    0,
+                                    500)
+                            : new HistoricalMarketDataQuery(
+                                    executionRequest.datasetSpec(),
+                                    executionRequest.datasetSpec().exchangeCode(),
+                                    executionRequest.datasetSpec().symbol(),
+                                    executionRequest.datasetSpec().interval(),
+                                    executionRequest.startTime(),
+                                    executionRequest.endTime());
             bars = historicalMarketDataPort.loadBars(query);
             if (bars.isEmpty()) {
                 throw new IllegalStateException("no historical bars found for requested window");
             }
-            if (frozenVersion && "db".equalsIgnoreCase(executionRequest.datasetSpec().provider())
-                    && !historicalMarketDataPort.loadBars(new HistoricalMarketDataQuery(
-                            executionRequest.datasetSpec(), executionRequest.datasetSpec().exchangeCode(), "SPOT",
-                            executionRequest.datasetSpec().symbol(), executionRequest.datasetSpec().interval(),
-                            executionRequest.startTime(), executionRequest.endTime(), 1, 500)).isEmpty()) {
+            if (frozenVersion
+                    && "db".equalsIgnoreCase(executionRequest.datasetSpec().provider())
+                    && !historicalMarketDataPort
+                            .loadBars(
+                                    new HistoricalMarketDataQuery(
+                                            executionRequest.datasetSpec(),
+                                            executionRequest.datasetSpec().exchangeCode(),
+                                            "SPOT",
+                                            executionRequest.datasetSpec().symbol(),
+                                            executionRequest.datasetSpec().interval(),
+                                            executionRequest.startTime(),
+                                            executionRequest.endTime(),
+                                            1,
+                                            500))
+                            .isEmpty()) {
                 throw new IllegalStateException("frozen backtest bar limit exceeded");
             }
+            initializeDiscountCapital(
+                    executionRequest, executionContext, bars.getFirst().openTime());
 
             if (frozenVersion) {
                 inputIdentity = SpotBarIdentity.capture(bars, objectMapper);
                 if ("public-capture".equals(executionRequest.datasetSpec().provider())
-                        && !inputIdentity.sha256().equals(readJson(currentRun.datasetSnapshotJson())
-                                .path("capture").path("consumedSha256").asText())) {
+                        && !inputIdentity
+                                .sha256()
+                                .equals(
+                                        readJson(currentRun.datasetSnapshotJson())
+                                                .path("capture")
+                                                .path("consumedSha256")
+                                                .asText())) {
                     throw new IllegalStateException("PUBLIC_CAPTURE_CONSUMED_IDENTITY_MISMATCH");
                 }
-                simulateFrozenFacts(currentRun, executionRequest, executionContext, bars,
-                        simulatedOrders, simulatedTrades, simulatedPositions, simulatedPnlSnapshots,
+                simulateFrozenFacts(
+                        currentRun,
+                        executionRequest,
+                        executionContext,
+                        bars,
+                        simulatedOrders,
+                        simulatedTrades,
+                        simulatedPositions,
+                        simulatedPnlSnapshots,
                         decisionReasons);
             } else {
-                simulateFacts(currentRun.backtestRunId(), executionRequest, executionContext, bars,
-                        simulatedOrders, simulatedTrades, simulatedPositions, simulatedPnlSnapshots);
+                simulateFacts(
+                        currentRun.backtestRunId(),
+                        executionRequest,
+                        executionContext,
+                        bars,
+                        simulatedOrders,
+                        simulatedTrades,
+                        simulatedPositions,
+                        simulatedPnlSnapshots);
             }
 
             Instant executionFinishedAt = Instant.now(clock);
-            String summaryJson = buildSuccessSummary(
-                    executionRequest,
-                    executionContext,
-                    bars,
-                    executionStartedAt,
-                    executionFinishedAt,
-                    simulatedOrders,
-                    simulatedTrades,
-                    simulatedPnlSnapshots,
-                    currentRun,
-                    inputIdentity,
-                    decisionReasons
-            );
+            String summaryJson =
+                    buildSuccessSummary(
+                            executionRequest,
+                            executionContext,
+                            bars,
+                            executionStartedAt,
+                            executionFinishedAt,
+                            simulatedOrders,
+                            simulatedTrades,
+                            simulatedPnlSnapshots,
+                            currentRun,
+                            inputIdentity,
+                            decisionReasons);
             backtestExecutionPersistenceService.persistSuccess(
                     currentRun.backtestRunId(),
                     executionStartedAt,
@@ -263,8 +340,7 @@ public class BacktestExecutionService {
                     simulatedTrades,
                     new ArrayList<>(simulatedPositions.values()),
                     simulatedPnlSnapshots,
-                    summaryJson
-            );
+                    summaryJson);
             return new BacktestExecutionResult(
                     currentRun.backtestRunId(),
                     BacktestRunStatus.SUCCEEDED,
@@ -273,28 +349,26 @@ public class BacktestExecutionService {
                     executionFinishedAt,
                     bars.getFirst().openTime(),
                     bars.getLast().closeTime(),
-                    summaryJson
-            );
+                    summaryJson);
         } catch (RuntimeException ex) {
             Instant executionFinishedAt = Instant.now(clock);
-            String summaryJson = buildFailureSummary(
-                    executionRequest,
-                    researchConfig,
-                    executionStartedAt,
-                    executionFinishedAt,
-                    ex,
-                    simulatedOrders,
-                    simulatedTrades,
-                    simulatedPnlSnapshots
-            );
+            String summaryJson =
+                    buildFailureSummary(
+                            executionRequest,
+                            researchConfig,
+                            executionStartedAt,
+                            executionFinishedAt,
+                            ex,
+                            simulatedOrders,
+                            simulatedTrades,
+                            simulatedPnlSnapshots);
             backtestExecutionPersistenceService.markFailed(
                     currentRun.backtestRunId(),
                     executionStartedAt,
                     executionFinishedAt,
                     "BACKTEST_EXECUTION_FAILED",
                     safeMessage(ex),
-                    summaryJson
-            );
+                    summaryJson);
             throw new IllegalStateException("backtest execution failed: " + safeMessage(ex), ex);
         }
     }
@@ -307,91 +381,148 @@ public class BacktestExecutionService {
             List<SimOrder> simulatedOrders,
             List<SimTrade> simulatedTrades,
             Map<String, SimPosition> simulatedPositions,
-            List<SimPnlSnapshot> simulatedPnlSnapshots
-    ) {
-        BigDecimal feeRate = executionSpecDecimal(executionRequest.executionSpecJson(), "feeRate", BigDecimal.ZERO);
-        BigDecimal slippageBps = executionSpecDecimal(
-                executionRequest.executionSpecJson(),
-                "slippageBps",
-                BigDecimal.ZERO
-        );
-        BigDecimal defaultOrderQuantity = executionSpecDecimal(
-                executionRequest.executionSpecJson(),
-                "orderQuantity",
-                BigDecimal.ONE
-        );
+            List<SimPnlSnapshot> simulatedPnlSnapshots) {
+        SpotFeeModel directionalFees =
+                SpotFeeExecutionSpec.directional(
+                        readJson(executionRequest.executionSpecJson()), objectMapper);
+        BigDecimal feeRate =
+                directionalFees == null
+                        ? executionSpecDecimal(
+                                executionRequest.executionSpecJson(), "feeRate", BigDecimal.ZERO)
+                        : null;
+        BigDecimal slippageBps =
+                executionSpecDecimal(
+                        executionRequest.executionSpecJson(), "slippageBps", BigDecimal.ZERO);
+        BigDecimal defaultOrderQuantity =
+                executionSpecDecimal(
+                        executionRequest.executionSpecJson(), "orderQuantity", BigDecimal.ONE);
 
         for (int barIndex = 0; barIndex < bars.size(); barIndex++) {
             HistoricalBar historicalBar = bars.get(barIndex);
-            SignalIntent signalIntent = backtestSignalPolicy.evaluate(
-                    executionRequest.sourceStrategyType(),
-                    historicalBar,
-                    barIndex,
-                    bars.size(),
-                    executionContext
-            );
+            SignalIntent signalIntent =
+                    backtestSignalPolicy.evaluate(
+                            executionRequest.sourceStrategyType(),
+                            historicalBar,
+                            barIndex,
+                            bars.size(),
+                            executionContext);
 
             if (signalIntent.signalIntentType() == SignalIntentType.HOLD) {
-                simulatedPnlSnapshots.add(createPnlSnapshot(
-                        executionContext,
-                        historicalBar.closeTime(),
-                        historicalBar.closePrice()
-                ));
+                simulatedPnlSnapshots.add(
+                        createPnlSnapshot(
+                                executionContext,
+                                historicalBar.closeTime(),
+                                historicalBar.closePrice(),
+                                simulatedPnlSnapshots.size() + 1L));
                 continue;
             }
 
-            BigDecimal requestedQuantity = signalIntent.quantity().compareTo(BigDecimal.ZERO) > 0
-                    ? normalize(signalIntent.quantity())
-                    : normalize(defaultOrderQuantity);
-            BigDecimal barClosePrice = executionPricingPolicy.executionPrice(historicalBar.closePrice());
+            BigDecimal requestedQuantity =
+                    signalIntent.quantity().compareTo(BigDecimal.ZERO) > 0
+                            ? normalize(signalIntent.quantity())
+                            : normalize(defaultOrderQuantity);
+            BigDecimal barClosePrice =
+                    executionPricingPolicy.executionPrice(historicalBar.closePrice());
             String side = toOrderSide(signalIntent.signalIntentType());
             if (signalIntent.signalIntentType() == SignalIntentType.BUY) {
-                validateBuyQuantity(executionContext, barClosePrice, requestedQuantity, feeRate, slippageBps);
+                if (directionalFees == null)
+                    validateBuyQuantity(
+                            executionContext,
+                            barClosePrice,
+                            requestedQuantity,
+                            feeRate,
+                            slippageBps);
+                else if (executionContext
+                                .cashBalance()
+                                .compareTo(
+                                        directionalFees
+                                                .quoteReserve(requestedQuantity, barClosePrice)
+                                                .add(
+                                                        slippageModel.calculate(
+                                                                barClosePrice,
+                                                                requestedQuantity,
+                                                                slippageBps)))
+                        < 0)
+                    throw new IllegalStateException(
+                            "insufficient cash for simulated buy principal and slippage");
             } else {
                 validateSellQuantity(executionContext, requestedQuantity);
             }
 
-            SimOrder simOrder = createFilledOrder(
-                    backtestRunId,
-                    historicalBar.symbol(),
-                    side,
-                    requestedQuantity,
-                    barClosePrice,
-                    historicalBar.closeTime()
-            );
+            // 原币收费先校验再追加模拟事实；失败不留下宣称成交成功的半份订单。
+            Charge nativeFee =
+                    directionalFees == null
+                            ? null
+                            : directionalFees.charge(
+                                    historicalBar.symbol(),
+                                    Side.valueOf(side),
+                                    LiquidityRole.TAKER,
+                                    requestedQuantity,
+                                    barClosePrice,
+                                    executionContext.discountFundingAt(historicalBar.closeTime()),
+                                    historicalBar.closeTime());
+            SimOrder simOrder =
+                    createFilledOrder(
+                            backtestRunId,
+                            historicalBar.symbol(),
+                            side,
+                            requestedQuantity,
+                            barClosePrice,
+                            historicalBar.closeTime());
             simulatedOrders.add(simOrder);
 
             BigDecimal tradePrice = barClosePrice;
-            BigDecimal slippageAmount = slippageModel.calculate(tradePrice, requestedQuantity, slippageBps);
-            BigDecimal feeAmount = feeModel.calculate(tradePrice.multiply(requestedQuantity), feeRate);
-            SimTrade simTrade = new SimTrade(
-                    "st-" + UUID.randomUUID(),
-                    simOrder.simOrderId(),
-                    backtestRunId,
-                    historicalBar.symbol(),
-                    side,
-                    requestedQuantity,
-                    tradePrice,
-                    feeAmount,
-                    slippageAmount,
-                    historicalBar.closeTime(),
-                    historicalBar.closeTime(),
-                    historicalBar.closeTime()
-            );
+            BigDecimal slippageAmount =
+                    slippageModel.calculate(tradePrice, requestedQuantity, slippageBps);
+            BigDecimal feeAmount =
+                    nativeFee == null
+                            ? feeModel.calculate(tradePrice.multiply(requestedQuantity), feeRate)
+                            : nativeFee.quoteValue();
+            SimTrade simTrade =
+                    new SimTrade(
+                            "st-" + UUID.randomUUID(),
+                            simOrder.simOrderId(),
+                            backtestRunId,
+                            historicalBar.symbol(),
+                            side,
+                            requestedQuantity,
+                            tradePrice,
+                            feeAmount,
+                            slippageAmount,
+                            historicalBar.closeTime(),
+                            historicalBar.closeTime(),
+                            historicalBar.closeTime(),
+                            nativeFee == null ? null : nativeFee.currency(),
+                            nativeFee == null ? null : nativeFee.amount(),
+                            nativeFee == null ? null : nativeFee.paymentStatus(),
+                            nativeFee == null ? null : directionalFees.precision().quoteScale(),
+                            conversionPrice(executionContext, nativeFee, historicalBar.closeTime()),
+                            conversionObservedAt(
+                                    executionContext, nativeFee, historicalBar.closeTime()),
+                            conversionVisibleAt(
+                                    executionContext, nativeFee, historicalBar.closeTime()),
+                            conversionSha(executionContext, nativeFee, historicalBar.closeTime()),
+                            conversionJson(executionContext, nativeFee, historicalBar.closeTime()));
+            simTrade = simTrade.withExecutionSequence(simulatedTrades.size() + 1L);
             simulatedTrades.add(simTrade);
 
-            SimPosition updatedPosition = updatePosition(executionContext.currentPosition(), simTrade, historicalBar.closeTime());
+            SimPosition updatedPosition =
+                    updatePosition(
+                            executionContext.currentPosition(),
+                            simTrade,
+                            historicalBar.closeTime());
             simulatedPositions.put(updatedPosition.symbol(), updatedPosition);
             if ("BUY".equals(side)) {
                 executionContext.applyBuy(simTrade, updatedPosition);
             } else {
                 executionContext.applySell(simTrade, updatedPosition);
             }
-            simulatedPnlSnapshots.add(createPnlSnapshot(
-                    executionContext,
-                    historicalBar.closeTime(),
-                    historicalBar.closePrice()
-            ));
+            simulatedPnlSnapshots.add(
+                    createPnlSnapshot(
+                            executionContext,
+                            historicalBar.closeTime(),
+                            historicalBar.closePrice(),
+                            simulatedPnlSnapshots.size() + 1L));
         }
     }
 
@@ -404,75 +535,216 @@ public class BacktestExecutionService {
             List<SimTrade> trades,
             Map<String, SimPosition> positions,
             List<SimPnlSnapshot> pnl,
-            List<String> reasons
-    ) {
+            List<String> reasons) {
         JsonNode version = readJson(run.strategyVersionSnapshotJson());
-        SpotSmaTargetStrategy strategy = SpotSmaTargetStrategy.fromSnapshot(
-                run.strategyVersionSnapshotJson(), objectMapper);
+        SpotSmaTargetStrategy strategy =
+                SpotSmaTargetStrategy.fromSnapshot(run.strategyVersionSnapshotJson(), objectMapper);
         if (!run.strategyVersionId().equals(strategy.strategyVersionId())
                 || !version.path("paramSnapshotJson").equals(readJson(run.paramSnapshotJson()))) {
             throw new IllegalStateException("FROZEN_STRATEGY_SNAPSHOT_MISMATCH");
         }
-        SpotTargetSizer.Rules rules = frozenRules(request.executionSpecJson());
+        ExecutionRules rules = frozenRules(request.executionSpecJson());
         List<SpotSmaTargetStrategy.Decision> pendingSignals = new ArrayList<>();
         for (int index = 0; index < bars.size(); index++) {
             HistoricalBar bar = bars.get(index);
             // 延迟可见的信号保留到首次严格晚于可见时间的开盘，不能被新 bar 覆盖。
-            for (int pendingIndex = 0; pendingIndex < pendingSignals.size();) {
+            for (int pendingIndex = 0; pendingIndex < pendingSignals.size(); ) {
                 SpotSmaTargetStrategy.Decision executableSignal = pendingSignals.get(pendingIndex);
                 if (!executableSignal.availableAt().isBefore(bar.openTime())) {
                     pendingIndex++;
                     continue;
                 }
                 pendingSignals.remove(pendingIndex);
-                if (bar.openTime().isAfter(executableSignal.availableAt().plus(
-                        bar.interval().duration().multipliedBy(2)))) {
+                if (bar.openTime()
+                        .isAfter(
+                                executableSignal
+                                        .availableAt()
+                                        .plus(bar.interval().duration().multipliedBy(2)))) {
                     reasons.add(executableSignal.availableAt() + ":STALE_DATA");
                 } else {
                     SimPosition current = context.currentPosition();
                     BigDecimal quantity = current == null ? BigDecimal.ZERO : current.quantity();
-                    SpotTargetSizer.Result sizing = SpotTargetSizer.size(executableSignal.targetExposure(),
-                            new SpotTargetSizer.State(context.cashBalance(), quantity,
-                                    BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, bar.openPrice()), rules);
+                    SpotTargetSizer.Result sizing =
+                            rules.size(
+                                    executableSignal.targetExposure(),
+                                    new SpotTargetSizer.State(
+                                            context.cashBalance(),
+                                            quantity,
+                                            BigDecimal.ZERO,
+                                            BigDecimal.ZERO,
+                                            BigDecimal.ZERO,
+                                            bar.openPrice()),
+                                    context,
+                                    bar.openTime());
                     reasons.add(executableSignal.availableAt() + ":" + sizing.reason());
                     if (sizing.executable()) {
                         String side = sizing.side();
-                        SimOrder order = createFilledOrder(run.backtestRunId(), bar.symbol(), side,
-                                sizing.quantity(), sizing.fillPrice(), bar.openTime());
+                        SimOrder order =
+                                createFilledOrder(
+                                        run.backtestRunId(),
+                                        bar.symbol(),
+                                        side,
+                                        sizing.quantity(),
+                                        sizing.fillPrice(),
+                                        bar.openTime());
                         orders.add(order);
-                        SimTrade trade = new SimTrade("st-" + UUID.randomUUID(), order.simOrderId(),
-                                run.backtestRunId(), bar.symbol(), side, sizing.quantity(),
-                                sizing.fillPrice(), sizing.fee(), sizing.slippageCost(),
-                                bar.openTime(), bar.openTime(), bar.openTime());
+                        SimTrade trade =
+                                new SimTrade(
+                                        "st-" + UUID.randomUUID(),
+                                        order.simOrderId(),
+                                        run.backtestRunId(),
+                                        bar.symbol(),
+                                        side,
+                                        sizing.quantity(),
+                                        sizing.fillPrice(),
+                                        sizing.fee(),
+                                        sizing.slippageCost(),
+                                        bar.openTime(),
+                                        bar.openTime(),
+                                        bar.openTime(),
+                                        sizing.feeCharge() == null
+                                                ? null
+                                                : sizing.feeCharge().currency(),
+                                        sizing.feeCharge() == null
+                                                ? null
+                                                : sizing.feeCharge().amount(),
+                                        sizing.feeCharge() == null
+                                                ? null
+                                                : sizing.feeCharge().paymentStatus(),
+                                        sizing.feeCharge() == null
+                                                ? null
+                                                : rules.directional()
+                                                        .feeModel()
+                                                        .precision()
+                                                        .quoteScale(),
+                                        conversionPrice(
+                                                context, sizing.feeCharge(), bar.openTime()),
+                                        conversionObservedAt(
+                                                context, sizing.feeCharge(), bar.openTime()),
+                                        conversionVisibleAt(
+                                                context, sizing.feeCharge(), bar.openTime()),
+                                        conversionSha(context, sizing.feeCharge(), bar.openTime()),
+                                        conversionJson(
+                                                context, sizing.feeCharge(), bar.openTime()));
+                        trade = trade.withExecutionSequence(trades.size() + 1L);
                         trades.add(trade);
-                        SimPosition position = updatePosition(context.currentPosition(), trade, bar.openTime());
+                        SimPosition position =
+                                updatePosition(context.currentPosition(), trade, bar.openTime());
                         positions.put(position.symbol(), position);
                         context.applyAtSlippedFillPrice(trade, position);
                     }
                 }
             }
-            SpotSmaTargetStrategy.Decision latestSignal = strategy.evaluate(bars.subList(0, index + 1));
+            SpotSmaTargetStrategy.Decision latestSignal =
+                    strategy.evaluate(bars.subList(0, index + 1));
             if ("INSUFFICIENT_HISTORY".equals(latestSignal.reason())) {
                 reasons.add(bar.availableAt() + ":INSUFFICIENT_HISTORY");
             } else {
                 pendingSignals.add(latestSignal);
             }
-            pnl.add(createPnlSnapshot(context, bar.availableAt(), bar.closePrice()));
+            pnl.add(
+                    createPnlSnapshot(
+                            context, bar.availableAt(), bar.closePrice(), pnl.size() + 1L));
         }
         for (SpotSmaTargetStrategy.Decision pending : pendingSignals) {
             reasons.add(pending.availableAt() + ":NO_LATER_TRADABLE_EVENT");
         }
     }
 
-    private SpotTargetSizer.Rules frozenRules(String executionSpecJson) {
+    private ExecutionRules frozenRules(String executionSpecJson) {
         JsonNode spec = readJson(executionSpecJson);
-        return new SpotTargetSizer.Rules(requiredDecimal(spec, "quantityStep"),
-                requiredDecimal(spec, "priceTick"), requiredDecimal(spec, "minimumQuantity"),
-                requiredDecimal(spec, "minimumNotional"), requiredDecimal(spec, "feeRate"),
-                requiredDecimal(spec, "slippageBps"));
+        SpotFeeModel directional = SpotFeeExecutionSpec.directional(spec, objectMapper);
+        if (directional != null)
+            return new ExecutionRules(
+                    null,
+                    new SpotTargetSizer.DirectionalRules(
+                            spec.path("feeSymbol").asText(),
+                            requiredDecimal(spec, "quantityStep"),
+                            requiredDecimal(spec, "priceTick"),
+                            requiredDecimal(spec, "minimumQuantity"),
+                            requiredDecimal(spec, "minimumNotional"),
+                            requiredDecimal(spec, "slippageBps"),
+                            directional));
+        return new ExecutionRules(
+                new SpotTargetSizer.Rules(
+                        requiredDecimal(spec, "quantityStep"),
+                        requiredDecimal(spec, "priceTick"),
+                        requiredDecimal(spec, "minimumQuantity"),
+                        requiredDecimal(spec, "minimumNotional"),
+                        requiredDecimal(spec, "feeRate"),
+                        requiredDecimal(spec, "slippageBps")),
+                null);
     }
 
-    private void validatePublicCaptureAssumptions(String datasetSnapshotJson, String executionSpecJson) {
+    /** 用服务器冻结身份重读第三币价格；执行不接受客户端常数、主交易对报价或当前私有账户余额。 */
+    private void initializeDiscountCapital(
+            BacktestExecutionRequest request, BacktestExecutionContext context, Instant firstOpen) {
+        JsonNode spec = readJson(request.executionSpecJson());
+        SpotFeeModel model = SpotFeeExecutionSpec.directional(spec, objectMapper);
+        if (model == null || model.policy() != Policy.DISCOUNT_ASSET_IF_FUNDED) return;
+        if (discountPriceService == null)
+            throw new IllegalStateException("FEE_DISCOUNT_PRICE_SOURCE_DISABLED");
+        long owner =
+                Long.parseLong(requiredText(spec, "feeSourceOwnerUserId", "feeSourceOwnerUserId"));
+        UUID snapshotId =
+                UUID.fromString(
+                        requiredText(spec, "discountPriceSnapshotId", "discountPriceSnapshotId"));
+        UUID datasetId =
+                UUID.fromString(
+                        requiredText(spec, "discountPriceDatasetId", "discountPriceDatasetId"));
+        DiscountAssetPriceSnapshot prices =
+                discountPriceService.read(
+                        owner,
+                        snapshotId,
+                        requiredText(
+                                spec,
+                                "discountPriceSnapshotSha256",
+                                "discountPriceSnapshotSha256"));
+        if (!prices.datasetId().equals(datasetId)
+                || !prices.exchangeCode().equals(request.datasetSpec().exchangeCode()))
+            throw new IllegalArgumentException("FEE_DISCOUNT_PRICE_SOURCE_SCOPE_MISMATCH");
+        context.initializeDiscountAssets(
+                prices, requiredDecimal(spec, "discountAssetBudgetFraction"), firstOpen);
+    }
+
+    private static Point conversion(BacktestExecutionContext context, Charge charge, Instant at) {
+        return charge != null && "DISCOUNT_ASSET_USED".equals(charge.paymentStatus())
+                ? context.discountPriceAt(at)
+                : null;
+    }
+
+    private static BigDecimal conversionPrice(
+            BacktestExecutionContext context, Charge charge, Instant at) {
+        Point point = conversion(context, charge, at);
+        return point == null ? null : point.quotePerAsset();
+    }
+
+    private static Instant conversionObservedAt(
+            BacktestExecutionContext context, Charge charge, Instant at) {
+        Point point = conversion(context, charge, at);
+        return point == null ? null : point.observedAt();
+    }
+
+    private static Instant conversionVisibleAt(
+            BacktestExecutionContext context, Charge charge, Instant at) {
+        Point point = conversion(context, charge, at);
+        return point == null ? null : point.visibleAt();
+    }
+
+    private static String conversionSha(
+            BacktestExecutionContext context, Charge charge, Instant at) {
+        Point point = conversion(context, charge, at);
+        return point == null ? null : point.sourceSha256();
+    }
+
+    private static String conversionJson(
+            BacktestExecutionContext context, Charge charge, Instant at) {
+        Point point = conversion(context, charge, at);
+        return point == null ? null : point.sourceJson();
+    }
+
+    private void validatePublicCaptureAssumptions(
+            String datasetSnapshotJson, String executionSpecJson) {
         JsonNode capture = readJson(datasetSnapshotJson).path("capture");
         JsonNode rule = capture.path("rule");
         JsonNode spec = readJson(executionSpecJson);
@@ -480,20 +752,27 @@ public class BacktestExecutionService {
                 || !"EXPERIMENT_ASSUMPTION".equals(capture.path("replayVisibilitySource").asText())
                 || !"CURRENTLY_OBSERVED_PUBLIC_RULES".equals(rule.path("policy").asText())
                 || !"LIVE".equals(rule.path("state").asText())
-                || !capture.path("ruleSha256").asText().equals(PublicReplayRuleIdentity.sha256(rule))
+                || !capture.path("ruleSha256")
+                        .asText()
+                        .equals(PublicReplayRuleIdentity.sha256(rule))
                 || !capture.path("ruleSha256").asText().equals(spec.path("ruleSha256").asText())
                 || !"CURRENTLY_OBSERVED_PUBLIC_RULES".equals(spec.path("rulePolicy").asText())
-                || !"EXPERIMENT_ASSUMPTION".equals(spec.path("costSource").asText())
+                || !("EXPERIMENT_ASSUMPTION".equals(spec.path("costSource").asText())
+                        || "CURRENT_ACCOUNT_OBSERVATION".equals(spec.path("costSource").asText()))
                 || spec.path("feeAssumptionVersion").asText().isBlank()
                 || spec.path("slippageAssumptionVersion").asText().isBlank()
                 || !"EXPERIMENT_ASSUMPTION".equals(spec.path("minimumNotionalSource").asText())) {
             throw new IllegalStateException("PUBLIC_CAPTURE_RULE_OR_COST_IDENTITY_INVALID");
         }
         if (requiredDecimal(spec, "priceTick").compareTo(requiredDecimal(rule, "tickSize")) != 0
-                || requiredDecimal(spec, "quantityStep").compareTo(requiredDecimal(rule, "lotSize")) != 0
-                || requiredDecimal(spec, "minimumQuantity").compareTo(requiredDecimal(rule, "minimumSize")) != 0
+                || requiredDecimal(spec, "quantityStep").compareTo(requiredDecimal(rule, "lotSize"))
+                        != 0
+                || requiredDecimal(spec, "minimumQuantity")
+                                .compareTo(requiredDecimal(rule, "minimumSize"))
+                        != 0
                 || requiredDecimal(spec, "minimumNotional").signum() <= 0
-                || requiredDecimal(spec, "feeRate").signum() <= 0
+                || (SpotFeeExecutionSpec.directional(spec, objectMapper) == null
+                        && requiredDecimal(spec, "feeRate").abs().compareTo(BigDecimal.ONE) >= 0)
                 || requiredDecimal(spec, "slippageBps").signum() <= 0) {
             throw new IllegalStateException("PUBLIC_CAPTURE_RULE_OR_COST_VALUE_INVALID");
         }
@@ -508,22 +787,26 @@ public class BacktestExecutionService {
     }
 
     private BacktestExecutionRequest buildExecutionRequest(
-            BacktestRun backtestRun,
-            BacktestConfig backtestConfig,
-            ResearchConfig researchConfig
-    ) {
+            BacktestRun backtestRun, BacktestConfig backtestConfig, ResearchConfig researchConfig) {
         if (backtestRun.strategyVersionId() != null && !backtestRun.strategyVersionId().isBlank()) {
             JsonNode frozenConfig = readJson(backtestRun.configSnapshotJson());
-            HistoricalDatasetSpec frozenDataset = parseDatasetSpec(backtestRun.datasetSnapshotJson());
-            return new BacktestExecutionRequest(backtestRun.backtestRunId(), backtestRun.researchConfigId(),
-                    backtestRun.backtestConfigId(), backtestRun.sourceStrategyId(),
-                    SpotSmaTargetStrategy.EXECUTABLE, backtestRun.strategyVersionSnapshotJson(), frozenDataset,
+            HistoricalDatasetSpec frozenDataset =
+                    parseDatasetSpec(backtestRun.datasetSnapshotJson());
+            return new BacktestExecutionRequest(
+                    backtestRun.backtestRunId(),
+                    backtestRun.researchConfigId(),
+                    backtestRun.backtestConfigId(),
+                    backtestRun.sourceStrategyId(),
+                    SpotSmaTargetStrategy.EXECUTABLE,
+                    backtestRun.strategyVersionSnapshotJson(),
+                    frozenDataset,
                     Instant.parse(requiredText(frozenConfig, "startTime", "startTime")),
                     Instant.parse(requiredText(frozenConfig, "endTime", "endTime")),
                     new BigDecimal(requiredText(frozenConfig, "initialCapital", "initialCapital")),
                     frozenConfig.path("executionSpec").toString());
         }
-        HistoricalDatasetSpec datasetSpec = parseDatasetSpec(resolveExecutionDatasetSpec(backtestConfig, researchConfig));
+        HistoricalDatasetSpec datasetSpec =
+                parseDatasetSpec(resolveExecutionDatasetSpec(backtestConfig, researchConfig));
         return new BacktestExecutionRequest(
                 backtestRun.backtestRunId(),
                 researchConfig.researchConfigId(),
@@ -535,11 +818,11 @@ public class BacktestExecutionService {
                 backtestConfig.startTime(),
                 backtestConfig.endTime(),
                 backtestConfig.initialCapital(),
-                backtestConfig.executionSpec()
-        );
+                backtestConfig.executionSpec());
     }
 
-    private String resolveExecutionDatasetSpec(BacktestConfig backtestConfig, ResearchConfig researchConfig) {
+    private String resolveExecutionDatasetSpec(
+            BacktestConfig backtestConfig, ResearchConfig researchConfig) {
         if (backtestConfig.datasetId() != null
                 && !backtestConfig.datasetId().isBlank()
                 && backtestConfig.datasetSnapshotJson() != null
@@ -556,17 +839,14 @@ public class BacktestExecutionService {
         String symbol = requiredText(jsonNode, "symbol", "instrument");
         String interval = requiredText(jsonNode, "interval", "granularity");
         String provider = optionalText(jsonNode, "provider", "fixture");
-        String datasetId = optionalText(jsonNode, "datasetId", exchangeCode + "-" + symbol + "-" + interval);
+        String datasetId =
+                optionalText(jsonNode, "datasetId", exchangeCode + "-" + symbol + "-" + interval);
         BarInterval barInterval = BarInterval.fromWireValue(interval);
-        String resourcePath = resolveResourcePath(provider, datasetId, exchangeCode, symbol, barInterval, jsonNode);
+        String resourcePath =
+                resolveResourcePath(
+                        provider, datasetId, exchangeCode, symbol, barInterval, jsonNode);
         return new HistoricalDatasetSpec(
-                provider,
-                datasetId,
-                exchangeCode,
-                symbol,
-                barInterval,
-                resourcePath
-        );
+                provider, datasetId, exchangeCode, symbol, barInterval, resourcePath);
     }
 
     private String resolveResourcePath(
@@ -575,8 +855,7 @@ public class BacktestExecutionService {
             String exchangeCode,
             String symbol,
             BarInterval interval,
-            JsonNode jsonNode
-    ) {
+            JsonNode jsonNode) {
         if ("db".equalsIgnoreCase(provider)) {
             return optionalText(jsonNode, "resourcePath", "marketdata_bars");
         }
@@ -584,14 +863,19 @@ public class BacktestExecutionService {
         if (explicitResourcePath != null) {
             return explicitResourcePath;
         }
-        FixtureMarketdataDataset fixture = fixtureMarketdataRegistry.find(datasetId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "fixture datasetId is not registered and resourcePath is missing: " + datasetId
-                ));
+        FixtureMarketdataDataset fixture =
+                fixtureMarketdataRegistry
+                        .find(datasetId)
+                        .orElseThrow(
+                                () ->
+                                        new IllegalArgumentException(
+                                                "fixture datasetId is not registered and resourcePath is missing: "
+                                                        + datasetId));
         if (!fixture.exchangeCode().equalsIgnoreCase(exchangeCode)
                 || !fixture.symbol().equalsIgnoreCase(symbol)
                 || fixture.interval() != interval) {
-            throw new IllegalArgumentException("fixture dataset scope does not match requested datasetSpec");
+            throw new IllegalArgumentException(
+                    "fixture dataset scope does not match requested datasetSpec");
         }
         return fixture.resourcePath();
     }
@@ -605,7 +889,8 @@ public class BacktestExecutionService {
         return strategyType.asText().trim();
     }
 
-    private BigDecimal executionSpecDecimal(String executionSpecJson, String fieldName, BigDecimal defaultValue) {
+    private BigDecimal executionSpecDecimal(
+            String executionSpecJson, String fieldName, BigDecimal defaultValue) {
         JsonNode jsonNode = readJson(executionSpecJson);
         JsonNode field = jsonNode.get(fieldName);
         if (field == null || field.isNull() || field.asText().isBlank()) {
@@ -620,8 +905,7 @@ public class BacktestExecutionService {
             String side,
             BigDecimal requestedQuantity,
             BigDecimal requestedPrice,
-            Instant tradedAt
-    ) {
+            Instant tradedAt) {
         return new SimOrder(
                 "so-" + UUID.randomUUID(),
                 backtestRunId,
@@ -634,8 +918,7 @@ public class BacktestExecutionService {
                 tradedAt,
                 tradedAt,
                 null,
-                tradedAt
-        );
+                tradedAt);
     }
 
     private void validateBuyQuantity(
@@ -643,45 +926,53 @@ public class BacktestExecutionService {
             BigDecimal tradePrice,
             BigDecimal quantity,
             BigDecimal feeRate,
-            BigDecimal slippageBps
-    ) {
+            BigDecimal slippageBps) {
         BigDecimal notional = tradePrice.multiply(quantity);
-        BigDecimal feeAmount = feeModel.calculate(notional, feeRate);
+        // 回测保留十八位研究精度，但买入前只使用已到账现金，不预支负手续费形成的返佣。
+        BigDecimal feeAmount = feeModel.calculate(notional, feeRate.max(BigDecimal.ZERO));
         BigDecimal slippageAmount = slippageModel.calculate(tradePrice, quantity, slippageBps);
-        if (executionContext.cashBalance().compareTo(notional.add(feeAmount).add(slippageAmount)) < 0) {
+        if (executionContext.cashBalance().compareTo(notional.add(feeAmount).add(slippageAmount))
+                < 0) {
             throw new IllegalStateException("insufficient cash balance for simulated buy");
         }
     }
 
-    private void validateSellQuantity(BacktestExecutionContext executionContext, BigDecimal quantity) {
+    private void validateSellQuantity(
+            BacktestExecutionContext executionContext, BigDecimal quantity) {
         SimPosition currentPosition = executionContext.currentPosition();
         if (currentPosition == null || currentPosition.quantity().compareTo(quantity) < 0) {
             throw new IllegalStateException("insufficient position quantity for simulated sell");
         }
     }
 
-    private SimPosition updatePosition(SimPosition currentPosition, SimTrade simTrade, Instant updatedAt) {
-        SimPosition effectiveCurrentPosition = currentPosition == null
-                ? new SimPosition(
-                "sp-" + UUID.randomUUID(),
-                simTrade.backtestRunId(),
-                simTrade.symbol(),
-                BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP),
-                BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP),
-                BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP),
-                updatedAt,
-                updatedAt
-        )
-                : currentPosition;
+    private SimPosition updatePosition(
+            SimPosition currentPosition, SimTrade simTrade, Instant updatedAt) {
+        SimPosition effectiveCurrentPosition =
+                currentPosition == null
+                        ? new SimPosition(
+                                "sp-" + UUID.randomUUID(),
+                                simTrade.backtestRunId(),
+                                simTrade.symbol(),
+                                BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP),
+                                BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP),
+                                BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP),
+                                updatedAt,
+                                updatedAt)
+                        : currentPosition;
         if ("BUY".equals(simTrade.side())) {
-            BigDecimal nextQuantity = normalize(effectiveCurrentPosition.quantity().add(simTrade.quantity()));
-            BigDecimal nextAverageEntryPrice = nextQuantity.compareTo(BigDecimal.ZERO) == 0
-                    ? BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP)
-                    : normalize(
-                    effectiveCurrentPosition.averageEntryPrice().multiply(effectiveCurrentPosition.quantity())
-                    .add(simTrade.tradePrice().multiply(simTrade.quantity()))
-                    .divide(nextQuantity, 18, RoundingMode.HALF_UP)
-            );
+            BigDecimal nextQuantity =
+                    normalize(effectiveCurrentPosition.quantity().add(simTrade.settledBaseDelta()));
+            BigDecimal nextAverageEntryPrice =
+                    nextQuantity.compareTo(BigDecimal.ZERO) == 0
+                            ? BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP)
+                            : normalize(
+                                    effectiveCurrentPosition
+                                            .averageEntryPrice()
+                                            .multiply(effectiveCurrentPosition.quantity())
+                                            .add(
+                                                    simTrade.tradePrice()
+                                                            .multiply(simTrade.quantity()))
+                                            .divide(nextQuantity, 18, RoundingMode.HALF_UP));
             return new SimPosition(
                     effectiveCurrentPosition.simPositionId(),
                     effectiveCurrentPosition.backtestRunId(),
@@ -690,14 +981,16 @@ public class BacktestExecutionService {
                     nextAverageEntryPrice,
                     effectiveCurrentPosition.realizedPnl(),
                     effectiveCurrentPosition.createdAt(),
-                    updatedAt
-            );
+                    updatedAt);
         }
 
-        BigDecimal remainingQuantity = normalize(effectiveCurrentPosition.quantity().subtract(simTrade.quantity()));
-        BigDecimal realizedIncrement = normalize(
-                simTrade.tradePrice().subtract(effectiveCurrentPosition.averageEntryPrice()).multiply(simTrade.quantity())
-        );
+        BigDecimal remainingQuantity =
+                normalize(effectiveCurrentPosition.quantity().subtract(simTrade.quantity()));
+        BigDecimal realizedIncrement =
+                normalize(
+                        simTrade.tradePrice()
+                                .subtract(effectiveCurrentPosition.averageEntryPrice())
+                                .multiply(simTrade.quantity()));
         return new SimPosition(
                 effectiveCurrentPosition.simPositionId(),
                 effectiveCurrentPosition.backtestRunId(),
@@ -708,43 +1001,63 @@ public class BacktestExecutionService {
                         : effectiveCurrentPosition.averageEntryPrice(),
                 normalize(effectiveCurrentPosition.realizedPnl().add(realizedIncrement)),
                 effectiveCurrentPosition.createdAt(),
-                updatedAt
-        );
+                updatedAt);
     }
 
     private SimPnlSnapshot createPnlSnapshot(
             BacktestExecutionContext executionContext,
             Instant snapshotTime,
-            BigDecimal referenceClosePrice
-    ) {
+            BigDecimal referenceClosePrice,
+            long valuationSequence) {
         SimPosition currentPosition = executionContext.currentPosition();
-        BigDecimal quantity = currentPosition == null ? BigDecimal.ZERO : currentPosition.quantity();
-        BigDecimal averageEntryPrice = currentPosition == null
-                ? BigDecimal.ZERO
-                : currentPosition.averageEntryPrice();
+        BigDecimal quantity =
+                currentPosition == null ? BigDecimal.ZERO : currentPosition.quantity();
+        BigDecimal averageEntryPrice =
+                currentPosition == null ? BigDecimal.ZERO : currentPosition.averageEntryPrice();
         BigDecimal positionMarketValue = normalize(quantity.multiply(referenceClosePrice));
-        BigDecimal unrealizedPnl = quantity.compareTo(BigDecimal.ZERO) == 0
-                ? BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP)
-                : normalize(referenceClosePrice.subtract(averageEntryPrice).multiply(quantity));
-        BigDecimal realizedPnl = currentPosition == null
-                ? BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP)
-                : normalize(currentPosition.realizedPnl());
-        BigDecimal equity = normalize(executionContext.cashBalance().add(positionMarketValue));
+        BigDecimal unrealizedPnl =
+                quantity.compareTo(BigDecimal.ZERO) == 0
+                        ? BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP)
+                        : normalize(
+                                referenceClosePrice.subtract(averageEntryPrice).multiply(quantity));
+        BigDecimal realizedPnl =
+                currentPosition == null
+                        ? BigDecimal.ZERO.setScale(18, RoundingMode.HALF_UP)
+                        : normalize(currentPosition.realizedPnl());
+        BigDecimal equity =
+                normalize(
+                        executionContext
+                                .cashBalance()
+                                .add(positionMarketValue)
+                                .add(executionContext.discountQuoteValueAt(snapshotTime)));
         BigDecimal netPnl = normalize(equity.subtract(executionContext.initialCapital()));
+        Point discountPrice = executionContext.discountPriceAt(snapshotTime);
         return new SimPnlSnapshot(
-                "pnl-" + UUID.randomUUID(),
-                executionContext.backtestRunId(),
-                snapshotTime,
-                executionContext.cashBalance(),
-                positionMarketValue,
-                realizedPnl,
-                unrealizedPnl,
-                executionContext.totalFee(),
-                executionContext.totalSlippage(),
-                equity,
-                netPnl,
-                snapshotTime
-        );
+                        "pnl-" + UUID.randomUUID(),
+                        executionContext.backtestRunId(),
+                        snapshotTime,
+                        executionContext.cashBalance(),
+                        positionMarketValue,
+                        realizedPnl,
+                        unrealizedPnl,
+                        executionContext.totalFee(),
+                        executionContext.totalSlippage(),
+                        equity,
+                        netPnl,
+                        snapshotTime,
+                        discountPrice == null
+                                ? null
+                                : executionContext.discountPrices().assetCurrency(),
+                        discountPrice == null ? null : executionContext.discountBalance(),
+                        discountPrice == null
+                                ? null
+                                : executionContext.discountQuoteValueAt(snapshotTime),
+                        discountPrice == null ? null : discountPrice.quotePerAsset(),
+                        discountPrice == null ? null : discountPrice.observedAt(),
+                        discountPrice == null ? null : discountPrice.visibleAt(),
+                        discountPrice == null ? null : discountPrice.sourceSha256(),
+                        discountPrice == null ? null : discountPrice.sourceJson())
+                .withValuationSequence(valuationSequence);
     }
 
     private String buildSuccessSummary(
@@ -758,8 +1071,7 @@ public class BacktestExecutionService {
             List<SimPnlSnapshot> simulatedPnlSnapshots,
             BacktestRun run,
             SpotBarIdentity.Snapshot inputIdentity,
-            List<String> decisionReasons
-    ) {
+            List<String> decisionReasons) {
         SimPnlSnapshot finalSnapshot = simulatedPnlSnapshots.getLast();
         SimPosition finalPosition = executionContext.currentPosition();
         ObjectNode summary = objectMapper.createObjectNode();
@@ -773,7 +1085,9 @@ public class BacktestExecutionService {
         summary.put("barCount", bars.size());
         summary.put("orderCount", simulatedOrders.size());
         summary.put("tradeCount", simulatedTrades.size());
-        summary.put("finalPositionQuantity", finalPosition == null ? "0" : finalPosition.quantity().toPlainString());
+        summary.put(
+                "finalPositionQuantity",
+                finalPosition == null ? "0" : finalPosition.quantity().toPlainString());
         summary.put("finalCashBalance", finalSnapshot.cashBalance().toPlainString());
         summary.put("finalEquity", finalSnapshot.equity().toPlainString());
         summary.put("realizedPnl", finalSnapshot.realizedPnl().toPlainString());
@@ -781,32 +1095,68 @@ public class BacktestExecutionService {
         summary.put("netPnl", finalSnapshot.netPnl().toPlainString());
         summary.put("totalFee", finalSnapshot.totalFee().toPlainString());
         summary.put("totalSlippage", finalSnapshot.totalSlippage().toPlainString());
+        if (executionContext.hasDiscountAssets())
+            summary.set(
+                    "discountAsset",
+                    objectMapper
+                            .copy()
+                            .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+                            .valueToTree(
+                                    executionContext.discountFactsAt(
+                                            finalSnapshot.snapshotTime())));
         summary.put("resultStatus", BacktestRunStatus.SUCCEEDED.name());
         summary.put("executionStartedAt", executionStartedAt.toString());
         summary.put("executionFinishedAt", executionFinishedAt.toString());
         if (inputIdentity != null) {
-            SpotTargetSizer.Rules rules = frozenRules(executionRequest.executionSpecJson());
-            var researchFacts = new ResearchRunFacts(run.backtestRunId(),
-                    executionRequest.datasetSpec().datasetId(), inputIdentity.sha256(),
-                    run.strategyVersionId(), readJson(run.strategyVersionSnapshotJson()).path("checksum").asText(),
-                    executionRequest.datasetSpec().symbol(), executionRequest.datasetSpec().interval().wireValue(),
-                    run.datasetSnapshotJson(), new ResearchRunFacts.Assumptions(executionContext.initialCapital(),
-                    rules.feeRate(), rules.slippageBps(), "NEXT_OPEN_STRICTLY_AFTER_AVAILABLE_AT",
-                    "MARK_TO_MARKET", executionRequest.executionSpecJson(), executionRequest.initialCapital()),
-                    bars.stream().map(bar -> new ResearchRunFacts.BarWindow(bar.openTime().toString(),
-                            bar.closeTime().toString(), bar.availableAt().toString())).toList(),
-                    BuyAndHoldCalculator.calculate(bars, executionContext.initialCapital(), rules));
+            ExecutionRules rules = frozenRules(executionRequest.executionSpecJson());
+            var researchFacts =
+                    new ResearchRunFacts(
+                            run.backtestRunId(),
+                            executionRequest.datasetSpec().datasetId(),
+                            inputIdentity.sha256(),
+                            run.strategyVersionId(),
+                            readJson(run.strategyVersionSnapshotJson()).path("checksum").asText(),
+                            executionRequest.datasetSpec().symbol(),
+                            executionRequest.datasetSpec().interval().wireValue(),
+                            run.datasetSnapshotJson(),
+                            new ResearchRunFacts.Assumptions(
+                                    executionContext.initialCapital(),
+                                    rules.feeRate(),
+                                    rules.slippageBps(),
+                                    "NEXT_OPEN_STRICTLY_AFTER_AVAILABLE_AT",
+                                    "MARK_TO_MARKET",
+                                    executionRequest.executionSpecJson(),
+                                    executionRequest.initialCapital()),
+                            bars.stream()
+                                    .map(
+                                            bar ->
+                                                    new ResearchRunFacts.BarWindow(
+                                                            bar.openTime().toString(),
+                                                            bar.closeTime().toString(),
+                                                            bar.availableAt().toString()))
+                                    .toList(),
+                            rules.benchmark(
+                                    bars, executionContext.initialCapital(), executionContext),
+                            executionContext.discountFactsAt(finalSnapshot.snapshotTime()));
             // 成本、数量和权益不能在保存 JSON 树时先转换为 double。
-            summary.set("researchFacts", objectMapper.copy()
-                    .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS).valueToTree(researchFacts));
+            summary.set(
+                    "researchFacts",
+                    objectMapper
+                            .copy()
+                            .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+                            .valueToTree(researchFacts));
             summary.put("strategyVersionId", run.strategyVersionId());
-            summary.put("strategyChecksum", readJson(run.strategyVersionSnapshotJson()).path("checksum").asText());
+            summary.put(
+                    "strategyChecksum",
+                    readJson(run.strategyVersionSnapshotJson()).path("checksum").asText());
             summary.set("strategyParameters", readJson(run.paramSnapshotJson()));
             summary.set("datasetSnapshot", readJson(run.datasetSnapshotJson()));
             summary.set("costAndRuleAssumptions", readJson(executionRequest.executionSpecJson()));
             if ("public-capture".equals(executionRequest.datasetSpec().provider())) {
-                summary.put("costAndRuleSha256", PublicReplayAssumptionIdentity.sha256(
-                        readJson(executionRequest.executionSpecJson())));
+                summary.put(
+                        "costAndRuleSha256",
+                        PublicReplayAssumptionIdentity.sha256(
+                                readJson(executionRequest.executionSpecJson())));
             }
             summary.put("barContentSha256", inputIdentity.sha256());
             summary.set("consumedBars", readJson(inputIdentity.canonicalJson()));
@@ -825,8 +1175,7 @@ public class BacktestExecutionService {
             RuntimeException exception,
             List<SimOrder> simulatedOrders,
             List<SimTrade> simulatedTrades,
-            List<SimPnlSnapshot> simulatedPnlSnapshots
-    ) {
+            List<SimPnlSnapshot> simulatedPnlSnapshots) {
         ObjectNode summary = objectMapper.createObjectNode();
         summary.put("sourceStrategyId", researchConfig.sourceStrategyId());
         if (executionRequest != null) {
@@ -864,13 +1213,14 @@ public class BacktestExecutionService {
 
     private JsonNode readJson(String rawJson) {
         try {
-            return objectMapper.readTree(rawJson == null || rawJson.isBlank() ? "{}" : rawJson);
+            return snapshotReader.readTree(rawJson == null || rawJson.isBlank() ? "{}" : rawJson);
         } catch (JsonProcessingException ex) {
             throw new IllegalArgumentException("invalid json payload", ex);
         }
     }
 
-    private String requiredText(JsonNode jsonNode, String primaryFieldName, String fallbackFieldName) {
+    private String requiredText(
+            JsonNode jsonNode, String primaryFieldName, String fallbackFieldName) {
         JsonNode primaryField = jsonNode.get(primaryFieldName);
         if (primaryField != null && !primaryField.asText().isBlank()) {
             return primaryField.asText().trim();
@@ -892,6 +1242,47 @@ public class BacktestExecutionService {
 
     private BigDecimal normalize(BigDecimal value) {
         return value.setScale(18, RoundingMode.HALF_UP);
+    }
+
+    /** 两种费用合同共用执行时序；方向模型没有全局费率，旧摘要的feeRate明确保持null而非补零。 */
+    private record ExecutionRules(
+            SpotTargetSizer.Rules scalar, SpotTargetSizer.DirectionalRules directional) {
+        SpotTargetSizer.Result size(
+                BigDecimal target,
+                SpotTargetSizer.State state,
+                BacktestExecutionContext context,
+                Instant at) {
+            return directional == null
+                    ? SpotTargetSizer.size(target, state, scalar)
+                    : SpotTargetSizer.size(
+                            target,
+                            state,
+                            directional,
+                            context.discountFundingAt(at),
+                            at,
+                            context.discountQuoteValueAt(at));
+        }
+
+        BigDecimal feeRate() {
+            return scalar == null ? null : scalar.feeRate();
+        }
+
+        BigDecimal slippageBps() {
+            return directional == null ? scalar.slippageBps() : directional.slippageBps();
+        }
+
+        ResearchRunFacts.Benchmark benchmark(
+                List<HistoricalBar> bars, BigDecimal capital, BacktestExecutionContext context) {
+            if (directional == null) return BuyAndHoldCalculator.calculate(bars, capital, scalar);
+            return context.hasDiscountAssets()
+                    ? BuyAndHoldCalculator.calculate(
+                            bars,
+                            capital,
+                            directional,
+                            context.discountPrices(),
+                            context.discountBudgetFraction())
+                    : BuyAndHoldCalculator.calculate(bars, capital, directional);
+        }
     }
 
     private String safeMessage(RuntimeException exception) {

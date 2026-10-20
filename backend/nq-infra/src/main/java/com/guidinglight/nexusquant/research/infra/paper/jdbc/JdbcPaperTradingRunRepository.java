@@ -3,7 +3,14 @@ package com.guidinglight.nexusquant.research.infra.paper.jdbc;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRun;
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRunStatus;
 import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingRunRepository;
+import com.guidinglight.nexusquant.research.domain.port.ResearchFeeSourcePort;
+import com.guidinglight.nexusquant.research.infra.ResearchFeeReadScope;
 import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.AdmissionMutationCoordinator;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -13,14 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Repository;
-
+/** SIM范围继承发布来源；旧研究运行仍遵守原业务读取合同。 */
 @Repository
 public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository {
 
-    private static final String BASE_SELECT = """
+    private static final String BASE_SELECT =
+            """
             SELECT paper_run_id, publish_id, strategy_version_id, status, trade_env, exchange_code, market_type,
                    symbol, interval_code, started_at, stopped_at,
                    publish_snapshot_json::text AS publish_snapshot_json,
@@ -32,23 +37,34 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
             FROM paper_trading_runs
             """;
 
-    private static final RowMapper<PaperTradingRun> ROW_MAPPER = JdbcPaperTradingRunRepository::mapRow;
+    private static final RowMapper<PaperTradingRun> ROW_MAPPER =
+            JdbcPaperTradingRunRepository::mapRow;
 
     private final JdbcTemplate jdbcTemplate;
+    private ResearchFeeReadScope feeScope =
+            new ResearchFeeReadScope(ResearchFeeSourcePort.disabled());
+
+    /** 手工构造默认拒绝私有来源；正式装配在SQL中统一隔离详情及列表。 */
+    @Autowired
+    private void bindFeeReadScope(ResearchFeeReadScope scope) {
+        this.feeScope = scope;
+    }
+
     private final AdmissionMutationCoordinator admissionMutationCoordinator;
 
     public JdbcPaperTradingRunRepository(
-            JdbcTemplate jdbcTemplate,
-            AdmissionMutationCoordinator admissionMutationCoordinator
-    ) {
+            JdbcTemplate jdbcTemplate, AdmissionMutationCoordinator admissionMutationCoordinator) {
         this.jdbcTemplate = jdbcTemplate;
         this.admissionMutationCoordinator = admissionMutationCoordinator;
     }
 
     @Override
     public void insert(PaperTradingRun run) {
-        admissionMutationCoordinator.withLockedAdmissionStates(List.of(run.publishId()), () -> jdbcTemplate.update(
-                """
+        admissionMutationCoordinator.withLockedAdmissionStates(
+                List.of(run.publishId()),
+                () ->
+                        jdbcTemplate.update(
+                                """
                         INSERT INTO paper_trading_runs (
                             paper_run_id, publish_id, strategy_version_id, status, trade_env, exchange_code, market_type,
                             symbol, interval_code, started_at, stopped_at,
@@ -60,35 +76,34 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
                                   CAST(? AS JSONB), CAST(? AS JSONB),
                                   ?, ?, ?)
                         """,
-                run.paperRunId(),
-                run.publishId(),
-                run.strategyVersionId(),
-                run.status().name(),
-                run.tradeEnv(),
-                run.exchangeCode(),
-                run.marketType(),
-                run.symbol(),
-                run.intervalCode(),
-                toTimestamp(run.startedAt()),
-                toTimestamp(run.stoppedAt()),
-                run.publishSnapshotJson(),
-                run.strategyVersionSnapshotJson(),
-                run.datasetSnapshotJson(),
-                run.paramSnapshotJson(),
-                run.configSnapshotJson(),
-                run.createdBy(),
-                Timestamp.from(run.createdAt()),
-                Timestamp.from(run.updatedAt())
-        ));
+                                run.paperRunId(),
+                                run.publishId(),
+                                run.strategyVersionId(),
+                                run.status().name(),
+                                run.tradeEnv(),
+                                run.exchangeCode(),
+                                run.marketType(),
+                                run.symbol(),
+                                run.intervalCode(),
+                                toTimestamp(run.startedAt()),
+                                toTimestamp(run.stoppedAt()),
+                                run.publishSnapshotJson(),
+                                run.strategyVersionSnapshotJson(),
+                                run.datasetSnapshotJson(),
+                                run.paramSnapshotJson(),
+                                run.configSnapshotJson(),
+                                run.createdBy(),
+                                Timestamp.from(run.createdAt()),
+                                Timestamp.from(run.updatedAt())));
     }
 
     @Override
     public Optional<PaperTradingRun> findById(String paperRunId) {
-        List<PaperTradingRun> rows = jdbcTemplate.query(
-                BASE_SELECT + " WHERE paper_run_id = ?",
-                ROW_MAPPER,
-                paperRunId
-        );
+        List<PaperTradingRun> rows =
+                jdbcTemplate.query(
+                        BASE_SELECT + " WHERE paper_run_id = ? AND " + feeScope.paper(),
+                        ROW_MAPPER,
+                        paperRunId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
@@ -106,19 +121,51 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
             sql.append(hasWhere ? " AND" : " WHERE").append(" status = ?");
             args.add(status);
         }
+        sql.append(args.isEmpty() ? " WHERE " : " AND ").append(feeScope.paper());
         sql.append(" ORDER BY created_at DESC, paper_run_id DESC");
         return jdbcTemplate.query(sql.toString(), ROW_MAPPER, args.toArray());
     }
 
+    /** 来源与费用权限在LIMIT之前生效，避免canonical或外国私有记录挤占可见历史窗口。 */
     @Override
-    public boolean updateStatus(String paperRunId, PaperTradingRunStatus status, Instant startedAt, Instant stoppedAt, Instant updatedAt) {
-        List<String> publishIds = jdbcTemplate.query(
-                "SELECT publish_id FROM paper_trading_runs WHERE paper_run_id = ?",
-                (resultSet, rowNum) -> resultSet.getString("publish_id"),
-                paperRunId
-        );
-        int updated = admissionMutationCoordinator.withLockedAdmissionStates(publishIds, () -> jdbcTemplate.update(
+    public List<PaperTradingRun> listLegacyForAnalysis(long owner, int limit) {
+        if (owner <= 0 || limit < 1 || limit > 201)
+            throw new IllegalArgumentException("INVALID_LEGACY_ANALYSIS_SCOPE");
+        var reader = new JdbcTemplate(jdbcTemplate.getDataSource());
+        reader.setQueryTimeout(5);
+        return reader.query(
+                BASE_SELECT
+                        + """
+                WHERE canonical_account_id IS NULL AND trade_env='SIM'
+                    AND EXISTS (SELECT 1 FROM backtest_publish_records nq_legacy_publish
+                        WHERE nq_legacy_publish.publish_record_id=paper_trading_runs.publish_id AND
                 """
+                        + feeScope.backtest("nq_legacy_publish.backtest_run_id", owner)
+                        + """
+                    ) ORDER BY updated_at DESC,paper_run_id DESC LIMIT ?
+                """,
+                ROW_MAPPER,
+                limit);
+    }
+
+    @Override
+    public boolean updateStatus(
+            String paperRunId,
+            PaperTradingRunStatus status,
+            Instant startedAt,
+            Instant stoppedAt,
+            Instant updatedAt) {
+        List<String> publishIds =
+                jdbcTemplate.query(
+                        "SELECT publish_id FROM paper_trading_runs WHERE paper_run_id = ?",
+                        (resultSet, rowNum) -> resultSet.getString("publish_id"),
+                        paperRunId);
+        int updated =
+                admissionMutationCoordinator.withLockedAdmissionStates(
+                        publishIds,
+                        () ->
+                                jdbcTemplate.update(
+                                        """
                         UPDATE paper_trading_runs
                         SET status = ?,
                             started_at = COALESCE(?, started_at),
@@ -126,12 +173,11 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
                             updated_at = ?
                         WHERE paper_run_id = ?
                         """,
-                status.name(),
-                toTimestamp(startedAt),
-                toTimestamp(stoppedAt),
-                Timestamp.from(updatedAt),
-                paperRunId
-        ));
+                                        status.name(),
+                                        toTimestamp(startedAt),
+                                        toTimestamp(stoppedAt),
+                                        Timestamp.from(updatedAt),
+                                        paperRunId));
         return updated > 0;
     }
 
@@ -158,8 +204,7 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
                 resultSet.getString("created_by"),
                 resultSet.getTimestamp("created_at").toInstant(),
                 resultSet.getTimestamp("updated_at").toInstant(),
-                resultSet.getObject("canonical_account_id", Long.class)
-        );
+                resultSet.getObject("canonical_account_id", Long.class));
     }
 
     private static Timestamp toTimestamp(Instant value) {

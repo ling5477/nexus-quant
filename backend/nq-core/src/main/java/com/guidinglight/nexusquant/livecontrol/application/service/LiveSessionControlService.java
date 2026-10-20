@@ -171,7 +171,7 @@ public class LiveSessionControlService {
     }
 
     /**
-     * OPERATOR_PILOT 会话只绑定显式人工 authority，不创建或借用 strategy/risk facts。
+     * OPERATOR_CONTROLLED_EXECUTION 会话只绑定显式人工 authority，不创建或借用 strategy/risk facts。
      */
     @Transactional
     public LiveSession createOperatorPilotSession(
@@ -184,16 +184,16 @@ public class LiveSessionControlService {
         Objects.requireNonNull(session, "session must not be null");
         Objects.requireNonNull(authority, "authority must not be null");
         Objects.requireNonNull(createdEvent, "createdEvent must not be null");
-        if (session.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
+        if (session.authorityType() != LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION
                 || session.state() != LiveSessionState.APPROVAL_PENDING || session.version() != 1
                 || session.createdBy() != actor.userId() || session.ownerId() != actor.userId()
-                || !session.operatorPilotAuthorityId().equals(authority.id())
-                || !session.operatorPilotAuthorityDigest().equals(authority.canonicalDigest())
+                || !session.operatorExecutionAuthorityId().equals(authority.id())
+                || !session.operatorExecutionAuthorityDigest().equals(authority.canonicalDigest())
                 || !authority.activeAt(repository.currentTime())
                 || !authority.hasCanonicalDigest()
                 || !authorization.lockAndCheckRole(actor.userId(), SESSION_CREATOR_ROLE)) {
             throw new LiveControlException(
-                    "OPERATOR_PILOT_SESSION_AUTHORITY_REJECTED",
+                    "OPERATOR_CONTROLLED_EXECUTION_SESSION_AUTHORITY_REJECTED",
                     "operator pilot session authority is invalid");
         }
         authority.requireScope(
@@ -208,7 +208,7 @@ public class LiveSessionControlService {
                 || !session.hasCanonicalApprovalScopeHash()
                 || !repository.lockAndValidateSessionReferences(session)) {
             throw new LiveControlException(
-                    "OPERATOR_PILOT_SESSION_REFERENCE_MISMATCH",
+                    "OPERATOR_CONTROLLED_EXECUTION_SESSION_REFERENCE_MISMATCH",
                     "operator pilot session references are inconsistent");
         }
         repository.createSession(session);
@@ -321,15 +321,15 @@ public class LiveSessionControlService {
                 LiveSessionCommand.FAIL,
                 LiveSessionCommand.KILL
         ).contains(command)) {
-            throw new LiveControlException("MINIMAL_PILOT_TRANSITION_FORBIDDEN", "command is outside minimal pilot");
+            throw new LiveControlException("CONTROLLED_EXECUTION_TRANSITION_FORBIDDEN", "command is outside minimal pilot");
         }
         LiveSession current = repository.lockSession(sessionId)
                 .orElseThrow(() -> new LiveControlException("LIVE_SESSION_NOT_FOUND", "live session was not found"));
         if (current.ownerId() != actor.userId()
-                || current.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
+                || current.authorityType() != LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION
                 || !authorization.lockAndCheckRole(actor.userId(), SESSION_CREATOR_ROLE)
                 || !repository.lockAndValidateSessionReferences(current)) {
-            throw new LiveControlException("MINIMAL_PILOT_OPERATOR_FORBIDDEN", "operator/session authority failed");
+            throw new LiveControlException("CONTROLLED_EXECUTION_OPERATOR_FORBIDDEN", "operator/session authority failed");
         }
         LiveSessionState target = stateMachine.transition(current.state(), command);
         Instant occurredAt = repository.currentTime();
@@ -338,10 +338,10 @@ public class LiveSessionControlService {
             throw new LiveControlException("LIVE_SESSION_VERSION_CONFLICT", "session changed concurrently");
         }
         repository.appendSessionEvent(event(
-                current, target, "MINIMAL_PILOT_" + command.name(), actor.userId(),
+                current, target, "CONTROLLED_EXECUTION_" + command.name(), actor.userId(),
                 requestId, traceId,
                 command == LiveSessionCommand.APPROVE
-                        ? "MINIMAL_PILOT_INTERNAL_APPROVAL" : "MINIMAL_PILOT_" + command.name(),
+                        ? "CONTROLLED_EXECUTION_INTERNAL_APPROVAL" : "CONTROLLED_EXECUTION_" + command.name(),
                 idempotencyKey,
                 LiveSessionApprovalScopeEncoder.digest(current),
                 occurredAt
@@ -372,7 +372,7 @@ public class LiveSessionControlService {
                 .orElseThrow(() -> new LiveControlException(
                         "LIVE_SESSION_NOT_FOUND", "live session was not found"));
         if (current.ownerId() != actor.userId()
-                || current.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
+                || current.authorityType() != LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION
                 || !recoveries.lockAndValidateSessionRecovery(current, recoveryDecisionId)) {
             throw new LiveControlException(
                     "PRE_PLACE_RECOVERY_REFERENCE_MISMATCH", "pre-place recovery references are invalid");
@@ -398,7 +398,7 @@ public class LiveSessionControlService {
                         "LIVE_SESSION_VERSION_CONFLICT", "session changed during pre-place recovery");
             }
             repository.appendSessionEvent(event(
-                    current, target, "MINIMAL_PILOT_" + command.name(), actor.userId(),
+                    current, target, "CONTROLLED_EXECUTION_" + command.name(), actor.userId(),
                     requestId, traceId, "PRE_PLACE_REGENERATION_" + command.name(),
                     idempotencyKey,
                     LiveSessionApprovalScopeEncoder.digest(current),
@@ -429,7 +429,7 @@ public class LiveSessionControlService {
         LiveSession current = repository.lockSession(sessionId)
                 .orElseThrow(() -> new LiveControlException("LIVE_SESSION_NOT_FOUND", "live session was not found"));
         if (current.ownerId() != actor.userId()
-                || current.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
+                || current.authorityType() != LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION
                 || !repository.lockAndValidatePostExecutionReconciliation(current, leaseId)) {
             throw new LiveControlException(
                     "POST_EXECUTION_RECOVERY_REFERENCE_MISMATCH", "durable reconciliation proof is incomplete");
@@ -457,7 +457,7 @@ public class LiveSessionControlService {
                         "LIVE_SESSION_VERSION_CONFLICT", "session changed during post-execution recovery");
             }
             repository.appendSessionEvent(event(
-                    current, target, "MINIMAL_PILOT_" + command.name(), actor.userId(),
+                    current, target, "CONTROLLED_EXECUTION_" + command.name(), actor.userId(),
                     requestId, traceId, "POST_EXECUTION_RECONCILIATION_" + command.name(),
                     idempotencyKey,
                     LiveSessionApprovalScopeEncoder.digest(current),
@@ -503,7 +503,7 @@ public class LiveSessionControlService {
         LiveSession current = repository.lockSession(candidate.get()).orElseThrow(() ->
                 new LiveControlException("LIVE_SESSION_NOT_FOUND", "live session was not found"));
         if (current.ownerId() != actor.userId()
-                || current.authorityType() != LiveSessionAuthorityType.OPERATOR_PILOT
+                || current.authorityType() != LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION
                 || current.state() != LiveSessionState.APPROVAL_PENDING) {
             throw new LiveControlException(
                     "PRE_PLACE_PREPARATION_RECOVERY_REFERENCE_MISMATCH",
@@ -517,20 +517,20 @@ public class LiveSessionControlService {
                     "LIVE_SESSION_VERSION_CONFLICT", "session changed during preparation recovery");
         }
         repository.appendSessionEvent(event(
-                current, target, "MINIMAL_PILOT_REJECT", actor.userId(), requestId, traceId,
+                current, target, "CONTROLLED_EXECUTION_REJECT", actor.userId(), requestId, traceId,
                 "PRE_PLACE_PREPARATION_EXPIRED", idempotencyKey,
                 LiveSessionApprovalScopeEncoder.digest(current),
                 occurredAt));
         operatorAuthorities.close(
-                current.operatorPilotAuthorityId(), OperatorPilotAuthority.Status.EXPIRED, occurredAt);
+                current.operatorExecutionAuthorityId(), OperatorPilotAuthority.Status.EXPIRED, occurredAt);
         return Optional.of(updated);
     }
 
     private static LiveSession withState(LiveSession current, LiveSessionState target, Instant occurredAt) {
         return new LiveSession(
                 current.id(), current.ownerId(), current.exchangeAccountId(), current.venue(),
-                current.authorityType(), current.operatorPilotAuthorityId(),
-                current.operatorPilotAuthorityDigest(),
+                current.authorityType(), current.operatorExecutionAuthorityId(),
+                current.operatorExecutionAuthorityDigest(),
                 current.strategyReleaseId(), current.releaseDigest(), current.releaseAdmissionRevision(),
                 current.riskLimitSetId(), current.riskLimitSetDigest(), current.credentialReference(),
                 current.symbolAllowlist(), current.capitalCap(), current.executionWindowStart(),

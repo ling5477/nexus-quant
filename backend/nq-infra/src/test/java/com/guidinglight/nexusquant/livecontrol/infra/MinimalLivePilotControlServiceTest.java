@@ -64,7 +64,7 @@ class MinimalLivePilotControlServiceTest {
                 ArgumentCaptor.forClass(CredentialPermissionProbeCommand.class);
         verify(fixture.permissionProbeService).probe(
                 anyLong(), anyLong(), anyLong(), anyString(), probe.capture(), anyString());
-        assertEquals("GATEY_PILOT_READINESS", probe.getValue().mode());
+        assertEquals("SCOPED_TRADE_READINESS", probe.getValue().mode());
         assertEquals(Boolean.TRUE, probe.getValue().dryRun());
         assertEquals(Boolean.TRUE, probe.getValue().paperSafetyConfirmed());
 
@@ -101,7 +101,7 @@ class MinimalLivePilotControlServiceTest {
         LiveControlException failure = assertThrows(
                 LiveControlException.class, () -> fixture.service.prepare(command()));
 
-        assertEquals("BTC_USDT_VENUE_MINIMUM_EXCEEDS_PILOT_CAP", failure.code());
+        assertEquals("BTC_USDT_VENUE_MINIMUM_EXCEEDS_EXECUTION_CAP", failure.code());
         verify(fixture.bindings, never()).create(any(), any());
     }
 

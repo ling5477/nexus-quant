@@ -30,46 +30,46 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /** 真实 PG16 独立 schema 验证进度持久性与锁边界；所有实例使用 production 仓储及 Spring 事务代理。 */
-@EnabledIfSystemProperty(named = "nq.l4.blockers.enabled", matches = "true")
+@EnabledIfSystemProperty(named = "nq.postgres.smoke.required", matches = "true")
 class ReconciliationCursorPostgresIntegrationTest {
     private static final List<OrderStatus> STATES = List.of(OrderStatus.FILLED, OrderStatus.CANCELLED);
 
     @ParameterizedTest @ValueSource(booleans = {false, true})
-    void freshAndV47UpgradePreserveHistoryAndOnlyAddCursor(boolean upgrade) {
+    void freshAndRepeatedBaselinePreserveHistoryAndCursor(boolean populated) {
         try (var f = new Fixture(false)) {
-            var previous = f.flyway("47");
+            var previous = f.flyway("1");
             List<Map<String, Object>> history = List.of();
             long tablesBefore = 0;
-            if (upgrade) {
-                assertEquals(47, previous.migrate().migrationsExecuted);
+            if (populated) {
+                assertEquals(1, previous.migrate().migrationsExecuted);
                 history = f.jdbc.queryForList("SELECT version,checksum FROM flyway_schema_history ORDER BY installed_rank");
                 tablesBefore = f.tableCount();
                 f.account(); f.add("old", "OKX", OrderStatus.CANCELLED, 0);
             }
-            assertEquals(upgrade ? 1 : 48, f.latest.migrate().migrationsExecuted);
+            assertEquals(populated ? 0 : 1, f.latest.migrate().migrationsExecuted);
             f.latest.validate();
-            assertEquals("48", f.latest.info().current().getVersion().getVersion());
+            assertEquals("1", f.latest.info().current().getVersion().getVersion());
             assertEquals(0, f.latest.info().pending().length);
-            assertEquals(48, f.jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success AND version IS NOT NULL", Integer.class));
-            if (upgrade) {
-                assertEquals(history, f.jdbc.queryForList("SELECT version,checksum FROM flyway_schema_history WHERE version IS DISTINCT FROM '48' ORDER BY installed_rank"));
-                assertEquals(tablesBefore + 1, f.tableCount());
+            assertEquals(1, f.jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success AND version IS NOT NULL", Integer.class));
+            if (populated) {
+                assertEquals(history, f.jdbc.queryForList("SELECT version,checksum FROM flyway_schema_history ORDER BY installed_rank"));
+                assertEquals(tablesBefore, f.tableCount());
                 assertEquals(0, f.raw.findByOrderId("old").orElseThrow().version());
             }
             assertEquals(5, f.jdbc.queryForObject("SELECT count(*) FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='reconciliation_scan_cursors'", Integer.class));
             assertEquals(1, f.jdbc.queryForObject("SELECT count(*) FROM pg_indexes WHERE schemaname=current_schema() AND tablename='reconciliation_scan_cursors'", Integer.class));
             assertEquals(5, f.jdbc.queryForObject("SELECT count(*) FROM pg_attribute WHERE attrelid='reconciliation_scan_cursors'::regclass AND attnum>0 AND col_description(attrelid,attnum) IS NOT NULL", Integer.class));
             assertNotNull(f.jdbc.queryForObject("SELECT obj_description('reconciliation_scan_cursors'::regclass)", String.class));
-            var checksum = f.jdbc.queryForObject("SELECT checksum FROM flyway_schema_history WHERE version='48'", Integer.class);
+            var checksum = f.jdbc.queryForObject("SELECT checksum FROM flyway_schema_history WHERE version='1'", Integer.class);
             assertEquals(0, f.latest.migrate().migrationsExecuted);
             f.latest.validate();
-            assertEquals(checksum, f.jdbc.queryForObject("SELECT checksum FROM flyway_schema_history WHERE version='48'", Integer.class));
+            assertEquals(checksum, f.jdbc.queryForObject("SELECT checksum FROM flyway_schema_history WHERE version='1'", Integer.class));
             f.jdbc.update("INSERT INTO reconciliation_scan_cursors(venue) VALUES ('OKX')");
             assertThrows(DataAccessException.class, () -> f.jdbc.update("INSERT INTO reconciliation_scan_cursors(venue) VALUES ('OKX')"));
             assertThrows(DataAccessException.class, () -> f.jdbc.update("UPDATE reconciliation_scan_cursors SET cursor_order_id='half-key'"));
             assertThrows(DataAccessException.class, () -> f.jdbc.update("UPDATE reconciliation_scan_cursors SET revision=-1"));
             assertThrows(DataAccessException.class, () -> f.jdbc.update("INSERT INTO reconciliation_scan_cursors(venue) VALUES (' ')"));
-            System.out.println("C2_FLYWAY_PASS upgrade=" + upgrade + " latest=48 checksum=" + checksum + " tables=" + f.tableCount());
+            System.out.println("RECONCILIATION_BASELINE_PASS populated=" + populated + " latest=1 checksum=" + checksum + " tables=" + f.tableCount());
         }
     }
 
@@ -189,23 +189,21 @@ class ReconciliationCursorPostgresIntegrationTest {
     static class Transactions { }
 
     private static final class Fixture implements AutoCloseable {
-        final String url = System.getProperty("spring.datasource.url", "");
+        final ReleaseBaselineTestDatabase database;
         final String schema = "c2_scan_" + UUID.randomUUID().toString().replace("-", "");
         final JdbcTemplate jdbc;
         final JdbcOrderRepository raw;
         final Flyway latest;
 
         Fixture(boolean migrate) {
-            assertTrue(url.startsWith("jdbc:postgresql://127.0.0.1:") && url.endsWith("/nq_l4_blocker"));
-            jdbc = new JdbcTemplate(source()); raw = new JdbcOrderRepository(jdbc); latest = flyway("48");
+            try { database = ReleaseBaselineTestDatabase.create(); }
+            catch (Exception error) { throw new IllegalStateException("Disposable database creation failed", error); }
+            jdbc = new JdbcTemplate(source()); raw = new JdbcOrderRepository(jdbc); latest = flyway("1");
             if (migrate) { latest.migrate(); latest.validate(); account(); }
         }
 
-        DriverManagerDataSource source() { return new DriverManagerDataSource(url + "?currentSchema=" + schema, "postgres", ""); }
-        Flyway flyway(String target) {
-            return Flyway.configure().dataSource(url, "postgres", "").locations("classpath:db/migration")
-                    .schemas(schema).defaultSchema(schema).createSchemas(true).cleanDisabled(false).target(target).load();
-        }
+        DriverManagerDataSource source() { return database.source(); }
+        Flyway flyway(String target) { return database.flyway(); }
         AnnotationConfigApplicationContext instance() {
             var context = new AnnotationConfigApplicationContext();
             var dataSource = source();
@@ -222,6 +220,9 @@ class ReconciliationCursorPostgresIntegrationTest {
         }
         long revision(String venue) { return jdbc.queryForObject("SELECT revision FROM reconciliation_scan_cursors WHERE venue=?", Long.class, venue); }
         long tableCount() { return jdbc.queryForObject("SELECT count(*) FROM information_schema.tables WHERE table_schema=current_schema() AND table_type='BASE TABLE'", Long.class); }
-        @Override public void close() { latest.clean(); }
+        @Override public void close() {
+            try { database.close(); }
+            catch (Exception error) { throw new IllegalStateException("Disposable database cleanup failed", error); }
+        }
     }
 }

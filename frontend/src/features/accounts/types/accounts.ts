@@ -34,12 +34,22 @@ export interface ExchangeAccountCredentialSummary {
     exchangeAccountId: number;
     credentialType: ExchangeCredentialType;
     maskedAccessKey: string;
+    credentialStatus: 'ACTIVE' | 'DISABLED' | 'ROTATED' | 'REVOKED' | 'EXPIRED';
     verificationStatus: CredentialVerificationStatus;
     isActive: boolean;
     rotatedFromCredentialId: number | null;
+    revokedAt: string | null;
+    rotatedAt: string | null;
     lastVerifiedAt: string | null;
     lastVerificationError: string | null;
     updatedAt: string;
+    permissionProbeStatus: string;
+    permissionScope: string | null;
+    withdrawEnabled: boolean;
+    ipAllowlistProbeStatus: string;
+    failedAuthCount: number;
+    lastPermissionProbeAt: string | null;
+    lastPermissionProbeError: string | null;
 }
 
 export interface ExchangeAccountActiveCredentialResponse {

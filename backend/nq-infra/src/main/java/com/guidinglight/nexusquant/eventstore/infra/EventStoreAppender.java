@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository;
  * EventStoreAppender 负责把关键命令/事件持久化到 event_store。
  * <p>
  * Why:
- * Gate B 需要把命令与关键业务事件写入事实表，才能在恢复场景下回放并追踪副作用来源。
+ * 需要把命令与关键业务事件写入事实表，才能在恢复场景下回放并追踪副作用来源。
  * <p>
  * 约束:
  * 1) topic 必须使用 TopicNames 常量，避免散装字符串；

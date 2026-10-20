@@ -2,10 +2,13 @@ import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n/index';
 import {App, Alert, Button, Descriptions, Drawer, Empty, Form, Input, Modal, Space, Timeline, Typography} from 'antd';
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {describeApiError, formatApiError} from '@/api/errors';
 
 import {StatusTag} from '@/nq-design-system/status/StatusTag';
+import {ResearchResultRecovery, usePendingResultAction} from '@/features/ResearchResultRecovery';
+import {readResultAction} from '@/features/research-result-recovery';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {
     useValidationReviewDetailQuery,
     useValidationReviewEventsQuery,
@@ -41,18 +44,6 @@ interface ValidationReviewCaseDrawerProps {
     onClose: () => void;
 }
 
-/** 每次用户确认提交生成一个新 key；mutation 不 retry，因此同一请求过程只使用该稳定值。 */
-function createIdempotencyKey(): string {
-    if (typeof globalThis.crypto?.randomUUID !== 'function') {
-        throw new Error('secure UUID generation is unavailable');
-    }
-    const key = globalThis.crypto.randomUUID();
-    if (!key) {
-        throw new Error('secure UUID generation returned an empty key');
-    }
-    return key;
-}
-
 /**
  * Case detail Drawer 展示后端 allowlisted 字段、最多 100 条 events 与真实状态机动作。
  * 不展示 raw metadata、credential、stack trace 或服务端未公开的诊断锚点。
@@ -67,50 +58,68 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
     const detailQuery = useValidationReviewDetailQuery(caseId);
     const eventsQuery = useValidationReviewEventsQuery(caseId);
     const mutation = useValidationReviewLifecycleMutation();
+    const currentUser = useAuthStore((state) => state.currentUser);
+    const accessToken = useAuthStore(selectSessionIdentity);
+    const actionScope = useRef<object | null>(null);
+    const canOperate = currentUser?.roles.some((role) =>
+        ['ADMIN', 'OPERATOR', 'ROLE_ADMIN', 'ROLE_OPERATOR'].includes(role.toUpperCase()),
+    ) ?? false;
+    // 切换对象、身份或会话后，旧回调不得覆盖新上下文；卸载也使原回调失效。
+    useLayoutEffect(() => {
+        const scope = {};
+        actionScope.current = scope;
+        return () => {
+            if (actionScope.current === scope) actionScope.current = null;
+        };
+    }, [caseId, currentUser?.userId, accessToken, canOperate]);
+
+    const pending = usePendingResultAction('VALIDATION_REVIEW');
+    const blocked = pending !== null;
+    // 读取失败或对象不匹配时隐藏旧快照，避免旧版本继续授权按钮。
+    const details = !detailQuery.isError && detailQuery.data?.id === caseId ? detailQuery.data : null;
 
     useEffect(() => {
         setActionForbidden(false);
         setActionNotice(null);
         setAction(null);
         form.resetFields();
-    }, [caseId, form]);
+    }, [caseId, form, currentUser?.userId, accessToken, canOperate]);
 
     const allowedActions = useMemo(
-        () => detailQuery.data ? (ACTIONS_BY_STATE[detailQuery.data.state] ?? []) : [],
-        [detailQuery.data],
+        () => details ? (ACTIONS_BY_STATE[details.state] ?? []) : [],
+        [details],
     );
     const detailError = detailQuery.error as AppApiError | null;
     const eventsError = eventsQuery.error as AppApiError | null;
 
     function submitAction(values: ValidationReviewLifecycleRequest) {
-        if (!caseId || !action || !detailQuery.data) return;
-        if (!allowedActions.includes(action) || !Number.isSafeInteger(detailQuery.data.version) || detailQuery.data.version < 0) {
+        if (!caseId || !action || !details || !canOperate || blocked) return;
+        if (!allowedActions.includes(action) || !Number.isSafeInteger(details.version) || details.version < 0) {
             setActionNotice({key: 'pages:theCaseStateOrVersionCannotBeSubmittedNoRequestWasSentRefreshTheLatestDetails'});
             return;
         }
-        let idempotencyKey: string;
-        try {
-            idempotencyKey = createIdempotencyKey();
-        } catch {
-            setActionNotice({key: 'pages:unableToGenerateASafeIdempotencyKeyTheRequestWasNotSent'});
-            return;
-        }
+        const submittedScope = actionScope.current;
         mutation.mutate({
             caseId,
             action,
-            idempotencyKey,
-            payload: {expectedVersion: detailQuery.data.version, reason: values.reason.trim()},
+            payload: {expectedVersion: details.version, reason: values.reason.trim()},
         }, {
             onSuccess: () => {
+                if (!submittedScope || actionScope.current !== submittedScope) return;
                 message.success(t('pages:reviewActionSubmitted', {action: ACTION_LABELS[action]}));
                 setAction(null);
                 setActionNotice(null);
                 form.resetFields();
             },
             onError: (error) => {
+                if (!submittedScope || actionScope.current !== submittedScope) return;
                 const apiError = error as AppApiError;
                 if (apiError.status === 403) setActionForbidden(true);
                 setActionNotice({error: apiError});
+                // 未知结果只保留原请求查询，关闭确认框，不能再次生成身份提交。
+                if (readResultAction(currentUser?.userId, 'VALIDATION_REVIEW') !== null) {
+                    setAction(null);
+                }
             },
         });
     }
@@ -136,36 +145,40 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
                         <Alert type="error" showIcon message={describeApiError(detailError).title} description={formatApiError(detailError)}/>
                     ) : null}
                     {detailQuery.isLoading ? <Text type="secondary">{t('pages:loadingCaseDetails')}</Text> : null}
-                    {detailQuery.data ? (
-                        <Descriptions bordered size="small" column={2}>
-                            <Descriptions.Item label={t('pages:caseId')} span={2}><Text code copyable>{detailQuery.data.id}</Text></Descriptions.Item>
-                            <Descriptions.Item label={t('pages:state')}><StatusTag status={detailQuery.data.state} title="" variant="pill"/></Descriptions.Item>
-                            <Descriptions.Item label={t('pages:severity2')}><StatusTag status={detailQuery.data.severity} title="" variant="pill"/></Descriptions.Item>
-                            <Descriptions.Item label={t('pages:owner')}>{detailQuery.data.ownerId}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:version')}>{detailQuery.data.version}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:evidenceType')}>{detailQuery.data.evidenceType}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:evidenceSource')}>{detailQuery.data.evidenceSource}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:title')} span={2}>{detailQuery.data.title}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:summary')} span={2}>{detailQuery.data.summary}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:created')}>{formatDateTime(detailQuery.data.createdAt)}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:updated2')}>{formatDateTime(detailQuery.data.updatedAt)}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:retentionUntil')} span={2}>{formatDateTime(detailQuery.data.retentionUntil)}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:diagnosticMetadata')} span={2}>
+                    {details ? (
+                        <Descriptions bordered size="small" column={{xs: 1, sm: 2, md: 2, lg: 2, xl: 2, xxl: 2}}>
+                            <Descriptions.Item label={t('pages:caseId')} span="filled"><Text copyable><code style={{whiteSpace: 'normal', overflowWrap: 'anywhere'}}>{details.id}</code></Text></Descriptions.Item>
+                            <Descriptions.Item label={t('pages:state')}><StatusTag status={details.state} title="" variant="pill"/></Descriptions.Item>
+                            <Descriptions.Item label={t('pages:severity2')}><StatusTag status={details.severity} title="" variant="pill"/></Descriptions.Item>
+                            <Descriptions.Item label={t('pages:owner')}>{details.ownerId}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:version')}>{details.version}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:evidenceType')}>{details.evidenceType}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:evidenceSource')}>{details.evidenceSource}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:title')} span="filled">{details.title}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:summary')} span="filled">{details.summary}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:created')}>{formatDateTime(details.createdAt)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:updated2')}>{formatDateTime(details.updatedAt)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:retentionUntil')} span="filled">{formatDateTime(details.retentionUntil)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:diagnosticMetadata')} span="filled">
                                 {t('pages:theSafeBackendDtoDoesNotExposeTraceSchemaChecksumOrEvidenceAnchorsTheFrontendDoesNotInferOrFabricate')}</Descriptions.Item>
                         </Descriptions>
                     ) : null}
 
+                    <ResearchResultRecovery kind="VALIDATION_REVIEW" />
                     {actionNotice ? <Alert type="warning" showIcon message={'error' in actionNotice ? formatApiError(actionNotice.error) : t(actionNotice.key)}/> : null}
-                    {detailQuery.data ? (
+                    {details ? (
                         <Space wrap data-testid="validation-review-actions">
                             {allowedActions.map((item) => (
                                 <Button
                                     key={item}
                                     danger={item === 'close'}
-                                    disabled={actionForbidden || mutation.isPending}
+                                    disabled={
+                                        !canOperate || blocked || detailQuery.isFetching ||
+                                        actionForbidden || mutation.isPending
+                                    }
                                     onClick={() => {
                                         setAction(item);
-                                        form.setFieldsValue({expectedVersion: detailQuery.data?.version, reason: ''});
+                                        form.setFieldsValue({expectedVersion: details?.version, reason: ''});
                                     }}
                                 >
                                     {ACTION_LABELS[item]}
@@ -206,7 +219,10 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
                 okText={t('pages:confirmAndSubmit')}
                 cancelText={t('pages:cancel')}
                 confirmLoading={mutation.isPending}
-                okButtonProps={{disabled: actionForbidden || mutation.isPending}}
+                okButtonProps={{
+                    disabled: !canOperate || blocked || detailQuery.isFetching ||
+                        actionForbidden || mutation.isPending,
+                }}
                 zIndex={1100}
                 onCancel={() => !mutation.isPending && setAction(null)}
                 onOk={() => form.submit()}

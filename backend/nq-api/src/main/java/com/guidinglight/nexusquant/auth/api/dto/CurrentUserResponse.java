@@ -24,7 +24,9 @@ public record CurrentUserResponse(
         @Schema(description = "默认交易环境")
         String defaultTradeEnv,
         @Schema(description = "默认账户别名")
-        String defaultAccountAlias
+        String defaultAccountAlias,
+        @Schema(description = "是否必须先修改密码")
+        boolean mustChangePassword
 ) {
 }
 

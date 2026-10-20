@@ -26,10 +26,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRepository {
 
     private static final String COLUMNS = """
-            SELECT lease_id,live_session_id,operator_pilot_authority_id,binding_id,binding_digest,status,max_notional,
+            SELECT lease_id,live_session_id,operator_execution_authority_id,binding_id,binding_digest,status,max_notional,
                    valid_from,expires_at,consumed_at,closed_at,created_by,version,created_at,updated_at,
                    predecessor_lease_id,recovery_decision_id,replacement_ordinal,replacement_reason
-            FROM pilot_execution_leases
+            FROM controlled_execution_leases
             """;
 
     private final JdbcTemplate jdbc;
@@ -46,21 +46,21 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
         Optional<PilotExecutionLease> existing = findByBinding(lease.bindingId(), true);
         if (existing.isPresent()) {
             if (existing.get().equals(lease)) return existing.get();
-            throw rejected("PILOT_LEASE_IDEMPOTENCY_CONFLICT");
+            throw rejected("EXECUTION_LEASE_IDEMPOTENCY_CONFLICT");
         }
         jdbc.update("""
-                        INSERT INTO pilot_execution_leases(
-                            lease_id,live_session_id,operator_pilot_authority_id,binding_id,binding_digest,status,max_notional,
+                        INSERT INTO controlled_execution_leases(
+                            lease_id,live_session_id,operator_execution_authority_id,binding_id,binding_digest,status,max_notional,
                             valid_from,expires_at,created_by,version,created_at,updated_at,
                             predecessor_lease_id,recovery_decision_id,replacement_ordinal,replacement_reason
                         ) VALUES (?,?,?,?,?,?,?,?,?,?,1,?,?,?,?,?,?)
-                        """, lease.id(), lease.liveSessionId(), lease.operatorPilotAuthorityId(),
+                        """, lease.id(), lease.liveSessionId(), lease.operatorExecutionAuthorityId(),
                 lease.bindingId(), lease.bindingDigest(),
                 lease.status().name(), lease.maxNotional(), Timestamp.from(lease.validFrom()),
                 Timestamp.from(lease.expiresAt()), lease.createdBy(), Timestamp.from(lease.createdAt()),
                 Timestamp.from(lease.updatedAt()), lease.predecessorLeaseId(), lease.recoveryDecisionId(),
                 lease.replacementOrdinal(), lease.replacementReason());
-        appendEvent(lease.id(), null, lease.status(), 1, "PILOT_LEASE_CREATED",
+        appendEvent(lease.id(), null, lease.status(), 1, "EXECUTION_LEASE_CREATED",
                 requestId, traceId, lease.createdAt());
         return findLocked(lease.id()).orElseThrow();
     }
@@ -74,14 +74,14 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
     @Transactional
     public PilotExecutionLease activate(UUID leaseId, long expectedVersion, Instant occurredAt,
                                         String requestId, String traceId) {
-        PilotExecutionLease lease = findLocked(leaseId).orElseThrow(() -> rejected("PILOT_LEASE_NOT_FOUND"));
+        PilotExecutionLease lease = findLocked(leaseId).orElseThrow(() -> rejected("EXECUTION_LEASE_NOT_FOUND"));
         if (lease.status() != PilotExecutionLease.Status.CREATED || lease.version() != expectedVersion
                 || occurredAt.isBefore(lease.validFrom()) || !occurredAt.isBefore(lease.expiresAt())) {
-            throw rejected("PILOT_LEASE_ACTIVATION_REJECTED");
+            throw rejected("EXECUTION_LEASE_ACTIVATION_REJECTED");
         }
         updateStatus(lease, PilotExecutionLease.Status.ACTIVE, occurredAt, null, null);
         appendEvent(lease.id(), lease.status(), PilotExecutionLease.Status.ACTIVE, lease.version() + 1,
-                "PILOT_LEASE_ACTIVATED", requestId, traceId, occurredAt);
+                "EXECUTION_LEASE_ACTIVATED", requestId, traceId, occurredAt);
         return findLocked(leaseId).orElseThrow();
     }
 
@@ -95,14 +95,14 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
             String requestId,
             String traceId
     ) {
-        PilotExecutionLease lease = findLocked(leaseId).orElseThrow(() -> rejected("PILOT_LEASE_NOT_FOUND"));
+        PilotExecutionLease lease = findLocked(leaseId).orElseThrow(() -> rejected("EXECUTION_LEASE_NOT_FOUND"));
         if (!lease.activeAt(occurredAt) || !lease.liveSessionId().equals(binding.sessionId())
-                || !Objects.equals(lease.operatorPilotAuthorityId(),
+                || !Objects.equals(lease.operatorExecutionAuthorityId(),
                 binding.operatorPilotAuthority() == null
                         ? null : binding.operatorPilotAuthority().authorityId())
                 || !lease.bindingId().equals(binding.id()) || !lease.bindingDigest().equals(binding.bindingDigest())
                 || !binding.hasCanonicalDigest() || binding.order().notional().compareTo(lease.maxNotional()) > 0) {
-            throw rejected("PILOT_LEASE_SCOPE_MISMATCH");
+            throw rejected("EXECUTION_LEASE_SCOPE_MISMATCH");
         }
         List<Integer> exact = jdbc.query("""
                         SELECT 1 FROM execution_intents
@@ -112,37 +112,37 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
                         """, (row, ignored) -> row.getInt(1), intentId, binding.sessionId(),
                 binding.order().exchangeInstrumentId(), binding.order().side().name(),
                 binding.order().quantity(), binding.order().price());
-        if (exact.size() != 1) throw rejected("PILOT_LEASE_INTENT_MISMATCH");
+        if (exact.size() != 1) throw rejected("EXECUTION_LEASE_INTENT_MISMATCH");
         try {
-            jdbc.update("INSERT INTO pilot_execution_lease_intents(lease_id,intent_id,action,created_at) "
+            jdbc.update("INSERT INTO controlled_execution_lease_intents(lease_id,intent_id,action,created_at) "
                     + "VALUES (?,?,'PLACE',?)", leaseId, intentId, Timestamp.from(occurredAt));
         } catch (DataIntegrityViolationException conflict) {
-            throw rejected("PILOT_LEASE_PLACE_ALREADY_BOUND");
+            throw rejected("EXECUTION_LEASE_PLACE_ALREADY_BOUND");
         }
         updateStatus(lease, PilotExecutionLease.Status.CONSUMED, occurredAt, occurredAt, null);
         appendEvent(lease.id(), lease.status(), PilotExecutionLease.Status.CONSUMED, lease.version() + 1,
-                "PILOT_LEASE_PLACE_BOUND", requestId, traceId, occurredAt);
+                "EXECUTION_LEASE_PLACE_BOUND", requestId, traceId, occurredAt);
         return findLocked(leaseId).orElseThrow();
     }
 
     @Override
     @Transactional
     public void bindCancel(UUID leaseId, UUID intentId, Instant occurredAt) {
-        PilotExecutionLease lease = findLocked(leaseId).orElseThrow(() -> rejected("PILOT_LEASE_NOT_FOUND"));
+        PilotExecutionLease lease = findLocked(leaseId).orElseThrow(() -> rejected("EXECUTION_LEASE_NOT_FOUND"));
         if (lease.status() != PilotExecutionLease.Status.CONSUMED || !occurredAt.isBefore(lease.expiresAt())) {
-            throw rejected("PILOT_LEASE_CANCEL_REJECTED");
+            throw rejected("EXECUTION_LEASE_CANCEL_REJECTED");
         }
         List<Integer> exact = jdbc.query("""
                 SELECT 1 FROM execution_intents
                 WHERE intent_id=? AND session_id=? AND action='CANCEL'
                 FOR UPDATE
                 """, (row, ignored) -> row.getInt(1), intentId, lease.liveSessionId());
-        if (exact.size() != 1) throw rejected("PILOT_LEASE_INTENT_MISMATCH");
+        if (exact.size() != 1) throw rejected("EXECUTION_LEASE_INTENT_MISMATCH");
         try {
-            jdbc.update("INSERT INTO pilot_execution_lease_intents(lease_id,intent_id,action,created_at) "
+            jdbc.update("INSERT INTO controlled_execution_lease_intents(lease_id,intent_id,action,created_at) "
                     + "VALUES (?,?,'CANCEL',?)", leaseId, intentId, Timestamp.from(occurredAt));
         } catch (DataIntegrityViolationException conflict) {
-            throw rejected("PILOT_LEASE_CANCEL_ALREADY_BOUND");
+            throw rejected("EXECUTION_LEASE_CANCEL_ALREADY_BOUND");
         }
     }
 
@@ -155,12 +155,12 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
                 && terminal != PilotExecutionLease.Status.FAILED) {
             throw new IllegalArgumentException("terminal lease status is required");
         }
-        PilotExecutionLease lease = findLocked(leaseId).orElseThrow(() -> rejected("PILOT_LEASE_NOT_FOUND"));
+        PilotExecutionLease lease = findLocked(leaseId).orElseThrow(() -> rejected("EXECUTION_LEASE_NOT_FOUND"));
         if (lease.status() == terminal) return lease;
         if (lease.status() != PilotExecutionLease.Status.CREATED
                 && lease.status() != PilotExecutionLease.Status.ACTIVE
                 && lease.status() != PilotExecutionLease.Status.CONSUMED) {
-            throw rejected("PILOT_LEASE_ALREADY_TERMINAL");
+            throw rejected("EXECUTION_LEASE_ALREADY_TERMINAL");
         }
         updateStatus(lease, terminal, occurredAt, lease.consumedAt(), occurredAt);
         appendEvent(lease.id(), lease.status(), terminal, lease.version() + 1,
@@ -187,12 +187,12 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
     private void updateStatus(PilotExecutionLease lease, PilotExecutionLease.Status target, Instant occurredAt,
                               Instant consumedAt, Instant closedAt) {
         int updated = jdbc.update("""
-                        UPDATE pilot_execution_leases
+                        UPDATE controlled_execution_leases
                         SET status=?,consumed_at=?,closed_at=?,version=version+1,updated_at=?
                         WHERE lease_id=? AND status=? AND version=?
                         """, target.name(), timestamp(consumedAt), timestamp(closedAt), Timestamp.from(occurredAt),
                 lease.id(), lease.status().name(), lease.version());
-        if (updated != 1) throw rejected("PILOT_LEASE_VERSION_CONFLICT");
+        if (updated != 1) throw rejected("EXECUTION_LEASE_VERSION_CONFLICT");
     }
 
     private void appendEvent(UUID leaseId, PilotExecutionLease.Status from, PilotExecutionLease.Status to,
@@ -201,7 +201,7 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
         requireText(requestId, "requestId");
         requireText(traceId, "traceId");
         jdbc.update("""
-                        INSERT INTO pilot_execution_lease_events(
+                        INSERT INTO controlled_execution_lease_events(
                             event_id,lease_id,from_status,to_status,lease_version,reason_code,
                             request_id,trace_id,occurred_at
                         ) VALUES (?,?,?,?,?,?,?,?,?)
@@ -212,7 +212,7 @@ public class JdbcPilotExecutionLeaseRepository implements PilotExecutionLeaseRep
     private static PilotExecutionLease map(ResultSet row, int ignored) throws SQLException {
         return new PilotExecutionLease(
                 row.getObject("lease_id", UUID.class), row.getObject("live_session_id", UUID.class),
-                row.getObject("operator_pilot_authority_id", UUID.class),
+                row.getObject("operator_execution_authority_id", UUID.class),
                 row.getObject("binding_id", UUID.class), row.getString("binding_digest"),
                 PilotExecutionLease.Status.valueOf(row.getString("status")), row.getBigDecimal("max_notional"),
                 row.getTimestamp("valid_from").toInstant(), row.getTimestamp("expires_at").toInstant(),

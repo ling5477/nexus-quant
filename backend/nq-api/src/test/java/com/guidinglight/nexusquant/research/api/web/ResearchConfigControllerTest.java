@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.research.api.web;
 
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -99,6 +101,12 @@ class ResearchConfigControllerTest {
 
     @Test
     void shouldArchiveResearchConfig() throws Exception {
+        var claims = new TokenClaims(
+                "1", "admin", List.of("ADMIN"), Instant.now(), Instant.now().plusSeconds(3600),
+                "nexus-quant", "token-" + "x".repeat(128), 0);
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        claims, "unused", List.of()));
         ResearchConfig archived = new ResearchConfig(
                 "rcf-1",
                 "str-1",
@@ -112,10 +120,10 @@ class ResearchConfigControllerTest {
                 Instant.parse("2026-03-22T00:00:00Z"),
                 ResearchConfig.STATUS_ARCHIVED,
                 Instant.parse("2026-03-22T00:00:00Z"),
-                "system",
+                "admin",
                 "retired from default list"
         );
-        when(applicationService.archive("rcf-1", "system", "retired from default list"))
+        when(applicationService.archive("rcf-1", "admin", "retired from default list"))
                 .thenReturn(archived);
 
         mockMvc.perform(post("/api/research-configs/rcf-1/archive")
@@ -125,7 +133,7 @@ class ResearchConfigControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.researchConfigId").value("rcf-1"))
                 .andExpect(jsonPath("$.status").value("ARCHIVED"))
-                .andExpect(jsonPath("$.archivedBy").value("system"))
+                .andExpect(jsonPath("$.archivedBy").value("admin"))
                 .andExpect(jsonPath("$.archiveReason").value("retired from default list"));
     }
 

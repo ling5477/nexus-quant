@@ -123,6 +123,29 @@ class ValidationReviewControllerTest {
     }
 
     @Test
+    void shouldReadOriginalActionEventWithoutExposingIdentityOrMutatingState() throws Exception {
+        when(operationsService.originalEvent(any(), any(), any()))
+                .thenReturn(Optional.of(transitionResult.event()));
+        MvcResult result = mockMvc.perform(get("/api/validation-review-cases/{caseId}/action-result", CASE_ID)
+                        .header("Idempotency-Key", "original-request-only-in-header"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.caseId").value(CASE_ID.toString()))
+                .andExpect(jsonPath("$.caseVersion").value(1))
+                .andExpect(jsonPath("$.toState").value("ACKNOWLEDGED"))
+                .andExpect(jsonPath("$.actorId").value(11))
+                .andReturn();
+        assertNoForbiddenFields(result.getResponse().getContentAsString());
+        Assertions.assertFalse(result.getResponse().getContentAsString().contains("original-request-only-in-header"));
+        when(operationsService.originalEvent(any(), any(), any())).thenReturn(Optional.empty());
+        mockMvc.perform(get("/api/validation-review-cases/{caseId}/action-result", CASE_ID)
+                        .header("Idempotency-Key", "not-recorded"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/validation-review-cases/{caseId}/action-result", CASE_ID))
+                .andExpect(status().isBadRequest());
+        verify(operationsService, Mockito.never()).transition(any(), any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
     void shouldExposeBoundedQueriesStableEventsAndConservativeFields() throws Exception {
         when(operationsService.listCases(any(), any())).thenReturn(List.of(reviewCase));
         when(operationsService.detail(any(), any())).thenReturn(reviewCase);
@@ -254,14 +277,18 @@ class ValidationReviewControllerTest {
     }
 
     @Test
-    void shouldExposeOnlyThreeGetsAndFourLifecyclePosts() {
+    void shouldExposeFourExactGetsAndKeepFourLifecyclePosts() {
         List<Method> gets = Arrays.stream(ValidationReviewController.class.getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(GetMapping.class))
                 .toList();
         List<Method> posts = Arrays.stream(ValidationReviewController.class.getDeclaredMethods())
                 .filter(method -> method.isAnnotationPresent(PostMapping.class))
                 .toList();
-        assertEquals(3, gets.size());
+        assertEquals(4, gets.size());
+        // 唯一新增的是原事件查询；原有读取与四种写动作的边界保持精确约束。
+        assertEquals(List.of("", "/{caseId}", "/{caseId}/action-result", "/{caseId}/events"),
+                gets.stream().map(method -> method.getAnnotation(GetMapping.class).value())
+                        .map(paths -> paths.length == 0 ? "" : paths[0]).sorted().toList());
         assertEquals(4, posts.size());
         for (Method method : ValidationReviewController.class.getDeclaredMethods()) {
             assertFalse(method.isAnnotationPresent(DeleteMapping.class));

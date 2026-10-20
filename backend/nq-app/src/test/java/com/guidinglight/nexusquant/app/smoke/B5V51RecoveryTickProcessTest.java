@@ -15,12 +15,12 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** 没有 scan/recover 请求时由生产启动及 tick 接手 disabled manual 工作。 */
+/** 独立恢复进程接手已禁用定义的 manual 持久工作，并投影真实终态。 */
 @EnabledIfSystemProperty(named = "nq.b5.v51", matches = "true")
 class B5V51RecoveryTickProcessTest {
-    @Test void disabledManualRunUsesImmutableOverrideAtStartupAndTerminalTick() throws Exception {
+    @Test void disabledManualRunUsesImmutableOverrideAtRecoveryAndTerminalProjection() throws Exception {
         Path dir = B0Processes.root().resolve("backend/nq-app/target/b5-v51-tick/" + UUID.randomUUID()); Files.createDirectories(dir);
-        var mapper = new ObjectMapper(); var proof = mapper.createObjectNode().put("scenario", "DISABLED_MANUAL_STARTUP_TICK");
+        var mapper = new ObjectMapper(); var proof = mapper.createObjectNode().put("scenario", "DISABLED_MANUAL_DURABLE_RECOVERY");
         System.out.println("B5_V51_TICK_ROOT " + dir);
         try (var pg = B0Processes.Pg.start(); var fixture = B0Fixture.create(pg);
              var venue = new B0Processes.Child(B2SyntheticVenueMain.class, dir, "venue", B0Processes.cleanEnvironment())) {
@@ -35,7 +35,9 @@ class B5V51RecoveryTickProcessTest {
                 String runId = value(reader, "SELECT strategy_run_id FROM strategy_runs");
                 a.send("DISABLE_V51"); a.kill();
                 assertEquals("CREATED", value(reader, "SELECT status FROM strategy_runs"));
-                try (var b = new B0Processes.Child(B5V51NqRecoveryMain.class, dir, "b", env).awaitReady()) {
+                try (var b = new B0Processes.Child(B0NqProcessMain.class, dir, "b", env).awaitReady()) {
+                    // 当前首版不允许数据库开关激活策略恢复；隔离进程显式调用正式单轮恢复入口。
+                    assertTrue(b.send("RECOVER_V51_ALL").startsWith("V51_RECOVERED "));
                     awaitStatus(reader, "RUNNING");
                     assertEquals("7.00000000", value(reader, "SELECT qty FROM orders"));
                     assertEquals("f", value(reader, "SELECT enabled FROM strategy_definitions"));
@@ -44,6 +46,7 @@ class B5V51RecoveryTickProcessTest {
                         assertEquals(200, client.send(HttpRequest.newBuilder(URI.create(endpoint + "/control")).timeout(Duration.ofSeconds(5))
                                 .POST(HttpRequest.BodyPublishers.ofString("FILL 7 0.01")).build(), HttpResponse.BodyHandlers.ofString()).statusCode());
                         b.send("RECOVER");
+                        assertTrue(b.send("RECOVER_V51_ALL").startsWith("V51_RECOVERED "));
                         awaitStatus(reader, "SUCCEEDED");
                         var facts = mapper.readTree(client.send(HttpRequest.newBuilder(URI.create(endpoint + "/facts")).timeout(Duration.ofSeconds(5))
                                 .GET().build(), HttpResponse.BodyHandlers.ofString()).body());
@@ -65,6 +68,6 @@ class B5V51RecoveryTickProcessTest {
     private static String value(Connection c, String sql) throws Exception { return B5StrategyRunRecoveryProcessTest.value(c, sql); }
     private static void awaitStatus(Connection c, String status) throws Exception {
         long deadline = System.nanoTime() + Duration.ofSeconds(20).toNanos();
-        while (!status.equals(value(c, "SELECT status FROM strategy_runs"))) { assertTrue(System.nanoTime() < deadline, "independent recovery tick did not progress " + status); Thread.sleep(30); }
+        while (!status.equals(value(c, "SELECT status FROM strategy_runs"))) { assertTrue(System.nanoTime() < deadline, "independent recovery did not progress " + status); Thread.sleep(30); }
     }
 }

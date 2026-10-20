@@ -21,7 +21,7 @@ public record HistoricalMarketDataQuery(
         int size
 ) {
     /**
-     * 兼容 RC1 调用口径，默认查询 SPOT 且限制最大 200 条。
+     * 兼容 调用口径，默认查询 SPOT 且限制最大 200 条。
      */
     public HistoricalMarketDataQuery(
             HistoricalDatasetSpec datasetSpec,

@@ -75,5 +75,89 @@
     "checkConnection": "Check your connection and the latest state. Confirm the outcome before deciding whether to retry."
   },
   "fieldInvalid": "{{field}}: check this value.",
-  "requestField": "Request"
+  "requestField": "Request",
+  "networkReadMessage": "Read failed. Unable to connect to the service.",
+  "networkReadAction": "Check the connection and service, then reload.",
+  "login": {
+    "credentials": "The username or password is incorrect. Check your credentials and try again.",
+    "expired": "Sign-in verification failed or your session is no longer valid. Sign in again to continue.",
+    "unavailableAccount": "This account cannot sign in right now. Contact your administrator.",
+    "rateLimited": "Too many attempts. Wait a moment and try again.",
+    "network": "Unable to connect. Check your connection and try again.",
+    "service": "The sign-in service is temporarily unavailable. Try again shortly.",
+    "failed": "Sign-in could not be completed. Try again or contact your administrator.",
+    "diagnostic": "Diagnostics"
+  },
+  "accountCommandPending": {
+    "title": "Account operation is unconfirmed",
+    "message": "Query the original result in Accounts before starting another account operation."
+  },
+  "accountCommandStorage": {
+    "title": "Operation identity could not be retained",
+    "message": "The browser could not retain the operation identity. This request has not been submitted. Restore session storage before proceeding."
+  },
+  "accountCommandUnknown": {
+    "title": "Account operation outcome is unknown",
+    "message": "The response did not match the original identity. Query the formal receipt in Accounts."
+  },
+  "accountCommandScope": {
+    "title": "Signed-in user changed",
+    "message": "Sign in as the original user to query the corresponding operation. Another user’s operation is not the current result."
+  },
+  "credentialOperationUnknown": {
+    "title": "Credential operation awaiting confirmation",
+    "message": "Query the original result and retain its identity before creating or rotating credentials again."
+  },
+  "credentialOperationIdentity": {
+    "title": "Credential operation identity conflict",
+    "message": "The successful operation has different input or its fingerprint key changed. Query its original result instead of retrying under a new identity."
+  },
+  "feeSyncUnknown": {
+    "title": "Fee synchronization needs confirmation",
+    "message": "Query the original synchronization result before creating another identity or resending."
+  },
+  "feeSyncStorage": {
+    "title": "Fee synchronization identity could not be saved",
+    "message": "Synchronization has not been sent. Keep this session and check browser storage so the original operation can be recovered."
+  },
+  "schedulerOperationPending": {
+    "title": "Scheduler operation pending",
+    "message": "Look up the original operation before submitting a new run."
+  },
+  "schedulerOperationIdentity": {
+    "title": "Original scheduler input conflicts",
+    "message": "Keep the original ID and verify the job and parameters. Do not automatically submit a new ID."
+  },
+  "schedulerOperationStorage": {
+    "title": "Cannot save scheduler operation identity",
+    "message": "This request has not been sent. Restore session storage before confirming the operation."
+  },
+  "schedulerOperationUnknown": {
+    "title": "Scheduler operation result unconfirmed",
+    "message": "Look up the original ID to confirm completion before submitting another operation."
+  },
+  "schedulerOperationScope": {
+    "title": "Signed-in user changed",
+    "message": "This scheduler operation cannot be restored under another user. Sign in as the original user to query it."
+  },
+  "schedulerOperationVersion": {
+    "title": "Job control has changed",
+    "message": "Another operation updated this job. The original version did not change the control; reload the job before confirming again."
+  },
+  "schedulerOperationCapability": {
+    "title": "Job capability is unavailable in this environment",
+    "message": "The required capability is not assembled or enabled. Review runtime boundaries; the scheduler switch cannot replace those prerequisites."
+  },
+  "researchCreationUnknown": {
+    "title": "Creation result needs confirmation",
+    "message": "Read the saved original result in the recovery panel before creating another object."
+  },
+  "researchCreationStorage": {
+    "title": "Creation identity storage unavailable",
+    "message": "No request was sent. Restore browser storage before continuing."
+  },
+  "researchCreationScopeChanged": {
+    "title": "Account changed",
+    "message": "Creation was not sent. Review the saved original requests and input for the current account."
+  }
 }

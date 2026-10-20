@@ -110,7 +110,7 @@ class PilotScopeControlPlaneServiceTest {
         verify(transactions).materializeOperatorPilot(
                 any(), session.capture(), authority.capture(), any(), scope.capture(), any());
         assertEquals(operatorAuthority, authority.getValue());
-        assertEquals(operatorAuthority.id(), session.getValue().operatorPilotAuthorityId());
+        assertEquals(operatorAuthority.id(), session.getValue().operatorExecutionAuthorityId());
         assertEquals(null, session.getValue().strategyReleaseId());
         assertEquals(null, session.getValue().riskLimitSetId());
         assertTrue(scope.getValue().hasCanonicalHash(session.getValue()));
@@ -185,7 +185,7 @@ class PilotScopeControlPlaneServiceTest {
         LiveControlException failure = assertThrows(
                 LiveControlException.class, () -> service.materializeMinimal(ACTOR, command));
 
-        assertEquals("TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_UNAVAILABLE", failure.code());
+        assertEquals("TRUSTED_OPERATOR_CONTROLLED_EXECUTION_SCOPE_BOOTSTRAP_UNAVAILABLE", failure.code());
         verify(transactions, never()).materializeOperatorPilot(
                 any(), any(), any(), any(), any(), any());
     }
@@ -228,7 +228,7 @@ class PilotScopeControlPlaneServiceTest {
         LiveControlException failure = assertThrows(
                 LiveControlException.class, () -> service.materialize(ACTOR, command));
 
-        assertEquals("PILOT_SCOPE_HASH_MISMATCH", failure.code());
+        assertEquals("EXECUTION_SCOPE_HASH_MISMATCH", failure.code());
         assertEquals(0, observationAuthority.calls());
         verify(transactions, never()).materialize(any(), any(), any(), any(), any(), any());
     }
@@ -249,7 +249,7 @@ class PilotScopeControlPlaneServiceTest {
                 LiveControlException.class,
                 () -> service.materialize(ACTOR, replaceRisk(value, mismatchedRisk)));
 
-        assertEquals("PILOT_RISK_REFERENCE_MISMATCH", failure.code());
+        assertEquals("EXECUTION_RISK_REFERENCE_MISMATCH", failure.code());
         assertEquals(0, observationAuthority.calls());
         verify(transactions, never()).materialize(any(), any(), any(), any(), any(), any());
     }
@@ -324,7 +324,7 @@ class PilotScopeControlPlaneServiceTest {
         when(authorization.lockAndCheckRole(ACTOR.userId(), "OPERATOR")).thenReturn(false);
         LiveControlException revoked = assertThrows(
                 LiveControlException.class, () -> service.preflight(ACTOR, UUID.randomUUID()));
-        assertEquals("PILOT_PREFLIGHT_OPERATOR_ROLE_REQUIRED", revoked.code());
+        assertEquals("EXECUTION_PREFLIGHT_OPERATOR_ROLE_REQUIRED", revoked.code());
     }
 
     @Test
@@ -343,7 +343,7 @@ class PilotScopeControlPlaneServiceTest {
                 LiveControlException.class,
                 () -> service.approve(new AuthenticatedLiveControlActor(22), command));
 
-        assertEquals("PILOT_APPROVAL_SCOPE_MISMATCH", failure.code());
+        assertEquals("EXECUTION_APPROVAL_SCOPE_MISMATCH", failure.code());
         verify(transactions, never()).approve(any(), any());
     }
 

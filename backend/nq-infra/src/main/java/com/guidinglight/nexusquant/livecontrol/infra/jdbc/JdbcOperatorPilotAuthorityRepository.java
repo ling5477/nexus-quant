@@ -27,7 +27,7 @@ public class JdbcOperatorPilotAuthorityRepository implements OperatorPilotAuthor
                    instrument,side,order_type,max_notional,max_place_count,max_cancel_count,
                    transfer_allowed,withdraw_allowed,valid_from,expires_at,status,created_by,
                    created_at,canonical_digest
-            FROM operator_pilot_authorities
+            FROM operator_execution_authorities
             """;
 
     private final JdbcTemplate jdbc;
@@ -43,10 +43,10 @@ public class JdbcOperatorPilotAuthorityRepository implements OperatorPilotAuthor
             if (replay.get().equals(authority)) {
                 return replay.get();
             }
-            throw rejected("OPERATOR_PILOT_AUTHORITY_IDEMPOTENCY_CONFLICT");
+            throw rejected("OPERATOR_CONTROLLED_EXECUTION_AUTHORITY_IDEMPOTENCY_CONFLICT");
         }
         jdbc.update("""
-                        INSERT INTO operator_pilot_authorities(
+                        INSERT INTO operator_execution_authorities(
                             authority_id,owner_user_id,exchange_account_id,credential_reference_id,
                             instrument,side,order_type,max_notional,max_place_count,max_cancel_count,
                             transfer_allowed,withdraw_allowed,valid_from,expires_at,status,created_by,
@@ -81,21 +81,21 @@ public class JdbcOperatorPilotAuthorityRepository implements OperatorPilotAuthor
             Instant occurredAt
     ) {
         OperatorPilotAuthority current = lock(authorityId)
-                .orElseThrow(() -> rejected("OPERATOR_PILOT_AUTHORITY_NOT_FOUND"));
+                .orElseThrow(() -> rejected("OPERATOR_CONTROLLED_EXECUTION_AUTHORITY_NOT_FOUND"));
         if (current.status() == status) {
             return current;
         }
         if (current.status() != OperatorPilotAuthority.Status.ACTIVE) {
-            throw rejected("OPERATOR_PILOT_AUTHORITY_ALREADY_TERMINAL");
+            throw rejected("OPERATOR_CONTROLLED_EXECUTION_AUTHORITY_ALREADY_TERMINAL");
         }
         int updated = jdbc.update("""
-                        UPDATE operator_pilot_authorities
+                        UPDATE operator_execution_authorities
                         SET status=?,closed_at=?,updated_at=?,version=version+1
                         WHERE authority_id=? AND status='ACTIVE'
                         """, status.name(), Timestamp.from(occurredAt), Timestamp.from(occurredAt),
                 authorityId);
         if (updated != 1) {
-            throw rejected("OPERATOR_PILOT_AUTHORITY_VERSION_CONFLICT");
+            throw rejected("OPERATOR_CONTROLLED_EXECUTION_AUTHORITY_VERSION_CONFLICT");
         }
         return lock(authorityId).orElseThrow();
     }

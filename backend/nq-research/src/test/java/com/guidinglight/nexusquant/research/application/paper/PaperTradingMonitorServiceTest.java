@@ -5,6 +5,13 @@ import com.guidinglight.nexusquant.research.application.paper.service.PaperTradi
 import com.guidinglight.nexusquant.research.application.paper.service.PaperTradingRunService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperEmergencyStopOperationService;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -29,6 +36,8 @@ import com.guidinglight.nexusquant.research.domain.paper.port.PaperRiskCheckResu
 import com.guidinglight.nexusquant.research.domain.paper.port.PositionCurveSnapshotRepository;
 import com.guidinglight.nexusquant.research.domain.paper.port.TradeReplayRecordRepository;
 
+import java.util.Optional;
+import java.util.UUID;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -205,8 +214,28 @@ class PaperTradingMonitorServiceTest {
         }
     }
 
+    /** 旧Paper入口不能借新回执合同停止canonical资金运行。 */
+    @Test
+    void stableEmergencyContractRejectsCanonicalRunBeforeStop() {
+        var runs = mock(PaperTradingRunService.class);
+        var monitor = mock(PaperTradingMonitorService.class);
+        var canonical = mock(PaperTradingRun.class);
+        when(canonical.canonicalAccountId()).thenReturn(12L);
+        when(runs.getById("ptr-canonical")).thenReturn(canonical);
+        var events = new InMemoryEmergencyStopRepo();
+        var operations = new PaperEmergencyStopOperationService(events, monitor, runs, new ObjectMapper());
+        assertThrows(IllegalArgumentException.class, () -> operations.submit(
+                UUID.randomUUID(), 7L, "operator", "ptr-canonical", "MANUAL", "do not bypass SIM"));
+        verifyNoInteractions(monitor);
+        assertEquals(0, events.records.size());
+    }
+
     static class InMemoryEmergencyStopRepo implements EmergencyStopEventRepository {
         final List<EmergencyStopEvent> records = new ArrayList<>();
+        @Override public void lockOperation(UUID operationId) {}
+        @Override public Optional<EmergencyStopEvent> findById(String id) {
+            return records.stream().filter(r -> r.emergencyStopId().equals(id)).findFirst();
+        }
         @Override public void insert(EmergencyStopEvent event) { records.add(event); }
         @Override public List<EmergencyStopEvent> listByRunId(String paperRunId) {
             return records.stream().filter(r -> r.paperRunId().equals(paperRunId)).toList();

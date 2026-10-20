@@ -4,37 +4,48 @@ import {t} from '@/i18n';
 import {
     Alert,
     App,
+    AutoComplete,
     Button,
     Card,
     Col,
+    Collapse,
     Descriptions,
     Drawer,
     Empty,
     Form,
     Input,
-    InputNumber,
     Row,
     Select,
     Space,
     Table,
     Tag,
     Typography,
+    Tooltip,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import type {FormInstance} from 'antd';
 import {useEffect, useMemo, useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
+import {useQuery} from '@tanstack/react-query';
+import {accountsApi} from '@/features/accounts/api/accounts';
+import {instrumentsApi} from '@/features/instruments/api/instruments';
+import {instrumentQueryKeys} from '@/api/query-keys';
+import {useAuthStore} from '@/store/auth-store';
 import {CanonicalSimFacts} from '@/features/paper-trading/components/CanonicalSimFacts';
+import {TradingPreflightPanel} from '@/features/trading/components/TradingPreflightPanel';
+import {ManualOrderWorkspace} from '@/features/trading/components/ManualOrderWorkspace';
+import {MaintenanceOperationDrawer} from '@/features/trading/components/MaintenanceOperationDrawer';
+import {OrderCancellationWorkspace} from '@/features/trading/components/OrderCancellationWorkspace';
+import {canRequestCancellation} from '@/features/trading/order-cancellation';
+import {
+    tradingOperationFeedback,
+    tradingOrderStatuses,
+} from '@/features/trading/trading-presentation';
 
-import {formatApiError, showApiError} from '@/api/errors';
-import {RuntimeGuardBanner} from '@/components/nq';
+import {formatApiError} from '@/api/errors';
+import {RuntimeGuardBanner, NqAmountText} from '@/components/nq';
 import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {
-    useCancelOrderMutation,
-    usePlaceOrderMutation,
-    useReconcileMutation,
-    useRecoveryMutation,
     useTradingOrderListQuery,
     useTradingWorkbenchLookupQuery,
 } from '@/features/trading/hooks/useTradingWorkbench';
@@ -43,18 +54,14 @@ import type {AppApiError} from '@/types/api';
 import type {
     AccountBalanceView,
     OperationTriggerResponse,
-    OrderCancelRequestBody,
-    OrderSubmitRequest,
     OrderView,
-    ReconcileRunOnceRequest,
-    RecoveryRunOnceRequest,
     TradingOrderListRequest,
     TradingWorkbenchLookupRequest,
     TradingWorkbenchLookupResult,
 } from '@/features/trading/types/trading-workbench';
-import {formatDateTime, formatNumber, normalizeOptionalText} from '@/utils/formatters';
+import {formatDateTime, normalizeOptionalText} from '@/utils/formatters';
 
-type ActionDrawer = 'place' | 'cancel' | 'reconcile' | 'recovery' | null;
+type ActionDrawer = 'preflight' | 'reconcile' | 'recovery' | null;
 
 interface TradingWorkbenchPageProps {
     legacyAlias?: boolean;
@@ -74,38 +81,82 @@ interface TradingOrderListForm {
  * `/trade-validation` 只作为过渡入口复用本页，不再成为独立业务模式。
  */
 export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPageProps) {
+    const catalog = useQuery({queryKey: instrumentQueryKeys.list(), queryFn: () => instrumentsApi.list()});
     const {i18n: pageI18n} = useTranslation('pages');
     const {message} = App.useApp();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const canonicalPaperRunId = searchParams.get('paperRunId');
+    const routedAccount = searchParams.get('exchangeAccountId');
+    const routedAccountId =
+        routedAccount &&
+        /^\d+$/.test(routedAccount) &&
+        Number.isSafeInteger(Number(routedAccount)) &&
+        Number(routedAccount) > 0
+            ? Number(routedAccount)
+            : null;
+    const userId = useAuthStore((state) => state.currentUser?.userId);
+    const canTrade = useAuthStore(
+        (state) =>
+            !!state.currentUser?.roles.some((role) =>
+                ['ADMIN', 'OPERATOR', 'ROLE_ADMIN', 'ROLE_OPERATOR'].includes(role),
+            ),
+    );
+    const [cancelTarget, setCancelTarget] = useState<OrderView | null>(null);
+    const setSelectedAccount = useAccountContextStore((state) => state.setSelectedAccount);
+    const routedAccountQuery = useQuery({
+        queryKey: ['trading-routed-account', userId, routedAccountId],
+        queryFn: () => accountsApi.detail(routedAccountId!),
+        enabled: Boolean(userId && routedAccountId),
+    });
+    useEffect(() => {
+        if (routedAccountQuery.data?.status === 'ACTIVE')
+            setSelectedAccount(routedAccountQuery.data);
+    }, [routedAccountQuery.data, setSelectedAccount]);
     const [listForm] = useLocalizedForm<TradingOrderListForm>();
-    const [placeForm] = useLocalizedForm<OrderSubmitRequest>();
-    const [cancelForm] = useLocalizedForm<OrderCancelRequestBody>();
-    const [reconcileForm] = useLocalizedForm<ReconcileRunOnceRequest>();
-    const [recoveryForm] = useLocalizedForm<RecoveryRunOnceRequest>();
-    const selectedExchangeAccountId = useAccountContextStore((state) => state.selectedExchangeAccountId);
+    const selectedExchangeAccountId = useAccountContextStore(
+        (state) => state.selectedExchangeAccountId,
+    );
     const exchangeCode = useAccountContextStore((state) => state.exchangeCode);
     const tradeEnv = useAccountContextStore((state) => state.tradeEnv);
     const accountAlias = useAccountContextStore((state) => state.accountAlias);
     const legacyAccountId = useAccountContextStore((state) => state.legacyAccountId);
-    const [submittedListRequest, setSubmittedListRequest] = useState<TradingOrderListRequest | null>(null);
+    const [submittedListRequest, setSubmittedListRequest] =
+        useState<TradingOrderListRequest | null>(null);
     const [listSearchVersion, setListSearchVersion] = useState(0);
     const [detailRequest, setDetailRequest] = useState<TradingWorkbenchLookupRequest | null>(null);
     const [detailSearchVersion, setDetailSearchVersion] = useState(0);
     const [detailOpen, setDetailOpen] = useState(false);
+    const closeOrderDetail = () => {
+        setDetailOpen(false);
+        // 关闭深链接详情同时清除地址身份，避免刷新重开；保留账户范围供列表返回使用。
+        if (searchParams.has('orderId')) {
+            const next = new URLSearchParams(searchParams);
+            next.delete('orderId');
+            setSearchParams(next);
+        }
+    };
     const [activeAction, setActiveAction] = useState<ActionDrawer>(null);
     const [lastActionResult, setLastActionResult] = useState<OperationTriggerResponse | null>(null);
 
-    const orderListQuery = useTradingOrderListQuery(canonicalPaperRunId ? null : submittedListRequest, listSearchVersion);
-    const detailQuery = useTradingWorkbenchLookupQuery(canonicalPaperRunId ? null : detailRequest, detailSearchVersion);
-    const placeOrderMutation = usePlaceOrderMutation();
-    const cancelOrderMutation = useCancelOrderMutation();
-    const reconcileMutation = useReconcileMutation();
-    const recoveryMutation = useRecoveryMutation();
+    const orderListQuery = useTradingOrderListQuery(
+        canonicalPaperRunId ? null : submittedListRequest,
+        listSearchVersion,
+    );
+    const detailQuery = useTradingWorkbenchLookupQuery(
+        canonicalPaperRunId ? null : detailRequest,
+        detailSearchVersion,
+    );
 
-    const accountContextReady = Boolean(selectedExchangeAccountId && exchangeCode && tradeEnv);
+    const accountContextReady = Boolean(
+        selectedExchangeAccountId &&
+            exchangeCode &&
+            tradeEnv &&
+            (!routedAccount ||
+                (routedAccountQuery.data?.exchangeAccountId === selectedExchangeAccountId &&
+                    routedAccountQuery.data.status === 'ACTIVE')),
+    );
     const currentContextLabel = accountContextReady
-        ? `${exchangeCode} / ${tradeEnv} / ${accountAlias}（exchangeAccountId=${selectedExchangeAccountId}）`
+        ? `${accountAlias} · ${exchangeCode} / ${tradeEnv}`
         : t('pages:noCanonicalAccountContextSelected');
 
     useEffect(() => {
@@ -113,6 +164,8 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
             setSubmittedListRequest(null);
             return;
         }
+        setLastActionResult(null);
+        setActiveAction(null);
         const nextRequest: TradingOrderListRequest = {
             accountId: selectedExchangeAccountId,
             venue: exchangeCode ?? undefined,
@@ -121,103 +174,159 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
             size: 20,
         };
         listForm.setFieldsValue({orderId: undefined, symbol: undefined, status: undefined});
-        placeForm.setFieldsValue({accountId: selectedExchangeAccountId, venue: exchangeCode ?? undefined});
-        cancelForm.setFieldsValue({accountId: selectedExchangeAccountId});
-        reconcileForm.setFieldsValue({venue: exchangeCode ?? undefined});
-        recoveryForm.setFieldsValue({venue: exchangeCode ?? undefined});
         setSubmittedListRequest(nextRequest);
         setListSearchVersion((value) => value + 1);
     }, [
         accountContextReady,
         canonicalPaperRunId,
-        cancelForm,
         exchangeCode,
         listForm,
-        placeForm,
-        recoveryForm,
-        reconcileForm,
         selectedExchangeAccountId,
         tradeEnv,
     ]);
 
-    const orderColumns = useMemo<ColumnsType<OrderView>>(() => [
-        {
-            title: t('pages:orderId'),
-            dataIndex: 'orderId',
-            key: 'orderId',
-            width: 220,
-            render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
-        },
-        {
-            title: t('pages:environment'),
-            dataIndex: 'tradeEnv',
-            key: 'tradeEnv',
-            width: 100,
-            render: (value: string) => <Tag color={value === 'LIVE' ? 'red' : 'blue'}>{value}</Tag>,
-        },
-        {
-            title: t('pages:venue'),
-            dataIndex: 'venue',
-            key: 'venue',
-            width: 110,
-        },
-        {
-            title: t('pages:tradingPair'),
-            dataIndex: 'symbol',
-            key: 'symbol',
-            width: 130,
-        },
-        {
-            title: t('pages:side'),
-            dataIndex: 'side',
-            key: 'side',
-            width: 90,
-        },
-        {
-            title: t('pages:type'),
-            dataIndex: 'type',
-            key: 'type',
-            width: 100,
-        },
-        {
-            title: t('pages:price'),
-            dataIndex: 'price',
-            key: 'price',
-            width: 120,
-            render: (value: number | null) => formatNumber(value, 8),
-        },
-        {
-            title: t('pages:quantity'),
-            dataIndex: 'quantity',
-            key: 'quantity',
-            width: 120,
-            render: (value: number) => formatNumber(value, 8),
-        },
-        {
-            title: t('pages:status'),
-            dataIndex: 'status',
-            key: 'status',
-            width: 130,
-            render: (value: string) => <Tag color="blue">{value}</Tag>,
-        },
-        {
-            title: t('pages:createdAt'),
-            dataIndex: 'createdAt',
-            key: 'createdAt',
-            width: 180,
-            render: (value: string | null) => formatDateTime(value),
-        },
-        {
-            title: t('pages:actions'),
-            key: 'action',
-            fixed: 'right',
-            width: 120,
-            render: (_, record) => (
-                <Button type="link" onClick={() => openDetail(record)}>
-                    {t('pages:viewDetails')}</Button>
-            ),
-        },
-    ], [pageI18n.resolvedLanguage]);
+    useEffect(() => {
+        const orderId = searchParams.get('orderId');
+        if (!canonicalPaperRunId && accountContextReady && orderId && selectedExchangeAccountId) {
+            setDetailRequest({accountId: selectedExchangeAccountId, orderId});
+            setDetailSearchVersion((value) => value + 1);
+            setDetailOpen(true);
+        } else {
+            setDetailRequest(null);
+            setDetailOpen(false);
+        }
+    }, [
+        searchParams,
+        canonicalPaperRunId,
+        accountContextReady,
+        selectedExchangeAccountId,
+        exchangeCode,
+        tradeEnv,
+    ]);
+
+    const orderColumns = useMemo<ColumnsType<OrderView>>(
+        () => [
+            {
+                title: t('pages:orderId'),
+                dataIndex: 'orderId',
+                key: 'orderId',
+                width: 220,
+                render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
+            },
+            {
+                title: t('pages:environment'),
+                dataIndex: 'tradeEnv',
+                key: 'tradeEnv',
+                width: 100,
+                render: (value: string) => (
+                    <Tag color={value === 'LIVE' ? 'red' : 'blue'}>{value}</Tag>
+                ),
+            },
+            {
+                title: t('pages:venue'),
+                dataIndex: 'venue',
+                key: 'venue',
+                width: 110,
+            },
+            {
+                title: t('pages:tradingPair'),
+                dataIndex: 'symbol',
+                key: 'symbol',
+                width: 130,
+            },
+            {
+                title: t('pages:side'),
+                dataIndex: 'side',
+                key: 'side',
+                width: 90,
+            },
+            {
+                title: t('pages:type'),
+                dataIndex: 'type',
+                key: 'type',
+                width: 100,
+            },
+            {
+                title: t('pages:price'),
+                dataIndex: 'price',
+                key: 'price',
+                width: 120,
+                render: (value: string | null) => <NqAmountText exact value={value} />,
+            },
+            {
+                title: t('pages:quantity'),
+                dataIndex: 'quantity',
+                key: 'quantity',
+                width: 120,
+                render: (value: string) => <NqAmountText exact value={value} />,
+            },
+            {
+                title: t('pages:status'),
+                dataIndex: 'status',
+                key: 'status',
+                width: 130,
+                render: (value: string) => (
+                    <Tag color={value === 'CANCEL_REQUESTED' ? 'orange' : 'blue'} title={value}>
+                        {t(`pages:tradingActions.orderStatuses.${value}`, {defaultValue: value})}
+                    </Tag>
+                ),
+            },
+            {
+                title: t('pages:createdAt'),
+                dataIndex: 'createdAt',
+                key: 'createdAt',
+                width: 180,
+                render: (value: string | null) => formatDateTime(value),
+            },
+            {
+                title: t('pages:actions'),
+                key: 'action',
+                fixed: 'right',
+                width: 190,
+                render: (_, record) => (
+                    <Space size={0}>
+                        <Button type="link" onClick={() => openDetail(record)}>
+                            {t('pages:viewDetails')}
+                        </Button>
+                        <Tooltip
+                            title={
+                                !canTrade
+                                    ? t('pages:orderCancellation.readOnly')
+                                    : !canRequestCancellation(record)
+                                      ? t('pages:orderCancellation.stateUnavailable')
+                                      : undefined
+                            }
+                        >
+                            <span>
+                                <Button
+                                    type="link"
+                                    disabled={
+                                        !canTrade ||
+                                        !accountContextReady ||
+                                        record.accountId !== legacyAccountId ||
+                                        record.venue !== exchangeCode ||
+                                        !canRequestCancellation(record)
+                                    }
+                                    onClick={() => setCancelTarget(record)}
+                                >
+                                    {t('pages:cancelOrder')}
+                                </Button>
+                            </span>
+                        </Tooltip>
+                    </Space>
+                ),
+            },
+        ],
+        [
+            pageI18n.resolvedLanguage,
+            canTrade,
+            accountContextReady,
+            selectedExchangeAccountId,
+            legacyAccountId,
+            exchangeCode,
+            tradeEnv,
+        ],
+    );
 
     const handleListSearch = (values: TradingOrderListForm) => {
         if (!selectedExchangeAccountId) {
@@ -263,9 +372,19 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
         setDetailOpen(true);
     };
 
-    const handleActionSuccess = (result: OperationTriggerResponse, options?: { close?: boolean; refetch?: boolean }) => {
+    const handleActionSuccess = (
+        result: OperationTriggerResponse,
+        options?: {close?: boolean; refetch?: boolean},
+    ) => {
+        // 请求结束前切换账户时，不把原账户回执显示到新账户，也不据此刷新新账户订单。
+        if (
+            useAccountContextStore.getState().selectedExchangeAccountId !==
+            selectedExchangeAccountId
+        )
+            return;
         setLastActionResult(result);
-        message.success(t('pages:actionCompleted', {action: result.action}));
+        const feedback = tradingOperationFeedback(result);
+        message[feedback.tone](t(`pages:tradingActions.feedback.${feedback.key}`));
         const orderId = extractOrderId(result.detail);
         if (orderId && selectedExchangeAccountId) {
             setSubmittedListRequest({
@@ -285,85 +404,193 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
         }
     };
 
-    if (canonicalPaperRunId) return <NqPageScaffold>
-        <NqPageHeader title={t('pages:simReadOnlyContext')} description={t('pages:simCanonical')}/>
-        <Card><CanonicalSimFacts paperRunId={canonicalPaperRunId} details/></Card>
-    </NqPageScaffold>;
+    const lastFeedback = lastActionResult ? tradingOperationFeedback(lastActionResult) : null;
+
+    if (canonicalPaperRunId)
+        return (
+            <NqPageScaffold>
+                <NqPageHeader
+                    title={t('pages:simReadOnlyContext')}
+                    description={t('pages:simCanonical')}
+                />
+                <Card>
+                    <CanonicalSimFacts paperRunId={canonicalPaperRunId} details />
+                </Card>
+            </NqPageScaffold>
+        );
 
     return (
         <>
             <NqPageScaffold>
+                {routedAccount && !routedAccountId && (
+                    <Alert type="error" message={t('objectSearch.invalidIdentity')} />
+                )}
+                {routedAccountQuery.error && (
+                    <Alert
+                        type="error"
+                        message={formatApiError(routedAccountQuery.error as AppApiError)}
+                    />
+                )}
+                {routedAccountQuery.data?.status === 'DISABLED' && (
+                    <Alert type="error" message={t('objectSearch.unavailableAccount')} />
+                )}
                 {legacyAlias ? (
                     <Alert
                         type="warning"
                         showIcon
                         message={t('pages:tradeValidationIsATransitionalEntry')}
-                        description={t('pages:theTradingWorkbenchIsAvailableAtTradingTheLegacyPathRemainsForCompatibility')}
+                        description={t(
+                            'pages:theTradingWorkbenchIsAvailableAtTradingTheLegacyPathRemainsForCompatibility',
+                        )}
                     />
                 ) : null}
 
                 <Card className="page-card" bordered={false}>
                     <NqPageHeader
                         title={t('pages:tradingWorkbench')}
-                        description={t('pages:queryOrdersAndViewDetailsInTheExchangeaccountidContextWithSimLiveAndPrerequisiteRiskControlsVisible')}
+                        description={t(
+                            'pages:queryOrdersAndViewDetailsInTheExchangeaccountidContextWithSimLiveAndPrerequisiteRiskControlsVisible',
+                        )}
                         badge="Trading"
                     />
                 </Card>
 
-                <RuntimeGuardBanner variant="trading-workbench"/>
+                <Alert
+                    type="warning"
+                    showIcon
+                    message={t('boundary.runtime')}
+                    description={t('pages:tradingActions.liveBoundary')}
+                    action={
+                        <Button
+                            size="small"
+                            onClick={() => setActiveAction('preflight')}
+                            disabled={!accountContextReady}
+                        >
+                            {t('pages:preOrderChecks')}
+                        </Button>
+                    }
+                />
 
-                <Card className="page-section" bordered={false} title={t('pages:accountContext')}>
+                <Card className="page-section trading-account-context" bordered={false} title={t('pages:accountContext')}>
                     {accountContextReady ? (
-                        <Descriptions bordered size="small" column={2}>
-                            <Descriptions.Item label={t('pages:currentAccount')}>{currentContextLabel}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:compatibleLegacyaccountid')}>{legacyAccountId ?? '-'}</Descriptions.Item>
+                        <Descriptions
+                            bordered
+                            size="small"
+                            column={{xs: 1, sm: 2}}
+                            styles={{content: {overflowWrap: 'anywhere'}}}
+                        >
+                            <Descriptions.Item label={t('pages:currentAccount')}>
+                                {currentContextLabel}
+                            </Descriptions.Item>
+                            <Descriptions.Item label={t('pages:venue')}>
+                                {exchangeCode}
+                            </Descriptions.Item>
                             <Descriptions.Item label="SIM / LIVE">
                                 <Tag color={tradeEnv === 'LIVE' ? 'red' : 'blue'}>{tradeEnv}</Tag>
                             </Descriptions.Item>
                             <Descriptions.Item label={t('pages:scope')}>
-                                {t('pages:thisPageUsesTheCanonicalExchangeaccountidTheBackendHandlesCompatibilityWithLegacyTradingAccounts')}</Descriptions.Item>
+                                {t('pages:tradingActions.accountScope')}
+                            </Descriptions.Item>
                         </Descriptions>
                     ) : (
                         <Alert
                             type="warning"
                             showIcon
                             message={t('pages:noCanonicalAccountContextSelected')}
-                            description={t('pages:selectAnExchangeAccountInTheHeaderOrAccountSettingsFirstQueriesAndWritesRequireAnAccountContext')}
+                            description={t(
+                                'pages:selectAnExchangeAccountInTheHeaderOrAccountSettingsFirstQueriesAndWritesRequireAnAccountContext',
+                            )}
                         />
                     )}
                 </Card>
 
+                <ManualOrderWorkspace
+                    contextReady={accountContextReady}
+                    onRecorded={(order) => {
+                        setLastActionResult(null);
+                        if (!selectedExchangeAccountId) return;
+                        setSubmittedListRequest({
+                            accountId: selectedExchangeAccountId,
+                            orderId: order.orderId,
+                            venue: exchangeCode ?? undefined,
+                            environment: tradeEnv ?? undefined,
+                            page: 0,
+                            size: 20,
+                        });
+                        setListSearchVersion((value) => value + 1);
+                    }}
+                    onView={(orderId) => {
+                        if (!selectedExchangeAccountId) return;
+                        setDetailRequest({accountId: selectedExchangeAccountId, orderId});
+                        setDetailSearchVersion((value) => value + 1);
+                        setDetailOpen(true);
+                    }}
+                />
+
+                <OrderCancellationWorkspace
+                    target={cancelTarget}
+                    contextReady={accountContextReady}
+                    onClose={() => setCancelTarget(null)}
+                    onUpdated={() => {
+                        setListSearchVersion((value) => value + 1);
+                        setDetailSearchVersion((value) => value + 1);
+                    }}
+                    onView={(orderId) => {
+                        if (!selectedExchangeAccountId) return;
+                        setDetailRequest({accountId: selectedExchangeAccountId, orderId});
+                        setDetailSearchVersion((value) => value + 1);
+                        setDetailOpen(true);
+                    }}
+                />
+
                 <Card
-                    className="page-section"
+                    className="page-section workspace-filter-panel"
                     bordered={false}
                     title={t('pages:orderSearch')}
-                    extra={(
+                    extra={
                         <Space>
-                            <Button type="primary" disabled={!accountContextReady} onClick={() => listForm.submit()}>
-                                {t('pages:search')}</Button>
+                            <Button
+                                type="primary"
+                                disabled={!accountContextReady}
+                                onClick={() => listForm.submit()}
+                            >
+                                {t('pages:search')}
+                            </Button>
                             <Button disabled={!accountContextReady} onClick={handleListReset}>
-                                {t('pages:reset')}</Button>
+                                {t('pages:reset')}
+                            </Button>
                         </Space>
-                    )}
+                    }
                 >
-                    <Form form={listForm} layout="vertical" onFinish={handleListSearch}>
+                    {/* 多张表单含同名字段时，用独立名称隔离控件ID，避免标签跨表单关联。 */}
+                    <Form
+                        name="trading-order-search"
+                        form={listForm}
+                        layout="vertical"
+                        onFinish={handleListSearch}
+                    >
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={8}>
                                 <Form.Item label={t('pages:orderId')} name="orderId">
-                                    <Input placeholder={t('pages:optionalExactMatch')}/>
+                                    <Input placeholder={t('pages:optionalExactMatch')} />
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
-                                <Form.Item label={t('pages:tradingPair')} name="symbol">
-                                    <Input placeholder={t('pages:forExampleBtcUsdt')}/>
+                                <Form.Item label={t('pages:tradingPair')} name="symbol" tooltip={t('product:historicalSymbolQuery')}>
+                                    <AutoComplete
+                                        allowClear
+                                        placeholder={t('pages:forExampleBtcUsdt')}
+                                        options={(catalog.data ?? []).filter(item => item.exchangeCode === exchangeCode).map(item => ({value: item.internalSymbol}))}
+                                        filterOption={(input, option) => String(option?.value).toUpperCase().includes(input.toUpperCase())}
+                                    />
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
                                 <Form.Item label={t('pages:orderStatus')} name="status">
                                     <Select
                                         allowClear
-                                        options={['CREATED', 'RISK_PASSED', 'ACCEPTED', 'PARTIALLY_FILLED', 'FILLED', 'CANCEL_REQUESTED', 'CANCELLED', 'REJECTED', 'FAILED'].map((value) => ({
-                                            label: value,
+                                        options={tradingOrderStatuses.map((value) => ({
+                                            label: t(`pages:tradingActions.orderStatuses.${value}`),
                                             value,
                                         }))}
                                     />
@@ -374,20 +601,38 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
                 </Card>
 
                 <Card
-                    className="page-section"
+                    className="page-section workspace-results-panel"
                     bordered={false}
                     title={t('pages:orders')}
-                    extra={orderListQuery.data ? <Typography.Text type="secondary">{t('pages:total')}{orderListQuery.data.total} {t('pages:records')}</Typography.Text> : null}
+                    extra={
+                        orderListQuery.data ? (
+                            <Typography.Text type="secondary">
+                                {t('pages:total')}
+                                {orderListQuery.data.total} {t('pages:records')}
+                            </Typography.Text>
+                        ) : null
+                    }
                 >
                     {!accountContextReady ? (
-                        <Empty description={t('pages:ordersLoadAutomaticallyAfterAnAccountContextIsSelected')}/>
+                        <Empty
+                            description={t(
+                                'pages:ordersLoadAutomaticallyAfterAnAccountContextIsSelected',
+                            )}
+                        />
                     ) : orderListQuery.error ? (
                         <Alert
                             type="error"
                             showIcon
                             message={t('pages:failedToQueryOrders')}
                             description={formatApiError(orderListQuery.error as AppApiError)}
-                            action={<Button size="small" onClick={() => setListSearchVersion((value) => value + 1)}>{t('pages:retry')}</Button>}
+                            action={
+                                <Button
+                                    size="small"
+                                    onClick={() => setListSearchVersion((value) => value + 1)}
+                                >
+                                    {t('pages:retry')}
+                                </Button>
+                            }
                         />
                     ) : (
                         <Table
@@ -395,171 +640,285 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
                             columns={orderColumns}
                             dataSource={orderListQuery.data?.items ?? []}
                             loading={orderListQuery.isFetching}
-                            pagination={false}
+                            pagination={{
+                                current: (submittedListRequest?.page ?? 0) + 1,
+                                pageSize: submittedListRequest?.size ?? 20,
+                                total: orderListQuery.data?.total ?? 0,
+                                showSizeChanger: true,
+                                pageSizeOptions: [20, 50, 100],
+                                onChange: (page, size) => {
+                                    if (!submittedListRequest) return;
+                                    // 翻页沿用已提交筛选，未提交的编辑值不能悄悄改变查询范围。
+                                    setSubmittedListRequest({
+                                        ...submittedListRequest,
+                                        page: size === submittedListRequest.size ? page - 1 : 0,
+                                        size,
+                                    });
+                                    setListSearchVersion((value) => value + 1);
+                                },
+                            }}
                             scroll={{x: 1500}}
-                            locale={{emptyText: t('pages:noMatchingOrdersInTheCurrentAccountContext')}}
+                            locale={{
+                                emptyText: t('pages:noMatchingOrdersInTheCurrentAccountContext'),
+                            }}
                         />
                     )}
                 </Card>
 
                 <Card className="page-section" bordered={false} title={t('pages:actions2')}>
+                    <Typography.Paragraph type="secondary">
+                        {t('pages:tradingActions.maintenanceScope')}
+                    </Typography.Paragraph>
                     <Space wrap>
-                        <Button type="primary" disabled={!accountContextReady} onClick={() => setActiveAction('place')}>
-                            {t('pages:preOrderChecks')}</Button>
-                        <Button disabled={!accountContextReady} onClick={() => setActiveAction('cancel')}>
-                            {t('pages:cancelOrder')}</Button>
-                        <Button disabled={!accountContextReady} onClick={() => setActiveAction('reconcile')}>
-                            {t('pages:runReconciliation')}</Button>
-                        <Button disabled={!accountContextReady} onClick={() => setActiveAction('recovery')}>
-                            {t('pages:runRecovery')}</Button>
+                        <Button
+                            disabled={!accountContextReady || !canTrade}
+                            onClick={() => setActiveAction('reconcile')}
+                        >
+                            {t('pages:runReconciliation')}
+                        </Button>
+                        <Button
+                            disabled={!accountContextReady || !canTrade}
+                            onClick={() => setActiveAction('recovery')}
+                        >
+                            {t('pages:runRecovery')}
+                        </Button>
                     </Space>
-                    {lastActionResult ? (
-                        <Card size="small" style={{marginTop: 16}} title={t('pages:latestActionFeedback')}>
-                            <Descriptions bordered size="small" column={1}>
-                                <Descriptions.Item label={t('pages:action')}>{lastActionResult.action}</Descriptions.Item>
-                                <Descriptions.Item label={t('pages:traceId')}>{lastActionResult.traceId}</Descriptions.Item>
-                                <Descriptions.Item label={t('pages:resultSummary')}>{lastActionResult.detail}</Descriptions.Item>
-                            </Descriptions>
+                    {lastActionResult && lastFeedback ? (
+                        <Card
+                            size="small"
+                            style={{marginTop: 16}}
+                            title={t('pages:latestActionFeedback')}
+                        >
+                            <Alert
+                                showIcon
+                                type={lastFeedback.tone}
+                                data-testid="trading-operation-feedback"
+                                message={t(`pages:tradingActions.feedback.${lastFeedback.key}`)}
+                                description={
+                                    lastFeedback.status
+                                        ? t(
+                                              `pages:tradingActions.orderStatuses.${lastFeedback.status}`,
+                                          )
+                                        : t('pages:tradingActions.verifyCurrentOrder')
+                                }
+                            />
+                            <Collapse
+                                size="small"
+                                style={{marginTop: 12}}
+                                items={[
+                                    {
+                                        key: 'receipt',
+                                        label: t('pages:tradingActions.originalReceipt'),
+                                        children: (
+                                            <Descriptions
+                                                bordered
+                                                size="small"
+                                                column={1}
+                                                styles={{content: {overflowWrap: 'anywhere'}}}
+                                            >
+                                                <Descriptions.Item label={t('pages:action')}>
+                                                    {lastActionResult.action}
+                                                </Descriptions.Item>
+                                                <Descriptions.Item label={t('pages:traceId')}>
+                                                    {lastActionResult.traceId}
+                                                </Descriptions.Item>
+                                                <Descriptions.Item label={t('pages:resultSummary')}>
+                                                    {lastActionResult.detail}
+                                                </Descriptions.Item>
+                                            </Descriptions>
+                                        ),
+                                    },
+                                ]}
+                            />
                         </Card>
                     ) : null}
                 </Card>
+                <Collapse
+                    size="small"
+                    items={[
+                        {
+                            key: 'runtime',
+                            label: t('pages:tradingActions.runtimeDetails'),
+                            children: (
+                                <Space direction="vertical" style={{display: 'flex'}}>
+                                    <Descriptions bordered size="small" column={1}>
+                                        <Descriptions.Item label={t('pages:accountId')}>
+                                            {selectedExchangeAccountId ?? '—'}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item
+                                            label={t('pages:compatibleLegacyaccountid')}
+                                        >
+                                            {legacyAccountId ?? '—'}
+                                        </Descriptions.Item>
+                                    </Descriptions>
+                                    <RuntimeGuardBanner variant="trading-workbench" />
+                                </Space>
+                            ),
+                        },
+                    ]}
+                />
             </NqPageScaffold>
 
-            <Drawer open={detailOpen} width={860} title={t('pages:orderDetails')} onClose={() => setDetailOpen(false)} destroyOnClose>
+            <Drawer
+                open={detailOpen}
+                width={860}
+                title={t('pages:orderDetails')}
+                onClose={closeOrderDetail}
+                destroyOnClose
+            >
                 {detailQuery.isLoading ? (
-                    <Alert type="info" showIcon message={t('pages:loadingOrderDetails')}/>
+                    <Alert type="info" showIcon message={t('pages:loadingOrderDetails')} />
                 ) : detailQuery.error ? (
-                    <Alert type="error" showIcon message={t('pages:failedToLoadOrderDetails')} description={formatApiError(detailQuery.error as AppApiError)}/>
+                    <Alert
+                        type="error"
+                        showIcon
+                        message={t('pages:failedToLoadOrderDetails')}
+                        description={formatApiError(detailQuery.error as AppApiError)}
+                    />
                 ) : detailQuery.data ? (
-                    <OrderDetailContent result={detailQuery.data}/>
+                    <OrderDetailContent result={detailQuery.data} />
                 ) : null}
             </Drawer>
 
-            <Drawer open={activeAction === 'place'} width={640} title={t('pages:preOrderChecks')} onClose={() => setActiveAction(null)} destroyOnClose>
-                <Alert
-                    type={tradeEnv === 'LIVE' ? 'warning' : 'info'}
-                    showIcon
-                    style={{marginBottom: 16}}
-                    message={t('pages:riskSummary')}
-                    description={t('pages:orderRiskBoundary', {account: currentContextLabel})}
-                />
-                <Form
-                    form={placeForm}
-                    layout="vertical"
-                    initialValues={{accountId: selectedExchangeAccountId ?? undefined, venue: exchangeCode ?? 'OKX', side: 'BUY', orderType: 'LIMIT'}}
-                    onFinish={(values) => placeOrderMutation.mutate(normalizePlaceOrder(values), {
-                        onSuccess: (result) => handleActionSuccess(result, {close: true}),
-                        onError: (error) => showApiError(error as AppApiError, message),
-                    })}
-                >
-                    <OrderActionFields/>
-                    <Space>
-                        <Button type="primary" htmlType="submit" loading={placeOrderMutation.isPending}>
-                            {t('pages:confirmAndSubmit')}</Button>
-                        <Button onClick={() => setActiveAction(null)}>{t('pages:cancel')}</Button>
-                    </Space>
-                </Form>
+            <Drawer
+                open={activeAction === 'preflight'}
+                width={640}
+                title={t('pages:preOrderChecks')}
+                onClose={() => setActiveAction(null)}
+                destroyOnClose
+            >
+                {accountContextReady && selectedExchangeAccountId && exchangeCode ? (
+                    <TradingPreflightPanel
+                        accountId={selectedExchangeAccountId}
+                        exchangeCode={exchangeCode}
+                    />
+                ) : (
+                    <Alert
+                        type="warning"
+                        message={t('pages:selectACanonicalAccountContextFirst')}
+                    />
+                )}
             </Drawer>
 
-            <Drawer open={activeAction === 'cancel'} width={560} title={t('pages:cancelOrder')} onClose={() => setActiveAction(null)} destroyOnClose>
-                <Form
-                    form={cancelForm}
-                    layout="vertical"
-                    initialValues={{accountId: selectedExchangeAccountId ?? undefined, reason: 'manual cancel'}}
-                    onFinish={(values) => cancelOrderMutation.mutate({
-                        orderId: normalizeOptionalText(values.orderId),
-                        accountId: values.accountId,
-                        clientOrderId: normalizeOptionalText(values.clientOrderId),
-                        reason: normalizeOptionalText(values.reason),
-                    }, {
-                        onSuccess: (result) => handleActionSuccess(result, {close: true}),
-                        onError: (error) => showApiError(error as AppApiError, message),
-                    })}
-                >
-                    <Form.Item label={t('pages:orderId')} name="orderId">
-                        <Input placeholder={t('pages:optionalIfOmittedProvideAccountidAndClientorderid')}/>
-                    </Form.Item>
-                    <Form.Item label={t('pages:accountId')} name="accountId">
-                        <InputNumber style={{width: '100%'}} min={1}/>
-                    </Form.Item>
-                    <Form.Item label={t('pages:clientOrderId')} name="clientOrderId">
-                        <Input placeholder={t('pages:identifiesTheOrderTogetherWithAccountid')}/>
-                    </Form.Item>
-                    <Form.Item label={t('pages:cancellationReason')} name="reason" rules={[{required: true, message: t('pages:enterACancellationReason')}]}>
-                        <Input/>
-                    </Form.Item>
-                    <Space>
-                        <Button type="primary" htmlType="submit" loading={cancelOrderMutation.isPending}>{t('pages:submitCancellation')}</Button>
-                        <Button onClick={() => setActiveAction(null)}>{t('pages:cancel')}</Button>
-                    </Space>
-                </Form>
-            </Drawer>
-
-            <MaintenanceDrawer
-                open={activeAction === 'reconcile'}
-                showLimit
-                title={t('pages:runReconciliation')}
-                form={reconcileForm}
+            <MaintenanceOperationDrawer
+                kind={activeAction === 'reconcile' ? 'RECONCILE' : activeAction === 'recovery' ? 'RECOVERY' : null}
                 defaultVenue={exchangeCode ?? 'OKX'}
-                loading={reconcileMutation.isPending}
                 onClose={() => setActiveAction(null)}
-                onFinish={(values) => reconcileMutation.mutate({
-                    venue: normalizeOptionalText(values.venue),
-                    limit: values.limit,
-                }, {
-                    onSuccess: (result) => handleActionSuccess(result, {close: true, refetch: true}),
-                    onError: (error) => showApiError(error as AppApiError, message),
-                })}
-            />
-            <MaintenanceDrawer
-                open={activeAction === 'recovery'}
-                title={t('pages:runRecovery')}
-                form={recoveryForm}
-                defaultVenue={exchangeCode ?? 'OKX'}
-                loading={recoveryMutation.isPending}
-                onClose={() => setActiveAction(null)}
-                onFinish={(values) => recoveryMutation.mutate({venue: normalizeOptionalText(values.venue)}, {
-                    onSuccess: (result) => handleActionSuccess(result, {close: true, refetch: true}),
-                    onError: (error) => showApiError(error as AppApiError, message),
-                })}
+                onCompleted={receipt => handleActionSuccess({
+                    action: receipt.kind === 'RECONCILE' ? 'reconcileOnce' : 'recoveryRunOnce',
+                    traceId: receipt.traceId,
+                    detail: receipt.detail!,
+                }, {refetch: true})}
             />
         </>
     );
 }
 
-function OrderDetailContent({result}: { result: TradingWorkbenchLookupResult }) {
+function OrderDetailContent({result}: {result: TradingWorkbenchLookupResult}) {
     useTranslation('pages');
     return (
         <Space direction="vertical" size={16} style={{display: 'flex'}}>
-            <Descriptions bordered column={2} size="small" title={t('pages:order')}>
-                <Descriptions.Item label={t('pages:orderId')}>{result.order.orderId}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:account')}>{result.order.accountId}</Descriptions.Item>
+            <Descriptions
+                bordered
+                column={{xs: 1, sm: 2}}
+                size="small"
+                styles={{content: {overflowWrap: 'anywhere'}}}
+                title={t('pages:order')}
+            >
+                <Descriptions.Item label={t('pages:orderId')}>
+                    {result.order.orderId}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:account')}>
+                    {result.order.accountId}
+                </Descriptions.Item>
                 <Descriptions.Item label={t('pages:venue')}>{result.order.venue}</Descriptions.Item>
-                <Descriptions.Item label="SIM / LIVE"><Tag color={result.order.tradeEnv === 'LIVE' ? 'red' : 'blue'}>{result.order.tradeEnv}</Tag></Descriptions.Item>
-                <Descriptions.Item label={t('pages:tradingPair')}>{result.order.symbol}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:status')}>{result.order.status}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:side')}>{result.order.side}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:type')}>{result.order.type}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:price')}>{formatNumber(result.order.price, 8)}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:quantity')}>{formatNumber(result.order.quantity, 8)}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:clientOrderId')}>{result.order.clientOrderId}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:externalOrderId')}>{result.order.externalOrderId || '-'}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:createdAt')}>{formatDateTime(result.order.createdAt)}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:updatedAt')}>{formatDateTime(result.order.updatedAt)}</Descriptions.Item>
+                <Descriptions.Item label="SIM / LIVE">
+                    <Tag color={result.order.tradeEnv === 'LIVE' ? 'red' : 'blue'}>
+                        {result.order.tradeEnv}
+                    </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:tradingPair')}>
+                    {result.order.symbol}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:status')}>
+                    <span title={result.order.status}>
+                        {t(`pages:tradingActions.orderStatuses.${result.order.status}`, {
+                            defaultValue: result.order.status,
+                        })}
+                    </span>
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:side')}>
+                    <span title={result.order.side}>
+                        {t(`pages:tradingActions.sides.${result.order.side}`, {
+                            defaultValue: result.order.side,
+                        })}
+                    </span>
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:type')}>
+                    <span title={result.order.type}>
+                        {t(`pages:tradingActions.orderTypes.${result.order.type}`, {
+                            defaultValue: result.order.type,
+                        })}
+                    </span>
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:price')}>
+                    {<NqAmountText exact value={result.order.price} />}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:quantity')}>
+                    {<NqAmountText exact value={result.order.quantity} />}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:clientOrderId')}>
+                    {result.order.clientOrderId}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:externalOrderId')}>
+                    {result.order.externalOrderId || '-'}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:createdAt')}>
+                    {formatDateTime(result.order.createdAt)}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('pages:updatedAt')}>
+                    {formatDateTime(result.order.updatedAt)}
+                </Descriptions.Item>
             </Descriptions>
             {result.latestTrade ? (
-                <Descriptions bordered column={2} size="small" title={t('pages:trade')}>
-                    <Descriptions.Item label={t('pages:tradeId')}>{result.latestTrade.tradeId}</Descriptions.Item>
-                    <Descriptions.Item label={t('pages:exchangeTradeId')}>{result.latestTrade.exchangeTradeId || '-'}</Descriptions.Item>
-                    <Descriptions.Item label={t('pages:price')}>{formatNumber(result.latestTrade.price, 8)}</Descriptions.Item>
-                    <Descriptions.Item label={t('pages:quantity')}>{formatNumber(result.latestTrade.quantity, 8)}</Descriptions.Item>
-                    <Descriptions.Item label={t('pages:fee')}>{formatNumber(result.latestTrade.fee, 8)}</Descriptions.Item>
-                    <Descriptions.Item label={t('pages:feeCurrency')}>{result.latestTrade.feeCurrency || '-'}</Descriptions.Item>
-                    <Descriptions.Item label={t('pages:tradeTime')}>{formatDateTime(result.latestTrade.tradeTs)}</Descriptions.Item>
-                    <Descriptions.Item label={t('pages:traceId')}>{result.latestTrade.traceId}</Descriptions.Item>
+                <Descriptions
+                    bordered
+                    column={{xs: 1, sm: 2}}
+                    size="small"
+                    styles={{content: {overflowWrap: 'anywhere'}}}
+                    title={t('pages:trade')}
+                >
+                    <Descriptions.Item label={t('pages:tradeId')}>
+                        {result.latestTrade.tradeId}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('pages:exchangeTradeId')}>
+                        {result.latestTrade.exchangeTradeId || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('pages:price')}>
+                        {<NqAmountText exact value={result.latestTrade.price} />}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('pages:quantity')}>
+                        {<NqAmountText exact value={result.latestTrade.quantity} />}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('pages:fee')}>
+                        {<NqAmountText exact value={result.latestTrade.fee} />}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('pages:feeCurrency')}>
+                        {result.latestTrade.feeCurrency || '-'}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('pages:tradeTime')}>
+                        {formatDateTime(result.latestTrade.tradeTs)}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('pages:traceId')}>
+                        {result.latestTrade.traceId}
+                    </Descriptions.Item>
                 </Descriptions>
             ) : (
-                <Alert type="info" showIcon message={t('pages:noLatestTradeIsAvailableForThisOrder')}/>
+                <Alert
+                    type="info"
+                    showIcon
+                    message={t('pages:noLatestTradeIsAvailableForThisOrder')}
+                />
             )}
             {result.account ? (
                 <Card title={t('pages:account')} size="small">
@@ -573,134 +932,96 @@ function OrderDetailContent({result}: { result: TradingWorkbenchLookupResult }) 
                     />
                 </Card>
             ) : (
-                <Alert type="info" showIcon message={t('pages:noBalanceSnapshotIsAvailableForThisAccount')}/>
+                <Alert
+                    type="info"
+                    showIcon
+                    message={t('pages:noBalanceSnapshotIsAvailableForThisAccount')}
+                />
             )}
             {result.position ? (
-                <Descriptions bordered column={2} size="small" title={t('pages:position')}>
-                    <Descriptions.Item label={t('pages:accountId')}>{result.position.accountId}</Descriptions.Item>
-                    <Descriptions.Item label={t('pages:venue')}>{result.position.venue}</Descriptions.Item>
-                    <Descriptions.Item label={t('pages:tradingPair')}>{result.position.symbol}</Descriptions.Item>
-                    <Descriptions.Item label={t('pages:positionQuantity')}>{formatNumber(result.position.quantity, 8)}</Descriptions.Item>
-                    <Descriptions.Item label={t('pages:availableQuantity')}>{formatNumber(result.position.availableQuantity, 8)}</Descriptions.Item>
-                    <Descriptions.Item label={t('pages:averagePrice')}>{formatNumber(result.position.avgPrice, 8)}</Descriptions.Item>
+                <Descriptions
+                    bordered
+                    column={{xs: 1, sm: 2}}
+                    size="small"
+                    styles={{content: {overflowWrap: 'anywhere'}}}
+                    title={t('pages:position')}
+                >
+                    <Descriptions.Item label={t('pages:accountId')}>
+                        {result.position.accountId}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('pages:venue')}>
+                        {result.position.venue}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('pages:tradingPair')}>
+                        {result.position.symbol}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('pages:positionQuantity')}>
+                        {<NqAmountText exact value={result.position.quantity} />}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('pages:availableQuantity')}>
+                        {<NqAmountText exact value={result.position.availableQuantity} />}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('pages:averagePrice')}>
+                        {<NqAmountText exact value={result.position.avgPrice} />}
+                    </Descriptions.Item>
                 </Descriptions>
             ) : (
-                <Alert type="info" showIcon message={t('pages:noPositionSnapshotIsAvailableForThisAccountAndTradingPair')}/>
+                <Alert
+                    type="info"
+                    showIcon
+                    message={t('pages:noPositionSnapshotIsAvailableForThisAccountAndTradingPair')}
+                />
             )}
         </Space>
     );
 }
 
 const balanceColumns: ColumnsType<AccountBalanceView> = [
-    {get title() { return t('pages:currency'); }, dataIndex: 'currency', key: 'currency', width: 120},
-    {get title() { return t('pages:totalBalance'); }, dataIndex: 'balance', key: 'balance', width: 140, render: (value: number) => formatNumber(value, 8)},
-    {get title() { return t('pages:available'); }, dataIndex: 'available', key: 'available', width: 140, render: (value: number) => formatNumber(value, 8)},
-    {get title() { return t('pages:frozen'); }, dataIndex: 'frozen', key: 'frozen', width: 140, render: (value: number) => formatNumber(value, 8)},
-    {get title() { return t('pages:snapshotTime'); }, dataIndex: 'snapshotTs', key: 'snapshotTs', width: 180, render: (value: string) => formatDateTime(value)},
+    {
+        get title() {
+            return t('pages:currency');
+        },
+        dataIndex: 'currency',
+        key: 'currency',
+        width: 120,
+    },
+    {
+        get title() {
+            return t('pages:totalBalance');
+        },
+        dataIndex: 'balance',
+        key: 'balance',
+        width: 140,
+        render: (value: string) => <NqAmountText exact value={value} />,
+    },
+    {
+        get title() {
+            return t('pages:available');
+        },
+        dataIndex: 'available',
+        key: 'available',
+        width: 140,
+        render: (value: string) => <NqAmountText exact value={value} />,
+    },
+    {
+        get title() {
+            return t('pages:frozen');
+        },
+        dataIndex: 'frozen',
+        key: 'frozen',
+        width: 140,
+        render: (value: string) => <NqAmountText exact value={value} />,
+    },
+    {
+        get title() {
+            return t('pages:snapshotTime');
+        },
+        dataIndex: 'snapshotTs',
+        key: 'snapshotTs',
+        width: 180,
+        render: (value: string) => formatDateTime(value),
+    },
 ];
-
-function OrderActionFields() {
-    useTranslation('pages');
-    return (
-        <Row gutter={[16, 0]}>
-            <Col span={12}>
-                <Form.Item label={t('pages:accountId')} name="accountId" rules={[{required: true, message: t('pages:enterAccountid')}]}>
-                    <InputNumber style={{width: '100%'}} min={1}/>
-                </Form.Item>
-            </Col>
-            <Col span={12}>
-                <Form.Item label={t('pages:strategyRunId')} name="strategyRunId">
-                    <Input placeholder={t('pages:optional')}/>
-                </Form.Item>
-            </Col>
-            <Col span={12}>
-                <Form.Item label={t('pages:venue')} name="venue" rules={[{required: true, message: t('pages:enterAVenue')}]}>
-                    <Select options={[{label: 'OKX', value: 'OKX'}, {label: 'BINANCE', value: 'BINANCE'}]}/>
-                </Form.Item>
-            </Col>
-            <Col span={12}>
-                <Form.Item label={t('pages:clientOrderId')} name="clientOrderId" rules={[{required: true, message: t('pages:enterClientorderid')}]}>
-                    <Input/>
-                </Form.Item>
-            </Col>
-            <Col span={12}>
-                <Form.Item label={t('pages:tradingPair')} name="symbol" rules={[{required: true, message: t('pages:enterASymbol')}]}>
-                    <Input/>
-                </Form.Item>
-            </Col>
-            <Col span={12}>
-                <Form.Item label={t('pages:side')} name="side" rules={[{required: true, message: t('pages:selectASide')}]}>
-                    <Select options={[{label: 'BUY', value: 'BUY'}, {label: 'SELL', value: 'SELL'}]}/>
-                </Form.Item>
-            </Col>
-            <Col span={12}>
-                <Form.Item label={t('pages:orderType')} name="orderType" rules={[{required: true, message: t('pages:selectAnOrderType')}]}>
-                    <Select options={[{label: 'LIMIT', value: 'LIMIT'}, {label: 'MARKET', value: 'MARKET'}]}/>
-                </Form.Item>
-            </Col>
-            <Col span={12}>
-                <Form.Item label={t('pages:price')} name="price">
-                    <InputNumber style={{width: '100%'}} min={0}/>
-                </Form.Item>
-            </Col>
-            <Col span={12}>
-                <Form.Item label={t('pages:quantity')} name="quantity" rules={[{required: true, message: t('pages:enterAQuantity')}]}>
-                    <InputNumber style={{width: '100%'}} min={0.00000001}/>
-                </Form.Item>
-            </Col>
-        </Row>
-    );
-}
-
-function MaintenanceDrawer<T extends ReconcileRunOnceRequest | RecoveryRunOnceRequest>({
-    open,
-    showLimit = false,
-    title,
-    form,
-    defaultVenue,
-    loading,
-    onClose,
-    onFinish,
-}: {
-    open: boolean;
-    showLimit?: boolean;
-    title: string;
-    form: FormInstance<T>;
-    defaultVenue: string;
-    loading: boolean;
-    onClose: () => void;
-    onFinish: (values: T) => void;
-}) {
-    useTranslation('pages');
-    return (
-        <Drawer open={open} width={520} title={title} onClose={onClose} destroyOnClose>
-            <Form form={form} layout="vertical" initialValues={{venue: defaultVenue, limit: 100}} onFinish={onFinish}>
-                <Form.Item label={t('pages:venue')} name="venue">
-                    <Select options={[{label: 'OKX', value: 'OKX'}, {label: 'BINANCE', value: 'BINANCE'}]}/>
-                </Form.Item>
-                {showLimit ? (
-                    <Form.Item label={t('pages:scanLimit')} name="limit">
-                        <InputNumber style={{width: '100%'}} min={1}/>
-                    </Form.Item>
-                ) : null}
-                <Space>
-                    <Button type="primary" htmlType="submit" loading={loading}>{title}</Button>
-                    <Button onClick={onClose}>{t('pages:cancel')}</Button>
-                </Space>
-            </Form>
-        </Drawer>
-    );
-}
-
-function normalizePlaceOrder(values: OrderSubmitRequest): OrderSubmitRequest {
-    return {
-        ...values,
-        strategyRunId: normalizeOptionalText(values.strategyRunId),
-        venue: normalizeOptionalText(values.venue),
-        clientOrderId: normalizeOptionalText(values.clientOrderId),
-        symbol: normalizeOptionalText(values.symbol),
-    };
-}
 
 function extractOrderId(detail: string): string | null {
     const matched = /order_id=([^,]+)/.exec(detail);

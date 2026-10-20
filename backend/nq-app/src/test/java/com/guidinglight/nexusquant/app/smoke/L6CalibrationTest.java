@@ -82,7 +82,7 @@ class L6CalibrationTest {
                          var resources = new L6RuntimeResources(resourceReader, dir, actors, venue, endpoint, container)) {
                         proof.put("postgresVersion", value(reader, "SHOW server_version"));
                         proof.put("schema", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
-                        assertEquals("51", proof.path("schema").asText());
+                        assertEquals("1", proof.path("schema").asText());
                         reader.setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ); reader.setAutoCommit(false);
                         started = System.nanoTime(); proof.put("startedAt", Instant.now().toString());
                         sampler = resources.sampler(contract, started, dir.resolve("resource-samples.ndjson"));

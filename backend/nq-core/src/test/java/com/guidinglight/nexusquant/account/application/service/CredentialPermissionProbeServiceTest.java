@@ -146,7 +146,7 @@ class CredentialPermissionProbeServiceTest {
 
             @Override
             public ExchangeCredentialPermissionProbeResult probe(ExchangeCredentialPermissionProbeRequest request) {
-                assertEquals(CredentialPermissionExpectation.GATEY_PILOT_READINESS,
+                assertEquals(CredentialPermissionExpectation.SCOPED_TRADE_READINESS,
                         request.permissionExpectation());
                 return ExchangeCredentialPermissionProbeResult.succeeded(
                         "OKX",
@@ -155,7 +155,7 @@ class CredentialPermissionProbeServiceTest {
                         true,
                         true,
                         false,
-                        CredentialPermissionExpectation.GATEY_PILOT_READINESS,
+                        CredentialPermissionExpectation.SCOPED_TRADE_READINESS,
                         true,
                         "PASSED",
                         "req-gatey",
@@ -174,7 +174,7 @@ class CredentialPermissionProbeServiceTest {
                 new CredentialPermissionProbeCommand(
                         "GateY pilot readiness probe",
                         true,
-                        "GATEY_PILOT_READINESS",
+                        "SCOPED_TRADE_READINESS",
                         true
                 ),
                 "trace-gatey"
@@ -183,7 +183,7 @@ class CredentialPermissionProbeServiceTest {
         assertEquals("SUCCEEDED", summary.permissionProbeStatus());
         assertEquals("TRADE", summary.permissionScope());
         var metadata = objectMapper.readTree(fixture.repository.auditLogs.get(1).metadataJson());
-        assertEquals("GATEY_PILOT_READINESS", metadata.get("permissionExpectation").asText());
+        assertEquals("SCOPED_TRADE_READINESS", metadata.get("permissionExpectation").asText());
         assertTrue(metadata.get("readPermissionDetected").asBoolean());
         assertTrue(metadata.get("tradePermissionDetected").asBoolean());
         assertFalse(metadata.get("withdrawPermissionDetected").asBoolean());
@@ -203,6 +203,28 @@ class CredentialPermissionProbeServiceTest {
                 credential.credentialId(),
                 "admin",
                 new CredentialPermissionProbeCommand("unknown policy", true, "FUTURE_POLICY", true),
+                "trace-unknown-policy"
+        ));
+
+        assertEquals("unsupported credential permission expectation", failure.getMessage());
+        assertEquals(0, port.calls);
+        assertEquals(0, fixture.transactions.executions);
+        assertTrue(fixture.repository.auditLogs.isEmpty());
+        assertEquals("NOT_PROBED", fixture.repository.storage.get(credential.credentialId()).permissionProbeStatus());
+    }
+
+    @Test
+    void retiredPermissionExpectationFailsClosedBeforeCredentialOrTransactionAccess() {
+        Fixture fixture = new Fixture("LIVE");
+        ExchangeAccountCredentialMaterial credential = fixture.seedCredential(credential("ACTIVE", true));
+        RecordingProbePort port = RecordingProbePort.success("READ_ONLY");
+
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> fixture.service(port).probe(
+                1L,
+                fixture.account.exchangeAccountId(),
+                credential.credentialId(),
+                "admin",
+                new CredentialPermissionProbeCommand("unknown policy", true, "GATEY_PILOT_READINESS", true),
                 "trace-unknown-policy"
         ));
 

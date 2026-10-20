@@ -29,7 +29,7 @@ class B5LegacyVenuePostgresTest {
             String client = "b0" + fixture.name().substring(fixture.name().length() - 30);
             try (var setup = DriverManager.getConnection(fixture.url(), "postgres", "");
                  var insert = setup.prepareStatement("INSERT INTO orders(order_id,account_id,venue,symbol,client_order_id,side,type,price,qty,status,trace_id,exchange_code,trade_env,version) "
-                         + "SELECT 'legacy-order',account_id,'okx','BTC-USDT',?,'BUY','LIMIT',100,10,'SENT','legacy-venue','okx','SIM',2 FROM accounts WHERE account_code='b0-account'")) {
+                         + "SELECT 'legacy-order',account_id,'okx','BTC-USDT',?,'BUY','LIMIT',100,10,'SENT','legacy-venue','okx','SIM',2 FROM accounts WHERE account_id=(SELECT legacy_account_id FROM exchange_accounts WHERE account_alias='b0-sim')")) {
                 insert.setString(1, client); assertEquals(1, insert.executeUpdate());
             }
             try (var reader = fixture.checker(); var a = new B0Processes.Child(B0NqProcessMain.class, dir, "nq-a", env).awaitReady();

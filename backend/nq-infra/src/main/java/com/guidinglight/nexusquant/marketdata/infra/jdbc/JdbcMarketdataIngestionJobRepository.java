@@ -6,17 +6,17 @@ import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionRun;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionStatus;
 import com.guidinglight.nexusquant.marketdata.domain.port.MarketdataIngestionJobRepository;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Repository;
 
 /**
  * JdbcMarketdataIngestionJobRepository 提供历史行情接入 ingestion jobs/runs 的 JDBC 实现。
@@ -41,6 +41,7 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
                             job_id, exchange_code, market_type, symbol, "interval", start_time, end_time,
                             status, source, created_by, created_at, updated_at, request_json
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb)
+                        ON CONFLICT (job_id) DO NOTHING
                         """,
                 job.jobId(),
                 job.exchangeCode(),
@@ -54,9 +55,11 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
                 job.createdBy(),
                 Timestamp.from(job.createdAt()),
                 Timestamp.from(job.updatedAt()),
-                job.requestJson()
-        );
-        return job;
+                job.requestJson());
+        // 唯一约束负责并发仲裁；冲突后重读原事实，由应用层核对原创建者和冻结输入。
+        return findJob(job.jobId())
+                .orElseThrow(
+                        () -> new IllegalStateException("ingestion job result is not recorded"));
     }
 
     @Override
@@ -69,29 +72,62 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
                         ORDER BY updated_at DESC
                         LIMIT 100
                         """,
-                (rs, rowNum) -> mapJob(rs)
-        );
+                (rs, rowNum) -> mapJob(rs));
     }
 
     @Override
     public Optional<MarketdataIngestionJob> findJob(UUID jobId) {
-        List<MarketdataIngestionJob> jobs = jdbcTemplate.query(
-                """
+        List<MarketdataIngestionJob> jobs =
+                jdbcTemplate.query(
+                        """
                         SELECT job_id, exchange_code, market_type, symbol, "interval", start_time, end_time,
                                status, source, created_by, created_at, updated_at, request_json
                         FROM marketdata_ingestion_jobs
                         WHERE job_id = ?
                         """,
-                (rs, rowNum) -> mapJob(rs),
-                jobId
-        );
+                        (rs, rowNum) -> mapJob(rs),
+                        jobId);
         return jobs.stream().findFirst();
     }
 
     @Override
+    public Optional<MarketdataIngestionJob> lockJob(UUID jobId) {
+        // 网络读取发生在既有事务中；竞争者最多等待三秒，再保留原编号查询，不能无限占用连接。
+        jdbcTemplate.execute("SET LOCAL lock_timeout = '3s'");
+        return jdbcTemplate
+                .query(
+                        """
+                SELECT job_id, exchange_code, market_type, symbol, "interval", start_time, end_time,
+                       status, source, created_by, created_at, updated_at, request_json
+                FROM marketdata_ingestion_jobs WHERE job_id = ? FOR UPDATE
+                """,
+                        (rs, rowNum) -> mapJob(rs),
+                        jobId)
+                .stream()
+                .findFirst();
+    }
+
+    @Override
+    public Optional<MarketdataIngestionRun> findRun(UUID runId) {
+        return jdbcTemplate
+                .query(
+                        """
+                SELECT run_id, job_id, status, started_at, finished_at, requested_start_time,
+                       requested_end_time, actual_start_time, actual_end_time, fetched_bars,
+                       inserted_bars, updated_bars, skipped_bars, error_message, raw_summary_json, created_at
+                FROM marketdata_ingestion_runs WHERE run_id = ?
+                """,
+                        (rs, rowNum) -> mapRun(rs),
+                        runId)
+                .stream()
+                .findFirst();
+    }
+
+    @Override
     public Optional<Instant> findLatestSuccessfulActualEnd(UUID jobId) {
-        List<Instant> values = jdbcTemplate.query(
-                """
+        List<Instant> values =
+                jdbcTemplate.query(
+                        """
                         SELECT actual_end_time
                         FROM marketdata_ingestion_runs
                         WHERE job_id = ?
@@ -100,9 +136,8 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
                         ORDER BY actual_end_time DESC
                         LIMIT 1
                         """,
-                (rs, rowNum) -> rs.getTimestamp("actual_end_time").toInstant(),
-                jobId
-        );
+                        (rs, rowNum) -> rs.getTimestamp("actual_end_time").toInstant(),
+                        jobId);
         return values.stream().findFirst();
     }
 
@@ -116,8 +151,7 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
                         """,
                 status.name(),
                 Timestamp.from(updatedAt),
-                jobId
-        );
+                jobId);
     }
 
     @Override
@@ -129,6 +163,7 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
                             requested_end_time, actual_start_time, actual_end_time, fetched_bars,
                             inserted_bars, updated_bars, skipped_bars, error_message, raw_summary_json, created_at
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?)
+                        ON CONFLICT (run_id) DO NOTHING
                         """,
                 run.runId(),
                 run.jobId(),
@@ -145,15 +180,17 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
                 run.skippedBars(),
                 run.errorMessage(),
                 run.rawSummaryJson(),
-                Timestamp.from(run.createdAt())
-        );
-        return run;
+                Timestamp.from(run.createdAt()));
+        return findRun(run.runId())
+                .orElseThrow(
+                        () -> new IllegalStateException("ingestion run result is not recorded"));
     }
 
     @Override
     public MarketdataIngestionRun finishRun(MarketdataIngestionRun run) {
-        jdbcTemplate.update(
-                """
+        int affected =
+                jdbcTemplate.update(
+                        """
                         UPDATE marketdata_ingestion_runs
                         SET status = ?,
                             finished_at = ?,
@@ -167,19 +204,22 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
                             raw_summary_json = ?::jsonb
                         WHERE run_id = ?
                         """,
-                run.status().name(),
-                toTimestamp(run.finishedAt()),
-                toTimestamp(run.actualStartTime()),
-                toTimestamp(run.actualEndTime()),
-                run.fetchedBars(),
-                run.insertedBars(),
-                run.updatedBars(),
-                run.skippedBars(),
-                run.errorMessage(),
-                run.rawSummaryJson(),
-                run.runId()
-        );
-        return run;
+                        run.status().name(),
+                        toTimestamp(run.finishedAt()),
+                        toTimestamp(run.actualStartTime()),
+                        toTimestamp(run.actualEndTime()),
+                        run.fetchedBars(),
+                        run.insertedBars(),
+                        run.updatedBars(),
+                        run.skippedBars(),
+                        run.errorMessage(),
+                        run.rawSummaryJson(),
+                        run.runId());
+        if (affected != 1) throw new IllegalStateException("ingestion run result is not recorded");
+        // 返回数据库规范化后的微秒时间与JSONB，首次响应和原结果重读必须是同一份持久化事实。
+        return findRun(run.runId())
+                .orElseThrow(
+                        () -> new IllegalStateException("ingestion run result is not recorded"));
     }
 
     @Override
@@ -195,8 +235,7 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
                         LIMIT 100
                         """,
                 (rs, rowNum) -> mapRun(rs),
-                jobId
-        );
+                jobId);
     }
 
     private MarketdataIngestionJob mapJob(ResultSet rs) throws SQLException {
@@ -213,8 +252,7 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
                 rs.getString("created_by"),
                 rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant(),
-                rs.getString("request_json")
-        );
+                rs.getString("request_json"));
     }
 
     private MarketdataIngestionRun mapRun(ResultSet rs) throws SQLException {
@@ -234,8 +272,7 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
                 rs.getInt("skipped_bars"),
                 rs.getString("error_message"),
                 rs.getString("raw_summary_json"),
-                rs.getTimestamp("created_at").toInstant()
-        );
+                rs.getTimestamp("created_at").toInstant());
     }
 
     private Timestamp toTimestamp(Instant instant) {

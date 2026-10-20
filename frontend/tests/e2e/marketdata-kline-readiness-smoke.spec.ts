@@ -143,6 +143,51 @@ async function fillQueryWindow(page: Page): Promise<void> {
 }
 
 test.describe('marketdata kline readiness view', () => {
+    test('隐藏分区收到 bars 后首次显示适配时间轴，重开和调整窗口仍可悬停', async ({page}) => {
+        await seedAuthAndMarketdataStubs(page);
+        let releaseBars!: () => void;
+        const barsGate = new Promise<void>(resolve => {releaseBars = resolve;});
+        await page.route('**/api/marketdata/bars**', async route => {
+            await barsGate;
+            await route.fulfill({status: 200, json: SAMPLE_BARS});
+        });
+        await page.goto('/marketdata');
+        await fillQueryWindow(page);
+        const pendingBars = page.waitForRequest('**/api/marketdata/bars**');
+        await page.getByRole('button', {name: /查\s*询/}).first().click();
+        await pendingBars;
+        await page.getByRole('tab', {name: '数据准备', exact: true}).click();
+        releaseBars();
+        const kline = page.getByTestId('nq-kline-chart');
+        await expect(kline.locator('canvas').first()).toHaveCount(1);
+        await page.getByRole('tab', {name: '行情查询与图表', exact: true}).click();
+        const inspectPlot = async () => {
+            const plot = kline.locator('.nq-chart__canvas');
+            await plot.scrollIntoViewIfNeeded();
+            const box = (await plot.boundingBox())!;
+            const inspection = kline.getByTestId('kline-inspection');
+            const seen = new Set<string>();
+            for (const fraction of [0.15, 0.35, 0.55, 0.75]) {
+                await page.mouse.move(box.x + (box.width - 60) * fraction, box.y + 70);
+                await expect(inspection.locator('time')).toHaveCount(1);
+                const time = await inspection.locator('time').textContent();
+                const bar = SAMPLE_BARS.find(b => `${b.openTime.replace('T', ' ').replace('Z', '')} UTC` === time);
+                expect(bar).toBeDefined();
+                seen.add(time!);
+                const values = await inspection.locator('strong').allTextContents();
+                expect(values.map(v => Number(v.replaceAll(',', '')))).toEqual([bar!.openPrice, bar!.highPrice, bar!.lowPrice, bar!.closePrice, bar!.volume]);
+            }
+            expect(seen.size).toBeGreaterThan(1);
+        };
+        await inspectPlot();
+        await page.getByRole('tab', {name: '数据准备', exact: true}).click();
+        await page.getByRole('tab', {name: '行情查询与图表', exact: true}).click();
+        await inspectPlot();
+        await page.setViewportSize({width: 1366, height: 768});
+        await inspectPlot();
+        await expect(page.getByTestId('nq-volume-chart').locator('canvas').first()).toBeAttached();
+    });
+
     test('mock bars 渲染 K 线主图 / 成交量图,并覆盖初始 empty 状态', async ({page}) => {
         await seedAuthAndMarketdataStubs(page);
         await page.goto('/marketdata');
@@ -174,5 +219,26 @@ test.describe('marketdata kline readiness view', () => {
         await expect(chartPanel.getByText('GAP_DETECTED')).toBeVisible();
         await expect(chartPanel.getByText(/缺口 \/ qualityStatus：1/)).toBeVisible();
         await expect(page.getByText('Marketdata bars 查询失败')).toHaveCount(0);
+        const plot = kline.locator('.nq-chart__canvas');
+        await plot.scrollIntoViewIfNeeded();
+        const box = (await plot.boundingBox())!;
+        const inspection = kline.getByTestId('kline-inspection');
+        const seen = new Set<string>();
+        for (const fraction of [0.15, 0.35, 0.55, 0.75]) {
+            await page.mouse.move(box.x + (box.width - 60) * fraction, box.y + 70);
+            const time = await inspection.locator('time').textContent();
+            const bar = SAMPLE_BARS.find(b => `${b.openTime.replace('T', ' ').replace('Z', '')} UTC` === time);
+            expect(bar).toBeDefined();
+            seen.add(time!);
+            const values = await inspection.locator('strong').allTextContents();
+            expect(values.map(v => Number(v.replaceAll(',', '')))).toEqual([bar!.openPrice, bar!.highPrice, bar!.lowPrice, bar!.closePrice, bar!.volume]);
+        }
+        expect(seen.size).toBeGreaterThan(1);
+        await page.mouse.move(box.x - 5, box.y - 5);
+        await expect(inspection.locator('time')).toHaveCount(0);
+        await inspection.getByRole('slider').focus();
+        await page.keyboard.press('End');
+        await expect(inspection.locator('time')).toHaveText('2026-06-29 01:03:00 UTC');
+        await expect(kline.getByRole('link', {name: /TradingView/})).toBeVisible();
     });
 });

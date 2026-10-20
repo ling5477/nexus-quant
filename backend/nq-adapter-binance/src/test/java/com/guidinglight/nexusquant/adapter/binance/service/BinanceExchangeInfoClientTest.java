@@ -1,26 +1,28 @@
 package com.guidinglight.nexusquant.adapter.binance.service;
 
-import com.guidinglight.nexusquant.adapter.binance.http.BinanceHttpClient;
-import com.guidinglight.nexusquant.adapter.binance.marketdata.BinanceExchangeInfoClient;
-import com.guidinglight.nexusquant.adapter.binance.signing.BinanceRequestSigner;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.adapter.binance.http.BinanceHttpClient;
+import com.guidinglight.nexusquant.adapter.binance.marketdata.BinanceExchangeInfoClient;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceApiCredentials;
 import com.guidinglight.nexusquant.adapter.binance.model.BinanceSymbolFilters;
+import com.guidinglight.nexusquant.adapter.binance.signing.BinanceRequestSigner;
+import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Map;
-import java.math.BigDecimal;
-
-import org.junit.jupiter.api.Test;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * BinanceExchangeInfoClientTest 验证 exchangeInfo 的 filters 解析。
@@ -29,7 +31,8 @@ class BinanceExchangeInfoClientTest {
 
     @Test
     void shouldParseSpotExchangeInfoFilters() throws Exception {
-        String body = """
+        String body =
+                """
                 {
                   \"timezone\":\"UTC\",
                   \"serverTime\":1700000000000,
@@ -50,18 +53,19 @@ class BinanceExchangeInfoClientTest {
                 }
                 """;
         try (TestServer server = new TestServer(body)) {
-            BinanceHttpClient httpClient = new BinanceHttpClient(
-                    HttpClient.newHttpClient(),
-                    new ObjectMapper(),
-                    server.baseUrl(),
-                    Duration.ofSeconds(2),
-                    new BinanceRequestSigner(),
-                    () -> 1_700_000_000_000L,
-                    new BinanceApiCredentials("", "")
-            );
+            BinanceHttpClient httpClient =
+                    new BinanceHttpClient(
+                            HttpClient.newHttpClient(),
+                            new ObjectMapper(),
+                            server.baseUrl(),
+                            Duration.ofSeconds(2),
+                            new BinanceRequestSigner(),
+                            () -> 1_700_000_000_000L,
+                            new BinanceApiCredentials("", ""));
             BinanceExchangeInfoClient client = new BinanceExchangeInfoClient(httpClient);
 
-            Map<String, BinanceSymbolFilters> snapshot = client.fetchSpotExchangeInfo("trc-binance-exchange-info");
+            Map<String, BinanceSymbolFilters> snapshot =
+                    client.fetchSpotExchangeInfo("trc-binance-exchange-info");
             BinanceSymbolFilters filters = snapshot.get("BTCUSDT");
 
             assertNotNull(filters);
@@ -72,21 +76,32 @@ class BinanceExchangeInfoClientTest {
             assertEquals(0, filters.minQty().compareTo(new BigDecimal("0.00001000")));
             assertEquals(0, filters.minNotional().compareTo(new BigDecimal("5.00000000")));
             assertEquals(true, filters.minNotionalAppliesToMarket());
+            assertEquals(
+                    "showPermissionSets=false",
+                    server.lastExchange.get().getRequestURI().getRawQuery());
+            assertEquals(
+                    "gzip",
+                    server.lastExchange.get().getRequestHeaders().getFirst("Accept-Encoding"));
+            assertNull(server.lastExchange.get().getRequestHeaders().getFirst("X-MBX-APIKEY"));
         }
     }
 
     private static final class TestServer implements AutoCloseable {
         private final HttpServer server;
+        private final AtomicReference<HttpExchange> lastExchange = new AtomicReference<>();
 
         private TestServer(String responseBody) throws IOException {
             this.server = HttpServer.create(new InetSocketAddress(0), 0);
-            server.createContext("/", exchange -> {
-                byte[] response = responseBody.getBytes();
-                exchange.sendResponseHeaders(200, response.length);
-                try (OutputStream outputStream = exchange.getResponseBody()) {
-                    outputStream.write(response);
-                }
-            });
+            server.createContext(
+                    "/",
+                    exchange -> {
+                        lastExchange.set(exchange);
+                        byte[] response = responseBody.getBytes();
+                        exchange.sendResponseHeaders(200, response.length);
+                        try (OutputStream outputStream = exchange.getResponseBody()) {
+                            outputStream.write(response);
+                        }
+                    });
             server.start();
         }
 

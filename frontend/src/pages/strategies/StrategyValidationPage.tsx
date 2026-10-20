@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useMemo} from 'react';
 import {useSearchParams} from 'react-router-dom';
 
 import {
@@ -13,18 +13,25 @@ import type {StrategyValidationQuery} from '@/features/validation/types/strategy
  */
 export function StrategyValidationPage() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const initialQuery = useMemo(() => queryFromSearchParams(searchParams), [searchParams]);
-    const [submittedQuery, setSubmittedQuery] = useState<StrategyValidationQuery | null>(
-        hasQueryValue(initialQuery) ? initialQuery : null,
+    // URL 定义已提交查询；忽略复核事项选择，避免切换事项改变业务范围或历史返回失配。
+    const querySearch = new URLSearchParams(
+        queryFromSearchParams(searchParams) as Record<string, string>,
+    ).toString();
+    const initialQuery = useMemo(
+        () => queryFromSearchParams(new URLSearchParams(querySearch)),
+        [querySearch],
     );
+    // 空筛选也可查询缺失证据；显式提交标记区分该操作与清空，刷新及历史导航仍可恢复。
+    const queryRequested = hasQueryValue(initialQuery) || searchParams.get('querySubmitted') === 'true';
+    const submittedQuery = queryRequested ? initialQuery : null;
 
     function submitQuery(query: StrategyValidationQuery) {
-        setSubmittedQuery(query);
-        setSearchParams(query as Record<string, string>);
+        const next = new URLSearchParams(query as Record<string, string>);
+        if (!hasQueryValue(query)) next.set('querySubmitted', 'true');
+        setSearchParams(next);
     }
 
     function resetQuery() {
-        setSubmittedQuery(null);
         setSearchParams({});
     }
 

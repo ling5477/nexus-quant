@@ -4,41 +4,45 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.guidinglight.nexusquant.marketdata.application.service.FixtureMarketdataRegistry;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
-import com.guidinglight.nexusquant.research.domain.backtest.SignalIntentType;
-import com.guidinglight.nexusquant.research.domain.backtest.BuiltinFixtureSignalPolicy;
-import com.guidinglight.nexusquant.research.domain.backtest.ExecutionPricingPolicy;
-import com.guidinglight.nexusquant.research.domain.backtest.FeeModel;
-import com.guidinglight.nexusquant.research.domain.backtest.SlippageModel;
-import com.guidinglight.nexusquant.research.domain.backtest.SimOrder;
-import com.guidinglight.nexusquant.research.domain.backtest.SimPnlSnapshot;
-import com.guidinglight.nexusquant.research.domain.backtest.SimPosition;
-import com.guidinglight.nexusquant.research.domain.backtest.SimTrade;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
-import com.guidinglight.nexusquant.research.domain.backtest.port.SimOrderRepository;
-import com.guidinglight.nexusquant.research.domain.backtest.port.SimPnlSnapshotRepository;
-import com.guidinglight.nexusquant.research.domain.backtest.port.SimPositionRepository;
-import com.guidinglight.nexusquant.research.domain.backtest.port.SimTradeRepository;
+import com.guidinglight.nexusquant.research.application.BacktestRunService;
+import com.guidinglight.nexusquant.research.application.ResearchConfigService;
+import com.guidinglight.nexusquant.research.application.backtest.command.BacktestConfigCreateRequest;
+import com.guidinglight.nexusquant.research.application.backtest.command.BacktestRunStartRequest;
+import com.guidinglight.nexusquant.research.application.command.ResearchConfigCreateRequest;
+import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
 import com.guidinglight.nexusquant.research.domain.BacktestConfig;
 import com.guidinglight.nexusquant.research.domain.BacktestRun;
 import com.guidinglight.nexusquant.research.domain.BacktestRunStatus;
 import com.guidinglight.nexusquant.research.domain.ResearchConfig;
 import com.guidinglight.nexusquant.research.domain.SourceStrategySnapshot;
+import com.guidinglight.nexusquant.research.domain.backtest.BuiltinFixtureSignalPolicy;
+import com.guidinglight.nexusquant.research.domain.backtest.ExecutionPricingPolicy;
+import com.guidinglight.nexusquant.research.domain.backtest.FeeModel;
+import com.guidinglight.nexusquant.research.domain.backtest.SignalIntentType;
+import com.guidinglight.nexusquant.research.domain.backtest.SimOrder;
+import com.guidinglight.nexusquant.research.domain.backtest.SimPnlSnapshot;
+import com.guidinglight.nexusquant.research.domain.backtest.SimPosition;
+import com.guidinglight.nexusquant.research.domain.backtest.SimTrade;
+import com.guidinglight.nexusquant.research.domain.backtest.SlippageModel;
+import com.guidinglight.nexusquant.research.domain.backtest.port.SimOrderRepository;
+import com.guidinglight.nexusquant.research.domain.backtest.port.SimPnlSnapshotRepository;
+import com.guidinglight.nexusquant.research.domain.backtest.port.SimPositionRepository;
+import com.guidinglight.nexusquant.research.domain.backtest.port.SimTradeRepository;
 import com.guidinglight.nexusquant.research.domain.port.BacktestConfigRepository;
 import com.guidinglight.nexusquant.research.domain.port.BacktestRunRepository;
 import com.guidinglight.nexusquant.research.domain.port.ResearchConfigRepository;
 import com.guidinglight.nexusquant.research.domain.port.SourceStrategySnapshotRepository;
-import com.guidinglight.nexusquant.research.application.backtest.command.BacktestConfigCreateRequest;
-import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
-import com.guidinglight.nexusquant.research.application.BacktestRunService;
-import com.guidinglight.nexusquant.research.application.backtest.command.BacktestRunStartRequest;
-import com.guidinglight.nexusquant.research.application.command.ResearchConfigCreateRequest;
-import com.guidinglight.nexusquant.research.application.ResearchConfigService;
+
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -50,29 +54,119 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.junit.jupiter.api.Test;
-
 class BacktestExecutionServiceTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-    private final Clock fixedClock = Clock.fixed(Instant.parse("2026-03-24T12:00:00Z"), ZoneOffset.UTC);
+    private final ObjectMapper objectMapper =
+            new ObjectMapper().registerModule(new JavaTimeModule());
+    private final Clock fixedClock =
+            Clock.fixed(Instant.parse("2026-03-24T12:00:00Z"), ZoneOffset.UTC);
+
+    /** 同可见时间是合法输入；实际开盘成交与逐bar估值各保存顺序，不通过改时间规避重读歧义。 */
+    @Test
+    void sharedAvailabilityWritesBuySellBuyInActualExecutionOrder() {
+        String[] prices = {"100", "200", "100", "200", "200", "200", "200", "200"};
+        var input = new ArrayList<HistoricalBar>();
+        for (int index = 0; index < prices.length; index++) {
+            var bar = spotBar(index, prices[index], prices[index]);
+            input.add(index >= 1 && index <= 3 ? availableAt(bar, "2026-01-01T00:03:59Z") : bar);
+        }
+        Scenario scenario = createScenario(query -> input);
+        BacktestRun legacy =
+                scenario.createRun(
+                        """
+                {"provider":"fixture","datasetId":"synthetic-strategy-sim","exchangeCode":"OKX",
+                 "symbol":"BTC-USDT","interval":"1m","resourcePath":"synthetic"}
+                """);
+        String parameters = "{\"window\":2,\"investedExposure\":\"1\"}";
+        String version =
+                """
+                {"strategyVersionId":"sv-1","checksum":"sha-1","status":"ACTIVE",
+                 "paramSnapshotJson":{"window":2,"investedExposure":"1"},
+                 "sourceSnapshotJson":{"executable":"SPOT_SMA_TARGET_V1"}}
+                """;
+        String config =
+                """
+                {"startTime":"2026-01-01T00:00:00Z","endTime":"2026-01-01T00:07:59Z",
+                 "initialCapital":"100","executionSpec":{"quantityStep":"0.0001","priceTick":"0.01",
+                 "minimumQuantity":"0.0001","minimumNotional":"5","feeRate":"0","slippageBps":"0"}}
+                """;
+        scenario.backtestRunRepository.insert(
+                new BacktestRun(
+                        legacy.backtestRunId(),
+                        legacy.backtestConfigId(),
+                        legacy.researchConfigId(),
+                        legacy.sourceStrategyId(),
+                        legacy.strategySnapshot(),
+                        "sv-1",
+                        version,
+                        parameters,
+                        config,
+                        config,
+                        "{\"provider\":\"fixture\",\"datasetId\":\"synthetic-strategy-sim\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\",\"interval\":\"1m\",\"resourcePath\":\"synthetic\"}",
+                        BacktestRunStatus.CREATED,
+                        legacy.requestedAt(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        "{}",
+                        legacy.createdAt(),
+                        legacy.updatedAt()));
+        scenario.backtestExecutionService.startRun(legacy.backtestRunId());
+        var trades = scenario.simTradeRepository.listByBacktestRunId(legacy.backtestRunId());
+        assertEquals(
+                List.of("BUY", "SELL", "BUY", "SELL"),
+                trades.stream().map(SimTrade::side).toList());
+        assertEquals(
+                List.of(1L, 2L, 3L, 4L), trades.stream().map(SimTrade::executionSequence).toList());
+        assertEquals(Instant.parse("2026-01-01T00:04:00Z"), trades.get(0).tradedAt());
+        assertEquals(trades.get(0).tradedAt(), trades.get(1).tradedAt());
+        assertEquals(trades.get(1).tradedAt(), trades.get(2).tradedAt());
+        var snapshots =
+                scenario.simPnlSnapshotRepository.listByBacktestRunId(legacy.backtestRunId());
+        assertEquals(
+                List.of(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L),
+                snapshots.stream().map(SimPnlSnapshot::valuationSequence).toList());
+        assertEquals(Instant.parse("2026-01-01T00:03:59Z"), snapshots.get(1).snapshotTime());
+        assertEquals(snapshots.get(1).snapshotTime(), snapshots.get(2).snapshotTime());
+        assertEquals(snapshots.get(2).snapshotTime(), snapshots.get(3).snapshotTime());
+    }
 
     @Test
     void shouldProduceSimulatedFactsForBuyAndHoldFixture() {
-        Scenario scenario = createScenario(query -> List.of(
-                bar("2025-01-01T00:00:00Z", "2025-01-01T00:00:59Z", "43000", "43010", "10"),
-                bar("2025-01-01T00:01:00Z", "2025-01-01T00:01:59Z", "43010", "43110", "11")
-        ));
+        Scenario scenario =
+                createScenario(
+                        query ->
+                                List.of(
+                                        bar(
+                                                "2025-01-01T00:00:00Z",
+                                                "2025-01-01T00:00:59Z",
+                                                "43000",
+                                                "43010",
+                                                "10"),
+                                        bar(
+                                                "2025-01-01T00:01:00Z",
+                                                "2025-01-01T00:01:59Z",
+                                                "43010",
+                                                "43110",
+                                                "11")));
 
-        BacktestRun createdRun = scenario.createRun("""
+        BacktestRun createdRun =
+                scenario.createRun(
+                        """
                 {"provider":"db","datasetId":"BINANCE_BTCUSDT_1M_SAMPLE","exchangeCode":"BINANCE","resourcePath":"marketdata_bars","symbol":"BTCUSDT","interval":"1m"}
                 """);
         var result = scenario.backtestExecutionService.startRun(createdRun.backtestRunId());
-        BacktestRun updatedRun = scenario.backtestRunService.getByBacktestRunId(createdRun.backtestRunId());
-        List<SimOrder> orders = scenario.simOrderRepository.listByBacktestRunId(createdRun.backtestRunId());
-        List<SimTrade> trades = scenario.simTradeRepository.listByBacktestRunId(createdRun.backtestRunId());
-        List<SimPosition> positions = scenario.simPositionRepository.listByBacktestRunId(createdRun.backtestRunId());
-        List<SimPnlSnapshot> pnlSnapshots = scenario.simPnlSnapshotRepository.listByBacktestRunId(createdRun.backtestRunId());
+        BacktestRun updatedRun =
+                scenario.backtestRunService.getByBacktestRunId(createdRun.backtestRunId());
+        List<SimOrder> orders =
+                scenario.simOrderRepository.listByBacktestRunId(createdRun.backtestRunId());
+        List<SimTrade> trades =
+                scenario.simTradeRepository.listByBacktestRunId(createdRun.backtestRunId());
+        List<SimPosition> positions =
+                scenario.simPositionRepository.listByBacktestRunId(createdRun.backtestRunId());
+        List<SimPnlSnapshot> pnlSnapshots =
+                scenario.simPnlSnapshotRepository.listByBacktestRunId(createdRun.backtestRunId());
 
         assertEquals(BacktestRunStatus.SUCCEEDED, result.resultStatus());
         assertEquals(2, orders.size());
@@ -84,9 +178,11 @@ class BacktestExecutionServiceTest {
         assertTrue(updatedRun.summaryJson().contains("\"sourceStrategyId\":\"str-demo-3\""));
         assertTrue(updatedRun.summaryJson().contains("\"orderCount\":2"));
         assertTrue(updatedRun.summaryJson().contains("\"tradeCount\":2"));
-        assertTrue(updatedRun.summaryJson().contains("\"finalEquity\":\"99927.760000000000000000\""));
+        assertTrue(
+                updatedRun.summaryJson().contains("\"finalEquity\":\"99927.760000000000000000\""));
         assertTrue(updatedRun.summaryJson().contains("\"totalFee\":\"86.120000000000000000\""));
-        assertTrue(updatedRun.summaryJson().contains("\"totalSlippage\":\"86.120000000000000000\""));
+        assertTrue(
+                updatedRun.summaryJson().contains("\"totalSlippage\":\"86.120000000000000000\""));
         assertEquals(new BigDecimal("43.010000000000000000"), trades.getFirst().feeAmount());
         assertEquals(new BigDecimal("43.010000000000000000"), trades.getFirst().slippageAmount());
         assertEquals(SignalIntentType.BUY.name(), orders.getFirst().side());
@@ -94,91 +190,172 @@ class BacktestExecutionServiceTest {
 
     @Test
     void frozenVersionTradesOnlyAtNextBarOpenAndRecordsConsumedInput() throws Exception {
-        List<HistoricalBar> bars = List.of(
-                spotBar(0, "100", "100"), spotBar(1, "100", "101"),
-                spotBar(2, "101", "102"), spotBar(3, "103", "104"));
+        List<HistoricalBar> bars =
+                List.of(
+                        spotBar(0, "100", "100"), spotBar(1, "100", "101"),
+                        spotBar(2, "101", "102"), spotBar(3, "103", "104"));
         Scenario scenario = createScenario(query -> bars);
-        BacktestRun legacy = scenario.createRun("""
+        BacktestRun legacy =
+                scenario.createRun(
+                        """
                 {"provider":"fixture","datasetId":"synthetic-strategy-sim","exchangeCode":"OKX",
                  "symbol":"BTC-USDT","interval":"1m","resourcePath":"synthetic"}
                 """);
         String parameters = "{\"window\":3,\"investedExposure\":\"1\"}";
-        String version = """
+        String version =
+                """
                 {"strategyVersionId":"sv-1","checksum":"sha-1","status":"ACTIVE",
                  "paramSnapshotJson":{"window":3,"investedExposure":"1"},
                  "sourceSnapshotJson":{"executable":"SPOT_SMA_TARGET_V1"}}
                 """;
-        String config = """
+        String config =
+                """
                 {"startTime":"2026-01-01T00:00:00Z","endTime":"2026-01-01T00:03:59Z",
                  "initialCapital":"100","executionSpec":{"quantityStep":"0.0001","priceTick":"0.01",
-                 "minimumQuantity":"0.0001","minimumNotional":"10","feeRate":"0.001","slippageBps":"10"}}
+                 "minimumQuantity":"0.0001","minimumNotional":"10","feeRate":"0.001","slippageBps":"10",
+                 "researchNumericParameter":9007199254740993.123456789012345678}}
                 """;
-        scenario.backtestRunRepository.insert(new BacktestRun(legacy.backtestRunId(),
-                legacy.backtestConfigId(), legacy.researchConfigId(), legacy.sourceStrategyId(),
-                legacy.strategySnapshot(), "sv-1", version, parameters, config, config,
-                "{\"provider\":\"fixture\",\"datasetId\":\"synthetic-strategy-sim\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\",\"interval\":\"1m\",\"resourcePath\":\"synthetic\"}",
-                BacktestRunStatus.CREATED, legacy.requestedAt(), null, null, null, null,
-                "{}", legacy.createdAt(), legacy.updatedAt()));
+        scenario.backtestRunRepository.insert(
+                new BacktestRun(
+                        legacy.backtestRunId(),
+                        legacy.backtestConfigId(),
+                        legacy.researchConfigId(),
+                        legacy.sourceStrategyId(),
+                        legacy.strategySnapshot(),
+                        "sv-1",
+                        version,
+                        parameters,
+                        config,
+                        config,
+                        "{\"provider\":\"fixture\",\"datasetId\":\"synthetic-strategy-sim\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\",\"interval\":\"1m\",\"resourcePath\":\"synthetic\"}",
+                        BacktestRunStatus.CREATED,
+                        legacy.requestedAt(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        "{}",
+                        legacy.createdAt(),
+                        legacy.updatedAt()));
 
         scenario.backtestExecutionService.startRun(legacy.backtestRunId());
-        List<SimTrade> trades = scenario.simTradeRepository.listByBacktestRunId(legacy.backtestRunId());
+        List<SimTrade> trades =
+                scenario.simTradeRepository.listByBacktestRunId(legacy.backtestRunId());
         assertEquals(1, trades.size());
         assertEquals(Instant.parse("2026-01-01T00:03:00Z"), trades.getFirst().tradedAt());
         assertEquals(0, new BigDecimal("103.11").compareTo(trades.getFirst().tradePrice()));
-        BacktestRun completed = scenario.backtestRunService.getByBacktestRunId(legacy.backtestRunId());
+        BacktestRun completed =
+                scenario.backtestRunService.getByBacktestRunId(legacy.backtestRunId());
         var summary = objectMapper.readTree(completed.summaryJson());
         assertEquals("sv-1", summary.path("strategyVersionId").asText());
         assertEquals(4, summary.path("consumedBars").size());
         assertEquals(64, summary.path("barContentSha256").asText().length());
+        // 未执行的元数据也属于冻结身份；成交事实及成本算法保持原断言，不能靠舍入输入绕过一致性校验。
+        JsonNode exactSummary =
+                objectMapper
+                        .reader()
+                        .with(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+                        .readTree(completed.summaryJson());
+        JsonNode assumptions =
+                objectMapper
+                        .reader()
+                        .with(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)
+                        .readTree(
+                                exactSummary
+                                        .path("researchFacts")
+                                        .path("assumptions")
+                                        .path("executionSpecJson")
+                                        .asText());
+        assertEquals(
+                0,
+                new BigDecimal("9007199254740993.123456789012345678")
+                        .compareTo(assumptions.path("researchNumericParameter").decimalValue()));
+        assertTrue(objectMapper.readTree("1.234567890123456789").isDouble());
         assertTrue(new BigDecimal(summary.path("totalSlippage").asText()).signum() > 0);
         BigDecimal notional = trades.getFirst().tradePrice().multiply(trades.getFirst().quantity());
-        assertEquals(0, new BigDecimal("100").subtract(notional).subtract(trades.getFirst().feeAmount())
-                .compareTo(new BigDecimal(summary.path("finalCashBalance").asText())));
+        assertEquals(
+                0,
+                new BigDecimal("100")
+                        .subtract(notional)
+                        .subtract(trades.getFirst().feeAmount())
+                        .compareTo(new BigDecimal(summary.path("finalCashBalance").asText())));
     }
 
     @Test
     void delayedFrozenSignalWaitsForFirstLaterTradableOpen() {
-        List<HistoricalBar> bars = List.of(spotBar(0, "100", "100"), spotBar(1, "101", "101"),
-                availableAt(spotBar(2, "102", "102"), "2026-01-01T00:03:00Z"),
-                availableAt(spotBar(3, "103", "103"), "2026-01-01T00:04:00Z"),
-                spotBar(4, "104", "104"));
+        List<HistoricalBar> bars =
+                List.of(
+                        spotBar(0, "100", "100"),
+                        spotBar(1, "101", "101"),
+                        availableAt(spotBar(2, "102", "102"), "2026-01-01T00:03:00Z"),
+                        availableAt(spotBar(3, "103", "103"), "2026-01-01T00:04:00Z"),
+                        spotBar(4, "104", "104"));
         Scenario scenario = createScenario(query -> bars);
-        BacktestRun legacy = scenario.createRun("""
+        BacktestRun legacy =
+                scenario.createRun(
+                        """
                 {"provider":"fixture","datasetId":"synthetic-strategy-sim","exchangeCode":"OKX",
                  "symbol":"BTC-USDT","interval":"1m","resourcePath":"synthetic"}
                 """);
         String parameters = "{\"window\":3,\"investedExposure\":\"1\"}";
-        String version = """
+        String version =
+                """
                 {"strategyVersionId":"sv-1","checksum":"sha-1","status":"ACTIVE",
                  "paramSnapshotJson":{"window":3,"investedExposure":"1"},
                  "sourceSnapshotJson":{"executable":"SPOT_SMA_TARGET_V1"}}
                 """;
-        String config = """
+        String config =
+                """
                 {"startTime":"2026-01-01T00:00:00Z","endTime":"2026-01-01T00:04:59Z",
                  "initialCapital":"100","executionSpec":{"quantityStep":"0.0001","priceTick":"0.01",
                   "minimumQuantity":"0.0001","minimumNotional":"10","feeRate":"0.001","slippageBps":"10"}}
                 """;
-        scenario.backtestRunRepository.insert(new BacktestRun(legacy.backtestRunId(),
-                legacy.backtestConfigId(), legacy.researchConfigId(), legacy.sourceStrategyId(),
-                legacy.strategySnapshot(), "sv-1", version, parameters, config, config,
-                "{\"provider\":\"fixture\",\"datasetId\":\"synthetic-strategy-sim\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\",\"interval\":\"1m\",\"resourcePath\":\"synthetic\"}",
-                BacktestRunStatus.CREATED, legacy.requestedAt(), null, null, null, null,
-                "{}", legacy.createdAt(), legacy.updatedAt()));
+        scenario.backtestRunRepository.insert(
+                new BacktestRun(
+                        legacy.backtestRunId(),
+                        legacy.backtestConfigId(),
+                        legacy.researchConfigId(),
+                        legacy.sourceStrategyId(),
+                        legacy.strategySnapshot(),
+                        "sv-1",
+                        version,
+                        parameters,
+                        config,
+                        config,
+                        "{\"provider\":\"fixture\",\"datasetId\":\"synthetic-strategy-sim\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\",\"interval\":\"1m\",\"resourcePath\":\"synthetic\"}",
+                        BacktestRunStatus.CREATED,
+                        legacy.requestedAt(),
+                        null,
+                        null,
+                        null,
+                        null,
+                        "{}",
+                        legacy.createdAt(),
+                        legacy.updatedAt()));
 
         scenario.backtestExecutionService.startRun(legacy.backtestRunId());
-        List<SimTrade> trades = scenario.simTradeRepository.listByBacktestRunId(legacy.backtestRunId());
+        List<SimTrade> trades =
+                scenario.simTradeRepository.listByBacktestRunId(legacy.backtestRunId());
         assertEquals(1, trades.size());
         assertEquals(Instant.parse("2026-01-01T00:04:00Z"), trades.getFirst().tradedAt());
     }
 
     @Test
     void shouldForwardExchangeCodeWhenDatasetSpecUsesDbProvider() {
-        CapturingHistoricalMarketDataPort historicalMarketDataPort = new CapturingHistoricalMarketDataPort(List.of(
-                bar("2025-01-01T00:00:00Z", "2025-01-01T00:00:59Z", "43000", "43010", "10")
-        ));
+        CapturingHistoricalMarketDataPort historicalMarketDataPort =
+                new CapturingHistoricalMarketDataPort(
+                        List.of(
+                                bar(
+                                        "2025-01-01T00:00:00Z",
+                                        "2025-01-01T00:00:59Z",
+                                        "43000",
+                                        "43010",
+                                        "10")));
         Scenario scenario = createScenario(historicalMarketDataPort);
 
-        BacktestRun createdRun = scenario.createRun("""
+        BacktestRun createdRun =
+                scenario.createRun(
+                        """
                 {"provider":"db","datasetId":"BINANCE_BTCUSDT_1M_SAMPLE","exchangeCode":"BINANCE","resourcePath":"marketdata_bars","symbol":"BTCUSDT","interval":"1m"}
                 """);
         scenario.backtestExecutionService.startRun(createdRun.backtestRunId());
@@ -186,46 +363,56 @@ class BacktestExecutionServiceTest {
         assertEquals("BINANCE", historicalMarketDataPort.lastQuery.exchangeCode());
         assertEquals("BINANCE", historicalMarketDataPort.lastQuery.datasetSpec().exchangeCode());
         assertEquals("db", historicalMarketDataPort.lastQuery.datasetSpec().provider());
-        assertEquals("marketdata_bars", historicalMarketDataPort.lastQuery.datasetSpec().resourcePath());
+        assertEquals(
+                "marketdata_bars", historicalMarketDataPort.lastQuery.datasetSpec().resourcePath());
     }
 
     @Test
     void shouldResolveRegisteredFixtureDatasetWithoutHardcodedBtcFallback() {
-        CapturingHistoricalMarketDataPort historicalMarketDataPort = new CapturingHistoricalMarketDataPort(List.of(
-                new HistoricalBar(
-                        "BINANCE",
-                        "ETHUSDT",
-                        BarInterval.ONE_MINUTE,
-                        Instant.parse("2025-01-01T00:00:00Z"),
-                        Instant.parse("2025-01-01T00:00:59Z"),
-                        new BigDecimal("2300"),
-                        new BigDecimal("2305"),
-                        new BigDecimal("2298"),
-                        new BigDecimal("2302"),
-                        new BigDecimal("100")
-                )
-        ));
+        CapturingHistoricalMarketDataPort historicalMarketDataPort =
+                new CapturingHistoricalMarketDataPort(
+                        List.of(
+                                new HistoricalBar(
+                                        "BINANCE",
+                                        "ETHUSDT",
+                                        BarInterval.ONE_MINUTE,
+                                        Instant.parse("2025-01-01T00:00:00Z"),
+                                        Instant.parse("2025-01-01T00:00:59Z"),
+                                        new BigDecimal("2300"),
+                                        new BigDecimal("2305"),
+                                        new BigDecimal("2298"),
+                                        new BigDecimal("2302"),
+                                        new BigDecimal("100"))));
         Scenario scenario = createScenario(historicalMarketDataPort);
 
-        BacktestRun createdRun = scenario.createRun("""
+        BacktestRun createdRun =
+                scenario.createRun(
+                        """
                 {"provider":"fixture","datasetId":"BINANCE_ETHUSDT_1M_SAMPLE","exchangeCode":"BINANCE","symbol":"ETHUSDT","interval":"1m"}
                 """);
         scenario.backtestExecutionService.startRun(createdRun.backtestRunId());
 
-        assertEquals("backtest/fixtures/ethusdt_1m_sample.csv", historicalMarketDataPort.lastQuery.datasetSpec().resourcePath());
+        assertEquals(
+                "backtest/fixtures/ethusdt_1m_sample.csv",
+                historicalMarketDataPort.lastQuery.datasetSpec().resourcePath());
         assertEquals("ETHUSDT", historicalMarketDataPort.lastQuery.datasetSpec().symbol());
     }
 
     @Test
     void shouldMarkFailedWhenNoBarsReturned() {
         Scenario scenario = createScenario(query -> List.of());
-        BacktestRun createdRun = scenario.createRun("""
+        BacktestRun createdRun =
+                scenario.createRun(
+                        """
                 {"provider":"fixture","datasetId":"btc-empty","exchangeCode":"BINANCE","resourcePath":"backtest/fixtures/btcusdt_1m_sample.csv","symbol":"BTCUSDT","interval":"1m"}
                 """);
 
-        assertThrows(IllegalStateException.class, () -> scenario.backtestExecutionService.startRun(createdRun.backtestRunId()));
+        assertThrows(
+                IllegalStateException.class,
+                () -> scenario.backtestExecutionService.startRun(createdRun.backtestRunId()));
 
-        BacktestRun updatedRun = scenario.backtestRunService.getByBacktestRunId(createdRun.backtestRunId());
+        BacktestRun updatedRun =
+                scenario.backtestRunService.getByBacktestRunId(createdRun.backtestRunId());
         assertEquals(BacktestRunStatus.FAILED, updatedRun.status());
         assertEquals("BACKTEST_EXECUTION_FAILED", updatedRun.failureCode());
     }
@@ -233,172 +420,199 @@ class BacktestExecutionServiceTest {
     @Test
     void shouldMarkFailedWhenDatasetSpecIsInvalid() {
         Scenario scenario = createScenario(query -> List.of());
-        BacktestRun createdRun = scenario.createRun("""
+        BacktestRun createdRun =
+                scenario.createRun(
+                        """
                 {"provider":"fixture","datasetId":"btc-invalid","exchangeCode":"BINANCE","resourcePath":"backtest/fixtures/btcusdt_1m_sample.csv","interval":"1m"}
                 """);
 
-        assertThrows(IllegalStateException.class, () -> scenario.backtestExecutionService.startRun(createdRun.backtestRunId()));
+        assertThrows(
+                IllegalStateException.class,
+                () -> scenario.backtestExecutionService.startRun(createdRun.backtestRunId()));
 
-        BacktestRun updatedRun = scenario.backtestRunService.getByBacktestRunId(createdRun.backtestRunId());
+        BacktestRun updatedRun =
+                scenario.backtestRunService.getByBacktestRunId(createdRun.backtestRunId());
         assertEquals(BacktestRunStatus.FAILED, updatedRun.status());
         assertEquals("BACKTEST_EXECUTION_FAILED", updatedRun.failureCode());
     }
 
     @Test
     void shouldMarkRunFailedWithoutPersistingFactsWhenSuccessPersistenceFails() {
-        InMemoryResearchConfigRepository researchConfigRepository = new InMemoryResearchConfigRepository();
-        InMemoryBacktestConfigRepository backtestConfigRepository = new InMemoryBacktestConfigRepository();
+        InMemoryResearchConfigRepository researchConfigRepository =
+                new InMemoryResearchConfigRepository();
+        InMemoryBacktestConfigRepository backtestConfigRepository =
+                new InMemoryBacktestConfigRepository();
         InMemoryBacktestRunRepository backtestRunRepository = new InMemoryBacktestRunRepository();
         InMemorySimOrderRepository simOrderRepository = new InMemorySimOrderRepository();
         InMemorySimTradeRepository simTradeRepository = new InMemorySimTradeRepository();
         InMemorySimPositionRepository simPositionRepository = new InMemorySimPositionRepository();
-        InMemorySimPnlSnapshotRepository simPnlSnapshotRepository = new InMemorySimPnlSnapshotRepository();
-        SourceStrategySnapshotRepository sourceStrategySnapshotRepository = strategyId -> Optional.of(new SourceStrategySnapshot(
-                strategyId,
-                "buy-hold-fixture",
-                "Buy Hold Fixture",
-                "BUY_AND_HOLD_FIXTURE",
-                "BINANCE",
-                1001L,
-                "SIM",
-                true,
-                "{\"strategy\":\"fixture\"}",
-                1
-        ));
-        ResearchConfigService researchConfigService = new ResearchConfigService(
-                researchConfigRepository,
-                sourceStrategySnapshotRepository,
-                objectMapper,
-                fixedClock
-        );
-        BacktestConfigService backtestConfigService = new BacktestConfigService(
-                backtestConfigRepository,
-                researchConfigService,
-                objectMapper,
-                fixedClock
-        );
-        BacktestRunService backtestRunService = new BacktestRunService(
-                backtestRunRepository,
-                backtestConfigService,
-                researchConfigService,
-                fixedClock
-        );
-        BacktestExecutionPersistenceService failingPersistenceService = new FailingBacktestExecutionPersistenceService(
-                backtestRunRepository,
-                simOrderRepository,
-                simTradeRepository,
-                simPositionRepository,
-                simPnlSnapshotRepository
-        );
-        BacktestExecutionService backtestExecutionService = new BacktestExecutionService(
-                query -> List.of(
-                        bar("2025-01-01T00:00:00Z", "2025-01-01T00:00:59Z", "43000", "43010", "10"),
-                        bar("2025-01-01T00:01:00Z", "2025-01-01T00:01:59Z", "43010", "43110", "11")
-                ),
-                new FixtureMarketdataRegistry(),
-                backtestRunService,
-                backtestConfigService,
-                researchConfigService,
-                failingPersistenceService,
-                new BuiltinFixtureSignalPolicy(),
-                new ExecutionPricingPolicy(),
-                new FeeModel(),
-                new SlippageModel(),
-                objectMapper,
-                fixedClock
-        );
+        InMemorySimPnlSnapshotRepository simPnlSnapshotRepository =
+                new InMemorySimPnlSnapshotRepository();
+        SourceStrategySnapshotRepository sourceStrategySnapshotRepository =
+                strategyId ->
+                        Optional.of(
+                                new SourceStrategySnapshot(
+                                        strategyId,
+                                        "buy-hold-fixture",
+                                        "Buy Hold Fixture",
+                                        "BUY_AND_HOLD_FIXTURE",
+                                        "BINANCE",
+                                        1001L,
+                                        "SIM",
+                                        true,
+                                        "{\"strategy\":\"fixture\"}",
+                                        1));
+        ResearchConfigService researchConfigService =
+                new ResearchConfigService(
+                        researchConfigRepository,
+                        sourceStrategySnapshotRepository,
+                        objectMapper,
+                        fixedClock);
+        BacktestConfigService backtestConfigService =
+                new BacktestConfigService(
+                        backtestConfigRepository, researchConfigService, objectMapper, fixedClock);
+        BacktestRunService backtestRunService =
+                new BacktestRunService(
+                        backtestRunRepository,
+                        backtestConfigService,
+                        researchConfigService,
+                        fixedClock);
+        BacktestExecutionPersistenceService failingPersistenceService =
+                new FailingBacktestExecutionPersistenceService(
+                        backtestRunRepository,
+                        simOrderRepository,
+                        simTradeRepository,
+                        simPositionRepository,
+                        simPnlSnapshotRepository);
+        BacktestExecutionService backtestExecutionService =
+                new BacktestExecutionService(
+                        query ->
+                                List.of(
+                                        bar(
+                                                "2025-01-01T00:00:00Z",
+                                                "2025-01-01T00:00:59Z",
+                                                "43000",
+                                                "43010",
+                                                "10"),
+                                        bar(
+                                                "2025-01-01T00:01:00Z",
+                                                "2025-01-01T00:01:59Z",
+                                                "43010",
+                                                "43110",
+                                                "11")),
+                        new FixtureMarketdataRegistry(),
+                        backtestRunService,
+                        backtestConfigService,
+                        researchConfigService,
+                        failingPersistenceService,
+                        new BuiltinFixtureSignalPolicy(),
+                        new ExecutionPricingPolicy(),
+                        new FeeModel(),
+                        new SlippageModel(),
+                        objectMapper,
+                        fixedClock);
 
-        ResearchConfig researchConfig = researchConfigService.create(new ResearchConfigCreateRequest(
-                "str-demo-3",
-                "Buy Hold Research",
-                null,
-                "{}",
-                "{}",
-                """
+        ResearchConfig researchConfig =
+                researchConfigService.create(
+                        new ResearchConfigCreateRequest(
+                                "str-demo-3",
+                                "Buy Hold Research",
+                                null,
+                                "{}",
+                                "{}",
+                                """
                 {"provider":"fixture","datasetId":"btc-sample","exchangeCode":"BINANCE","resourcePath":"backtest/fixtures/btcusdt_1m_sample.csv","symbol":"BTCUSDT","interval":"1m"}
-                """
-        ));
-        BacktestConfig backtestConfig = backtestConfigService.create(new BacktestConfigCreateRequest(
-                researchConfig.researchConfigId(),
-                "Buy Hold Backtest",
-                null,
-                Instant.parse("2025-01-01T00:00:00Z"),
-                Instant.parse("2025-01-01T00:01:59Z"),
-                new BigDecimal("100000"),
-                "{\"mode\":\"bar\",\"feeRate\":\"0.001\",\"slippageBps\":\"10\",\"orderQuantity\":\"1\"}",
-                "{}"
-        ));
-        BacktestRun createdRun = backtestRunService.create(new BacktestRunStartRequest(backtestConfig.backtestConfigId()));
+                """));
+        BacktestConfig backtestConfig =
+                backtestConfigService.create(
+                        new BacktestConfigCreateRequest(
+                                researchConfig.researchConfigId(),
+                                "Buy Hold Backtest",
+                                null,
+                                Instant.parse("2025-01-01T00:00:00Z"),
+                                Instant.parse("2025-01-01T00:01:59Z"),
+                                new BigDecimal("100000"),
+                                "{\"mode\":\"bar\",\"feeRate\":\"0.001\",\"slippageBps\":\"10\",\"orderQuantity\":\"1\"}",
+                                "{}"));
+        BacktestRun createdRun =
+                backtestRunService.create(
+                        new BacktestRunStartRequest(backtestConfig.backtestConfigId()));
 
-        assertThrows(IllegalStateException.class, () -> backtestExecutionService.startRun(createdRun.backtestRunId()));
+        assertThrows(
+                IllegalStateException.class,
+                () -> backtestExecutionService.startRun(createdRun.backtestRunId()));
 
         BacktestRun updatedRun = backtestRunService.getByBacktestRunId(createdRun.backtestRunId());
         assertEquals(BacktestRunStatus.FAILED, updatedRun.status());
         assertEquals(0, simOrderRepository.listByBacktestRunId(createdRun.backtestRunId()).size());
         assertEquals(0, simTradeRepository.listByBacktestRunId(createdRun.backtestRunId()).size());
-        assertEquals(0, simPositionRepository.listByBacktestRunId(createdRun.backtestRunId()).size());
-        assertEquals(0, simPnlSnapshotRepository.listByBacktestRunId(createdRun.backtestRunId()).size());
+        assertEquals(
+                0, simPositionRepository.listByBacktestRunId(createdRun.backtestRunId()).size());
+        assertEquals(
+                0, simPnlSnapshotRepository.listByBacktestRunId(createdRun.backtestRunId()).size());
     }
 
     private Scenario createScenario(HistoricalMarketDataPort historicalMarketDataPort) {
-        InMemoryResearchConfigRepository researchConfigRepository = new InMemoryResearchConfigRepository();
-        InMemoryBacktestConfigRepository backtestConfigRepository = new InMemoryBacktestConfigRepository();
+        InMemoryResearchConfigRepository researchConfigRepository =
+                new InMemoryResearchConfigRepository();
+        InMemoryBacktestConfigRepository backtestConfigRepository =
+                new InMemoryBacktestConfigRepository();
         InMemoryBacktestRunRepository backtestRunRepository = new InMemoryBacktestRunRepository();
         InMemorySimOrderRepository simOrderRepository = new InMemorySimOrderRepository();
         InMemorySimTradeRepository simTradeRepository = new InMemorySimTradeRepository();
         InMemorySimPositionRepository simPositionRepository = new InMemorySimPositionRepository();
-        InMemorySimPnlSnapshotRepository simPnlSnapshotRepository = new InMemorySimPnlSnapshotRepository();
-        SourceStrategySnapshotRepository sourceStrategySnapshotRepository = strategyId -> Optional.of(new SourceStrategySnapshot(
-                strategyId,
-                "buy-hold-fixture",
-                "Buy Hold Fixture",
-                "BUY_AND_HOLD_FIXTURE",
-                "BINANCE",
-                1001L,
-                "SIM",
-                true,
-                "{\"strategy\":\"fixture\"}",
-                1
-        ));
-        ResearchConfigService researchConfigService = new ResearchConfigService(
-                researchConfigRepository,
-                sourceStrategySnapshotRepository,
-                objectMapper,
-                fixedClock
-        );
-        BacktestConfigService backtestConfigService = new BacktestConfigService(
-                backtestConfigRepository,
-                researchConfigService,
-                objectMapper,
-                fixedClock
-        );
-        BacktestRunService backtestRunService = new BacktestRunService(
-                backtestRunRepository,
-                backtestConfigService,
-                researchConfigService,
-                fixedClock
-        );
-        BacktestExecutionPersistenceService backtestExecutionPersistenceService = new BacktestExecutionPersistenceService(
-                backtestRunRepository,
-                simOrderRepository,
-                simTradeRepository,
-                simPositionRepository,
-                simPnlSnapshotRepository
-        );
-        BacktestExecutionService backtestExecutionService = new BacktestExecutionService(
-                historicalMarketDataPort,
-                new FixtureMarketdataRegistry(),
-                backtestRunService,
-                backtestConfigService,
-                researchConfigService,
-                backtestExecutionPersistenceService,
-                new BuiltinFixtureSignalPolicy(),
-                new ExecutionPricingPolicy(),
-                new FeeModel(),
-                new SlippageModel(),
-                objectMapper,
-                fixedClock
-        );
+        InMemorySimPnlSnapshotRepository simPnlSnapshotRepository =
+                new InMemorySimPnlSnapshotRepository();
+        SourceStrategySnapshotRepository sourceStrategySnapshotRepository =
+                strategyId ->
+                        Optional.of(
+                                new SourceStrategySnapshot(
+                                        strategyId,
+                                        "buy-hold-fixture",
+                                        "Buy Hold Fixture",
+                                        "BUY_AND_HOLD_FIXTURE",
+                                        "BINANCE",
+                                        1001L,
+                                        "SIM",
+                                        true,
+                                        "{\"strategy\":\"fixture\"}",
+                                        1));
+        ResearchConfigService researchConfigService =
+                new ResearchConfigService(
+                        researchConfigRepository,
+                        sourceStrategySnapshotRepository,
+                        objectMapper,
+                        fixedClock);
+        BacktestConfigService backtestConfigService =
+                new BacktestConfigService(
+                        backtestConfigRepository, researchConfigService, objectMapper, fixedClock);
+        BacktestRunService backtestRunService =
+                new BacktestRunService(
+                        backtestRunRepository,
+                        backtestConfigService,
+                        researchConfigService,
+                        fixedClock);
+        BacktestExecutionPersistenceService backtestExecutionPersistenceService =
+                new BacktestExecutionPersistenceService(
+                        backtestRunRepository,
+                        simOrderRepository,
+                        simTradeRepository,
+                        simPositionRepository,
+                        simPnlSnapshotRepository);
+        BacktestExecutionService backtestExecutionService =
+                new BacktestExecutionService(
+                        historicalMarketDataPort,
+                        new FixtureMarketdataRegistry(),
+                        backtestRunService,
+                        backtestConfigService,
+                        researchConfigService,
+                        backtestExecutionPersistenceService,
+                        new BuiltinFixtureSignalPolicy(),
+                        new ExecutionPricingPolicy(),
+                        new FeeModel(),
+                        new SlippageModel(),
+                        objectMapper,
+                        fixedClock);
         return new Scenario(
                 researchConfigService,
                 backtestConfigService,
@@ -408,11 +622,11 @@ class BacktestExecutionServiceTest {
                 simOrderRepository,
                 simTradeRepository,
                 simPositionRepository,
-                simPnlSnapshotRepository
-        );
+                simPnlSnapshotRepository);
     }
 
-    private HistoricalBar bar(String openTime, String closeTime, String openPrice, String closePrice, String volume) {
+    private HistoricalBar bar(
+            String openTime, String closeTime, String openPrice, String closePrice, String volume) {
         return new HistoricalBar(
                 "BINANCE",
                 "BTCUSDT",
@@ -423,26 +637,52 @@ class BacktestExecutionServiceTest {
                 new BigDecimal(openPrice),
                 new BigDecimal(openPrice),
                 new BigDecimal(closePrice),
-                new BigDecimal(volume)
-        );
+                new BigDecimal(volume));
     }
 
     private HistoricalBar spotBar(int minute, String open, String close) {
         Instant start = Instant.parse("2026-01-01T00:00:00Z").plusSeconds(minute * 60L);
-        return new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_MINUTE,
-                start, start.plusSeconds(59), new BigDecimal(open), new BigDecimal(close),
-                new BigDecimal(open), new BigDecimal(close), BigDecimal.ONE,
-                null, null, "OK", "{}", start.plusSeconds(59));
+        return new HistoricalBar(
+                "OKX",
+                "SPOT",
+                "BTC-USDT",
+                BarInterval.ONE_MINUTE,
+                start,
+                start.plusSeconds(59),
+                new BigDecimal(open),
+                new BigDecimal(close),
+                new BigDecimal(open),
+                new BigDecimal(close),
+                BigDecimal.ONE,
+                null,
+                null,
+                "OK",
+                "{}",
+                start.plusSeconds(59));
     }
 
     private HistoricalBar availableAt(HistoricalBar bar, String timestamp) {
-        return new HistoricalBar(bar.exchangeCode(), bar.marketType(), bar.symbol(), bar.interval(),
-                bar.openTime(), bar.closeTime(), bar.openPrice(), bar.highPrice(), bar.lowPrice(),
-                bar.closePrice(), bar.volume(), bar.quoteVolume(), bar.tradeCount(),
-                bar.qualityStatus(), bar.rawPayloadJson(), Instant.parse(timestamp));
+        return new HistoricalBar(
+                bar.exchangeCode(),
+                bar.marketType(),
+                bar.symbol(),
+                bar.interval(),
+                bar.openTime(),
+                bar.closeTime(),
+                bar.openPrice(),
+                bar.highPrice(),
+                bar.lowPrice(),
+                bar.closePrice(),
+                bar.volume(),
+                bar.quoteVolume(),
+                bar.tradeCount(),
+                bar.qualityStatus(),
+                bar.rawPayloadJson(),
+                Instant.parse(timestamp));
     }
 
-    private static final class CapturingHistoricalMarketDataPort implements HistoricalMarketDataPort {
+    private static final class CapturingHistoricalMarketDataPort
+            implements HistoricalMarketDataPort {
         private final List<HistoricalBar> bars;
         private HistoricalMarketDataQuery lastQuery;
 
@@ -466,32 +706,35 @@ class BacktestExecutionServiceTest {
             InMemorySimOrderRepository simOrderRepository,
             InMemorySimTradeRepository simTradeRepository,
             InMemorySimPositionRepository simPositionRepository,
-            InMemorySimPnlSnapshotRepository simPnlSnapshotRepository
-    ) {
+            InMemorySimPnlSnapshotRepository simPnlSnapshotRepository) {
         BacktestRun createRun(String datasetSpec) {
-            ResearchConfig researchConfig = researchConfigService.create(new ResearchConfigCreateRequest(
-                    "str-demo-3",
-                    "Buy Hold Research",
-                    null,
-                    "{}",
-                    "{}",
-                    datasetSpec
-            ));
-            BacktestConfig backtestConfig = backtestConfigService.create(new BacktestConfigCreateRequest(
-                    researchConfig.researchConfigId(),
-                    "Buy Hold Backtest",
-                    null,
-                    Instant.parse("2025-01-01T00:00:00Z"),
-                    Instant.parse("2025-01-01T00:01:59Z"),
-                    new BigDecimal("100000"),
-                    "{\"mode\":\"bar\",\"feeRate\":\"0.001\",\"slippageBps\":\"10\",\"orderQuantity\":\"1\"}",
-                    "{}"
-            ));
-            return backtestRunService.create(new BacktestRunStartRequest(backtestConfig.backtestConfigId()));
+            ResearchConfig researchConfig =
+                    researchConfigService.create(
+                            new ResearchConfigCreateRequest(
+                                    "str-demo-3",
+                                    "Buy Hold Research",
+                                    null,
+                                    "{}",
+                                    "{}",
+                                    datasetSpec));
+            BacktestConfig backtestConfig =
+                    backtestConfigService.create(
+                            new BacktestConfigCreateRequest(
+                                    researchConfig.researchConfigId(),
+                                    "Buy Hold Backtest",
+                                    null,
+                                    Instant.parse("2025-01-01T00:00:00Z"),
+                                    Instant.parse("2025-01-01T00:01:59Z"),
+                                    new BigDecimal("100000"),
+                                    "{\"mode\":\"bar\",\"feeRate\":\"0.001\",\"slippageBps\":\"10\",\"orderQuantity\":\"1\"}",
+                                    "{}"));
+            return backtestRunService.create(
+                    new BacktestRunStartRequest(backtestConfig.backtestConfigId()));
         }
     }
 
-    private static final class InMemoryResearchConfigRepository implements ResearchConfigRepository {
+    private static final class InMemoryResearchConfigRepository
+            implements ResearchConfigRepository {
 
         private final Map<String, ResearchConfig> storage = new LinkedHashMap<>();
 
@@ -511,7 +754,8 @@ class BacktestExecutionServiceTest {
         }
     }
 
-    private static final class InMemoryBacktestConfigRepository implements BacktestConfigRepository {
+    private static final class InMemoryBacktestConfigRepository
+            implements BacktestConfigRepository {
 
         private final Map<String, BacktestConfig> storage = new LinkedHashMap<>();
 
@@ -555,8 +799,14 @@ class BacktestExecutionServiceTest {
         @Override
         public List<BacktestRun> list(String researchConfigId, String backtestConfigId) {
             return storage.values().stream()
-                    .filter(item -> researchConfigId == null || item.researchConfigId().equals(researchConfigId))
-                    .filter(item -> backtestConfigId == null || item.backtestConfigId().equals(backtestConfigId))
+                    .filter(
+                            item ->
+                                    researchConfigId == null
+                                            || item.researchConfigId().equals(researchConfigId))
+                    .filter(
+                            item ->
+                                    backtestConfigId == null
+                                            || item.backtestConfigId().equals(backtestConfigId))
                     .toList();
         }
 
@@ -569,34 +819,34 @@ class BacktestExecutionServiceTest {
                 String failureCode,
                 String failureMessage,
                 String summaryJson,
-                Instant updatedAt
-        ) {
+                Instant updatedAt) {
             BacktestRun current = storage.get(backtestRunId);
             if (current == null) {
                 return false;
             }
-            storage.put(backtestRunId, new BacktestRun(
-                    current.backtestRunId(),
-                    current.backtestConfigId(),
-                    current.researchConfigId(),
-                    current.sourceStrategyId(),
-                    current.strategySnapshot(),
-                    current.strategyVersionId(),
-                    current.strategyVersionSnapshotJson(),
-                    current.paramSnapshotJson(),
-                    current.backtestConfigSnapshot(),
-                    current.configSnapshotJson(),
-                    current.datasetSnapshotJson(),
-                    status,
-                    current.requestedAt(),
-                    startedAt,
-                    finishedAt,
-                    failureCode,
-                    failureMessage,
-                    summaryJson == null ? current.summaryJson() : summaryJson,
-                    current.createdAt(),
-                    updatedAt
-            ));
+            storage.put(
+                    backtestRunId,
+                    new BacktestRun(
+                            current.backtestRunId(),
+                            current.backtestConfigId(),
+                            current.researchConfigId(),
+                            current.sourceStrategyId(),
+                            current.strategySnapshot(),
+                            current.strategyVersionId(),
+                            current.strategyVersionSnapshotJson(),
+                            current.paramSnapshotJson(),
+                            current.backtestConfigSnapshot(),
+                            current.configSnapshotJson(),
+                            current.datasetSnapshotJson(),
+                            status,
+                            current.requestedAt(),
+                            startedAt,
+                            finishedAt,
+                            failureCode,
+                            failureMessage,
+                            summaryJson == null ? current.summaryJson() : summaryJson,
+                            current.createdAt(),
+                            updatedAt));
             return true;
         }
     }
@@ -612,7 +862,9 @@ class BacktestExecutionServiceTest {
 
         @Override
         public List<SimOrder> listByBacktestRunId(String backtestRunId) {
-            return storage.stream().filter(item -> item.backtestRunId().equals(backtestRunId)).toList();
+            return storage.stream()
+                    .filter(item -> item.backtestRunId().equals(backtestRunId))
+                    .toList();
         }
     }
 
@@ -627,7 +879,9 @@ class BacktestExecutionServiceTest {
 
         @Override
         public List<SimTrade> listByBacktestRunId(String backtestRunId) {
-            return storage.stream().filter(item -> item.backtestRunId().equals(backtestRunId)).toList();
+            return storage.stream()
+                    .filter(item -> item.backtestRunId().equals(backtestRunId))
+                    .toList();
         }
     }
 
@@ -641,7 +895,8 @@ class BacktestExecutionServiceTest {
         }
 
         @Override
-        public Optional<SimPosition> findByBacktestRunIdAndSymbol(String backtestRunId, String symbol) {
+        public Optional<SimPosition> findByBacktestRunIdAndSymbol(
+                String backtestRunId, String symbol) {
             return Optional.ofNullable(storage.get(backtestRunId + ":" + symbol));
         }
 
@@ -653,7 +908,8 @@ class BacktestExecutionServiceTest {
         }
     }
 
-    private static final class InMemorySimPnlSnapshotRepository implements SimPnlSnapshotRepository {
+    private static final class InMemorySimPnlSnapshotRepository
+            implements SimPnlSnapshotRepository {
 
         private final List<SimPnlSnapshot> storage = new ArrayList<>();
 
@@ -664,26 +920,27 @@ class BacktestExecutionServiceTest {
 
         @Override
         public List<SimPnlSnapshot> listByBacktestRunId(String backtestRunId) {
-            return storage.stream().filter(item -> item.backtestRunId().equals(backtestRunId)).toList();
+            return storage.stream()
+                    .filter(item -> item.backtestRunId().equals(backtestRunId))
+                    .toList();
         }
     }
 
-    private static final class FailingBacktestExecutionPersistenceService extends BacktestExecutionPersistenceService {
+    private static final class FailingBacktestExecutionPersistenceService
+            extends BacktestExecutionPersistenceService {
 
         private FailingBacktestExecutionPersistenceService(
                 BacktestRunRepository backtestRunRepository,
                 SimOrderRepository simOrderRepository,
                 SimTradeRepository simTradeRepository,
                 SimPositionRepository simPositionRepository,
-                SimPnlSnapshotRepository simPnlSnapshotRepository
-        ) {
+                SimPnlSnapshotRepository simPnlSnapshotRepository) {
             super(
                     backtestRunRepository,
                     simOrderRepository,
                     simTradeRepository,
                     simPositionRepository,
-                    simPnlSnapshotRepository
-            );
+                    simPnlSnapshotRepository);
         }
 
         @Override
@@ -695,8 +952,7 @@ class BacktestExecutionServiceTest {
                 List<SimTrade> simTrades,
                 List<SimPosition> simPositions,
                 List<SimPnlSnapshot> simPnlSnapshots,
-                String summaryJson
-        ) {
+                String summaryJson) {
             throw new IllegalStateException("simulated success persistence failure");
         }
     }

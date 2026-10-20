@@ -91,7 +91,7 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
         PilotScopeBinding scope = canonicalScope(actor, command, authority.scopeBindings(), session, now);
         if (!constantTimeEquals(scope.pilotScopeHash(), command.expectedPilotScopeHash())) {
             throw new LiveControlException(
-                    "PILOT_SCOPE_HASH_MISMATCH",
+                    "EXECUTION_SCOPE_HASH_MISMATCH",
                     "client expected pilot scope hash does not match server reconstruction"
             );
         }
@@ -183,7 +183,7 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
             throw exception;
         } catch (RuntimeException exception) {
             LiveControlException denied = new LiveControlException(
-                    "TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_INVALID",
+                    "TRUSTED_OPERATOR_CONTROLLED_EXECUTION_SCOPE_BOOTSTRAP_INVALID",
                     "trusted operator pilot scope bootstrap is invalid");
             denied.initCause(exception);
             throw denied;
@@ -195,21 +195,21 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
         Objects.requireNonNull(actor, "actor must not be null");
         Objects.requireNonNull(command, "command must not be null");
         if (!authorization.lockAndCheckRole(actor.userId(), OperatorApproval.REQUIRED_ROLE)) {
-            throw new LiveControlException("PILOT_APPROVAL_FORBIDDEN", "pilot approval authorization failed");
+            throw new LiveControlException("EXECUTION_APPROVAL_FORBIDDEN", "pilot approval authorization failed");
         }
         LiveSession session = liveControlRepository.findSession(command.sessionId())
                 .orElseThrow(() -> new LiveControlException("LIVE_SESSION_NOT_FOUND", "live session was not found"));
         if (session.authorityType()
-                == LiveSessionAuthorityType.OPERATOR_PILOT) {
+                == LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION) {
             throw new LiveControlException(
-                    "OPERATOR_PILOT_EXTERNAL_APPROVAL_FORBIDDEN",
+                    "OPERATOR_CONTROLLED_EXECUTION_EXTERNAL_APPROVAL_FORBIDDEN",
                     "operator pilot approval is carried by its explicit authority");
         }
         PilotScopeBinding scope = pilotScopeRepository.findBySessionId(command.sessionId())
-                .orElseThrow(() -> new LiveControlException("PILOT_SCOPE_NOT_FOUND", "pilot scope was not found"));
+                .orElseThrow(() -> new LiveControlException("EXECUTION_SCOPE_NOT_FOUND", "pilot scope was not found"));
         if (!scope.id().equals(command.pilotScopeId())
                 || !constantTimeEquals(scope.pilotScopeHash(), command.expectedPilotScopeHash())) {
-            throw new LiveControlException("PILOT_APPROVAL_SCOPE_MISMATCH", "approval does not bind the exact pilot scope");
+            throw new LiveControlException("EXECUTION_APPROVAL_SCOPE_MISMATCH", "approval does not bind the exact pilot scope");
         }
         OperatorApproval approval = new OperatorApproval(
                 command.approvalId(), session.id(), OperatorApproval.PILOT_SCOPE_SCHEMA, scope.id(),
@@ -225,7 +225,7 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
         Objects.requireNonNull(actor, "actor must not be null");
         Objects.requireNonNull(sessionId, "sessionId must not be null");
         if (!authorization.lockAndCheckRole(actor.userId(), OPERATOR_ROLE)) {
-            throw new LiveControlException("PILOT_PREFLIGHT_OPERATOR_ROLE_REQUIRED", "operator role is required");
+            throw new LiveControlException("EXECUTION_PREFLIGHT_OPERATOR_ROLE_REQUIRED", "operator role is required");
         }
         LiveSession session = liveControlRepository.findSession(sessionId)
                 .filter(value -> value.ownerId() == actor.userId())
@@ -318,7 +318,7 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
                 && observations.pilotScopeId().equals(scope.id());
         if (!exact) {
             throw new LiveControlException(
-                    "TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_INVALID",
+                    "TRUSTED_OPERATOR_CONTROLLED_EXECUTION_SCOPE_BOOTSTRAP_INVALID",
                     "trusted operator pilot scope bootstrap does not bind the exact session");
         }
     }
@@ -389,7 +389,7 @@ public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
                 && stored.maxMarketDataAgeMs() == supplied.maxMarketDataAgeMs()
                 && stored.minDataCoverageBps() == supplied.minDataCoverageBps();
         if (!exact) {
-            throw new LiveControlException("PILOT_RISK_REFERENCE_MISMATCH", "supplied risk facts differ from stored SoR");
+            throw new LiveControlException("EXECUTION_RISK_REFERENCE_MISMATCH", "supplied risk facts differ from stored SoR");
         }
     }
 

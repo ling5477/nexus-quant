@@ -7,18 +7,29 @@ import java.util.Optional;
 
 /**
  * TradingQueryFacade 定义统一交易契约的最小查询闭环入口。
- * <p>
- * Why:
- * trading 查询 contract 属于应用层内部读侧端口，应该和内部 projection 一起由 core
- * 持有，避免继续留在 `nq-api` 并把 web 契约反向带进 facade。
+ *
+ * <p>Why: trading 查询 contract 属于应用层内部读侧端口，应该和内部 projection 一起由 core 持有，避免继续留在 `nq-api` 并把 web
+ * 契约反向带进 facade。
  */
 public interface TradingQueryFacade {
+
+    /** 只读查询一个已授权账户的本地成交事实；不调用交易所或合并独立SIM账户。 */
+    List<TradeQueryView> listAccountTrades(Long accountId, String venue, String tradeEnv,
+            String symbol, int page, int size);
+
+    long countAccountTrades(Long accountId, String venue, String tradeEnv, String symbol);
+
+    /** 持仓沿用canonical投影；币种和估值来源缺失时不得推断外部账户收益。 */
+    List<PositionQueryView> listAccountPositions(Long accountId, String venue, String tradeEnv,
+            String symbol, int page, int size);
+
+    long countAccountPositions(Long accountId, String venue, String tradeEnv, String symbol);
 
     /**
      * 查询正式交易工作台订单列表。
      *
-     * <p>Why: 历史行情接入要求 `/trading` 不再依赖手工输入单个 orderId，
-     * 而是围绕强账户上下文展示订单列表。读侧仍由 infra 实现 SQL，避免 API 层直接访问数据库。</p>
+     * <p>Why: 历史行情接入要求 `/trading` 不再依赖手工输入单个 orderId， 而是围绕强账户上下文展示订单列表。读侧仍由 infra 实现 SQL，避免 API
+     * 层直接访问数据库。
      *
      * @param accountId legacy trading account id，由 API 层从正式 exchangeAccountId 解析得出
      * @param orderId 可选订单 ID 精确筛选
@@ -40,17 +51,27 @@ public interface TradingQueryFacade {
             String tradeEnv,
             int page,
             int size,
-            String traceId
-    );
+            String traceId);
 
     /**
      * 统计正式交易工作台订单列表总数。
      *
-     * <p>Why: 前端列表需要稳定分页信息；count 与 list 使用同一组筛选条件，确保 UI 展示与查询一致。</p>
+     * <p>Why: 前端列表需要稳定分页信息；count 与 list 使用同一组筛选条件，确保 UI 展示与查询一致。
      */
-    long countOrders(Long accountId, String orderId, String venue, String symbol, OrderStatus status, String tradeEnv, String traceId);
+    long countOrders(
+            Long accountId,
+            String orderId,
+            String venue,
+            String symbol,
+            OrderStatus status,
+            String tradeEnv,
+            String traceId);
 
     Optional<OrderQueryView> queryOrder(String orderId, String traceId);
+
+    /** 只读定位原幂等身份；调用方先确认规范账户归属，查询不得触发重提或恢复。 */
+    Optional<OrderQueryView> queryOrderByClientIdentity(
+            Long accountId, String venue, String tradeEnv, String clientOrderId, String traceId);
 
     Optional<TradeQueryView> queryLatestTrade(String orderId, String traceId);
 

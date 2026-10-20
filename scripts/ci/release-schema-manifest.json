@@ -1,0 +1,759 @@
+{
+  "manifestVersion": 2,
+  "schemaVersion": "1.0",
+  "flywayVersion": "34",
+  "postgresqlMajor": 16,
+  "baselineFile": "V1__nexus_quant_v1_baseline.sql",
+  "baselineSqlSha256": "65a9090d5e422e00655d01d11f266602681b3be41f0a34ee1d27e51cfc7f2cb9",
+  "normalizedSchemaSha256": "dc6c34f15d2a4233631fe4e7a9ccab2f33d749b5c06617315992f9f0f0aa0096",
+  "schemaCounts": {
+    "tables": 104,
+    "columns": 1393,
+    "constraints": 739,
+    "indexes": 356,
+    "functions": 137,
+    "triggers": 91,
+    "sequences": 12,
+    "comments": 1460,
+    "views": 0,
+    "enums": 0
+  },
+  "flywayHistory": [
+    {
+      "version": "1",
+      "description": "nexus quant v1 baseline",
+      "type": "SQL",
+      "script": "V1__nexus_quant_v1_baseline.sql",
+      "checksum": -1391541697,
+      "success": true
+    },
+    {
+      "version": "2",
+      "description": "user preferences",
+      "type": "SQL",
+      "script": "V2__user_preferences.sql",
+      "checksum": -974072856,
+      "success": true
+    },
+    {
+      "version": "3",
+      "description": "user default account",
+      "type": "SQL",
+      "script": "V3__user_default_account.sql",
+      "checksum": 1212327289,
+      "success": true
+    },
+    {
+      "version": "4",
+      "description": "account equity measurements",
+      "type": "SQL",
+      "script": "V4__account_equity_measurements.sql",
+      "checksum": 1415709439,
+      "success": true
+    },
+    {
+      "version": "5",
+      "description": "account command receipts",
+      "type": "SQL",
+      "script": "V5__account_command_receipts.sql",
+      "checksum": -384796940,
+      "success": true
+    },
+    {
+      "version": "6",
+      "description": "credential operation receipts",
+      "type": "SQL",
+      "script": "V6__credential_operation_receipts.sql",
+      "checksum": 662357293,
+      "success": true
+    },
+    {
+      "version": "7",
+      "description": "account fee observations",
+      "type": "SQL",
+      "script": "V7__account_fee_observations.sql",
+      "checksum": -167101058,
+      "success": true
+    },
+    {
+      "version": "8",
+      "description": "signed strategy sim fee",
+      "type": "SQL",
+      "script": "V8__signed_strategy_sim_fee.sql",
+      "checksum": 975710861,
+      "success": true
+    },
+    {
+      "version": "9",
+      "description": "marketdata price event sources",
+      "type": "SQL",
+      "script": "V9__marketdata_price_event_sources.sql",
+      "checksum": -1824813326,
+      "success": true
+    },
+    {
+      "version": "10",
+      "description": "spot commission observations",
+      "type": "SQL",
+      "script": "V10__spot_commission_observations.sql",
+      "checksum": -1066902236,
+      "success": true
+    },
+    {
+      "version": "11",
+      "description": "backtest native fee assets",
+      "type": "SQL",
+      "script": "V11__backtest_native_fee_assets.sql",
+      "checksum": -451200631,
+      "success": true
+    },
+    {
+      "version": "12",
+      "description": "strategy sim directional fee terms",
+      "type": "SQL",
+      "script": "V12__strategy_sim_directional_fee_terms.sql",
+      "checksum": 1304086126,
+      "success": true
+    },
+    {
+      "version": "13",
+      "description": "strategy sim scalar fee precision",
+      "type": "SQL",
+      "script": "V13__strategy_sim_scalar_fee_precision.sql",
+      "checksum": 621311267,
+      "success": true
+    },
+    {
+      "version": "14",
+      "description": "sim asset funding",
+      "type": "SQL",
+      "script": "V14__sim_asset_funding.sql",
+      "checksum": -1845846677,
+      "success": true
+    },
+    {
+      "version": "15",
+      "description": "discount asset price snapshots",
+      "type": "SQL",
+      "script": "V15__discount_asset_price_snapshots.sql",
+      "checksum": 1822446681,
+      "success": true
+    },
+    {
+      "version": "16",
+      "description": "backtest discount asset settlement",
+      "type": "SQL",
+      "script": "V16__backtest_discount_asset_settlement.sql",
+      "checksum": -1195126195,
+      "success": true
+    },
+    {
+      "version": "17",
+      "description": "strategy sim discount fee payments",
+      "type": "SQL",
+      "script": "V17__strategy_sim_discount_fee_payments.sql",
+      "checksum": -2053603955,
+      "success": true
+    },
+    {
+      "version": "18",
+      "description": "research event order",
+      "type": "SQL",
+      "script": "V18__research_event_order.sql",
+      "checksum": -1961468550,
+      "success": true
+    },
+    {
+      "version": "19",
+      "description": "scheduled job operations",
+      "type": "SQL",
+      "script": "V19__scheduled_job_operations.sql",
+      "checksum": -1760087319,
+      "success": true
+    },
+    {
+      "version": "20",
+      "description": "shadow run window precision",
+      "type": "SQL",
+      "script": "V20__shadow_run_window_precision.sql",
+      "checksum": -600747789,
+      "success": true
+    },
+    {
+      "version": "21",
+      "description": "continuous sim operations",
+      "type": "SQL",
+      "script": "V21__continuous_sim_operations.sql",
+      "checksum": 155353746,
+      "success": true
+    },
+    {
+      "version": "22",
+      "description": "paper alert operations",
+      "type": "SQL",
+      "script": "V22__paper_alert_operations.sql",
+      "checksum": 969673910,
+      "success": true
+    },
+    {
+      "version": "23",
+      "description": "strategy schedule creations",
+      "type": "SQL",
+      "script": "V23__strategy_schedule_creations.sql",
+      "checksum": -1985736540,
+      "success": true
+    },
+    {
+      "version": "24",
+      "description": "event store business identity indexes",
+      "type": "SQL",
+      "script": "V24__event_store_business_identity_indexes.sql",
+      "checksum": 1634293498,
+      "success": true
+    },
+    {
+      "version": "25",
+      "description": "public market capture operations",
+      "type": "SQL",
+      "script": "V25__public_market_capture_operations.sql",
+      "checksum": 1359501469,
+      "success": true
+    },
+    {
+      "version": "26",
+      "description": "marketdata dataset operations",
+      "type": "SQL",
+      "script": "V26__marketdata_dataset_operations.sql",
+      "checksum": -1494829128,
+      "success": true
+    },
+    {
+      "version": "27",
+      "description": "currency registry and equity valuation",
+      "type": "SQL",
+      "script": "V27__currency_registry_and_equity_valuation.sql",
+      "checksum": -956523780,
+      "success": true
+    },
+    {
+      "version": "28",
+      "description": "research creation operations",
+      "type": "SQL",
+      "script": "V28__research_creation_operations.sql",
+      "checksum": 113111639,
+      "success": true
+    },
+    {
+      "version": "29",
+      "description": "catalog sync and evaluation requests",
+      "type": "SQL",
+      "script": "V29__catalog_sync_and_evaluation_requests.sql",
+      "checksum": -1243985041,
+      "success": true
+    },
+    {
+      "version": "30",
+      "description": "paper equity projections and sim creation",
+      "type": "SQL",
+      "script": "V30__paper_equity_projections_and_sim_creation.sql",
+      "checksum": -127508687,
+      "success": true
+    },
+    {
+      "version": "31",
+      "description": "paper run creation identity",
+      "type": "SQL",
+      "script": "V31__paper_run_creation_identity.sql",
+      "checksum": -1876081761,
+      "success": true
+    },
+    {
+      "version": "32",
+      "description": "backtest evaluation report history",
+      "type": "SQL",
+      "script": "V32__backtest_evaluation_report_history.sql",
+      "checksum": -387969745,
+      "success": true
+    },
+    {
+      "version": "33",
+      "description": "trading maintenance operation receipts",
+      "type": "SQL",
+      "script": "V33__trading_maintenance_operation_receipts.sql",
+      "checksum": 611200704,
+      "success": true
+    },
+    {
+      "version": "34",
+      "description": "renewable auth sessions",
+      "type": "SQL",
+      "script": "V34__renewable_auth_sessions.sql",
+      "checksum": 1750571564,
+      "success": true
+    }
+  ],
+  "freshInstallFacts": {
+    "rowCounts": {
+      "account_command_receipts": 0,
+      "account_equity_measurements": 0,
+      "account_fee_observations": 0,
+      "account_snapshots": 0,
+      "accounts": 0,
+      "audit_logs": 0,
+      "auth_sessions": 0,
+      "backtest_configs": 0,
+      "backtest_eval_reports": 0,
+      "backtest_evaluation_requests": 0,
+      "backtest_publish_records": 0,
+      "backtest_runs": 0,
+      "continuous_sim_bars": 0,
+      "continuous_sim_operations": 0,
+      "continuous_sim_runs": 0,
+      "controlled_execution_lease_events": 0,
+      "controlled_execution_lease_intents": 0,
+      "controlled_execution_leases": 0,
+      "credential_audit_logs": 0,
+      "credential_operation_receipts": 0,
+      "currency_definitions": 6,
+      "discount_asset_price_snapshots": 0,
+      "emergency_stop_events": 0,
+      "equity_curve_snapshots": 0,
+      "event_store": 0,
+      "exchange_account_credentials": 0,
+      "exchange_accounts": 0,
+      "execution_instrument_observation_items": 0,
+      "execution_intents": 0,
+      "execution_pre_place_recovery_decisions": 0,
+      "execution_prerequisite_observations": 0,
+      "execution_receipts": 0,
+      "execution_scope_bindings": 0,
+      "instrument_catalog": 0,
+      "instrument_catalog_sync_requests": 0,
+      "kill_switch_events": 1,
+      "kill_switch_states": 1,
+      "ledger_entries": 0,
+      "ledger_events": 0,
+      "live_session_events": 0,
+      "live_sessions": 0,
+      "marketdata_bars": 0,
+      "marketdata_dataset_coverage": 0,
+      "marketdata_dataset_operations": 0,
+      "marketdata_datasets": 0,
+      "marketdata_ingestion_jobs": 0,
+      "marketdata_ingestion_runs": 0,
+      "marketdata_price_event_sources": 0,
+      "operator_approvals": 0,
+      "operator_execution_authorities": 0,
+      "orders": 0,
+      "ordinary_order_cancel_finality": 0,
+      "ordinary_place_authorities": 0,
+      "paper_alert_operations": 0,
+      "paper_risk_check_results": 0,
+      "paper_run_alerts": 0,
+      "paper_run_daily_reports": 0,
+      "paper_run_heartbeats": 0,
+      "paper_run_recovery_events": 0,
+      "paper_run_schedule_fires": 0,
+      "paper_run_schedules": 0,
+      "paper_run_stability_checks": 0,
+      "paper_trading_orders": 0,
+      "paper_trading_positions": 0,
+      "paper_trading_runs": 0,
+      "paper_trading_trades": 0,
+      "position_curve_snapshots": 0,
+      "positions": 0,
+      "public_market_capture_operations": 0,
+      "public_market_captures": 0,
+      "reconciliation_scan_cursors": 0,
+      "research_configs": 0,
+      "research_creation_operations": 0,
+      "risk_events": 0,
+      "risk_limit_sets": 0,
+      "roles": 3,
+      "scheduled_job_controls": 8,
+      "scheduled_job_operations": 0,
+      "shadow_consistency_reports": 0,
+      "shadow_run_events": 0,
+      "shadow_run_snapshots": 0,
+      "shadow_runs": 0,
+      "sim_asset_funding_receipts": 0,
+      "sim_orders": 0,
+      "sim_pnl_snapshots": 0,
+      "sim_positions": 0,
+      "sim_trades": 0,
+      "strategy_definitions": 0,
+      "strategy_release_admission_state": 0,
+      "strategy_run_dispatch_work": 0,
+      "strategy_run_recovery_scan_cursor": 1,
+      "strategy_runs": 0,
+      "strategy_schedule_creations": 0,
+      "strategy_schedules": 0,
+      "strategy_sim_decisions": 0,
+      "strategy_versions": 0,
+      "trade_replay_records": 0,
+      "trades": 0,
+      "trading_maintenance_operations": 0,
+      "user_preferences": 0,
+      "user_roles": 0,
+      "users": 0,
+      "validation_review_cases": 0,
+      "validation_review_events": 0
+    },
+    "facts": {
+      "roles": [
+        {
+          "id": 2,
+          "role_code": "OPERATOR",
+          "description": "Operations user"
+        },
+        {
+          "id": 3,
+          "role_code": "VIEWER",
+          "description": "Read-only user"
+        },
+        {
+          "id": 1,
+          "role_code": "ADMIN",
+          "description": "System administrator"
+        }
+      ],
+      "kill_switch_states": [
+        {
+          "scope": "GLOBAL_TRADING",
+          "source": "FLYWAY_MIGRATION",
+          "status": "ENGAGED",
+          "version": 1,
+          "trace_id": "baseline-bootstrap",
+          "updated_by": "SYSTEM",
+          "reason_code": "DEFAULT_SAFE_BOOTSTRAP"
+        }
+      ],
+      "kill_switch_events": [
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "scope": "GLOBAL_TRADING",
+          "source": "FLYWAY_MIGRATION",
+          "actor_id": "SYSTEM",
+          "trace_id": "baseline-bootstrap",
+          "to_status": "ENGAGED",
+          "from_status": null,
+          "reason_code": "DEFAULT_SAFE_BOOTSTRAP",
+          "state_version": 1
+        }
+      ],
+      "scheduled_job_controls": [
+        {
+          "enabled": false,
+          "job_key": "OKX_RECOVERY",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 15000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "PAPER_MATCHING",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 2000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "LEDGER_RECONCILIATION",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 30000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "CONTINUOUS_SIM_POLL",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 300000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "VALIDATION_EVIDENCE_REFRESH",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 300000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "BINANCE_RECONCILIATION",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 5000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "OKX_RECONCILIATION",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 5000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        },
+        {
+          "enabled": false,
+          "job_key": "STRATEGY_RECOVERY",
+          "version": 0,
+          "updated_by": null,
+          "last_status": "NEVER_RUN",
+          "next_run_at": null,
+          "active_run_id": null,
+          "fixed_delay_ms": 5000,
+          "last_error_code": null,
+          "last_started_at": null,
+          "last_finished_at": null,
+          "consecutive_failures": 0
+        }
+      ],
+      "strategy_run_recovery_scan_cursor": [
+        {
+          "cursor_id": 1,
+          "last_run_id": null,
+          "last_started_at": null
+        }
+      ]
+    },
+    "roleSequence": [
+      {
+        "last_value": 3,
+        "is_called": true
+      }
+    ]
+  },
+  "normalization": {
+    "liveColumnOrdinal": true,
+    "lineEndings": "LF",
+    "varcharTextArrayDeparse": "two exact cast forms preserving operands/literals/operators",
+    "pureAndChecks": [
+      "chk_execution_scope_bindings_age_skew",
+      "chk_risk_limit_sets_counts",
+      "chk_risk_limit_sets_market_data"
+    ],
+    "effectiveAcl": "aclexplode of explicit ACL or acldefault; OWNER is object owner; PUBLIC and named roles retained; schema/relation/sequence/function/explicit column/default privileges included"
+  },
+  "historicalMigrationRange": "V1-V59",
+  "historicalHead": "8291725995455b59d7936bf42e68a8061ef8252b",
+  "oldDatabasePolicy": "FRESH_DATABASE_ONLY; development databases are not upgrade targets",
+  "migrations": [
+    {
+      "version": "1",
+      "script": "V1__nexus_quant_v1_baseline.sql",
+      "sha256": "65a9090d5e422e00655d01d11f266602681b3be41f0a34ee1d27e51cfc7f2cb9"
+    },
+    {
+      "version": "2",
+      "script": "V2__user_preferences.sql",
+      "sha256": "c4cd012f6bade98678f9c0ef0cf9c015a47eb581f750608fd1a7069fea9c5c5c"
+    },
+    {
+      "version": "3",
+      "script": "V3__user_default_account.sql",
+      "sha256": "f35ff4d96be27dca14a17e21554a795b257502d2eda5801e8c2dae46597fa9c1"
+    },
+    {
+      "version": "4",
+      "script": "V4__account_equity_measurements.sql",
+      "sha256": "ca18c6c0738a909679223e61caeda63117f3ed6bb9d29677b9bea1956c8b1645"
+    },
+    {
+      "version": "5",
+      "script": "V5__account_command_receipts.sql",
+      "sha256": "d430f8ca64d57315d997ad4694c16eb13297fb81639f97e31281554d7967bd45"
+    },
+    {
+      "version": "6",
+      "script": "V6__credential_operation_receipts.sql",
+      "sha256": "cf08f901c546a024e0648ac351f712b003173d370582134a4f4d76575d2fe7db"
+    },
+    {
+      "version": "7",
+      "script": "V7__account_fee_observations.sql",
+      "sha256": "1ca5c8988e807f40352a596dfb45bceb0813bf8ccc90e15ca05b78906ff1a264"
+    },
+    {
+      "version": "8",
+      "script": "V8__signed_strategy_sim_fee.sql",
+      "sha256": "2c48f22ab0fe8830138e61a130179c5729fab4e1580d917a40afe6ecda62dac5"
+    },
+    {
+      "version": "9",
+      "script": "V9__marketdata_price_event_sources.sql",
+      "sha256": "c0627f10ae2bc4053b2ce9a1d66c54da4056c9cb6967606195be5c555dd82698"
+    },
+    {
+      "version": "10",
+      "script": "V10__spot_commission_observations.sql",
+      "sha256": "fa75d4a45be9ef2056671ba7049340aabdc1708d6d53a3f8d79ec339d5f48de6"
+    },
+    {
+      "version": "11",
+      "script": "V11__backtest_native_fee_assets.sql",
+      "sha256": "d749413ce91e7499311e05c8c603590ed12a8da71e9a159244503556cc23ae05"
+    },
+    {
+      "version": "12",
+      "script": "V12__strategy_sim_directional_fee_terms.sql",
+      "sha256": "d0f1ba7ddcd7b0f2b59e21bca65eb194f419e32d29a32be2f9978669fc9b4dea"
+    },
+    {
+      "version": "13",
+      "script": "V13__strategy_sim_scalar_fee_precision.sql",
+      "sha256": "349c8bcf93f247e14d9d80b4ff2c544c99db0982bc737cb98cca768f0dee7006"
+    },
+    {
+      "version": "14",
+      "script": "V14__sim_asset_funding.sql",
+      "sha256": "a576055d9573992a892b4550d1bc6beaa3cd7baac8bfcc9a459ffd13ec97d8a5"
+    },
+    {
+      "version": "15",
+      "script": "V15__discount_asset_price_snapshots.sql",
+      "sha256": "3555b9df8e9871f1b5f77a79f514049e29f80079c8eba1d2e71b103ed45ffa9c"
+    },
+    {
+      "version": "16",
+      "script": "V16__backtest_discount_asset_settlement.sql",
+      "sha256": "531f9ded45dd874b7d31177c56cd28c976e624275e3b4e1782a649f4d1ff8c03"
+    },
+    {
+      "version": "17",
+      "script": "V17__strategy_sim_discount_fee_payments.sql",
+      "sha256": "9c153c152098ecf1806e6f6f290f0df3a596f018d08c74514e0afe17e1d03832"
+    },
+    {
+      "version": "18",
+      "script": "V18__research_event_order.sql",
+      "sha256": "fdbd9b9bedbc3ec187eecb3ac433fc0a55789506ba35a3eb67bb70a56c5336a4"
+    },
+    {
+      "version": "19",
+      "script": "V19__scheduled_job_operations.sql",
+      "sha256": "24e16e6479a0f511a293eed6e8939656172ad3051d5e61c1da518b91df8e2528"
+    },
+    {
+      "version": "20",
+      "script": "V20__shadow_run_window_precision.sql",
+      "sha256": "56b3176cc507cf541c74e8355fb4281290fac12cb4650f7c573a62baf1391226"
+    },
+    {
+      "version": "21",
+      "script": "V21__continuous_sim_operations.sql",
+      "sha256": "e2eba3dd401d2eb15115a04784737eeeae6087f9454f0591c759cbb6035d34ad"
+    },
+    {
+      "version": "22",
+      "script": "V22__paper_alert_operations.sql",
+      "sha256": "915726a9ae65522223093e2edfa488185f5678935f7df344dc9b8bf652121336"
+    },
+    {
+      "version": "23",
+      "script": "V23__strategy_schedule_creations.sql",
+      "sha256": "3b490c813d1b504ba9173de6e7b252777e5f1dc5eeafd47074a0a2b9e8d01940"
+    },
+    {
+      "version": "24",
+      "script": "V24__event_store_business_identity_indexes.sql",
+      "sha256": "5b39cf0fd1678002f5a47642e5a50ca3efddac05155ee228a817b7b40be7385e"
+    },
+    {
+      "version": "25",
+      "script": "V25__public_market_capture_operations.sql",
+      "sha256": "ccef7902b1a636173d5182c77a689fd6bb8831c7a7d6c61ea5cfa734362eb9c8"
+    },
+    {
+      "version": "26",
+      "script": "V26__marketdata_dataset_operations.sql",
+      "sha256": "6c8bbe9a3245f9ed4da78beb92ecc431f1b000b10075c39ba1feb552102b99f0"
+    },
+    {
+      "version": "27",
+      "script": "V27__currency_registry_and_equity_valuation.sql",
+      "sha256": "c4b9ce1d9f819308d2eefc3454902fe5f16cd1d8d98213eb2d2ae48816c24f1e"
+    },
+    {
+      "version": "28",
+      "script": "V28__research_creation_operations.sql",
+      "sha256": "828b4444265340958519664d5164971601658a60b7817ae8e60fab3023a2efdf"
+    },
+    {
+      "version": "29",
+      "script": "V29__catalog_sync_and_evaluation_requests.sql",
+      "sha256": "5994e31049ac7878ebc9f5463a2dd3662030126f0ea588c2235a4a2a28ccc9a9"
+    },
+    {
+      "version": "30",
+      "script": "V30__paper_equity_projections_and_sim_creation.sql",
+      "sha256": "4e6456973976bbcd4f5e96bbc427e0f9e51552f9f6be536b53ee5e26085ded1f"
+    },
+    {
+      "version": "31",
+      "script": "V31__paper_run_creation_identity.sql",
+      "sha256": "41806928bcaee80b345fb1b5d2ee5a13018cd15607ec46526a07b18d914d74c3"
+    },
+    {
+      "version": "32",
+      "script": "V32__backtest_evaluation_report_history.sql",
+      "sha256": "1447b6268922f90a32f75104c9be8961e5e8266af6000a92728d5b14e9f781e2"
+    },
+    {
+      "version": "33",
+      "script": "V33__trading_maintenance_operation_receipts.sql",
+      "sha256": "bd21ec3a3f13db86ac63c3cb57ae32bfaea1f779ab2ca067ddce0511b1c7db4c"
+    },
+    {
+      "version": "34",
+      "script": "V34__renewable_auth_sessions.sql",
+      "sha256": "15084f17b9f5b7f7ae880a3fbcd759c9d0bc79c6e5b75d0fc4264b13cf77aad6"
+    }
+  ]
+}

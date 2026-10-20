@@ -12,7 +12,7 @@
 
     <artifactId>nq-infra</artifactId>
     <name>nq-infra</name>
-    <description>Gate A skeleton module: nq-infra</description>
+    <description>NexusQuant module: nq-infra</description>
     <packaging>jar</packaging>
 
     <dependencies>

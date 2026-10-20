@@ -1,25 +1,38 @@
 package com.guidinglight.nexusquant.scheduler.paper;
 
-import com.guidinglight.nexusquant.scheduler.port.OrderExecutionGateway;
-import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
 import com.guidinglight.nexusquant.common.numeric.NumericPolicy;
 import com.guidinglight.nexusquant.common.numeric.NumericType;
 import com.guidinglight.nexusquant.contracts.event.EventEnvelope;
 import com.guidinglight.nexusquant.contracts.event.TopicNames;
 import com.guidinglight.nexusquant.contracts.event.TradeExecuted;
+import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
+import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
+import com.guidinglight.nexusquant.ledger.service.port.SimAssetFundingPort;
+import com.guidinglight.nexusquant.marketdata.application.service.DiscountAssetPriceService;
+import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
+import com.guidinglight.nexusquant.scheduler.port.OrderExecutionGateway;
+import com.guidinglight.nexusquant.scheduler.port.TradeLedgerGateway;
+import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
+import com.guidinglight.nexusquant.strategy.domain.SpotFeeModel.Charge;
 import com.guidinglight.nexusquant.trading.application.port.TradingOrderStatusSnapshot;
 import com.guidinglight.nexusquant.trading.application.port.TradingVenueGateway;
 import com.guidinglight.nexusquant.trading.domain.OrderRecord;
-import com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository;
-import com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort;
-import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingResult;
-import com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest;
-import com.guidinglight.nexusquant.scheduler.model.PaperTradeRecord;
-import com.guidinglight.nexusquant.scheduler.service.port.TradeRepository;
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
+
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -30,13 +43,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
-import com.guidinglight.nexusquant.trading.domain.TradingVenue;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * PaperMatchingService 负责订单状态契约/交易所适配契约的本地 paper 成交同步。
@@ -50,9 +56,21 @@ import org.springframework.transaction.support.TransactionTemplate;
         prefix = "nq.runtime.trading-components",
         name = "enabled",
         havingValue = "true",
-        matchIfMissing = false
-)
+        matchIfMissing = false)
 public class PaperMatchingService {
+    // 冻结费用JSON只含十进制文本与来源字段，不依赖可变时间序列化设置，也不访问外部来源。
+    private final ObjectMapper feeMapper = new ObjectMapper();
+    private DiscountAssetPriceService discountPrices;
+    private SimAssetFundingPort assetFunding;
+
+    /** 只有显式优惠决策依赖多资产能力；普通PAPER和原收到资产路径保持原合同。 */
+    @Autowired
+    private void bindDiscountAssets(
+            ObjectProvider<DiscountAssetPriceService> prices,
+            ObjectProvider<SimAssetFundingPort> funding) {
+        discountPrices = prices.getIfAvailable();
+        assetFunding = funding.getIfAvailable();
+    }
 
     private static final String SOURCE = "nq-scheduler.paper-matching";
     private static final int DEFAULT_LIMIT = 100;
@@ -84,24 +102,32 @@ public class PaperMatchingService {
             AuditLogRepository auditLogRepository,
             TradingVenueGateway tradingVenueGateway,
             StrategySimDecisionRepository strategySimDecisions,
-            PlatformTransactionManager transactionManager
-    ) {
-        this.orderExecutionGateway = Objects.requireNonNull(orderExecutionGateway, "orderExecutionGateway must not be null");
-        this.tradeRepository = Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
-        this.tradeLedgerGateway = Objects.requireNonNull(tradeLedgerGateway, "tradeLedgerGateway must not be null");
-        this.eventPublisherPort = Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
-        this.auditLogRepository = Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
-        this.tradingVenueGateway = Objects.requireNonNull(
-                tradingVenueGateway,
-                "tradingVenueGateway must not be null"
-        );
+            PlatformTransactionManager transactionManager) {
+        this.orderExecutionGateway =
+                Objects.requireNonNull(
+                        orderExecutionGateway, "orderExecutionGateway must not be null");
+        this.tradeRepository =
+                Objects.requireNonNull(tradeRepository, "tradeRepository must not be null");
+        this.tradeLedgerGateway =
+                Objects.requireNonNull(tradeLedgerGateway, "tradeLedgerGateway must not be null");
+        this.eventPublisherPort =
+                Objects.requireNonNull(eventPublisherPort, "eventPublisherPort must not be null");
+        this.auditLogRepository =
+                Objects.requireNonNull(auditLogRepository, "auditLogRepository must not be null");
+        this.tradingVenueGateway =
+                Objects.requireNonNull(tradingVenueGateway, "tradingVenueGateway must not be null");
         this.strategySimDecisions = strategySimDecisions;
-        this.transactionTemplate = transactionManager == null ? null : new TransactionTemplate(transactionManager);
+        this.transactionTemplate =
+                transactionManager == null ? null : new TransactionTemplate(transactionManager);
         this.clock = Clock.systemUTC();
     }
 
-    public PaperMatchingService(OrderExecutionGateway orders, TradeRepository trades,
-            TradeLedgerGateway ledger, EventPublisherPort events, AuditLogRepository audit,
+    public PaperMatchingService(
+            OrderExecutionGateway orders,
+            TradeRepository trades,
+            TradeLedgerGateway ledger,
+            EventPublisherPort events,
+            AuditLogRepository audit,
             TradingVenueGateway venue) {
         this(orders, trades, ledger, events, audit, venue, null, null);
     }
@@ -128,10 +154,14 @@ public class PaperMatchingService {
                 continue;
             }
             try {
-                boolean matched = order.clientOrderId().startsWith("coid-sim-")
-                        ? Objects.requireNonNull(strategySimDecisions, "strategy SIM decision repository unavailable")
-                            .withAccountMutex(order.accountId(), () -> matchInTransaction(order))
-                        : matchInTransaction(order);
+                boolean matched =
+                        order.clientOrderId().startsWith("coid-sim-")
+                                ? Objects.requireNonNull(
+                                                strategySimDecisions,
+                                                "strategy SIM decision repository unavailable")
+                                        .withAccountMutex(
+                                                order.accountId(), () -> matchInTransaction(order))
+                                : matchInTransaction(order);
                 if (matched) {
                     newTradeCount++;
                 }
@@ -141,8 +171,7 @@ public class PaperMatchingService {
                         "PAPER_MATCH_FAILED",
                         order.orderId(),
                         order.traceId(),
-                        detail("error", ex.getMessage(), "order_id", order.orderId())
-                );
+                        detail("error", ex.getMessage(), "order_id", order.orderId()));
             }
         }
         return newTradeCount;
@@ -151,16 +180,19 @@ public class PaperMatchingService {
     private boolean matchInTransaction(OrderRecord order) {
         return transactionTemplate == null
                 ? matchSingleOrder(order)
-                : Boolean.TRUE.equals(transactionTemplate.execute(status -> matchSingleOrder(order)));
+                : Boolean.TRUE.equals(
+                        transactionTemplate.execute(status -> matchSingleOrder(order)));
     }
 
     private boolean matchSingleOrder(OrderRecord order) {
         if (order.clientOrderId().startsWith("coid-sim-")) {
             // 与 SIM 决策争用同一账户预算锁；成交和账本必须在同一事务提交。
-            Objects.requireNonNull(strategySimDecisions, "strategy SIM decision repository unavailable")
+            Objects.requireNonNull(
+                            strategySimDecisions, "strategy SIM decision repository unavailable")
                     .lockAccount(order.accountId());
         }
-        TradingOrderStatusSnapshot adapterSnapshot = tradingVenueGateway.getOrderStatus(order, order.traceId());
+        TradingOrderStatusSnapshot adapterSnapshot =
+                tradingVenueGateway.getOrderStatus(order, order.traceId());
         // Why: 只有当 adapter 反馈的状态与本地状态一致时，scheduler 才允许继续做本地成交副作用，
         // 这样 paper 路径不再是“完全绕过 adapter 的专用链路”。
         if (!order.status().name().equals(adapterSnapshot.externalStatus())) {
@@ -174,21 +206,27 @@ public class PaperMatchingService {
                             "order_status", order.status().name(),
                             "adapter_status", adapterSnapshot.externalStatus(),
                             "result_category", adapterSnapshot.resultCategory().name(),
-                            "venue", order.venue()
-                    )
-            );
+                            "venue", order.venue()));
             return false;
         }
 
         boolean strategySimOrder = order.clientOrderId().startsWith("coid-sim-");
-        StrategySimDecisionRepository.DecisionView decision = strategySimOrder
-                ? Objects.requireNonNull(strategySimDecisions, "strategy SIM decision repository unavailable")
-                    .findByOrderId(order.orderId())
-                    .filter(value -> "ACCEPTED".equals(value.status()))
-                    .orElseThrow(() -> new IllegalStateException("STRATEGY_SIM_DECISION_NOT_MATERIALIZED"))
-                : null;
-        BigDecimal marketPrice = NumericPolicy.normalize(NumericType.PRICE,
-                decision == null ? resolveMarketPrice() : decision.executionPrice());
+        StrategySimDecisionRepository.DecisionView decision =
+                strategySimOrder
+                        ? Objects.requireNonNull(
+                                        strategySimDecisions,
+                                        "strategy SIM decision repository unavailable")
+                                .findByOrderId(order.orderId())
+                                .filter(value -> "ACCEPTED".equals(value.status()))
+                                .orElseThrow(
+                                        () ->
+                                                new IllegalStateException(
+                                                        "STRATEGY_SIM_DECISION_NOT_MATERIALIZED"))
+                        : null;
+        BigDecimal marketPrice =
+                NumericPolicy.normalize(
+                        NumericType.PRICE,
+                        decision == null ? resolveMarketPrice() : decision.executionPrice());
         if (!isExecutable(order, marketPrice)) {
             auditLogRepository.append(
                     "MATCHING",
@@ -199,16 +237,42 @@ public class PaperMatchingService {
                             "order_id", order.orderId(),
                             "order_type", order.type(),
                             "limit_price", order.price(),
-                            "market_price", marketPrice
-                    )
-            );
+                            "market_price", marketPrice));
             return false;
         }
 
         Optional<PaperTradeRecord> existingTrade = tradeRepository.findByOrderId(order.orderId());
-        PaperTradeRecord trade = existingTrade.orElseGet(() -> createTrade(order, marketPrice,
-                decision == null ? BigDecimal.ZERO : decision.feeRate(),
-                decision == null ? clock.instant() : decision.executionOpenTime()));
+        PaperTradeRecord trade =
+                existingTrade.orElseGet(
+                        () ->
+                                createTrade(
+                                        order,
+                                        marketPrice,
+                                        decision == null ? BigDecimal.ZERO : decision.feeRate(),
+                                        decision == null ? null : decision.feeModelJson(),
+                                        decision == null ? null : decision.feeChargeJson(),
+                                        decision == null
+                                                ? clock.instant()
+                                                : decision.executionOpenTime()));
+        if (decision != null && decision.feeModelJson() != null) {
+            // 恢复已存在的Trade也要核对原冻结合同；不因幂等命中而悄悄消费另一币种或旧标量费用。
+            Charge expected =
+                    frozenCharge(
+                            order,
+                            decision.feeRate(),
+                            decision.feeModelJson(),
+                            decision.feeChargeJson(),
+                            trade.qty(),
+                            trade.price(),
+                            decision.executionOpenTime());
+            if (!expected.currency().equals(trade.feeCurrency())
+                    || expected.amount().compareTo(trade.fee()) != 0
+                    || decision.quantity().compareTo(trade.qty()) != 0
+                    || decision.executionPrice().compareTo(trade.price()) != 0
+                    || !decision.executionOpenTime().equals(trade.ts())) {
+                throw new IllegalStateException("STRATEGY_SIM_TRADE_FEE_IDENTITY_MISMATCH");
+            }
+        }
         if (existingTrade.isEmpty()) {
             tradeRepository.insert(trade);
             publishTradeEvent(order, trade);
@@ -217,56 +281,76 @@ public class PaperMatchingService {
                     "TRADE_EXECUTED",
                     trade.tradeId(),
                     trade.traceId(),
-                    detail("order_id", order.orderId(), "trade_id", trade.tradeId())
-            );
+                    detail("order_id", order.orderId(), "trade_id", trade.tradeId()));
         } else {
             auditLogRepository.append(
                     "MATCHING",
                     "TRADE_DEDUP_HIT",
                     order.orderId(),
                     order.traceId(),
-                    detail("order_id", order.orderId(), "trade_id", trade.tradeId())
-            );
+                    detail("order_id", order.orderId(), "trade_id", trade.tradeId()));
         }
 
-        LedgerPostingResult postingResult = tradeLedgerGateway.postTrade(new TradeLedgerRequest(
-                trade.tradeId(),
-                order.orderId(),
-                order.accountId(),
-                order.symbol(),
-                OrderSide.valueOf(order.side()),
-                trade.price(),
-                trade.qty(),
-                trade.fee(),
-                trade.feeCurrency(),
-                trade.traceId(),
-                trade.ts(),
-                order.tradeEnv()
-        ));
+        LedgerPostingResult postingResult =
+                tradeLedgerGateway.postTrade(
+                        new TradeLedgerRequest(
+                                trade.tradeId(),
+                                order.orderId(),
+                                order.accountId(),
+                                order.symbol(),
+                                OrderSide.valueOf(order.side()),
+                                trade.price(),
+                                trade.qty(),
+                                trade.fee(),
+                                trade.feeCurrency(),
+                                trade.traceId(),
+                                trade.ts(),
+                                order.tradeEnv()));
         if (!postingResult.posted()) {
             auditLogRepository.append(
                     "MATCHING",
                     "LEDGER_POSTING_FAILED",
                     trade.tradeId(),
                     trade.traceId(),
-                    detail("trade_id", trade.tradeId(), "reason", postingResult.reason())
-            );
+                    detail("trade_id", trade.tradeId(), "reason", postingResult.reason()));
             if (strategySimOrder) {
                 throw new IllegalStateException("STRATEGY_SIM_LEDGER_POSTING_INCOMPLETE");
             }
         }
 
         if (order.status() != OrderStatus.FILLED) {
-            orderExecutionGateway.markFilled(order.orderId(), "PAPER_MATCH_FILLED", order.traceId());
+            orderExecutionGateway.markFilled(
+                    order.orderId(), "PAPER_MATCH_FILLED", order.traceId());
         }
         return existingTrade.isEmpty();
     }
 
-    private PaperTradeRecord createTrade(OrderRecord order, BigDecimal marketPrice, BigDecimal feeRate,
-                                        Instant executionTime) {
-        BigDecimal price = NumericPolicy.normalize(NumericType.PRICE, resolveExecutionPrice(order, marketPrice));
+    private PaperTradeRecord createTrade(
+            OrderRecord order,
+            BigDecimal marketPrice,
+            BigDecimal feeRate,
+            String feeModelJson,
+            String feeChargeJson,
+            Instant executionTime) {
+        BigDecimal price =
+                NumericPolicy.normalize(
+                        NumericType.PRICE, resolveExecutionPrice(order, marketPrice));
         BigDecimal qty = NumericPolicy.normalize(NumericType.QTY, order.qty());
-        BigDecimal fee = NumericPolicy.normalize(NumericType.FEE, price.multiply(qty).multiply(feeRate));
+        // 普通PAPER订单沿用既有零费用和品种解析；新增冻结费用合同仅适用于正式策略SIM决策。
+        Charge charge =
+                order.clientOrderId().startsWith("coid-sim-")
+                        ? frozenCharge(
+                                order,
+                                feeRate,
+                                feeModelJson,
+                                feeChargeJson,
+                                qty,
+                                price,
+                                executionTime)
+                        : null;
+        BigDecimal fee =
+                NumericPolicy.normalize(
+                        NumericType.FEE, charge == null ? BigDecimal.ZERO : charge.amount());
         // 策略 SIM 的本地成交也需稳定 venue fill 身份，供 canonical run 从 Trade 证明终态。
         return new PaperTradeRecord(
                 "trd-" + UUID.randomUUID(),
@@ -275,48 +359,96 @@ public class PaperMatchingService {
                 order.symbol(),
                 order.venue(),
                 order.externalOrderId(),
-                order.clientOrderId().startsWith("coid-sim-") ? "paper-fill-" + order.orderId() : null,
+                order.clientOrderId().startsWith("coid-sim-")
+                        ? "paper-fill-" + order.orderId()
+                        : null,
                 price,
                 qty,
                 fee,
-                resolveFeeCurrency(order.symbol()),
+                charge == null ? resolveFeeCurrency(order.symbol()) : charge.currency(),
                 order.traceId(),
-                executionTime
-        );
+                executionTime);
+    }
+
+    /** 同账户锁内核验原选择及实际结算资金；不足或来源不符只拒绝撮合，不能重新选择币种或借用返佣。 */
+    private Charge frozenCharge(
+            OrderRecord order,
+            BigDecimal feeRate,
+            String feeModelJson,
+            String feeChargeJson,
+            BigDecimal quantity,
+            BigDecimal price,
+            Instant executionAt) {
+        StrategySimFeeTerms terms = StrategySimFeeTerms.from(feeRate, feeModelJson, feeMapper);
+        try {
+            JsonNode spec =
+                    feeModelJson == null
+                            ? feeMapper.createObjectNode()
+                            : feeMapper.readTree(feeModelJson);
+            if (!"DISCOUNT_ASSET_IF_FUNDED".equals(spec.path("feePaymentPolicy").asText())) {
+                if (feeChargeJson != null)
+                    throw new IllegalStateException("SIM_UNEXPECTED_DISCOUNT_FEE_PAYMENT");
+                return terms.charge(order.symbol(), order.side(), quantity, price, executionAt);
+            }
+            if (discountPrices == null || assetFunding == null)
+                throw new IllegalStateException("SIM_DISCOUNT_ASSET_SOURCE_DISABLED");
+            var source =
+                    discountPrices.read(
+                            Long.parseLong(spec.path("feeSourceOwnerUserId").asText()),
+                            UUID.fromString(spec.path("discountPriceSnapshotId").asText()),
+                            spec.path("discountPriceSnapshotSha256").asText());
+            if (!source.datasetId().toString().equals(spec.path("discountPriceDatasetId").asText())
+                    || !source.exchangeCode().equals(spec.path("feeExchangeCode").asText()))
+                throw new IllegalStateException("SIM_DISCOUNT_SOURCE_IDENTITY_DRIFT");
+            FrozenSimFeeCharge payment = FrozenSimFeeCharge.read(feeChargeJson, feeMapper);
+            payment.verifySource(source);
+            Charge charge =
+                    payment.charge(
+                            terms, order.symbol(), order.side(), quantity, price, executionAt);
+            if (charge.currency().equals(source.assetCurrency())
+                    && assetFunding
+                                    .assetBalance(order.accountId(), charge.currency())
+                                    .compareTo(charge.positiveReserve())
+                            < 0)
+                throw new IllegalStateException("SIM_DISCOUNT_SETTLEMENT_BALANCE_INSUFFICIENT");
+            return charge;
+        } catch (JsonProcessingException failure) {
+            throw new IllegalStateException("SIM_FEE_TERMS_INVALID", failure);
+        }
     }
 
     private void publishTradeEvent(OrderRecord order, PaperTradeRecord trade) {
-        TradeExecuted payload = new TradeExecuted(
-                trade.tradeId(),
-                order.orderId(),
-                order.clientOrderId(),
-                order.accountId(),
-                order.symbol(),
-                order.venue(),
-                trade.exchange(),
-                order.externalOrderId(),
-                trade.exchangeTradeId(),
-                trade.price(),
-                trade.qty(),
-                trade.fee(),
-                trade.feeCurrency(),
-                trade.ts()
-        );
-        EventEnvelope<TradeExecuted> envelope = new EventEnvelope<>(
-                "evt-" + UUID.randomUUID(),
-                payload.getClass().getSimpleName(),
-                1,
-                Instant.now(clock),
-                SOURCE,
-                order.traceId(),
-                order.clientOrderId(),
-                payload
-        );
+        TradeExecuted payload =
+                new TradeExecuted(
+                        trade.tradeId(),
+                        order.orderId(),
+                        order.clientOrderId(),
+                        order.accountId(),
+                        order.symbol(),
+                        order.venue(),
+                        trade.exchange(),
+                        order.externalOrderId(),
+                        trade.exchangeTradeId(),
+                        trade.price(),
+                        trade.qty(),
+                        trade.fee(),
+                        trade.feeCurrency(),
+                        trade.ts());
+        EventEnvelope<TradeExecuted> envelope =
+                new EventEnvelope<>(
+                        "evt-" + UUID.randomUUID(),
+                        payload.getClass().getSimpleName(),
+                        1,
+                        Instant.now(clock),
+                        SOURCE,
+                        order.traceId(),
+                        order.clientOrderId(),
+                        payload);
         eventPublisherPort.append(TopicNames.TRADE_EVENT_V1, envelope);
     }
 
     private BigDecimal resolveMarketPrice() {
-        // Gate B/交易所适配契约不接真实行情网络，使用固定价格提供器保证本地验证可重复。
+        // 交易所适配契约不接真实行情网络，使用固定价格提供器保证本地验证可重复。
         return new BigDecimal("100.00000000");
     }
 

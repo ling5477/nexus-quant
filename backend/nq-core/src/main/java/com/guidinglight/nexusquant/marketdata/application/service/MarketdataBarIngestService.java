@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * MarketdataBarIngestService 提供 RC1-5-A 的 fixture -> DB 正式 ingest 入口。
+ * MarketdataBarIngestService 提供 的 fixture -> DB 正式 ingest 入口。
  * <p>
  * Why:
  * 当前项目已经具备 `marketdata_bars` 的正式查询表，但没有任何真实写入路径。

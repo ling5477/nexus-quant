@@ -109,6 +109,17 @@ async function seedReviewWorkbench(page: Page, options: ReviewStubOptions = {}) 
 
     // Why: 非 GateV-4 既有 read-only query 返回明确 unavailable，避免用结构错误的空数组伪造 DTO。
     await page.route(/^https?:\/\/[^/]+\/api\//, (route: Route) => route.fulfill({status: 503, json: {code: 'FIXTURE_UNAVAILABLE'}}));
+    await page.route('**/api/user/preferences', (route: Route) => route.fulfill({
+        status: 200,
+        json: {
+            version: 0,
+            locale: 'zh-CN',
+            hideLoginDisclosures: true,
+            defaultMarket: null,
+            watchlist: [],
+            notificationsReadAt: null,
+        },
+    }));
     await page.route('**/api/auth/me', (route: Route) => route.fulfill({
         status: 200,
         json: {
@@ -218,7 +229,7 @@ test.describe('GateV-4 validation review workbench', () => {
 
         const workbench = page.getByTestId('validation-review-workbench');
         await expect(workbench.getByRole('heading', {name: '验证复核工作台', exact: true})).toBeVisible();
-        await expect(workbench).toContainText('诊断审查流程，不构成交易授权，也不会启动 LIVE 或 Shadow trading。');
+        await expect(workbench).toContainText('诊断审查不构成交易授权，也不会启动 LIVE 或影子交易。');
         await expect(page.getByLabel('所有者 ID')).toBeVisible();
         await expect(page.getByTestId('validation-review-queue').locator('tbody tr.ant-table-row')).toHaveCount(20);
         await page.getByRole('button', {name: '下一页'}).click();
@@ -339,7 +350,7 @@ test.describe('GateV-4 validation review workbench', () => {
     test('empty queue 展示明确空态', async ({page}) => {
         const emptyAudit = await seedReviewWorkbench(page, {roles: ['OPERATOR'], listMode: 'empty'});
         await page.goto('/strategies/validation');
-        await expect(page.getByText('当前筛选条件下没有 review case。')).toBeVisible();
+        await expect(page.getByText('当前筛选条件下没有复核事项。')).toBeVisible();
         expectOnlyAllowedReviewRequests(emptyAudit.requests);
         expectNoUnexpectedRuntimeErrors(emptyAudit);
     });
@@ -397,8 +408,9 @@ test.describe('GateV-4 validation review workbench', () => {
         await page.getByRole('button', {name: '确认已阅'}).click();
         await page.getByLabel('复核原因').fill('UUID fail-closed 回归');
         await page.getByRole('button', {name: '确认提交'}).click();
-        await expect(page.getByText('无法生成安全的 Idempotency-Key；本次请求未发送。')).toBeVisible();
+        await expect(page.getByRole('alert').filter({hasText: 'RESULT_RECOVERY_UNAVAILABLE'})).toBeVisible();
         expect(uuidFailureAudit.requests.filter((item) => item.method === 'POST')).toHaveLength(0);
+        expect(await page.evaluate(() => window.localStorage.getItem('nq:result-action:v1:7:VALIDATION_REVIEW'))).toBeNull();
         expectOnlyAllowedReviewRequests(uuidFailureAudit.requests);
         expectNoUnexpectedRuntimeErrors(uuidFailureAudit);
     });

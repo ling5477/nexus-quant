@@ -16,7 +16,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 /**
- * StructuralExchangeAccountCredentialVerifier 提供 RC1-4 首版结构性校验。
+ * StructuralExchangeAccountCredentialVerifier 提供 首版结构性校验。
  * <p>
  * Why:
  * 结构校验只要求“凭证格式/签名能力”真实成立，不要求真实连通外部交易所；

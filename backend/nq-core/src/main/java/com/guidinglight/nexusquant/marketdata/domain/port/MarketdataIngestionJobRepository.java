@@ -23,6 +23,12 @@ public interface MarketdataIngestionJobRepository {
 
     Optional<MarketdataIngestionJob> findJob(UUID jobId);
 
+    /** 在调用方事务中锁定任务；同一任务的断点计算和写入不能并发覆盖。 */
+    Optional<MarketdataIngestionJob> lockJob(UUID jobId);
+
+    /** 按稳定执行编号读取，包括其他任务的占用，以拒绝编号跨任务复用。 */
+    Optional<MarketdataIngestionRun> findRun(UUID runId);
+
     Optional<Instant> findLatestSuccessfulActualEnd(UUID jobId);
 
     void updateJobStatus(UUID jobId, MarketdataIngestionStatus status, Instant updatedAt);

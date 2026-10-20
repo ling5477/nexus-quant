@@ -2,12 +2,28 @@ import {expect, test, type Page, type Route} from 'playwright/test';
 
 const SIDE_EFFECT_POLICY = [
     {code: 'NO_DB_WRITE', status: 'FORBIDDEN', message: 'Preview must not write database state.'},
-    {code: 'NO_EXTERNAL_IO', status: 'FORBIDDEN', message: 'Preview must not call external systems.'},
-    {code: 'NO_CREDENTIAL_ACCESS', status: 'FORBIDDEN', message: 'Preview must not read credential material.'},
-    {code: 'NO_PRIVATE_ENDPOINT', status: 'FORBIDDEN', message: 'Preview must not call private exchange endpoint.'},
+    {
+        code: 'NO_EXTERNAL_IO',
+        status: 'FORBIDDEN',
+        message: 'Preview must not call external systems.',
+    },
+    {
+        code: 'NO_CREDENTIAL_ACCESS',
+        status: 'FORBIDDEN',
+        message: 'Preview must not read credential material.',
+    },
+    {
+        code: 'NO_PRIVATE_ENDPOINT',
+        status: 'FORBIDDEN',
+        message: 'Preview must not call private exchange endpoint.',
+    },
     {code: 'NO_ORDER_SUBMISSION', status: 'FORBIDDEN', message: 'Preview must not submit orders.'},
     {code: 'NO_LEDGER_MUTATION', status: 'FORBIDDEN', message: 'Preview must not mutate ledger.'},
-    {code: 'NO_ACCOUNT_MUTATION', status: 'FORBIDDEN', message: 'Preview must not mutate account state.'},
+    {
+        code: 'NO_ACCOUNT_MUTATION',
+        status: 'FORBIDDEN',
+        message: 'Preview must not mutate account state.',
+    },
 ];
 
 const STRATEGY_OVERVIEW_FIXTURE = {
@@ -308,7 +324,8 @@ const SHADOW_VALIDATION_WORKFLOW_FIXTURE = {
                 code: 'REVIEW_WORKFLOW_EVIDENCE',
                 owner: 'operator',
                 action: 'Review workflow evidence anchors.',
-                completionCondition: 'Operator review notes are recorded in a later approved workflow.',
+                completionCondition:
+                    'Operator review notes are recorded in a later approved workflow.',
                 boundaryCritical: true,
             },
         ],
@@ -363,7 +380,8 @@ const SHADOW_VALIDATION_WORKFLOW_FIXTURE = {
                     code: 'REVIEW_WORKFLOW_EVIDENCE',
                     owner: 'operator',
                     action: 'Review workflow evidence anchors.',
-                    completionCondition: 'Operator review notes are recorded in a later approved workflow.',
+                    completionCondition:
+                        'Operator review notes are recorded in a later approved workflow.',
                     boundaryCritical: true,
                 },
             ],
@@ -575,7 +593,8 @@ const CONSISTENCY_EVIDENCE_OVERVIEW_FIXTURE = {
             code: 'INSPECT_CONSISTENCY_EVIDENCE',
             owner: 'operator',
             action: 'Inspect consistency evidence anchors before later GateT work.',
-            completionCondition: 'Diagnostic evidence is inspected without introducing runtime actions.',
+            completionCondition:
+                'Diagnostic evidence is inspected without introducing runtime actions.',
             boundaryCritical: true,
         },
     ],
@@ -753,7 +772,8 @@ const INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE = {
             code: 'REVIEW_INCIDENT_REPLAY_WORKFLOW',
             owner: 'operator',
             action: 'Review incident replay review items without adding write side actions.',
-            completionCondition: 'Diagnostic review notes are handled in a later approved workflow.',
+            completionCondition:
+                'Diagnostic review notes are handled in a later approved workflow.',
             boundaryCritical: true,
         },
     ],
@@ -832,14 +852,16 @@ const EVALUATION_ARTIFACT_PREVIEW_OVERVIEW_FIXTURE = {
         {
             code: 'NO_ARTIFACT_SOURCE_CONFIGURED',
             severity: 'WARNING',
-            message: 'No artifact file, manifest or runtime source is configured for GateT-4 No-file baseline.',
+            message:
+                'No artifact file, manifest or runtime source is configured for GateT-4 No-file baseline.',
             sourceType: 'NO_FILE_BASELINE',
             sourceId: null,
         },
         {
             code: 'FAKE_FIXTURE_ONLY_NOT_REAL_PERFORMANCE',
             severity: 'WARNING',
-            message: 'FAKE_FIXTURE_ONLY metrics must stay fixture-only and are not real strategy performance.',
+            message:
+                'FAKE_FIXTURE_ONLY metrics must stay fixture-only and are not real strategy performance.',
             sourceType: 'METRIC_SUMMARY',
             sourceId: null,
         },
@@ -849,7 +871,8 @@ const EVALUATION_ARTIFACT_PREVIEW_OVERVIEW_FIXTURE = {
             code: 'KEEP_NO_FILE_BASELINE',
             owner: 'backend',
             action: 'Keep this overview GET-only and No-file baseline until a separate source review is approved.',
-            completionCondition: 'No artifact file, manifest, path query, upload, request body, Python subprocess, network or DB import is added.',
+            completionCondition:
+                'No artifact file, manifest, path query, upload, request body, Python subprocess, network or DB import is added.',
             boundaryCritical: true,
         },
     ],
@@ -860,7 +883,8 @@ const EVALUATION_ARTIFACT_PREVIEW_OVERVIEW_FIXTURE = {
             sourceVersion: 'python-evaluation-artifact.v1',
             sourceTimestamp: '2026-07-09T06:40:00Z',
             traceId: 'trace-evaluation-artifact-preview-smoke',
-            description: 'Offline Python EvaluationArtifact contract; no artifact file is read by this endpoint.',
+            description:
+                'Offline Python EvaluationArtifact contract; no artifact file is read by this endpoint.',
         },
     ],
     traceId: 'trace-evaluation-artifact-preview-overview-smoke',
@@ -894,45 +918,85 @@ const VALIDATION_OPERATIONS_RUNTIME_EVIDENCE_OVERVIEW_FIXTURE = {
             sourceKey: 'SHADOW_VALIDATION_WORKFLOW',
             displayName: 'Shadow Validation Workflow',
             evidenceMetadata: {
-                source: 'LOCAL_DB_VALIDATION_WORKFLOW', availability: 'AVAILABLE', lastCalculatedAt: '2026-07-11T08:59:00Z',
-                freshnessStatus: 'FRESH', ageSeconds: 60, staleAfterSeconds: 604800, staleReason: null,
-                diagnosticOnly: true, noSideEffect: true, notTradingAuthorization: true, liveDisabled: true,
+                source: 'LOCAL_DB_VALIDATION_WORKFLOW',
+                availability: 'AVAILABLE',
+                lastCalculatedAt: '2026-07-11T08:59:00Z',
+                freshnessStatus: 'FRESH',
+                ageSeconds: 60,
+                staleAfterSeconds: 604800,
+                staleReason: null,
+                diagnosticOnly: true,
+                noSideEffect: true,
+                notTradingAuthorization: true,
+                liveDisabled: true,
             },
         },
         {
             sourceKey: 'SHADOW_RUNS',
             displayName: 'Shadow Runs',
             evidenceMetadata: {
-                source: 'LOCAL_DB_SHADOW_FACTS', availability: 'AVAILABLE', lastCalculatedAt: '2026-07-11T08:59:10Z',
-                freshnessStatus: 'FRESH', ageSeconds: 50, staleAfterSeconds: null, staleReason: null,
-                diagnosticOnly: true, noSideEffect: true, notTradingAuthorization: true, liveDisabled: true,
+                source: 'LOCAL_DB_SHADOW_FACTS',
+                availability: 'AVAILABLE',
+                lastCalculatedAt: '2026-07-11T08:59:10Z',
+                freshnessStatus: 'FRESH',
+                ageSeconds: 50,
+                staleAfterSeconds: null,
+                staleReason: null,
+                diagnosticOnly: true,
+                noSideEffect: true,
+                notTradingAuthorization: true,
+                liveDisabled: true,
             },
         },
         {
             sourceKey: 'CONSISTENCY_EVIDENCE',
             displayName: 'Consistency Evidence',
             evidenceMetadata: {
-                source: 'LOCAL_DB_SHADOW_CONSISTENCY_REPORTS', availability: 'AVAILABLE', lastCalculatedAt: '2026-07-11T08:59:20Z',
-                freshnessStatus: 'FRESH', ageSeconds: 40, staleAfterSeconds: 604800, staleReason: null,
-                diagnosticOnly: true, noSideEffect: true, notTradingAuthorization: true, liveDisabled: true,
+                source: 'LOCAL_DB_SHADOW_CONSISTENCY_REPORTS',
+                availability: 'AVAILABLE',
+                lastCalculatedAt: '2026-07-11T08:59:20Z',
+                freshnessStatus: 'FRESH',
+                ageSeconds: 40,
+                staleAfterSeconds: 604800,
+                staleReason: null,
+                diagnosticOnly: true,
+                noSideEffect: true,
+                notTradingAuthorization: true,
+                liveDisabled: true,
             },
         },
         {
             sourceKey: 'INCIDENT_REPLAY_REVIEW',
             displayName: 'Incident / Replay Review',
             evidenceMetadata: {
-                source: 'LOCAL_DB_INCIDENT_REPLAY_REVIEW', availability: 'AVAILABLE', lastCalculatedAt: '2026-07-11T08:59:30Z',
-                freshnessStatus: 'FRESH', ageSeconds: 30, staleAfterSeconds: 604800, staleReason: null,
-                diagnosticOnly: true, noSideEffect: true, notTradingAuthorization: true, liveDisabled: true,
+                source: 'LOCAL_DB_INCIDENT_REPLAY_REVIEW',
+                availability: 'AVAILABLE',
+                lastCalculatedAt: '2026-07-11T08:59:30Z',
+                freshnessStatus: 'FRESH',
+                ageSeconds: 30,
+                staleAfterSeconds: 604800,
+                staleReason: null,
+                diagnosticOnly: true,
+                noSideEffect: true,
+                notTradingAuthorization: true,
+                liveDisabled: true,
             },
         },
         {
             sourceKey: 'EVALUATION_ARTIFACT_PREVIEW',
             displayName: 'Evaluation Artifact Preview',
             evidenceMetadata: {
-                source: 'LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW', availability: 'UNAVAILABLE', lastCalculatedAt: null,
-                freshnessStatus: 'UNKNOWN', ageSeconds: null, staleAfterSeconds: null, staleReason: 'LAST_CALCULATED_AT_MISSING',
-                diagnosticOnly: true, noSideEffect: true, notTradingAuthorization: true, liveDisabled: true,
+                source: 'LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW',
+                availability: 'UNAVAILABLE',
+                lastCalculatedAt: null,
+                freshnessStatus: 'UNKNOWN',
+                ageSeconds: null,
+                staleAfterSeconds: null,
+                staleReason: 'LAST_CALCULATED_AT_MISSING',
+                diagnosticOnly: true,
+                noSideEffect: true,
+                notTradingAuthorization: true,
+                liveDisabled: true,
             },
         },
     ],
@@ -1018,14 +1082,22 @@ const EVALUATION_GATE_FIXTURE = {
     paperEvidenceStatus: 'SATISFIED',
     publishTraceStatus: 'SATISFIED',
     requiredEvidence: [
-        {code: 'STRATEGY_VERSION', status: 'SATISFIED', message: 'Strategy version fact is present.'},
+        {
+            code: 'STRATEGY_VERSION',
+            status: 'SATISFIED',
+            message: 'Strategy version fact is present.',
+        },
         {code: 'DATASET', status: 'SATISFIED', message: 'Dataset quality facts are present.'},
         {code: 'EVALUATION', status: 'SATISFIED', message: 'Evaluation report is present.'},
     ],
     missingEvidence: [],
     blockers: [],
     warnings: [
-        {code: 'READONLY_BOUNDARY', severity: 'WARNING', message: 'Evaluation gate is review evidence only.'},
+        {
+            code: 'READONLY_BOUNDARY',
+            severity: 'WARNING',
+            message: 'Evaluation gate is review evidence only.',
+        },
     ],
     nextSteps: ['Review Paper vs Shadow comparison evidence before any later gate.'],
     generatedAt: '2026-07-05T10:00:00Z',
@@ -1058,14 +1130,26 @@ const PAPER_SHADOW_FIXTURE = {
     comparable: true,
     requiredEvidence: [
         {code: 'PAPER_EVIDENCE', status: 'SATISFIED', message: 'Paper run evidence is available.'},
-        {code: 'SHADOW_FACT_SOURCE', status: 'NOT_IMPLEMENTED', message: 'Shadow fact source is not implemented.'},
+        {
+            code: 'SHADOW_FACT_SOURCE',
+            status: 'NOT_IMPLEMENTED',
+            message: 'Shadow fact source is not implemented.',
+        },
     ],
     missingEvidence: [
-        {code: 'SHADOW_RUN_FACTS', status: 'NOT_IMPLEMENTED', message: 'Shadow run facts are not available.'},
+        {
+            code: 'SHADOW_RUN_FACTS',
+            status: 'NOT_IMPLEMENTED',
+            message: 'Shadow run facts are not available.',
+        },
     ],
     blockers: [],
     warnings: [
-        {code: 'SHADOW_NOT_IMPLEMENTED', severity: 'WARNING', message: 'Shadow runner remains not implemented.'},
+        {
+            code: 'SHADOW_NOT_IMPLEMENTED',
+            severity: 'WARNING',
+            message: 'Shadow runner remains not implemented.',
+        },
     ],
     nextSteps: ['Keep comparison read-only until a later approved Shadow fact source exists.'],
     generatedAt: '2026-07-05T10:01:00Z',
@@ -1105,18 +1189,22 @@ const SHADOW_PREVIEW_FIXTURE = {
         {
             code: 'SHADOW_FACTS',
             status: 'NOT_AVAILABLE',
-            message: 'Shadow run facts are required before preview review.'
+            message: 'Shadow run facts are required before preview review.',
         },
     ],
     blockers: [
         {
             code: 'PREVIEW_BLOCKED_SHADOW_FACTS_NOT_AVAILABLE',
             severity: 'BLOCKER',
-            message: 'Shadow facts are not available.'
+            message: 'Shadow facts are not available.',
         },
     ],
     warnings: [
-        {code: 'NO_SIDE_EFFECT_ONLY', severity: 'WARNING', message: 'Preview cannot execute strategy logic.'},
+        {
+            code: 'NO_SIDE_EFFECT_ONLY',
+            severity: 'WARNING',
+            message: 'Preview cannot execute strategy logic.',
+        },
     ],
     nextSteps: ['Provide approved Shadow read-only facts in a later gate before preview review.'],
     generatedAt: '2026-07-05T10:02:00Z',
@@ -1134,9 +1222,7 @@ const UNKNOWN_GATE_FIXTURE = {
     missingEvidence: [
         {code: 'DATASET', status: 'NOT_AVAILABLE', message: 'Dataset is not available.'},
     ],
-    blockers: [
-        {code: 'DATASET_MISSING', severity: 'BLOCKER', message: 'Dataset fact is missing.'},
-    ],
+    blockers: [{code: 'DATASET_MISSING', severity: 'BLOCKER', message: 'Dataset fact is missing.'}],
     warnings: [],
     nextSteps: ['Resolve missing dataset facts before review.'],
 };
@@ -1175,124 +1261,202 @@ async function seedAuthAndGateQStubs(
     const roles = overrides.roles ?? ['ADMIN'];
 
     // Why: smoke 只使用浏览器内本地 stub，不启动后端、不外联、不读取真实 credential。
-    await page.addInitScript(({sessionRoles}) => {
-        window.localStorage.setItem('nexus-quant.console.auth', JSON.stringify({
-            accessToken: 'strategy-validation-smoke-session',
-            tokenType: 'Bearer',
-            expiresAt: '2999-01-01T00:00:00Z',
-            username: 'e2e-operator',
-            roles: sessionRoles,
-        }));
-    }, {sessionRoles: roles});
+    await page.addInitScript(
+        ({sessionRoles}) => {
+            window.localStorage.setItem(
+                'nexus-quant.console.auth',
+                JSON.stringify({
+                    accessToken: 'strategy-validation-smoke-session',
+                    tokenType: 'Bearer',
+                    expiresAt: '2999-01-01T00:00:00Z',
+                    username: 'e2e-operator',
+                    roles: sessionRoles,
+                }),
+            );
+        },
+        {sessionRoles: roles},
+    );
 
     page.on('request', (request) => requests.push(request.url()));
 
-    await page.route(/^https?:\/\/[^/]+\/api\//, (route: Route) => route.fulfill({status: 200, json: []}));
+    await page.route(/^https?:\/\/[^/]+\/api\//, (route: Route) =>
+        route.fulfill({status: 200, json: []}),
+    );
 
-    await page.route('**/api/auth/me', (route: Route) => route.fulfill({
-        status: 200,
-        json: {
-            userId: 1,
-            username: 'e2e-operator',
-            roles,
-            authenticated: true,
-            defaultExchangeAccountId: 101,
-            defaultExchangeCode: 'BINANCE',
-            defaultTradeEnv: 'SIM',
-            defaultAccountAlias: 'strategy-validation-smoke',
-        },
-    }));
+    // 新全站页头按正式分页对象读取通知；空数组不是该接口的成功合同，不能污染目标页面的渲染验收。
+    await page.route('**/api/user/notifications?*', (route) =>
+        route.fulfill({
+            status: 200,
+            json: {
+                items: [],
+                offset: 0,
+                hasMore: false,
+                windowLimited: false,
+                checkedAt: '2026-10-15T00:00:00Z',
+                scope: 'OWNED_SIM_RUN_EVENTS',
+            },
+        }),
+    );
+    await page.route('**/api/user/preferences', (route) =>
+        route.fulfill({
+            status: 200,
+            json: {
+                version: 0,
+                locale: 'zh-CN',
+                hideLoginDisclosures: true,
+                defaultMarket: null,
+                watchlist: [],
+                notificationsReadAt: null,
+            },
+        }),
+    );
 
-    await page.route('**/api/exchange-accounts', (route: Route) => route.fulfill({
-        status: 200,
-        json: [{
-            exchangeAccountId: 101,
-            legacyAccountId: null,
-            exchangeCode: 'BINANCE',
-            tradeEnv: 'SIM',
-            accountAlias: 'strategy-validation-smoke',
-            externalAccountRef: null,
-            isDefault: true,
-            status: 'ACTIVE',
-        }],
-    }));
+    await page.route('**/api/auth/me', (route: Route) =>
+        route.fulfill({
+            status: 200,
+            json: {
+                userId: 1,
+                username: 'e2e-operator',
+                roles,
+                authenticated: true,
+                defaultExchangeAccountId: 101,
+                defaultExchangeCode: 'BINANCE',
+                defaultTradeEnv: 'SIM',
+                defaultAccountAlias: 'strategy-validation-smoke',
+            },
+        }),
+    );
 
-    await page.route('**/api/strategy-validation/overview', (route: Route) => route.fulfill({
-        status: 200,
-        json: STRATEGY_OVERVIEW_FIXTURE,
-    }));
+    await page.route('**/api/exchange-accounts', (route: Route) =>
+        route.fulfill({
+            status: 200,
+            json: [
+                {
+                    exchangeAccountId: 101,
+                    legacyAccountId: null,
+                    exchangeCode: 'BINANCE',
+                    tradeEnv: 'SIM',
+                    accountAlias: 'strategy-validation-smoke',
+                    externalAccountRef: null,
+                    isDefault: true,
+                    status: 'ACTIVE',
+                },
+            ],
+        }),
+    );
 
-    await page.route('**/api/shadow-runs/overview', (route: Route) => route.fulfill({
-        status: 200,
-        json: SHADOW_OVERVIEW_FIXTURE,
-    }));
+    await page.route('**/api/strategy-validation/overview', (route: Route) =>
+        route.fulfill({
+            status: 200,
+            json: STRATEGY_OVERVIEW_FIXTURE,
+        }),
+    );
 
-    await page.route('**/api/paper-shadow/consistency/drilldown**', (route: Route) => route.fulfill({
-        status: 200,
-        json: PAPER_SHADOW_DRILLDOWN_FIXTURE,
-    }));
+    await page.route('**/api/shadow-runs/overview', (route: Route) =>
+        route.fulfill({
+            status: 200,
+            json: SHADOW_OVERVIEW_FIXTURE,
+        }),
+    );
 
-    await page.route('**/api/shadow-validation/workflow/overview', (route: Route) => route.fulfill({
-        status: 200,
-        json: SHADOW_VALIDATION_WORKFLOW_FIXTURE,
-    }));
+    await page.route('**/api/paper-shadow/consistency/drilldown**', (route: Route) =>
+        route.fulfill({
+            status: 200,
+            json: PAPER_SHADOW_DRILLDOWN_FIXTURE,
+        }),
+    );
 
-    await page.route('**/api/paper-shadow/consistency/evidence/overview', (route: Route) => route.fulfill({
-        status: 200,
-        json: overrides.consistencyEvidence ?? CONSISTENCY_EVIDENCE_OVERVIEW_FIXTURE,
-    }));
+    await page.route('**/api/shadow-validation/workflow/overview', (route: Route) =>
+        route.fulfill({
+            status: 200,
+            json: SHADOW_VALIDATION_WORKFLOW_FIXTURE,
+        }),
+    );
 
-    await page.route('**/api/incidents/replay/review/overview', (route: Route) => route.fulfill({
-        status: 200,
-        json: overrides.incidentReplayReview ?? INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE,
-    }));
+    await page.route('**/api/paper-shadow/consistency/evidence/overview', (route: Route) =>
+        route.fulfill({
+            status: 200,
+            json: overrides.consistencyEvidence ?? CONSISTENCY_EVIDENCE_OVERVIEW_FIXTURE,
+        }),
+    );
 
-    await page.route('**/api/strategy-validation/evaluation-artifacts/preview/overview', (route: Route) => route.fulfill({
-        status: 200,
-        json: EVALUATION_ARTIFACT_PREVIEW_OVERVIEW_FIXTURE,
-    }));
+    await page.route('**/api/incidents/replay/review/overview', (route: Route) =>
+        route.fulfill({
+            status: 200,
+            json: overrides.incidentReplayReview ?? INCIDENT_REPLAY_REVIEW_OVERVIEW_FIXTURE,
+        }),
+    );
+
+    await page.route(
+        '**/api/strategy-validation/evaluation-artifacts/preview/overview',
+        (route: Route) =>
+            route.fulfill({
+                status: 200,
+                json: EVALUATION_ARTIFACT_PREVIEW_OVERVIEW_FIXTURE,
+            }),
+    );
 
     await page.route('**/api/validation-operations/runtime-evidence/overview', (route: Route) => {
         expect(route.request().method()).toBe('GET');
         return route.fulfill({
             status: 200,
-            json: overrides.runtimeEvidence ?? VALIDATION_OPERATIONS_RUNTIME_EVIDENCE_OVERVIEW_FIXTURE,
+            json:
+                overrides.runtimeEvidence ??
+                VALIDATION_OPERATIONS_RUNTIME_EVIDENCE_OVERVIEW_FIXTURE,
         });
     });
 
-    await page.route('**/api/incidents/replay/overview', (route: Route) => route.fulfill({
-        status: 200,
-        json: INCIDENT_REPLAY_OVERVIEW_FIXTURE,
-    }));
+    await page.route('**/api/incidents/replay/overview', (route: Route) =>
+        route.fulfill({
+            status: 200,
+            json: INCIDENT_REPLAY_OVERVIEW_FIXTURE,
+        }),
+    );
 
-    await page.route('**/api/strategies/evaluation-gate**', (route: Route) => route.fulfill({
-        status: 200,
-        json: overrides.evaluationGate ?? EVALUATION_GATE_FIXTURE,
-    }));
+    await page.route('**/api/strategies/evaluation-gate**', (route: Route) =>
+        route.fulfill({
+            status: 200,
+            json: overrides.evaluationGate ?? EVALUATION_GATE_FIXTURE,
+        }),
+    );
 
-    await page.route('**/api/strategies/paper-shadow/comparison**', (route: Route) => route.fulfill({
-        status: 200,
-        json: overrides.paperShadow ?? PAPER_SHADOW_FIXTURE,
-    }));
+    await page.route('**/api/strategies/paper-shadow/comparison**', (route: Route) =>
+        route.fulfill({
+            status: 200,
+            json: overrides.paperShadow ?? PAPER_SHADOW_FIXTURE,
+        }),
+    );
 
-    await page.route('**/api/strategies/shadow-live/preview**', (route: Route) => route.fulfill({
-        status: 200,
-        json: overrides.preview ?? SHADOW_PREVIEW_FIXTURE,
-    }));
+    await page.route('**/api/strategies/shadow-live/preview**', (route: Route) =>
+        route.fulfill({
+            status: 200,
+            json: overrides.preview ?? SHADOW_PREVIEW_FIXTURE,
+        }),
+    );
 
-    await page.route('**/api/strategy-releases/*/shadow-admission-preview', async (route: Route) => {
-        expect(route.request().method()).toBe('GET');
-        if (overrides.releaseAdmissionDelayMs) {
-            await new Promise((resolve) => setTimeout(resolve, overrides.releaseAdmissionDelayMs));
-        }
-        const status = overrides.releaseAdmissionStatus ?? 200;
-        return route.fulfill({
-            status,
-            json: status >= 400
-                ? {status, code: status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR', message: 'synthetic preview error'}
-                : overrides.releaseAdmissionPreview ?? RELEASE_ADMISSION_PREVIEW_FIXTURE,
-        });
-    });
+    await page.route(
+        '**/api/strategy-releases/*/shadow-admission-preview',
+        async (route: Route) => {
+            expect(route.request().method()).toBe('GET');
+            if (overrides.releaseAdmissionDelayMs) {
+                await new Promise((resolve) =>
+                    setTimeout(resolve, overrides.releaseAdmissionDelayMs),
+                );
+            }
+            const status = overrides.releaseAdmissionStatus ?? 200;
+            return route.fulfill({
+                status,
+                json:
+                    status >= 400
+                        ? {
+                              status,
+                              code: status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR',
+                              message: 'synthetic preview error',
+                          }
+                        : (overrides.releaseAdmissionPreview ?? RELEASE_ADMISSION_PREVIEW_FIXTURE),
+            });
+        },
+    );
 
     return requests;
 }
@@ -1311,17 +1475,24 @@ function validationUrl(): string {
 }
 
 function expectNoForbiddenCopy(page: Page) {
-    return expect(page.locator('body')).not.toContainText(/ready\s+to\s+trade|live\s+ready|trade[_\s]+approved|can\s+trade|authorizedForTrading|tradingReady|liveReady|SHADOW LIVE TRADING ENABLED|REAL PROVIDER ENABLED|PRIVATE TRADING ENABLED|REAL PERMISSION PROBE ENABLED|AI STARTED|DH INTEGRATED|Integration-1 RUNTIME STARTED|placeOrder|cancelOrder|withdraw|transfer|apiKey|secret|passphrase|token|private key|ML_READY\s*[:=]\s*true|PYTHON ML READY\s+YES|PYTHON LIVE READY\s+YES/i);
+    return expect(page.locator('body')).not.toContainText(
+        /ready\s+to\s+trade|live\s+ready|trade[_\s]+approved|can\s+trade|authorizedForTrading|tradingReady|liveReady|SHADOW LIVE TRADING ENABLED|REAL PROVIDER ENABLED|PRIVATE TRADING ENABLED|REAL PERMISSION PROBE ENABLED|AI STARTED|DH INTEGRATED|Integration-1 RUNTIME STARTED|placeOrder|cancelOrder|withdraw|transfer|apiKey|secret|passphrase|token|private key|ML_READY\s*[:=]\s*true|PYTHON ML READY\s+YES|PYTHON LIVE READY\s+YES/i,
+    );
 }
 
 function expectNoForbiddenRequests(requests: string[]): void {
-    const forbiddenApiPattern = /credential|permission-probe|withdraw|transfer|\/order|\/cancel|\/amend|wallet|subaccount|\/private|listenKey/i;
+    const forbiddenApiPattern =
+        /credential|permission-probe|withdraw|transfer|\/order|\/cancel|\/amend|wallet|subaccount|\/private|listenKey/i;
     const forbiddenHostPattern = /okx|binance|bybit|coinbase|kraken|gate\.io/i;
 
     for (const requestUrl of requests) {
         const hostname = new URL(requestUrl).hostname;
-        expect(requestUrl, `forbidden private/credential API request: ${requestUrl}`).not.toMatch(forbiddenApiPattern);
-        expect(hostname, `forbidden real exchange host request: ${requestUrl}`).not.toMatch(forbiddenHostPattern);
+        expect(requestUrl, `forbidden private/credential API request: ${requestUrl}`).not.toMatch(
+            forbiddenApiPattern,
+        );
+        expect(hostname, `forbidden real exchange host request: ${requestUrl}`).not.toMatch(
+            forbiddenHostPattern,
+        );
     }
 }
 
@@ -1331,16 +1502,50 @@ async function expectNoSuccessTagForStatuses(page: Page, statuses: string[]): Pr
     }
 }
 
+async function selectWorkspaceTab(page: Page, name: string): Promise<void> {
+    const tab = page.getByTestId('strategy-validation-page').getByRole('tab', {name, exact: true});
+    await tab.click();
+    await expect(tab).toHaveAttribute('aria-selected', 'true');
+}
+
+async function selectResultTab(page: Page, name: string): Promise<void> {
+    await selectWorkspaceTab(page, '查询结果');
+    await selectWorkspaceTab(page, name);
+}
+
+async function expandDiagnosticSection(page: Page, name: string): Promise<void> {
+    await selectWorkspaceTab(page, '高级诊断');
+    const section = page
+        .getByTestId('validation-operations-detail-sections')
+        .getByRole('button', {name});
+    // 展开图标也参与可访问名称；匹配唯一的业务标题，避免绑定 collapsed/expanded 图标文案。
+    await expect(section).toHaveCount(1);
+    // 诊断区按需挂载；通过用户可见入口展开，不能直接断言旧页面默认存在的节点。
+    if ((await section.getAttribute('aria-expanded')) !== 'true') {
+        await section.click();
+    }
+    await expect(section).toHaveAttribute('aria-expanded', 'true');
+}
+
 test.describe('strategy validation Paper / Shadow comparison view', () => {
-    test('展示 evaluation gate、comparison、preview、blockers、nextSteps 与 sideEffectPolicy', async ({page}) => {
+    test('展示 evaluation gate、comparison、preview、blockers、nextSteps 与 sideEffectPolicy', async ({
+        page,
+    }) => {
         const requests = await seedAuthAndGateQStubs(page);
 
         await page.goto(validationUrl());
 
         const view = page.getByTestId('strategy-validation-page');
         await expect(view).toBeVisible();
-        await expect(view.getByRole('heading', {name: '验证运营工作台', exact: true})).toBeVisible();
-        await expect(view).toContainText('只读运营复核 sections');
+        await expect(
+            view.getByRole('heading', {name: '策略验证工作台', exact: true}),
+        ).toBeVisible();
+        await selectWorkspaceTab(page, '证据总览');
+        await expect(view.getByText('验证运营工作台', {exact: true})).toBeVisible();
+        await expect(view).toContainText(
+            '只读诊断结果；用于人工复核排序、证据链路检查和边界确认，不新增 route、API、DB migration 或交易入口。',
+        );
+        await expandDiagnosticSection(page, '状态解释');
         await expect(view).toContainText('只读验证');
         await expect(view).toContainText('不代表交易授权');
         await expect(view).toContainText('不代表 LIVE 已启用');
@@ -1350,6 +1555,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('不写真实账户 / 资金 / ledger');
         await expect(view).toContainText('不接 AI / DH runtime 执行链路');
 
+        await selectWorkspaceTab(page, '证据总览');
         const operationsWorkbench = page.getByTestId('validation-operations-workbench');
         await expect(operationsWorkbench).toBeVisible();
 
@@ -1361,22 +1567,36 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(runtimeEvidence).toContainText('CONSISTENCY_EVIDENCE');
         await expect(runtimeEvidence).toContainText('INCIDENT_REPLAY_REVIEW');
         await expect(runtimeEvidence).toContainText('EVALUATION_ARTIFACT_PREVIEW');
-        await expect(runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata')).toContainText('可用性：PARTIAL');
-        await expect(runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
+        await expect(
+            runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata'),
+        ).toContainText('可用性：PARTIAL');
+        await expect(
+            runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata'),
+        ).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
         await expect(runtimeEvidence).toContainText('4 / 0 / 1 / 0');
         await expect(runtimeEvidence).toContainText('仅用于诊断');
         await expect(runtimeEvidence).toContainText('不构成交易授权');
-        const runtimeEvidenceRequestCount = () => requests.filter((url) => url.includes('/api/validation-operations/runtime-evidence/overview')).length;
+        const runtimeEvidenceRequestCount = () =>
+            requests.filter((url) =>
+                url.includes('/api/validation-operations/runtime-evidence/overview'),
+            ).length;
         await expect.poll(runtimeEvidenceRequestCount).toBeGreaterThan(0);
         const requestsBeforeRefresh = runtimeEvidenceRequestCount();
-        await page.getByTestId('validation-operations-runtime-evidence-card').getByRole('button', {name: '刷新总览'}).click();
+        await page
+            .getByTestId('validation-operations-runtime-evidence-card')
+            .getByRole('button', {name: '刷新总览'})
+            .click();
         await expect.poll(runtimeEvidenceRequestCount).toBe(requestsBeforeRefresh + 1);
 
         const operationsSummary = page.getByTestId('validation-operations-top-summary');
         await expect(operationsSummary).toBeVisible();
         await expect(operationsSummary).toContainText('影子验证工作流');
-        await expect(operationsSummary).toContainText('评估制品预览');
-        await expect(operationsSummary).toContainText('READY_FOR_OPERATOR_REVIEW（可人工复核，非交易授权）');
+        await expect(operationsSummary).toContainText(
+            'Python Evaluation Artifact Preview（No-file baseline）',
+        );
+        await expect(operationsSummary).toContainText(
+            'READY_FOR_OPERATOR_REVIEW（可人工复核，非交易授权）',
+        );
         await expect(operationsSummary).toContainText('DIVERGED（证据偏离）');
         await expect(operationsSummary).toContainText('NO_ARTIFACT_SOURCE_CONFIGURED');
 
@@ -1390,7 +1610,9 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(operationsQueue).toBeVisible();
         await expect(operationsQueue).toContainText('派生操作员条目');
         await expect(operationsQueue).toContainText('复核条目');
-        await expect(operationsQueue).toContainText('ACKNOWLEDGE_RECOMMENDED（建议人工确认，非自动处置）');
+        await expect(operationsQueue).toContainText(
+            'ACKNOWLEDGE_RECOMMENDED（建议人工确认，非自动处置）',
+        );
 
         const operationsBoundary = page.getByTestId('validation-operations-boundary-strip');
         await expect(operationsBoundary).toBeVisible();
@@ -1399,12 +1621,22 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(operationsBoundary).toContainText('Python ML 未就绪');
         await expect(operationsBoundary).toContainText('AI / DH 运行时未集成');
 
+        await selectWorkspaceTab(page, '高级诊断');
         const detailSections = page.getByTestId('validation-operations-detail-sections');
         await expect(detailSections).toBeVisible();
         await expect(detailSections).toContainText('Detail sections / 只读详情区');
-        await expect(view.getByRole('button', {name: /上传|导入|执行 Python|upload|import|start|stop|trade|approve|reject|acknowledge|escalate|closeout/i})).toHaveCount(0);
-        await expect(view.locator('input[placeholder*="artifact"], input[placeholder*="path"], input[aria-label*="artifact"], input[aria-label*="path"]')).toHaveCount(0);
+        await expect(
+            view.getByRole('button', {
+                name: /上传|导入|执行 Python|upload|import|start|stop|trade|approve|reject|acknowledge|escalate|closeout/i,
+            }),
+        ).toHaveCount(0);
+        await expect(
+            view.locator(
+                'input[placeholder*="artifact"], input[placeholder*="path"], input[aria-label*="artifact"], input[aria-label*="path"]',
+            ),
+        ).toHaveCount(0);
 
+        await expandDiagnosticSection(page, '策略验证 / 影子工作台');
         const workbench = page.getByTestId('strategy-validation-shadow-workbench');
         await expect(workbench).toBeVisible();
         await expect(view).toContainText('策略验证 / 影子工作台');
@@ -1427,17 +1659,27 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(workbench).toContainText('DIVERGED（证据偏离）');
         await expect(workbench).toContainText('HIGH（高偏离）');
         await expect(workbench).toContainText('LIVE DISABLED（LIVE 关闭）');
-        await expect(workbench).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
+        await expect(workbench).toContainText(
+            'Real provider NOT IMPLEMENTED（真实 provider 未实现）',
+        );
         await expect(workbench).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
-        await expect(workbench).toContainText('Validation is not trading authorization（验证不是交易授权）');
+        await expect(workbench).toContainText(
+            'Validation is not trading authorization（验证不是交易授权）',
+        );
         await expect(workbench).toContainText('Shadow Run is diagnostic only（Shadow Run 仅诊断）');
-        await expect(workbench).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
+        await expect(workbench).toContainText(
+            'AI/DH runtime not integrated（AI/DH runtime 未集成）',
+        );
         await expect(workbench).toContainText('trace-strategy-validation-smoke');
         await expect(workbench).toContainText('trace-drilldown-smoke');
         await expect(workbench).toContainText('REVIEW_SHADOW_DRILLDOWN');
         await expect(workbench).toContainText('CHECK_DIVERGENCE');
         await expect(workbench).toContainText('fixture-checksum-drilldown');
 
+        await expandDiagnosticSection(
+            page,
+            '影子验证工作流总览（Shadow Validation Workflow Overview）',
+        );
         const workflow = page.getByTestId('shadow-validation-workflow-panel');
         await expect(workflow).toBeVisible();
         await expect(view).toContainText('Shadow Validation Workflow Overview');
@@ -1456,12 +1698,19 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(workflow).toContainText('REVIEW_WORKFLOW_EVIDENCE');
         await expect(workflow).toContainText('trace-shadow-validation-workflow-smoke');
         await expect(workflow).toContainText('LIVE DISABLED（LIVE 关闭）');
-        await expect(workflow).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
+        await expect(workflow).toContainText(
+            'Real provider NOT IMPLEMENTED（真实 provider 未实现）',
+        );
         await expect(workflow).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
-        await expect(workflow).toContainText('Validation workflow is diagnostic only（验证 workflow 仅诊断）');
+        await expect(workflow).toContainText(
+            'Validation workflow is diagnostic only（验证 workflow 仅诊断）',
+        );
         await expect(workflow).toContainText('Not trading authorization（非交易授权）');
-        await expect(workflow).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
+        await expect(workflow).toContainText(
+            'AI/DH runtime not integrated（AI/DH runtime 未集成）',
+        );
 
+        await expandDiagnosticSection(page, '一致性证据总览（Consistency Evidence Overview）');
         const consistencyEvidence = page.getByTestId('consistency-evidence-overview-panel');
         await expect(consistencyEvidence).toBeVisible();
         await expect(view).toContainText('Consistency Evidence Overview');
@@ -1484,17 +1733,37 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(consistencyEvidence).toContainText('false（raw metricDelta 不应暴露）');
         await expect(consistencyEvidence).toContainText('INSPECT_CONSISTENCY_EVIDENCE');
         await expect(consistencyEvidence).toContainText('trace-consistency-evidence-smoke');
-        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('LOCAL_DB_SHADOW_CONSISTENCY_REPORTS');
-        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('可用性：AVAILABLE');
-        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('新鲜度：FRESH（新鲜）');
-        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('最近计算时间：');
+        await expect(
+            consistencyEvidence.getByTestId('consistency-evidence-metadata'),
+        ).toContainText('LOCAL_DB_SHADOW_CONSISTENCY_REPORTS');
+        await expect(
+            consistencyEvidence.getByTestId('consistency-evidence-metadata'),
+        ).toContainText('可用性：AVAILABLE');
+        await expect(
+            consistencyEvidence.getByTestId('consistency-evidence-metadata'),
+        ).toContainText('新鲜度：FRESH（新鲜）');
+        await expect(
+            consistencyEvidence.getByTestId('consistency-evidence-metadata'),
+        ).toContainText('最近计算时间：');
         await expect(consistencyEvidence).toContainText('LIVE DISABLED（LIVE 关闭）');
-        await expect(consistencyEvidence).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
-        await expect(consistencyEvidence).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
-        await expect(consistencyEvidence).toContainText('Consistency evidence is diagnostic only（一致性证据仅诊断）');
+        await expect(consistencyEvidence).toContainText(
+            'Real provider NOT IMPLEMENTED（真实 provider 未实现）',
+        );
+        await expect(consistencyEvidence).toContainText(
+            'Private trading NOT IMPLEMENTED（私有交易未实现）',
+        );
+        await expect(consistencyEvidence).toContainText(
+            'Consistency evidence is diagnostic only（一致性证据仅诊断）',
+        );
         await expect(consistencyEvidence).toContainText('Not trading authorization（非交易授权）');
-        await expect(consistencyEvidence).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
+        await expect(consistencyEvidence).toContainText(
+            'AI/DH runtime not integrated（AI/DH runtime 未集成）',
+        );
 
+        await expandDiagnosticSection(
+            page,
+            '事件回放复核总览（Incident / Replay Review Overview）',
+        );
         const incidentReplayReview = page.getByTestId('incident-replay-review-overview-panel');
         await expect(incidentReplayReview).toBeVisible();
         await expect(view).toContainText('Incident / Replay Review Overview');
@@ -1505,29 +1774,59 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(incidentReplayReview).toContainText('closedRecommendationCount');
         await expect(incidentReplayReview).toContainText('blockedCount');
         await expect(incidentReplayReview).toContainText('latestReviewItem.reviewState');
-        await expect(incidentReplayReview).toContainText('ESCALATED_RECOMMENDATION（建议人工升级复核）');
+        await expect(incidentReplayReview).toContainText(
+            'ESCALATED_RECOMMENDATION（建议人工升级复核）',
+        );
         await expect(incidentReplayReview).toContainText('latestReviewItem.reviewDecision');
-        await expect(incidentReplayReview).toContainText('ESCALATE_RECOMMENDED（建议人工升级复核，非系统已升级）');
-        await expect(incidentReplayReview).toContainText('ACKNOWLEDGE_RECOMMENDED（建议人工确认，非自动处置）');
-        await expect(incidentReplayReview).toContainText('CLOSEOUT_RECOMMENDED（建议形成诊断闭环，非真实关闭）');
+        await expect(incidentReplayReview).toContainText(
+            'ESCALATE_RECOMMENDED（建议人工升级复核，非系统已升级）',
+        );
+        await expect(incidentReplayReview).toContainText(
+            'ACKNOWLEDGE_RECOMMENDED（建议人工确认，非自动处置）',
+        );
+        await expect(incidentReplayReview).toContainText(
+            'CLOSEOUT_RECOMMENDED（建议形成诊断闭环，非真实关闭）',
+        );
         await expect(incidentReplayReview).toContainText('CRITICAL（严重诊断优先级）');
         await expect(incidentReplayReview).toContainText('HIGH（高诊断优先级）');
         await expect(incidentReplayReview).toContainText('STALE（证据过期）');
         await expect(incidentReplayReview).toContainText('Review summaries');
         await expect(incidentReplayReview).toContainText('REVIEW_INCIDENT_REPLAY_WORKFLOW');
         await expect(incidentReplayReview).toContainText('trace-incident-replay-review-smoke');
-        await expect(incidentReplayReview).toContainText('trace-incident-replay-review-overview-smoke');
-        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('LOCAL_DB_INCIDENT_REPLAY_REVIEW');
-        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('可用性：AVAILABLE');
-        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('新鲜度：FRESH（新鲜）');
-        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('最近计算时间：');
+        await expect(incidentReplayReview).toContainText(
+            'trace-incident-replay-review-overview-smoke',
+        );
+        await expect(
+            incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata'),
+        ).toContainText('LOCAL_DB_INCIDENT_REPLAY_REVIEW');
+        await expect(
+            incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata'),
+        ).toContainText('可用性：AVAILABLE');
+        await expect(
+            incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata'),
+        ).toContainText('新鲜度：FRESH（新鲜）');
+        await expect(
+            incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata'),
+        ).toContainText('最近计算时间：');
         await expect(incidentReplayReview).toContainText('LIVE DISABLED（LIVE 关闭）');
-        await expect(incidentReplayReview).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
-        await expect(incidentReplayReview).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
-        await expect(incidentReplayReview).toContainText('Incident / Replay review is diagnostic only（Incident / Replay review 仅诊断）');
+        await expect(incidentReplayReview).toContainText(
+            'Real provider NOT IMPLEMENTED（真实 provider 未实现）',
+        );
+        await expect(incidentReplayReview).toContainText(
+            'Private trading NOT IMPLEMENTED（私有交易未实现）',
+        );
+        await expect(incidentReplayReview).toContainText(
+            'Incident / Replay review is diagnostic only（Incident / Replay review 仅诊断）',
+        );
         await expect(incidentReplayReview).toContainText('Not trading authorization（非交易授权）');
-        await expect(incidentReplayReview).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
+        await expect(incidentReplayReview).toContainText(
+            'AI/DH runtime not integrated（AI/DH runtime 未集成）',
+        );
 
+        await expandDiagnosticSection(
+            page,
+            'Python Evaluation Artifact Preview（No-file baseline）',
+        );
         const artifactPreview = page.getByTestId('evaluation-artifact-preview-overview-panel');
         await expect(artifactPreview).toBeVisible();
         await expect(view).toContainText('Python Evaluation Artifact Preview');
@@ -1547,27 +1846,53 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(artifactPreview).toContainText('false（Python ML ready NO）');
         await expect(artifactPreview).toContainText('pythonLiveExecutionReady');
         await expect(artifactPreview).toContainText('false（Python live execution ready NO）');
-        await expect(artifactPreview.getByTestId('evaluation-artifact-preview-evidence-metadata')).toContainText('LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW');
-        await expect(artifactPreview.getByTestId('evaluation-artifact-preview-evidence-metadata')).toContainText('可用性：UNAVAILABLE');
-        await expect(artifactPreview.getByTestId('evaluation-artifact-preview-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
-        await expect(artifactPreview.getByTestId('evaluation-artifact-preview-evidence-metadata')).toContainText('最近计算时间：未提供');
+        await expect(
+            artifactPreview.getByTestId('evaluation-artifact-preview-evidence-metadata'),
+        ).toContainText('LOCAL_NO_FILE_EVALUATION_ARTIFACT_PREVIEW');
+        await expect(
+            artifactPreview.getByTestId('evaluation-artifact-preview-evidence-metadata'),
+        ).toContainText('可用性：UNAVAILABLE');
+        await expect(
+            artifactPreview.getByTestId('evaluation-artifact-preview-evidence-metadata'),
+        ).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
+        await expect(
+            artifactPreview.getByTestId('evaluation-artifact-preview-evidence-metadata'),
+        ).toContainText('最近计算时间：未提供');
         await expect(artifactPreview).toContainText('LIVE DISABLED（LIVE 关闭）');
-        await expect(artifactPreview).toContainText('Real provider NOT IMPLEMENTED（真实 provider 未实现）');
-        await expect(artifactPreview).toContainText('Private trading NOT IMPLEMENTED（私有交易未实现）');
-        await expect(artifactPreview).toContainText('Python artifact preview is diagnostic only（Python artifact preview 仅诊断）');
+        await expect(artifactPreview).toContainText(
+            'Real provider NOT IMPLEMENTED（真实 provider 未实现）',
+        );
+        await expect(artifactPreview).toContainText(
+            'Private trading NOT IMPLEMENTED（私有交易未实现）',
+        );
+        await expect(artifactPreview).toContainText(
+            'Python artifact preview is diagnostic only（Python artifact preview 仅诊断）',
+        );
         await expect(artifactPreview).toContainText('Not trading authorization（非交易授权）');
         await expect(artifactPreview).toContainText('Python ML ready NO（Python ML ready 否）');
-        await expect(artifactPreview).toContainText('Python live execution ready NO（Python live execution ready 否）');
-        await expect(artifactPreview).toContainText('AI/DH runtime not integrated（AI/DH runtime 未集成）');
-        await expect(artifactPreview).toContainText('trace-evaluation-artifact-preview-overview-smoke');
-        await expect(artifactPreview.getByRole('button', {name: /上传|导入|执行|upload|import/i})).toHaveCount(0);
+        await expect(artifactPreview).toContainText(
+            'Python live execution ready NO（Python live execution ready 否）',
+        );
+        await expect(artifactPreview).toContainText(
+            'AI/DH runtime not integrated（AI/DH runtime 未集成）',
+        );
+        await expect(artifactPreview).toContainText(
+            'trace-evaluation-artifact-preview-overview-smoke',
+        );
+        await expect(
+            artifactPreview.getByRole('button', {name: /上传|导入|执行|upload|import/i}),
+        ).toHaveCount(0);
         await expect(artifactPreview.locator('input')).toHaveCount(0);
 
+        await expandDiagnosticSection(page, '状态解释');
         await expect(view).toContainText('状态解释');
         await expect(view).toContainText('VALID_FOR_BINDING_PREVIEW');
         await expect(view).toContainText('UNKNOWN / NOT_AVAILABLE / NOT_IMPLEMENTED / BLOCKED_*');
+        await expandDiagnosticSection(page, '生命周期追溯链');
         await expect(view).toContainText('生命周期追溯链');
-        await expect(view).toContainText('strategyVersion -> dataset -> evaluation -> publish -> paper -> shadow');
+        await expect(view).toContainText(
+            'strategyVersion -> dataset -> evaluation -> publish -> paper -> shadow',
+        );
         await expect(view).toContainText('策略版本');
         await expect(view).toContainText('数据集');
         await expect(view).toContainText('评估门禁');
@@ -1579,6 +1904,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('NO_ARTIFACT_SOURCE_CONFIGURED（未配置 artifact source）');
         await expect(view).toContainText('trace-evaluation-artifact-preview-overview-smoke');
 
+        await expandDiagnosticSection(page, 'Evidence Matrix / 证据矩阵');
         await expect(view).toContainText('Evidence Matrix / 证据矩阵');
         await expect(view).toContainText('requiredEvidence');
         await expect(view).toContainText('missingEvidence');
@@ -1586,9 +1912,14 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('warnings');
         await expect(view).toContainText('nextSteps');
 
+        await selectResultTab(page, '评估准入');
         await expect(view).toContainText('READY_FOR_SHADOW_REVIEW（可进入 Shadow 评审）');
+        await selectResultTab(page, '模拟与影子对照');
         await expect(view).toContainText('READY_FOR_COMPARISON（可查看只读对照）');
-        await expect(view).toContainText('PREVIEW_BLOCKED_SHADOW_FACTS_NOT_AVAILABLE（Shadow facts 不可用）');
+        await selectResultTab(page, '无副作用预览');
+        await expect(view).toContainText(
+            'PREVIEW_BLOCKED_SHADOW_FACTS_NOT_AVAILABLE（Shadow facts 不可用）',
+        );
         await expect(view).toContainText('NOT_IMPLEMENTED（能力未实现）');
         await expect(view).toContainText('PREVIEW_BLOCKED_SHADOW_FACTS_NOT_AVAILABLE');
         await expect(view).toContainText('Provide approved Shadow read-only facts');
@@ -1605,6 +1936,21 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(view).toContainText('paper');
         await expect(view).toContainText('shadow');
 
+        await expandDiagnosticSection(page, '策略验证总览');
+        await expandDiagnosticSection(page, '事件 / 回放总览');
+        await selectResultTab(page, '发布准入预览');
+        // 页面拆分后仍检查已挂载但隐藏的面板，保留原整页禁止入口与输入项的覆盖范围。
+        await expect(
+            view.getByRole('button', {
+                name: /上传|导入|执行 Python|upload|import|start|stop|trade|approve|reject|acknowledge|escalate|closeout/i,
+                includeHidden: true,
+            }),
+        ).toHaveCount(0);
+        await expect(
+            view.locator(
+                'input[placeholder*="artifact"], input[placeholder*="path"], input[aria-label*="artifact"], input[aria-label*="path"]',
+            ),
+        ).toHaveCount(0);
         await expectNoForbiddenCopy(page);
         await expectNoSuccessTagForStatuses(page, [
             'NOT_IMPLEMENTED',
@@ -1626,20 +1972,48 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
             'CRITICAL',
         ]);
         expectNoForbiddenRequests(requests);
-        expect(requests.some((url) => url.includes('/api/strategy-validation/overview'))).toBeTruthy();
+        expect(
+            requests.some((url) => url.includes('/api/strategy-validation/overview')),
+        ).toBeTruthy();
         expect(requests.some((url) => url.includes('/api/shadow-runs/overview'))).toBeTruthy();
-        expect(requests.some((url) => url.includes('/api/paper-shadow/consistency/drilldown'))).toBeTruthy();
-        expect(requests.some((url) => url.includes('/api/shadow-validation/workflow/overview'))).toBeTruthy();
-        await expect(page.getByTestId('read-model-evidence-metadata')).toContainText('LOCAL_DB_VALIDATION_WORKFLOW');
-        await expect(page.getByTestId('read-model-evidence-metadata')).toContainText('可用性：AVAILABLE');
-        await expect(page.getByTestId('read-model-evidence-metadata')).toContainText('新鲜度：FRESH（新鲜）');
-        expect(requests.some((url) => url.includes('/api/paper-shadow/consistency/evidence/overview'))).toBeTruthy();
-        expect(requests.some((url) => url.includes('/api/incidents/replay/review/overview'))).toBeTruthy();
-        expect(requests.some((url) => url.includes('/api/strategy-validation/evaluation-artifacts/preview/overview'))).toBeTruthy();
-        expect(requests.some((url) => url.includes('/api/strategies/evaluation-gate'))).toBeTruthy();
-        expect(requests.some((url) => url.includes('/api/strategies/paper-shadow/comparison'))).toBeTruthy();
-        expect(requests.some((url) => url.includes('/api/strategies/shadow-live/preview'))).toBeTruthy();
-        expect(requests.some((url) => url.includes('/api/research/evaluation-artifacts'))).toBeFalsy();
+        expect(
+            requests.some((url) => url.includes('/api/paper-shadow/consistency/drilldown')),
+        ).toBeTruthy();
+        expect(
+            requests.some((url) => url.includes('/api/shadow-validation/workflow/overview')),
+        ).toBeTruthy();
+        await expect(page.getByTestId('read-model-evidence-metadata')).toContainText(
+            'LOCAL_DB_VALIDATION_WORKFLOW',
+        );
+        await expect(page.getByTestId('read-model-evidence-metadata')).toContainText(
+            '可用性：AVAILABLE',
+        );
+        await expect(page.getByTestId('read-model-evidence-metadata')).toContainText(
+            '新鲜度：FRESH（新鲜）',
+        );
+        expect(
+            requests.some((url) => url.includes('/api/paper-shadow/consistency/evidence/overview')),
+        ).toBeTruthy();
+        expect(
+            requests.some((url) => url.includes('/api/incidents/replay/review/overview')),
+        ).toBeTruthy();
+        expect(
+            requests.some((url) =>
+                url.includes('/api/strategy-validation/evaluation-artifacts/preview/overview'),
+            ),
+        ).toBeTruthy();
+        expect(
+            requests.some((url) => url.includes('/api/strategies/evaluation-gate')),
+        ).toBeTruthy();
+        expect(
+            requests.some((url) => url.includes('/api/strategies/paper-shadow/comparison')),
+        ).toBeTruthy();
+        expect(
+            requests.some((url) => url.includes('/api/strategies/shadow-live/preview')),
+        ).toBeTruthy();
+        expect(
+            requests.some((url) => url.includes('/api/research/evaluation-artifacts')),
+        ).toBeFalsy();
     });
 
     test('UNKNOWN / NOT_AVAILABLE 不显示为成功态', async ({page}) => {
@@ -1652,10 +2026,18 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
                 comparable: false,
                 requiredEvidence: [],
                 missingEvidence: [
-                    {code: 'PAPER_EVIDENCE', status: 'NOT_AVAILABLE', message: 'Paper evidence is not available.'},
+                    {
+                        code: 'PAPER_EVIDENCE',
+                        status: 'NOT_AVAILABLE',
+                        message: 'Paper evidence is not available.',
+                    },
                 ],
                 blockers: [
-                    {code: 'PAPER_EVIDENCE_MISSING', severity: 'BLOCKER', message: 'Paper evidence is missing.'},
+                    {
+                        code: 'PAPER_EVIDENCE_MISSING',
+                        severity: 'BLOCKER',
+                        message: 'Paper evidence is missing.',
+                    },
                 ],
             },
             preview: {
@@ -1668,7 +2050,11 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
                     {code: 'TRACE_CHAIN', status: 'UNKNOWN', message: 'Trace chain is unknown.'},
                 ],
                 blockers: [
-                    {code: 'UNKNOWN_INPUT_FACTS', severity: 'BLOCKER', message: 'Input facts are unknown.'},
+                    {
+                        code: 'UNKNOWN_INPUT_FACTS',
+                        severity: 'BLOCKER',
+                        message: 'Input facts are unknown.',
+                    },
                 ],
             },
             consistencyEvidence: {
@@ -1708,40 +2094,85 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
                 unknownAvailabilityCount: 5,
                 freshCount: 0,
                 unknownFreshnessCount: 5,
-                sources: VALIDATION_OPERATIONS_RUNTIME_EVIDENCE_OVERVIEW_FIXTURE.sources.map((source) => ({
-                    ...source,
-                    evidenceMetadata: {
-                        ...source.evidenceMetadata,
-                        availability: 'UNKNOWN',
-                        lastCalculatedAt: null,
-                        freshnessStatus: 'UNKNOWN',
-                        ageSeconds: null,
-                        staleReason: 'INCOMPLETE_OR_UNKNOWN_EVIDENCE_SOURCES',
-                    },
-                })),
+                sources: VALIDATION_OPERATIONS_RUNTIME_EVIDENCE_OVERVIEW_FIXTURE.sources.map(
+                    (source) => ({
+                        ...source,
+                        evidenceMetadata: {
+                            ...source.evidenceMetadata,
+                            availability: 'UNKNOWN',
+                            lastCalculatedAt: null,
+                            freshnessStatus: 'UNKNOWN',
+                            ageSeconds: null,
+                            staleReason: 'INCOMPLETE_OR_UNKNOWN_EVIDENCE_SOURCES',
+                        },
+                    }),
+                ),
             },
         });
 
         await page.goto(validationUrl());
 
+        // 所有只读面板都需经过真实导航挂载，避免负向状态断言因未渲染内容而空通过。
+        for (const name of ['评估准入', '模拟与影子对照', '无副作用预览', '发布准入预览']) {
+            await selectResultTab(page, name);
+        }
+        await selectWorkspaceTab(page, '证据总览');
+        for (const name of [
+            '策略验证总览',
+            '影子验证工作流总览（Shadow Validation Workflow Overview）',
+            '一致性证据总览（Consistency Evidence Overview）',
+            'Python Evaluation Artifact Preview（No-file baseline）',
+            '事件回放复核总览（Incident / Replay Review Overview）',
+            '事件 / 回放总览',
+            '策略验证 / 影子工作台',
+            '生命周期追溯链',
+            'Evidence Matrix / 证据矩阵',
+            '状态解释',
+        ]) {
+            await expandDiagnosticSection(page, name);
+        }
         const view = page.getByTestId('strategy-validation-page');
         await expect(view).toContainText('UNKNOWN（未知）');
         await expect(view).toContainText('NOT_AVAILABLE（不可用）');
         await expect(view).toContainText('查询结果不是通过态');
         await expect(view).toContainText('Resolve missing dataset facts before review.');
         await expect(view).not.toContainText('READY_FOR_SHADOW_REVIEW（可进入 Shadow 评审）');
-        await expect(view).not.toContainText('READY_FOR_NO_SIDE_EFFECT_PREVIEW（可生成无副作用预览）');
+        await expect(view).not.toContainText(
+            'READY_FOR_NO_SIDE_EFFECT_PREVIEW（可生成无副作用预览）',
+        );
+        await expandDiagnosticSection(page, '一致性证据总览（Consistency Evidence Overview）');
         const consistencyEvidence = page.getByTestId('consistency-evidence-overview-panel');
-        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('可用性：UNAVAILABLE');
-        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
-        await expect(consistencyEvidence.getByTestId('consistency-evidence-metadata')).toContainText('最近计算时间：未提供');
+        await expect(
+            consistencyEvidence.getByTestId('consistency-evidence-metadata'),
+        ).toContainText('可用性：UNAVAILABLE');
+        await expect(
+            consistencyEvidence.getByTestId('consistency-evidence-metadata'),
+        ).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
+        await expect(
+            consistencyEvidence.getByTestId('consistency-evidence-metadata'),
+        ).toContainText('最近计算时间：未提供');
+        await expandDiagnosticSection(
+            page,
+            '事件回放复核总览（Incident / Replay Review Overview）',
+        );
         const incidentReplayReview = page.getByTestId('incident-replay-review-overview-panel');
-        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('可用性：PARTIAL');
-        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
-        await expect(incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata')).toContainText('最近计算时间：未提供');
+        await expect(
+            incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata'),
+        ).toContainText('可用性：PARTIAL');
+        await expect(
+            incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata'),
+        ).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
+        await expect(
+            incidentReplayReview.getByTestId('incident-replay-review-evidence-metadata'),
+        ).toContainText('最近计算时间：未提供');
+        await selectWorkspaceTab(page, '证据总览');
         const runtimeEvidence = page.getByTestId('validation-operations-runtime-evidence-panel');
-        await expect(runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata')).toContainText('可用性：UNKNOWN');
-        await expect(runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata')).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
+        await expect(
+            runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata'),
+        ).toContainText('可用性：UNKNOWN');
+        await expect(
+            runtimeEvidence.getByTestId('validation-operations-runtime-evidence-metadata'),
+        ).toContainText('新鲜度：UNKNOWN（无法判断新鲜度）');
         await expect(runtimeEvidence).toContainText('暂无权威事实时间');
 
         await expectNoForbiddenCopy(page);
@@ -1753,25 +2184,32 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await seedAuthAndGateQStubs(page, {releaseAdmissionDelayMs: 10_000});
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toBeVisible();
         await expect(panel.locator('.ant-skeleton')).toBeVisible();
         await expect(panel.getByRole('button', {name: /刷新预览/})).toHaveClass(/ant-btn-loading/);
-        await expect(panel.getByRole('button', {name: /创建|启动|执行|下单|重绑|上传/i})).toHaveCount(0);
+        await expect(
+            panel.getByRole('button', {name: /创建|启动|执行|下单|重绑|上传/i}),
+        ).toHaveCount(0);
     });
 
     test('Shadow 准入预览区分 publish not found', async ({page}) => {
         await seedAuthAndGateQStubs(page, {releaseAdmissionStatus: 404});
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('未找到记录');
         await expect(panel).toContainText('记录不存在或已不可用，请刷新列表确认。');
         await expect(panel).toContainText('NOT_FOUND');
-        await expect(panel.getByRole('button', {name: /创建 Shadow Run|创建新的 Shadow Run|重试同一创建命令/}))
-            .toHaveCount(0);
+        await expect(
+            panel.getByRole('button', {
+                name: /创建 Shadow Run|创建新的 Shadow Run|重试同一创建命令/,
+            }),
+        ).toHaveCount(0);
     });
 
     test('Shadow 准入预览 fail-closed 展示 legacy unbound', async ({page}) => {
@@ -1788,6 +2226,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         });
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('历史未绑定');
@@ -1807,6 +2246,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         });
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('制品验证');
@@ -1825,6 +2265,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         });
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('准入已阻断');
@@ -1837,6 +2278,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         const requests = await seedAuthAndGateQStubs(page);
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('可创建未启动的 Shadow Run');
@@ -1850,24 +2292,49 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         const eligibleStatus = panel.locator('span[title="可进入 Shadow"]');
         await expect(eligibleStatus).toHaveAttribute('style', /--nq-success/);
         await expect(eligibleStatus).not.toHaveAttribute('style', /market-(up|down)/);
-        expect(requests.some((url) => url.includes('/api/strategy-releases/pub-gateq-5/shadow-admission-preview'))).toBeTruthy();
+        expect(
+            requests.some((url) =>
+                url.includes('/api/strategy-releases/pub-gateq-5/shadow-admission-preview'),
+            ),
+        ).toBeTruthy();
         expectNoForbiddenRequests(requests);
     });
 
-    test('Shadow 创建确认保持同命令 retry，并为显式 rerun 生成新 identity', async ({page}) => {
+    test('Shadow 未知创建刷新后先 GET，确认重试保留原命令，显式 rerun 才使用新 identity', async ({
+        page,
+    }) => {
         await seedAuthAndGateQStubs(page);
         const commandKeys: string[] = [];
+        const queryKeys: string[] = [];
         let responseIndex = 0;
+        await page.setViewportSize({width: 1536, height: 1024});
+        await page.route(
+            '**/api/strategy-releases/*/shadow-run-creation-result',
+            async (route: Route) => {
+                expect(route.request().method()).toBe('GET');
+                queryKeys.push(route.request().headers()['idempotency-key'] ?? '');
+                return route.fulfill({
+                    status: 404,
+                    json: {
+                        status: 404,
+                        code: 'NOT_FOUND',
+                        message: 'result not found in current snapshot',
+                    },
+                });
+            },
+        );
         await page.route('**/api/strategy-releases/*/shadow-runs', async (route: Route) => {
             expect(route.request().method()).toBe('POST');
             commandKeys.push(route.request().headers()['idempotency-key'] ?? '');
             responseIndex++;
+            if (responseIndex === 1) return route.abort('failed');
             return route.fulfill({
                 status: 200,
                 json: {
-                    shadowRunId: responseIndex <= 2
-                        ? '22222222-2222-4222-8222-222222222222'
-                        : '33333333-3333-4333-8333-333333333333',
+                    shadowRunId:
+                        responseIndex <= 2
+                            ? '22222222-2222-4222-8222-222222222222'
+                            : '33333333-3333-4333-8333-333333333333',
                     publishRecordId: 'pub-gateq-5',
                     artifactDigest: 'a'.repeat(64),
                     bindingMode: 'RELEASE_BOUND',
@@ -1879,6 +2346,7 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         });
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
         const panel = page.getByTestId('strategy-release-admission-preview');
         await panel.getByRole('button', {name: '创建 Shadow Run'}).click();
         const createModal = page.getByRole('dialog', {name: '确认创建 Shadow Run'});
@@ -1888,18 +2356,57 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         await expect(createModal).toContainText('不构成交易授权');
         await createModal.getByRole('button', {name: '确认创建'}).click();
 
+        await expect(panel.getByTestId('shadow-creation-recovery')).toContainText(
+            '原创建结果待确认',
+        );
+        await expect(panel.getByRole('button', {name: '重试同一创建命令'})).toBeDisabled();
+        await expect(panel.getByRole('button', {name: '创建 Shadow Run'})).toBeDisabled();
+        const stored = await page.evaluate(() =>
+            JSON.parse(localStorage.getItem('nq:shadow-creation:v1:1') ?? 'null'),
+        );
+        expect(stored).toMatchObject({
+            ownerUserId: 1,
+            publishRecordId: 'pub-gateq-5',
+            commandIdentity: commandKeys[0],
+            phase: 'UNKNOWN',
+        });
+        await page.reload();
+        await selectResultTab(page, '发布准入预览');
+        await expect(panel.getByTestId('shadow-creation-recovery')).toContainText(commandKeys[0]);
+        expect(commandKeys).toHaveLength(1);
+        expect(queryKeys).toHaveLength(0);
+        if (process.env.NQ_SHADOW_RECOVERY_UI_EVIDENCE)
+            await page.screenshot({
+                path: `${process.env.NQ_SHADOW_RECOVERY_UI_EVIDENCE}/unknown-reloaded-desktop.png`,
+            });
+        await panel.getByRole('button', {name: '查询原创建结果'}).click();
+        await expect(panel.getByTestId('shadow-creation-recovery')).toContainText(
+            '不能据此认定原创建失败',
+        );
+        expect(queryKeys).toEqual([commandKeys[0]]);
+        await expect(panel.getByRole('button', {name: '重试同一创建命令'})).toBeEnabled();
+        await panel.getByRole('button', {name: '重试同一创建命令'}).click();
+        await page
+            .getByRole('dialog', {name: '重新确认同一创建命令'})
+            .getByRole('button', {name: '确认重试'})
+            .click();
+        await expect(panel.getByTestId('shadow-materialization-notice')).toContainText(
+            '同一创建命令已安全重放',
+        );
         await expect(panel.getByTestId('shadow-materialization-result')).toContainText('CREATED');
         await expect(panel.getByTestId('shadow-materialization-result')).toContainText(
             '22222222-2222-4222-8222-222222222222',
         );
-        await panel.getByRole('button', {name: '重试同一创建命令'}).click();
-        await page.getByRole('dialog', {name: '重新确认同一创建命令'})
-            .getByRole('button', {name: '确认重试'}).click();
-        await expect(panel.getByTestId('shadow-materialization-notice')).toContainText('同一创建命令已安全重放');
+        await expect(
+            panel.getByTestId('shadow-materialization-result').getByRole('link'),
+        ).toHaveAttribute('href', '/strategies/shadow-runs/22222222-2222-4222-8222-222222222222');
+        await expect(panel.getByTestId('shadow-creation-recovery')).toHaveCount(0);
 
         await panel.getByRole('button', {name: '创建新的 Shadow Run'}).click();
-        await page.getByRole('dialog', {name: '确认创建 Shadow Run'})
-            .getByRole('button', {name: '确认创建'}).click();
+        await page
+            .getByRole('dialog', {name: '确认创建 Shadow Run'})
+            .getByRole('button', {name: '确认创建'})
+            .click();
         await expect(panel.getByTestId('shadow-materialization-result')).toContainText(
             '33333333-3333-4333-8333-333333333333',
         );
@@ -1921,19 +2428,282 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         });
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
         const panel = page.getByTestId('strategy-release-admission-preview');
         await panel.getByRole('button', {name: '创建 Shadow Run'}).click();
-        await page.getByRole('dialog', {name: '确认创建 Shadow Run'})
-            .getByRole('button', {name: '确认创建'}).click();
+        await page
+            .getByRole('dialog', {name: '确认创建 Shadow Run'})
+            .getByRole('button', {name: '确认创建'})
+            .click();
 
-        await expect(panel.getByTestId('shadow-materialization-notice')).toContainText('准入事实已变化');
-        await expect(panel.getByTestId('shadow-materialization-notice')).toContainText('系统不会自动重放操作');
-        await expect.poll(() => requests.filter(
-            (url) => url.includes('/api/strategy-releases/pub-gateq-5/shadow-admission-preview'),
-        ).length).toBeGreaterThan(1);
+        await expect(panel.getByTestId('shadow-materialization-notice')).toContainText(
+            '准入事实已变化',
+        );
+        await expect(panel.getByTestId('shadow-materialization-notice')).toContainText(
+            '系统不会自动重放操作',
+        );
+        await expect
+            .poll(
+                () =>
+                    requests.filter((url) =>
+                        url.includes('/api/strategy-releases/pub-gateq-5/shadow-admission-preview'),
+                    ).length,
+            )
+            .toBeGreaterThan(1);
         await page.waitForTimeout(200);
         expect(postCount).toBe(1);
-        await expect(panel.getByRole('button', {name: '重试同一创建命令'})).toBeVisible();
+        await expect(panel.getByRole('button', {name: '重试同一创建命令'})).toHaveCount(0);
+        await expect(panel.getByRole('button', {name: '创建 Shadow Run'})).toBeEnabled();
+    });
+
+    test('Shadow GET 已确认原创建，即使当前准入阻断也不再 POST', async ({page}) => {
+        await seedAuthAndGateQStubs(page, {
+            releaseAdmissionPreview: {
+                ...RELEASE_ADMISSION_PREVIEW_FIXTURE,
+                admissionDecision: 'BLOCKED',
+            },
+        });
+        const command = 'shadow-materialization-44444444-4444-4444-8444-444444444444';
+        const shadowRunId = '22222222-2222-4222-8222-222222222222';
+        const detailPath = `/strategies/shadow-runs/${shadowRunId}`;
+        const detailReads: string[] = [];
+        // 结果必须进入同一对象的正式详情；无执行快照和报告不伪造已运行证据。
+        await page.route(`**/api/shadow-runs/${shadowRunId}**`, (route) => {
+            expect(route.request().method()).toBe('GET');
+            const path = new URL(route.request().url()).pathname;
+            detailReads.push(path);
+            if (path.endsWith('/events') || path.endsWith('/snapshots'))
+                return route.fulfill({status: 200, json: []});
+            if (path.endsWith('/consistency-report/latest'))
+                return route.fulfill({status: 404, json: {code: 'NOT_FOUND', status: 404}});
+            expect(path).toBe(`/api/shadow-runs/${shadowRunId}`);
+            return route.fulfill({
+                status: 200,
+                json: {
+                    id: shadowRunId,
+                    strategyVersionId: 'sv-gateq-5',
+                    datasetId: '11111111-1111-4111-8111-111111111111',
+                    evaluationId: 'eval-gateq-5',
+                    publishId: 'pub-gateq-5',
+                    paperRunId: 'paper-gateq-5',
+                    status: 'CANCELLED',
+                    windowStart: '2026-10-15T00:00:00Z',
+                    windowEnd: '2026-10-15T01:00:00Z',
+                    authorizationBoundary: 'DIAGNOSTIC_ONLY',
+                    sideEffectFlags: {
+                        noOrderSubmission: true,
+                        noCredentialAccess: true,
+                        noPrivateEndpoint: true,
+                        noLedgerMutation: true,
+                        noAccountMutation: true,
+                        noExternalPrivateIo: true,
+                    },
+                    blockers: [],
+                    warnings: [],
+                    nextSteps: [],
+                    requestId: 'fixture-shadow-result-link',
+                    traceId: 'fixture-shadow-result-link',
+                    createdAt: '2026-10-15T00:00:00Z',
+                    updatedAt: '2026-10-15T00:01:00Z',
+                    startedAt: null,
+                    stoppedAt: null,
+                    completedAt: null,
+                },
+            });
+        });
+        await page.route('**/api/paper-shadow/consistency/drilldown**', (route) =>
+            route.fulfill({status: 404, json: {code: 'NOT_FOUND', status: 404}}),
+        );
+        await page.addInitScript(
+            ({command}) =>
+                localStorage.setItem(
+                    'nq:shadow-creation:v1:1',
+                    JSON.stringify({
+                        ownerUserId: 1,
+                        publishRecordId: 'pub-gateq-5',
+                        commandIdentity: command,
+                        phase: 'SUBMITTING',
+                        recordedAt: Date.now(),
+                    }),
+                ),
+            {command},
+        );
+        const writes: string[] = [];
+        page.on('request', (request) => {
+            if (request.method() === 'POST') writes.push(request.url());
+        });
+        await page.route('**/api/strategy-releases/*/shadow-run-creation-result', (route) => {
+            expect(route.request().headers()['idempotency-key']).toBe(command);
+            return route.fulfill({
+                status: 200,
+                json: {
+                    shadowRunId: '22222222-2222-4222-8222-222222222222',
+                    publishRecordId: 'pub-gateq-5',
+                    artifactDigest: 'a'.repeat(64),
+                    bindingMode: 'RELEASE_BOUND',
+                    creationStatus: 'CREATED',
+                    runStatus: 'CANCELLED',
+                    createdAt: '2026-10-15T00:00:00Z',
+                    updatedAt: '2026-10-15T00:01:00Z',
+                },
+            });
+        });
+        await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await expect(panel.getByTestId('shadow-creation-recovery')).toBeVisible();
+        await panel.getByRole('button', {name: '查询原创建结果'}).click();
+        await expect(panel.getByTestId('shadow-materialization-result')).toContainText('CREATED');
+        await expect(panel.getByTestId('shadow-materialization-result')).toContainText('CANCELLED');
+        await expect(panel.getByTestId('shadow-materialization-notice')).toContainText(
+            '已查询到原创建结果',
+        );
+        await expect(panel.getByTestId('shadow-creation-recovery')).toHaveCount(0);
+        expect(writes).toEqual([]);
+        expect(
+            await page.evaluate(() => localStorage.getItem('nq:shadow-creation:v1:1')),
+        ).toBeNull();
+        await page.setViewportSize({width: 390, height: 950});
+        await expect(page.locator('.app-shell__drawer')).toBeHidden();
+        await panel.getByTestId('shadow-materialization-result').scrollIntoViewIfNeeded();
+        const box = await panel.boundingBox();
+        expect(box?.width).toBeLessThanOrEqual(390);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+            390,
+        );
+        if (process.env.NQ_SHADOW_RECOVERY_UI_EVIDENCE)
+            await page.screenshot({
+                path: `${process.env.NQ_SHADOW_RECOVERY_UI_EVIDENCE}/confirmed-mobile.png`,
+            });
+        const link = panel
+            .getByTestId('shadow-materialization-result')
+            .getByRole('link', {name: shadowRunId, exact: true});
+        await expect(link).toHaveAttribute('href', detailPath);
+        await link.click();
+        await expect(page).toHaveURL(new RegExp(`${detailPath}$`));
+        const detail = page.getByTestId('shadow-run-detail-page');
+        await expect(detail).toBeVisible();
+        await expect(detail).toContainText(shadowRunId);
+        await expect(detail).toContainText('pub-gateq-5');
+        await expect(detail.getByTitle('CANCELLED', {exact: true})).toHaveText('已取消');
+        expect(detailReads).toContain(`/api/shadow-runs/${shadowRunId}`);
+        if (process.env.NQ_SHADOW_RECOVERY_UI_EVIDENCE)
+            await page.screenshot({
+                path: `${process.env.NQ_SHADOW_RECOVERY_UI_EVIDENCE}/result-detail-mobile.png`,
+            });
+        await page.goBack();
+        await expect(page).toHaveURL((url) => url.pathname + url.search === validationUrl());
+        await expect(page.getByTestId('strategy-validation-page')).toBeVisible();
+        await selectResultTab(page, '发布准入预览');
+        expect(writes).toEqual([]);
+    });
+
+    test('Shadow 恢复暂不可用或记录损坏时保持编号并禁用另起创建', async ({page}) => {
+        await seedAuthAndGateQStubs(page);
+        const command = 'shadow-materialization-55555555-5555-4555-8555-555555555555';
+        await page.addInitScript(
+            ({command}) => {
+                if (!localStorage.getItem('nq:shadow-creation:v1:1'))
+                    localStorage.setItem(
+                        'nq:shadow-creation:v1:1',
+                        JSON.stringify({
+                            ownerUserId: 1,
+                            publishRecordId: 'pub-gateq-5',
+                            commandIdentity: command,
+                            phase: 'UNKNOWN',
+                            recordedAt: Date.now(),
+                        }),
+                    );
+            },
+            {command},
+        );
+        await page.route('**/api/strategy-releases/*/shadow-run-creation-result', (route) =>
+            route.fulfill({
+                status: 503,
+                json: {
+                    status: 503,
+                    code: 'SHADOW_CREATION_RESULT_UNAVAILABLE',
+                    message: 'original audit unavailable',
+                },
+            }),
+        );
+        const writes: string[] = [];
+        page.on('request', (request) => {
+            if (request.method() === 'POST') writes.push(request.url());
+        });
+        await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await panel.getByRole('button', {name: '查询原创建结果'}).click();
+        await expect(panel.getByTestId('shadow-creation-recovery')).toContainText(
+            '原创建证据暂无法核实',
+        );
+        await expect(panel.getByRole('button', {name: '重试同一创建命令'})).toBeDisabled();
+        await expect(panel.getByRole('button', {name: '创建 Shadow Run'})).toBeDisabled();
+        expect(
+            await page.evaluate(
+                () =>
+                    JSON.parse(localStorage.getItem('nq:shadow-creation:v1:1') ?? 'null')
+                        .commandIdentity,
+            ),
+        ).toBe(command);
+        await page.evaluate(() => localStorage.setItem('nq:shadow-creation:v1:1', 'malformed'));
+        await page.reload();
+        await selectResultTab(page, '发布准入预览');
+        await expect(panel).toContainText('浏览器无法可靠保存或读取恢复编号');
+        await expect(panel.getByRole('button', {name: '创建 Shadow Run'})).toBeDisabled();
+        expect(await page.evaluate(() => localStorage.getItem('nq:shadow-creation:v1:1'))).toBe(
+            'malformed',
+        );
+        expect(writes).toEqual([]);
+    });
+
+    test('Shadow 待恢复记录只跟随原用户，切换登录主体不消费旧编号', async ({page}) => {
+        await seedAuthAndGateQStubs(page);
+        const command = 'shadow-materialization-66666666-6666-4666-8666-666666666666';
+        await page.addInitScript(
+            ({command}) => {
+                if (!localStorage.getItem('nq:shadow-creation:v1:1'))
+                    localStorage.setItem(
+                        'nq:shadow-creation:v1:1',
+                        JSON.stringify({
+                            ownerUserId: 1,
+                            publishRecordId: 'pub-gateq-5',
+                            commandIdentity: command,
+                            phase: 'UNKNOWN',
+                            recordedAt: Date.now(),
+                        }),
+                    );
+            },
+            {command},
+        );
+        let userId = 1;
+        await page.route('**/api/auth/me', (route) =>
+            route.fulfill({
+                status: 200,
+                json: {userId, username: 'e2e-operator', roles: ['ADMIN'], authenticated: true},
+            }),
+        );
+        const queries: string[] = [];
+        await page.route('**/api/strategy-releases/*/shadow-run-creation-result', (route) => {
+            queries.push(route.request().url());
+            return route.fulfill({status: 404, json: {status: 404, code: 'NOT_FOUND'}});
+        });
+        await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
+        const panel = page.getByTestId('strategy-release-admission-preview');
+        await expect(panel.getByTestId('shadow-creation-recovery')).toContainText(command);
+        userId = 2;
+        await page.reload();
+        await selectResultTab(page, '发布准入预览');
+        await expect(panel.getByTestId('shadow-creation-recovery')).toHaveCount(0);
+        await expect(panel.getByRole('button', {name: '创建 Shadow Run'})).toBeEnabled();
+        expect(queries).toEqual([]);
+        userId = 1;
+        await page.reload();
+        await selectResultTab(page, '发布准入预览');
+        await expect(panel.getByTestId('shadow-creation-recovery')).toContainText(command);
+        expect(queries).toEqual([]);
     });
 
     test('BLOCKED 与 VIEWER 均不展示写入口', async ({page}) => {
@@ -1947,32 +2717,44 @@ test.describe('strategy validation Paper / Shadow comparison view', () => {
         });
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('准入已阻断');
-        await expect(panel.getByRole('button', {name: /创建 Shadow Run|创建新的 Shadow Run|重试同一创建命令/}))
-            .toHaveCount(0);
+        await expect(
+            panel.getByRole('button', {
+                name: /创建 Shadow Run|创建新的 Shadow Run|重试同一创建命令/,
+            }),
+        ).toHaveCount(0);
     });
 
     test('ELIGIBLE 的 VIEWER 仍不展示写入口', async ({page}) => {
         await seedAuthAndGateQStubs(page, {roles: ['VIEWER']});
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('可创建未启动的 Shadow Run');
-        await expect(panel.getByRole('button', {name: /创建 Shadow Run|创建新的 Shadow Run|重试同一创建命令/}))
-            .toHaveCount(0);
+        await expect(
+            panel.getByRole('button', {
+                name: /创建 Shadow Run|创建新的 Shadow Run|重试同一创建命令/,
+            }),
+        ).toHaveCount(0);
     });
 
     test('Shadow 准入预览请求失败时保持不可用', async ({page}) => {
         await seedAuthAndGateQStubs(page, {releaseAdmissionStatus: 500});
 
         await page.goto(validationUrl());
+        await selectResultTab(page, '发布准入预览');
 
         const panel = page.getByTestId('strategy-release-admission-preview');
         await expect(panel).toContainText('服务异常');
         await expect(panel).toContainText('服务暂时无法完成请求');
         await expect(panel).toContainText('INTERNAL_ERROR');
-        await expect(panel.getByRole('button', {name: /创建 Shadow Run|创建新的 Shadow Run|重试同一创建命令/}))
-            .toHaveCount(0);
+        await expect(
+            panel.getByRole('button', {
+                name: /创建 Shadow Run|创建新的 Shadow Run|重试同一创建命令/,
+            }),
+        ).toHaveCount(0);
     });
 });

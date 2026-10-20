@@ -6,7 +6,6 @@ import {
     Button,
     Card,
     Col,
-    Descriptions,
     Drawer,
     Empty,
     Form,
@@ -19,43 +18,64 @@ import {
     Typography,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
+import {useSearchParams} from 'react-router-dom';
 
 import {formatApiError} from '@/api/errors';
 import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {RUN_STATUS_OPTIONS, RUN_TRIGGER_TYPE_OPTIONS} from '@/constants/filter-options';
-import {useRunDetailQuery, useRunListQuery} from '@/features/runs/hooks/useRunListQuery';
+import {useRunListQuery} from '@/features/runs/hooks/useRunListQuery';
 import type {AppApiError} from '@/types/api';
 import {
     defaultStrategyRunListFilters,
-    type StrategyRunDetailItem,
     type StrategyRunListFilters,
     type StrategyRunSummaryItem,
 } from '@/features/runs/types/runs';
-import {containsIgnoreCase, formatDateTime, normalizeOptionalText} from '@/utils/formatters';
+import {formatDateTime, normalizeOptionalText} from '@/utils/formatters';
+
+import {StrategyRunDetails} from '@/features/runs/components/StrategyRunDetails';
 
 type RunRow = StrategyRunSummaryItem;
 
 export function RunsPage() {
     useTranslation('pages');
     const [form] = useLocalizedForm<StrategyRunListFilters>();
-    const [submittedFilters, setSubmittedFilters] = useState<StrategyRunListFilters>(defaultStrategyRunListFilters);
-    const [searchVersion, setSearchVersion] = useState(0);
-    const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+    const [submittedFilters, setSubmittedFilters] = useState<StrategyRunListFilters>(
+        defaultStrategyRunListFilters,
+    );
+    const [searchVersion, setSearchVersion] = useState(1);
+    const [page, setPage] = useState(1);
+    const [params, setParams] = useSearchParams();
+    const [selectedRunId, setSelectedRunId] = useState<string | null>(params.get('runId'));
+    useEffect(() => {
+        setSelectedRunId(params.get('runId'));
+    }, [params]);
     const runsQuery = useRunListQuery(
         {
-            strategyId: submittedFilters.strategyId || undefined,
-            scheduleId: submittedFilters.scheduleId || undefined,
+            ...submittedFilters,
+            limit: 10,
+            offset: (page - 1) * 10,
         },
         searchVersion,
     );
-    const runDetailQuery = useRunDetailQuery(selectedRunId);
+    const urlStrategy = params.get('strategyId') ?? '';
+    const urlSchedule = params.get('scheduleId') ?? '';
+    // 来源计划直接带入正式范围；详情runId变化不能重置用户已提交的筛选。
+    useEffect(() => {
+        if (!urlStrategy && !urlSchedule) return;
+        const next = {
+            ...defaultStrategyRunListFilters,
+            strategyId: urlStrategy,
+            scheduleId: urlSchedule,
+        };
+        form.setFieldsValue(next);
+        setSubmittedFilters(next);
+        setPage(1);
+        setSearchVersion((value) => value + 1);
+    }, [urlStrategy, urlSchedule, form]);
     const hasSearched = searchVersion > 0;
 
-    const visibleItems = (runsQuery.data ?? []).filter((item) => (
-        containsIgnoreCase(item.status, submittedFilters.status)
-        && containsIgnoreCase(item.triggerType, submittedFilters.triggerType)
-    ));
+    const visibleItems = runsQuery.data?.items ?? [];
 
     const runColumns: ColumnsType<RunRow> = [
         {
@@ -77,13 +97,16 @@ export function RunsPage() {
             dataIndex: 'scheduleJobId',
             key: 'scheduleJobId',
             width: 220,
-            render: (value: string | null) => value ? <Typography.Text copyable>{value}</Typography.Text> : '-',
+            render: (value: string | null) =>
+                value ? <Typography.Text copyable>{value}</Typography.Text> : '-',
         },
         {
             title: t('pages:triggerType'),
             dataIndex: 'triggerType',
             key: 'triggerType',
             width: 140,
+            render: (value: string) =>
+                RUN_TRIGGER_TYPE_OPTIONS.find((option) => option.value === value)?.label ?? value,
         },
         {
             title: t('pages:status'),
@@ -112,8 +135,16 @@ export function RunsPage() {
             fixed: 'right',
             width: 120,
             render: (_, record) => (
-                <Button type="link" onClick={() => setSelectedRunId(record.strategyRunId)}>
-                    {t('pages:viewDetails')}</Button>
+                <Button
+                    type="link"
+                    onClick={() => {
+                        const next = new URLSearchParams(params);
+                        next.set('runId', record.strategyRunId);
+                        setParams(next);
+                    }}
+                >
+                    {t('pages:viewDetails')}
+                </Button>
             ),
         },
     ];
@@ -125,67 +156,16 @@ export function RunsPage() {
             status: normalizeOptionalText(values.status),
             triggerType: normalizeOptionalText(values.triggerType),
         });
+        setPage(1);
         setSearchVersion((value) => value + 1);
     };
 
     const handleReset = () => {
         form.resetFields();
         setSubmittedFilters(defaultStrategyRunListFilters);
-        setSearchVersion(0);
+        setPage(1);
+        setSearchVersion(1);
     };
-
-    const renderRunDetail = (detail: StrategyRunDetailItem) => (
-        <Space direction="vertical" size={16} style={{display: 'flex'}}>
-            <Descriptions bordered column={2} size="small">
-                <Descriptions.Item label={t('pages:runId')}>{detail.strategyRunId}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:strategyId')}>{detail.strategyId}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:scheduleId')}>{detail.scheduleJobId || '-'}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:requestId')}>{detail.requestId || '-'}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:triggerType')}>{detail.triggerType}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:status')}>
-                    <Tag color="blue">{detail.status}</Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label={t('pages:exchange')}>{detail.exchangeCode}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:account')}>{detail.accountId ?? '-'}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:tradingEnvironment')}>{detail.tradeEnv}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:startTime')}>{formatDateTime(detail.startedAt)}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:endTime')}>{formatDateTime(detail.finishedAt)}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:errorDiagnostics')}>{detail.errorMessage || '-'}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:orderCount')}>{detail.orders.length}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:tradeCount2')}>{detail.trades.length}</Descriptions.Item>
-                <Descriptions.Item label={t('pages:ledgerSummary')} span={2}>
-                    <Typography.Paragraph style={{marginBottom: 0}}>
-                        {detail.ledgerSummary || '-'}
-                    </Typography.Paragraph>
-                </Descriptions.Item>
-                <Descriptions.Item label={t('pages:riskSummary')} span={2}>
-                    <Typography.Paragraph style={{marginBottom: 0}}>
-                        {detail.riskSummary || '-'}
-                    </Typography.Paragraph>
-                </Descriptions.Item>
-                <Descriptions.Item label={t('pages:eventSummary')} span={2}>
-                    <Typography.Paragraph style={{marginBottom: 0}}>
-                        {detail.eventSummary || '-'}
-                    </Typography.Paragraph>
-                </Descriptions.Item>
-            </Descriptions>
-            <Card title={t('pages:actions2')} size="small">
-                <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                    <Alert
-                        type="info"
-                        showIcon
-                        message={t('pages:runDetailsAreReadOnlyUnderTheCurrentBackendContractNoWriteApiIsAvailableHere')}
-                    />
-                    <Space>
-                        <Button type="primary" disabled>
-                            {t('pages:noWriteActionsAvailable')}</Button>
-                        <Button onClick={() => runDetailQuery.refetch()}>
-                            {t('pages:refreshDetails')}</Button>
-                    </Space>
-                </Space>
-            </Card>
-        </Space>
-    );
 
     return (
         <>
@@ -193,23 +173,35 @@ export function RunsPage() {
                 <Card className="page-card" bordered={false}>
                     <NqPageHeader
                         title={t('pages:runRecords')}
-                        description={t('pages:viewStrategyRunsTriggersExecutionStatusAndRiskSummariesDetailsAreReadOnlyAndCanBeRefreshed')}
+                        description={t(
+                            'pages:viewStrategyRunsTriggersExecutionStatusAndRiskSummariesDetailsAreReadOnlyAndCanBeRefreshed',
+                        )}
                         badge={t('pages:runs')}
                     />
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-filter-panel"
                     bordered={false}
                     title={t('pages:filters')}
-                    extra={(
-                        <Space>
+                    extra={
+                        <Space wrap>
                             <Button type="primary" onClick={() => form.submit()}>
-                                {t('pages:search')}</Button>
-                            <Button onClick={handleReset}>
-                                {t('pages:reset')}</Button>
+                                {t('pages:search')}
+                            </Button>
+                            <Button onClick={handleReset}>{t('pages:reset')}</Button>
+                            <Button
+                                disabled={!hasSearched}
+                                loading={runsQuery.isFetching}
+                                onClick={() => void runsQuery.refetch()}
+                            >
+                                {t('pages:refresh')}
+                            </Button>
                         </Space>
-                    )}
+                    }
                 >
+                    <Typography.Paragraph type="secondary">
+                        {t('pages:runScopeHint')}
+                    </Typography.Paragraph>
                     <Form
                         form={form}
                         layout="vertical"
@@ -218,47 +210,93 @@ export function RunsPage() {
                     >
                         <Row gutter={[16, 0]}>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label={t('pages:strategyId')} name="strategyId">
-                                    <Input placeholder={t('pages:optional')}/>
+                                <Form.Item
+                                    label={t('pages:strategyId')}
+                                    name="strategyId"
+                                    dependencies={['scheduleId']}
+                                    rules={[
+                                        ({getFieldValue}) => ({
+                                            validator(_, value) {
+                                                return Boolean(String(value ?? '').trim()) !==
+                                                    Boolean(
+                                                        String(
+                                                            getFieldValue('scheduleId') ?? '',
+                                                        ).trim(),
+                                                    )
+                                                    ? Promise.resolve()
+                                                    : Promise.reject(
+                                                          new Error(t('pages:runScopeRequired')),
+                                                      );
+                                            },
+                                        }),
+                                    ]}
+                                >
+                                    <Input maxLength={128} placeholder={t('pages:optional')} />
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
                                 <Form.Item label={t('pages:scheduleId')} name="scheduleId">
-                                    <Input placeholder={t('pages:optional')}/>
+                                    <Input maxLength={128} placeholder={t('pages:optional')} />
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label={t('pages:runStatus')} name="status">
-                                    <Select allowClear placeholder={t('pages:allStatuses')} options={RUN_STATUS_OPTIONS}/>
+                                <Form.Item
+                                    label={t('pages:runStatus')}
+                                    name="status"
+                                    getValueProps={(value) => ({value: value || undefined})}
+                                >
+                                    <Select
+                                        allowClear
+                                        placeholder={t('pages:allStatuses')}
+                                        options={RUN_STATUS_OPTIONS}
+                                    />
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={6}>
-                                <Form.Item label={t('pages:triggerType')} name="triggerType">
-                                    <Select allowClear placeholder={t('pages:allTriggerTypes')} options={RUN_TRIGGER_TYPE_OPTIONS}/>
+                                <Form.Item
+                                    label={t('pages:triggerType')}
+                                    name="triggerType"
+                                    getValueProps={(value) => ({value: value || undefined})}
+                                >
+                                    <Select
+                                        allowClear
+                                        placeholder={t('pages:allTriggerTypes')}
+                                        options={RUN_TRIGGER_TYPE_OPTIONS}
+                                    />
                                 </Form.Item>
                             </Col>
                         </Row>
                     </Form>
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-results-panel"
                     bordered={false}
                     title={t('pages:results')}
-                    extra={hasSearched ?
-                        <Typography.Text type="secondary">{t('pages:total')}{visibleItems.length} {t('pages:records')}</Typography.Text> : null}
+                    extra={
+                        hasSearched ? (
+                            <Typography.Text type="secondary">
+                                {t('pages:total')}
+                                {runsQuery.data?.total ?? '—'} {t('pages:records')}
+                            </Typography.Text>
+                        ) : null
+                    }
                 >
                     {!hasSearched ? (
-                        <Empty description={t('pages:enterFiltersAndSearch')}/>
+                        <Empty description={t('pages:enterFiltersAndSearch')} />
                     ) : runsQuery.error ? (
                         <Alert
                             type="error"
                             showIcon
                             message={t('pages:failedToQueryRuns')}
                             description={formatApiError(runsQuery.error as AppApiError)}
-                            action={(
-                                <Button size="small" onClick={() => setSearchVersion((value) => value + 1)}>
-                                    {t('pages:retry')}</Button>
-                            )}
+                            action={
+                                <Button
+                                    size="small"
+                                    onClick={() => setSearchVersion((value) => value + 1)}
+                                >
+                                    {t('pages:retry')}
+                                </Button>
+                            }
                         />
                     ) : (
                         <Table
@@ -266,7 +304,13 @@ export function RunsPage() {
                             columns={runColumns}
                             dataSource={visibleItems}
                             loading={runsQuery.isFetching}
-                            pagination={{pageSize: 10, showSizeChanger: false}}
+                            pagination={{
+                                current: page,
+                                pageSize: 10,
+                                total: runsQuery.data?.total ?? 0,
+                                showSizeChanger: false,
+                                onChange: setPage,
+                            }}
                             scroll={{x: 1500}}
                             locale={{
                                 emptyText: t('pages:noRunsMatchTheseFilters'),
@@ -277,21 +321,19 @@ export function RunsPage() {
             </Space>
             <Drawer
                 open={Boolean(selectedRunId)}
-                width={760}
+                width={1120}
                 title={t('pages:runDetails')}
-                onClose={() => setSelectedRunId(null)}
+                onClose={() => {
+                    setSelectedRunId(null);
+                    const next = new URLSearchParams(params);
+                    next.delete('runId');
+                    setParams(next);
+                }}
                 destroyOnClose
             >
-                {runDetailQuery.isLoading ? (
-                    <Alert type="info" showIcon message={t('pages:loadingRunDetails')}/>
-                ) : runDetailQuery.error ? (
-                    <Alert
-                        type="error"
-                        showIcon
-                        message={t('pages:failedToLoadRunDetails')}
-                        description={formatApiError(runDetailQuery.error as AppApiError)}
-                    />
-                ) : runDetailQuery.data ? renderRunDetail(runDetailQuery.data) : null}
+                {selectedRunId ? (
+                    <StrategyRunDetails key={selectedRunId} runId={selectedRunId} />
+                ) : null}
             </Drawer>
         </>
     );

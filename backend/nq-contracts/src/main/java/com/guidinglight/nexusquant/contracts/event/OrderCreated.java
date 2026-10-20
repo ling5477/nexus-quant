@@ -8,7 +8,7 @@ import java.time.Instant;
  * OrderCreated 表示订单创建事实。
  *
  * Why:
- * Gate B 需要将订单写库动作同步沉淀到 event_store，方便恢复时按事实回放。
+ * 需要将订单写库动作同步沉淀到 event_store，方便恢复时按事实回放。
  *
  * @param orderId 系统订单 ID
  * @param accountId 账户 ID

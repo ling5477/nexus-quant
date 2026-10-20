@@ -14,6 +14,7 @@ export function RequireAuth() {
     const {t} = useTranslation();
     const location = useLocation();
     const isAuthenticated = useAuthStore(selectIsAuthenticated);
+    const mustChangePassword = useAuthStore((state) => state.currentUser?.mustChangePassword);
     const accessToken = useAuthStore((state) => state.accessToken);
     const bootstrapStatus = useAuthStore((state) => state.bootstrapStatus);
 
@@ -31,5 +32,8 @@ export function RequireAuth() {
         return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace/>;
     }
 
+    if (mustChangePassword && location.pathname !== '/change-password') {
+        return <Navigate to="/change-password" replace/>;
+    }
     return <Outlet/>;
 }

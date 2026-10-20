@@ -199,7 +199,7 @@ class KillSwitchServiceTest {
             }
             state = new KillSwitchState(
                     command.scope(), KillSwitchStatus.DISENGAGED, state.version() + 1,
-                    "PILOT_LEASE_" + command.leaseId(), "PILOT_EXECUTION_LEASE",
+                    "EXECUTION_LEASE_" + command.leaseId(), "CONTROLLED_EXECUTION_LEASE",
                     command.occurredAt(), command.updatedBy(), command.traceId());
             return state;
         }

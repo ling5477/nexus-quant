@@ -53,7 +53,7 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
         try {
             migrate(config, schema, null);
             JdbcTemplate jdbc = jdbc(config, schema);
-            assertEquals("38", currentFlywayVersion(jdbc));
+            assertEquals("1", currentFlywayVersion(jdbc));
             assertSchemaContract(jdbc);
 
             JdbcBacktestPublishRecordRepository repository = repository(jdbc);
@@ -99,11 +99,11 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
     }
 
     @Test
-    void existingV36DatabaseShouldUpgradeWithoutBackfillAndAllowOnlyFailedToSucceededFirstBinding() {
+    void baselineRerunShouldPreserveUnknownArtifactsAndAllowOnlyFailedToSucceededFirstBinding() {
         PostgresConfig config = requireLocalDisposableConfig();
         String schema = randomSchema("upgrade");
         try {
-            migrate(config, schema, MigrationVersion.fromVersion("36"));
+            migrate(config, schema, MigrationVersion.fromVersion("1"));
             JdbcTemplate before = jdbc(config, schema);
             Fixture legacySucceeded = seedFixture(before, "upgrade-succeeded");
             Fixture failedRetry = seedFixture(before, "upgrade-failed");
@@ -112,7 +112,7 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
 
             migrate(config, schema, null);
             JdbcTemplate upgraded = jdbc(config, schema);
-            assertEquals("38", currentFlywayVersion(upgraded));
+            assertEquals("1", currentFlywayVersion(upgraded));
             assertSchemaContract(upgraded);
             assertEquals(2, upgraded.queryForObject(
                     "SELECT COUNT(*) FROM backtest_publish_records "
@@ -568,7 +568,7 @@ class BacktestPublishArtifactLocatorPostgresIntegrationTest {
     }
 
     private static String withCurrentSchema(String url, String schema) {
-        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema;
+        return url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
     }
 
     private static String currentFlywayVersion(JdbcTemplate jdbc) {

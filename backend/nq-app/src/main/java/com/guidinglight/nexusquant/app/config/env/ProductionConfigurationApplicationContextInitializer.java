@@ -123,8 +123,8 @@ public final class ProductionConfigurationApplicationContextInitializer
 
         Set<String> effectiveProfiles = effectiveProfiles(environment);
         boolean productionProfile = effectiveProfiles.contains(PROD_PROFILE);
-        if (productionMarker && !APPROVED_PRODUCTION_PROFILES.equals(effectiveProfiles)) {
-            violations.add("production configuration requires effective profiles exactly {prod}");
+        if (productionMarker && !approvedProfiles(effectiveProfiles)) {
+            violations.add("production configuration requires effective profiles exactly {prod} or {prod, public-marketdata-manual}");
         }
 
         boolean productionConfiguration = productionMarker || productionProfile;
@@ -132,8 +132,8 @@ public final class ProductionConfigurationApplicationContextInitializer
             // Spring selects active profiles when present and otherwise uses default profiles. ConfigData
             // has already expanded include/group profiles in that selected set, so never inspect only the
             // raw spring.profiles.active property here.
-            if (!APPROVED_PRODUCTION_PROFILES.equals(effectiveProfiles)) {
-                violations.add("spring.profiles.active must resolve to exactly {prod}");
+            if (!approvedProfiles(effectiveProfiles)) {
+                violations.add("spring.profiles.active must resolve to exactly {prod} or {prod, public-marketdata-manual}");
             }
             validateDatasource(environment, violations);
             for (String property : PRODUCTION_SECRETS) {
@@ -149,6 +149,12 @@ public final class ProductionConfigurationApplicationContextInitializer
         if (!violations.isEmpty()) {
             throw new IllegalStateException(ERROR_CODE + ": " + String.join("; ", violations));
         }
+    }
+
+    private static boolean approvedProfiles(Set<String> profiles) {
+        // 安装产品复用已接受的公开行情客户端；仍禁止 local/test seed 或私有 profile 混入生产。
+        return APPROVED_PRODUCTION_PROFILES.equals(profiles)
+                || Set.of(PROD_PROFILE, "public-marketdata-manual").equals(profiles);
     }
 
     private static Set<String> effectiveProfiles(Environment environment) {

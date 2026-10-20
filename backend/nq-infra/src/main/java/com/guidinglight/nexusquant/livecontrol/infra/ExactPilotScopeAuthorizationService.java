@@ -109,6 +109,6 @@ public final class ExactPilotScopeAuthorizationService {
     }
 
     private static LiveControlException rejected(String message) {
-        return new LiveControlException("EXACT_PILOT_SCOPE_AUTHORIZATION_REJECTED", message);
+        return new LiveControlException("EXACT_EXECUTION_SCOPE_AUTHORIZATION_REJECTED", message);
     }
 }

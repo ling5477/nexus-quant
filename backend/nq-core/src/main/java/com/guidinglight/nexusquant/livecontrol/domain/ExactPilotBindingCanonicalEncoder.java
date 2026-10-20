@@ -5,7 +5,7 @@ import java.security.MessageDigest;
 import java.util.Objects;
 
 /**
- * `exact-pilot-binding.v2` 固定字段顺序、UTF-8、数值和 UTC 时间 canonical encoder。
+ * `exact-execution-binding.v2` 固定字段顺序、UTF-8、数值和 UTC 时间 canonical encoder。
  */
 public final class ExactPilotBindingCanonicalEncoder {
 
@@ -41,9 +41,9 @@ public final class ExactPilotBindingCanonicalEncoder {
                 ",\"riskPolicyVersion\":" + risk.riskPolicyVersion() +
                 ",\"riskPolicyDigest\":" + quote(risk.riskPolicyDigest()) +
                 ",\"killSwitchState\":" + quote(risk.killSwitchState())
-                : ",\"authorityType\":\"OPERATOR_PILOT\"" +
-                ",\"operatorPilotAuthorityId\":" + quote(operatorAuthority.authorityId().toString()) +
-                ",\"operatorPilotAuthorityDigest\":" + quote(operatorAuthority.authorityDigest()) +
+                : ",\"authorityType\":\"OPERATOR_CONTROLLED_EXECUTION\"" +
+                ",\"operatorExecutionAuthorityId\":" + quote(operatorAuthority.authorityId().toString()) +
+                ",\"operatorExecutionAuthorityDigest\":" + quote(operatorAuthority.authorityDigest()) +
                 ",\"operatorPilotInstrument\":" + quote(operatorAuthority.instrument()) +
                 ",\"operatorPilotSide\":" + quote(operatorAuthority.side().name()) +
                 ",\"operatorPilotOrderType\":" + quote(operatorAuthority.orderType().name()) +
@@ -55,12 +55,12 @@ public final class ExactPilotBindingCanonicalEncoder {
                 ",\"operatorPilotWithdrawAllowed\":" + operatorAuthority.withdrawAllowed() +
                 ",\"killSwitchState\":" + quote(operatorAuthority.killSwitchState());
         String schema = risk != null
-                ? ExactPilotBinding.SCHEMA_VERSION : ExactPilotBinding.OPERATOR_PILOT_SCHEMA_VERSION;
+                ? ExactPilotBinding.SCHEMA_VERSION : ExactPilotBinding.OPERATOR_CONTROLLED_EXECUTION_SCHEMA_VERSION;
         return "{" +
                 "\"schemaVersion\":" + quote(schema) +
                 ",\"bindingId\":" + quote(value.id().toString()) +
                 ",\"sessionId\":" + quote(value.sessionId().toString()) +
-                ",\"pilotScopeId\":" + quote(value.pilotScopeId().toString()) +
+                ",\"executionScopeId\":" + quote(value.pilotScopeId().toString()) +
                 ",\"observationSetId\":" + quote(value.observationSetId().toString()) +
                 ",\"sourceCommit\":" + quote(deployment.sourceCommit()) +
                 ",\"releaseId\":" + quote(deployment.releaseId()) +
@@ -85,8 +85,8 @@ public final class ExactPilotBindingCanonicalEncoder {
                 ",\"exchangeTimeSnapshotIdentity\":" + quote(observations.exchangeTimeSnapshotIdentity().toString()) +
                 ",\"marketSnapshotIdentity\":" + quote(observations.marketSnapshotIdentity().toString()) +
                 ",\"marketSnapshotDigest\":" + quote(observations.marketSnapshotDigest()) + authority +
-                ",\"pilotWindowStart\":" + CanonicalDigestSupport.instant(value.pilotWindowStart()) +
-                ",\"pilotWindowEnd\":" + CanonicalDigestSupport.instant(value.pilotWindowEnd()) +
+                ",\"executionWindowStart\":" + CanonicalDigestSupport.instant(value.pilotWindowStart()) +
+                ",\"executionWindowEnd\":" + CanonicalDigestSupport.instant(value.pilotWindowEnd()) +
                 ",\"requestId\":" + quote(correlation.requestId()) +
                 ",\"traceId\":" + quote(correlation.traceId()) +
                 ",\"idempotencyKey\":" + quote(correlation.idempotencyKey()) +

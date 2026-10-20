@@ -24,3 +24,15 @@ export interface StrategyReleaseShadowRunMaterializationResponse {
     createdAt: string;
     idempotentReplay: boolean;
 }
+
+/** 原创建结果与当前诊断状态分开，查询本身不表示重放、启动或交易授权。 */
+export interface ShadowRunCreationResultResponse {
+    shadowRunId: string;
+    publishRecordId: string;
+    artifactDigest: string;
+    bindingMode: 'RELEASE_BOUND';
+    creationStatus: 'CREATED';
+    runStatus: string;
+    createdAt: string;
+    updatedAt: string;
+}

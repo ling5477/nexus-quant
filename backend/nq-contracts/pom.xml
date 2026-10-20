@@ -12,7 +12,7 @@
 
     <artifactId>nq-contracts</artifactId>
     <name>nq-contracts</name>
-    <description>Gate A skeleton module: nq-contracts</description>
+    <description>NexusQuant module: nq-contracts</description>
     <packaging>jar</packaging>
 
     <dependencies>

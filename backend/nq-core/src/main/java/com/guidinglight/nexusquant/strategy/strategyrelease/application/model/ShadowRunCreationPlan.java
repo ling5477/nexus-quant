@@ -4,11 +4,11 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunAuthorizat
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunReleaseBindingMode;
 import com.guidinglight.nexusquant.strategy.strategyrelease.artifact.StrategyArtifactManifest;
 
-import java.time.Instant;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
@@ -35,8 +35,7 @@ public record ShadowRunCreationPlan(
         String manifestSchemaVersion,
         String provenanceReference,
         String traceId,
-        String shadowRunIdempotencyKey
-) {
+        String shadowRunIdempotencyKey) {
 
     public ShadowRunCreationPlan {
         releaseAnchorId = requireText(releaseAnchorId, "releaseAnchorId");
@@ -67,19 +66,22 @@ public record ShadowRunCreationPlan(
         }
         if (authorizationBoundary != ShadowRunAuthorizationBoundary.DIAGNOSTIC_ONLY
                 && authorizationBoundary != ShadowRunAuthorizationBoundary.REVIEW_ONLY) {
-            throw new IllegalArgumentException("creation plan authorization boundary is not eligible");
+            throw new IllegalArgumentException(
+                    "creation plan authorization boundary is not eligible");
         }
         if (!sideEffectPolicy.allNoSideEffects()) {
             throw new IllegalArgumentException("creation plan requires all no-side-effect flags");
         }
         if (!StrategyArtifactManifest.SUPPORTED_SCHEMA_VERSION.equals(manifestSchemaVersion)) {
-            throw new IllegalArgumentException("creation plan requires the supported manifest schema");
+            throw new IllegalArgumentException(
+                    "creation plan requires the supported manifest schema");
         }
         if (traceId.length() > 128) {
             throw new IllegalArgumentException("traceId must fit shadow_runs.trace_id");
         }
         if (!isLowercaseSha256(shadowRunIdempotencyKey)) {
-            throw new IllegalArgumentException("shadowRunIdempotencyKey must be a lowercase SHA-256");
+            throw new IllegalArgumentException(
+                    "shadowRunIdempotencyKey must be a lowercase SHA-256");
         }
     }
 
@@ -92,8 +94,11 @@ public record ShadowRunCreationPlan(
 
     private static boolean isLowercaseSha256(String value) {
         return value.length() == 64
-                && value.chars().allMatch(character -> (character >= '0' && character <= '9')
-                || (character >= 'a' && character <= 'f'));
+                && value.chars()
+                        .allMatch(
+                                character ->
+                                        (character >= '0' && character <= '9')
+                                                || (character >= 'a' && character <= 'f'));
     }
 
     /**
@@ -107,14 +112,7 @@ public record ShadowRunCreationPlan(
      * @return 仅替换 materialization idempotency key 的 immutable plan
      */
     public ShadowRunCreationPlan bindMaterializationCommand(String commandIdentity) {
-        String normalized = requireText(commandIdentity, "commandIdentity");
-        if (normalized.length() > 128 || normalized.chars().anyMatch(Character::isISOControl)) {
-            throw new IllegalArgumentException("commandIdentity must be 1..128 characters without control characters");
-        }
-        String materializationKey = deterministicSha256(List.of(
-                "shadow-run-materialization-command.v1",
-                normalized
-        ));
+        String materializationKey = materializationIdempotencyKey(commandIdentity);
         return new ShadowRunCreationPlan(
                 releaseAnchorId,
                 publishRecordId,
@@ -130,8 +128,24 @@ public record ShadowRunCreationPlan(
                 manifestSchemaVersion,
                 provenanceReference,
                 traceId,
-                materializationKey
-        );
+                materializationKey);
+    }
+
+    /**
+     * 由原命令编号定位创建事实，供创建与只读恢复共用，避免依赖后来变化的准入状态。
+     *
+     * <p>有效输入沿用原有长度前缀和 SHA-256 算法；拒绝不完整 UTF-16，防止 UTF-8 替代字符
+     * 将两个不同编号编码成相同字节。原编号仍不写入数据库。
+     */
+    public static String materializationIdempotencyKey(String commandIdentity) {
+        String normalized = requireText(commandIdentity, "commandIdentity");
+        if (normalized.length() > 128
+                || normalized.chars().anyMatch(Character::isISOControl)
+                || !StandardCharsets.UTF_8.newEncoder().canEncode(normalized)) {
+            throw new IllegalArgumentException(
+                    "commandIdentity must be 1..128 characters without control characters");
+        }
+        return deterministicSha256(List.of("shadow-run-materialization-command.v1", normalized));
     }
 
     private static String deterministicSha256(List<String> fields) {
@@ -157,8 +171,7 @@ public record ShadowRunCreationPlan(
             boolean noPrivateEndpoint,
             boolean noLedgerMutation,
             boolean noAccountMutation,
-            boolean noExternalPrivateIo
-    ) {
+            boolean noExternalPrivateIo) {
 
         public boolean allNoSideEffects() {
             return noOrderSubmission

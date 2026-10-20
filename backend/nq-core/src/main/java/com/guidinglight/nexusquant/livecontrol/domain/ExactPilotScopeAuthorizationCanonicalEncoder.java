@@ -47,7 +47,7 @@ public final class ExactPilotScopeAuthorizationCanonicalEncoder {
                 "\"schemaVersion\":" + quote(ExactPilotScopeAuthorization.SCHEMA_VERSION) +
                 ",\"bindingId\":" + quote(value.bindingId().toString()) +
                 ",\"sessionId\":" + quote(value.sessionId().toString()) +
-                ",\"pilotScopeId\":" + quote(value.pilotScopeId().toString()) +
+                ",\"executionScopeId\":" + quote(value.pilotScopeId().toString()) +
                 ",\"sourceCommit\":" + quote(deployment.sourceCommit()) +
                 ",\"releaseId\":" + quote(deployment.releaseId()) +
                 ",\"manifestSha256\":" + quote(deployment.manifestSha256()) +
@@ -69,8 +69,8 @@ public final class ExactPilotScopeAuthorizationCanonicalEncoder {
                 ",\"riskPolicyVersion\":" + risk.riskPolicyVersion() +
                 ",\"riskPolicyDigest\":" + quote(risk.riskPolicyDigest()) +
                 ",\"killSwitchState\":" + quote(risk.killSwitchState()) +
-                ",\"pilotWindowStart\":" + CanonicalDigestSupport.instant(value.pilotWindowStart()) +
-                ",\"pilotWindowEnd\":" + CanonicalDigestSupport.instant(value.pilotWindowEnd()) +
+                ",\"executionWindowStart\":" + CanonicalDigestSupport.instant(value.pilotWindowStart()) +
+                ",\"executionWindowEnd\":" + CanonicalDigestSupport.instant(value.pilotWindowEnd()) +
                 ",\"creatorPrincipal\":" + value.creatorPrincipal() +
                 ",\"approverPrincipal\":" + value.approverPrincipal() +
                 ",\"requestId\":" + quote(correlation.requestId()) +

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.strategy.application.command.StrategyVersionCreateRequest;
 import com.guidinglight.nexusquant.strategy.domain.StrategyDefinition;
@@ -13,6 +14,9 @@ import com.guidinglight.nexusquant.strategy.domain.StrategyVersionStatus;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyDefinitionRepository;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyVersionRepository;
 
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -22,33 +26,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.junit.jupiter.api.Test;
-
 class StrategyVersionServiceTest {
 
-    private final Clock fixedClock = Clock.fixed(Instant.parse("2026-05-18T01:00:00Z"), ZoneOffset.UTC);
+    private final Clock fixedClock =
+            Clock.fixed(Instant.parse("2026-05-18T01:00:00Z"), ZoneOffset.UTC);
 
     @Test
     void shouldCreateVersionFromExistingStrategyAndNormalizeSnapshots() {
-        InMemoryStrategyDefinitionRepository definitionRepository = new InMemoryStrategyDefinitionRepository();
-        InMemoryStrategyVersionRepository versionRepository = new InMemoryStrategyVersionRepository();
+        InMemoryStrategyDefinitionRepository definitionRepository =
+                new InMemoryStrategyDefinitionRepository();
+        InMemoryStrategyVersionRepository versionRepository =
+                new InMemoryStrategyVersionRepository();
         definitionRepository.insert(defaultDefinition());
-        StrategyVersionService service = new StrategyVersionService(
-                definitionRepository,
-                versionRepository,
-                new ObjectMapper(),
-                fixedClock
-        );
+        StrategyVersionService service =
+                new StrategyVersionService(
+                        definitionRepository, versionRepository, new ObjectMapper(), fixedClock);
 
-        StrategyVersion version = service.create(new StrategyVersionCreateRequest(
-                "demo-strategy",
-                "V1 Baseline",
-                "ACTIVE",
-                "{\"threshold\": 1}",
-                null,
-                "{\"source\":\"manual\"}",
-                "tester"
-        ));
+        StrategyVersion version =
+                service.create(
+                        new StrategyVersionCreateRequest(
+                                "demo-strategy",
+                                "V1 Baseline",
+                                "ACTIVE",
+                                "{\"threshold\": 1}",
+                                null,
+                                "{\"source\":\"manual\"}",
+                                "tester"));
 
         assertEquals("demo-strategy", version.strategyCode());
         assertEquals(1, version.version());
@@ -61,40 +64,41 @@ class StrategyVersionServiceTest {
 
     @Test
     void shouldRejectMissingStrategyAndInvalidJson() {
-        StrategyVersionService service = new StrategyVersionService(
-                new InMemoryStrategyDefinitionRepository(),
-                new InMemoryStrategyVersionRepository(),
-                new ObjectMapper(),
-                fixedClock
-        );
+        StrategyVersionService service =
+                new StrategyVersionService(
+                        new InMemoryStrategyDefinitionRepository(),
+                        new InMemoryStrategyVersionRepository(),
+                        new ObjectMapper(),
+                        fixedClock);
 
-        assertThrows(IllegalArgumentException.class, () -> service.create(new StrategyVersionCreateRequest(
-                "missing",
-                "V1",
-                "DRAFT",
-                "{}",
-                "{}",
-                "{}",
-                "tester"
-        )));
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        service.create(
+                                new StrategyVersionCreateRequest(
+                                        "missing", "V1", "DRAFT", "{}", "{}", "{}", "tester")));
 
-        InMemoryStrategyDefinitionRepository definitionRepository = new InMemoryStrategyDefinitionRepository();
+        InMemoryStrategyDefinitionRepository definitionRepository =
+                new InMemoryStrategyDefinitionRepository();
         definitionRepository.insert(defaultDefinition());
-        StrategyVersionService jsonService = new StrategyVersionService(
-                definitionRepository,
-                new InMemoryStrategyVersionRepository(),
-                new ObjectMapper(),
-                fixedClock
-        );
-        assertThrows(IllegalArgumentException.class, () -> jsonService.create(new StrategyVersionCreateRequest(
-                "demo-strategy",
-                "V1",
-                "DRAFT",
-                "{bad-json",
-                "{}",
-                "{}",
-                "tester"
-        )));
+        StrategyVersionService jsonService =
+                new StrategyVersionService(
+                        definitionRepository,
+                        new InMemoryStrategyVersionRepository(),
+                        new ObjectMapper(),
+                        fixedClock);
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        jsonService.create(
+                                new StrategyVersionCreateRequest(
+                                        "demo-strategy",
+                                        "V1",
+                                        "DRAFT",
+                                        "{bad-json",
+                                        "{}",
+                                        "{}",
+                                        "tester")));
     }
 
     @Test
@@ -102,6 +106,68 @@ class StrategyVersionServiceTest {
         for (StrategyVersionStatus status : StrategyVersionStatus.values()) {
             assertFalse(status.authorizesLiveTrading(), status + " must not enable LIVE trading");
         }
+    }
+
+    @Test
+    void preservesExactNumbersInAllSnapshotsWithoutChangingTheSharedMapper() throws Exception {
+        var definitions = new InMemoryStrategyDefinitionRepository();
+        definitions.insert(defaultDefinition());
+        var shared = new ObjectMapper();
+        var service =
+                new StrategyVersionService(
+                        definitions, new InMemoryStrategyVersionRepository(), shared, fixedClock);
+        String raw =
+                "{\"number\":9007199254740993.123456789012345678,\"small\":1.234567890123456789e-40,\"negative\":-0.000000000000000000123456789012345678,\"large\":123456789012345678901234567890,\"list\":[1.000000000000000001,\"1.000000000000000001\",true,null]}";
+        var created =
+                service.create(
+                        new StrategyVersionCreateRequest(
+                                "demo-strategy", "precision", "DRAFT", raw, raw, raw, "tester"));
+        var reader =
+                new ObjectMapper().reader().with(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
+        for (String snapshot :
+                List.of(
+                        created.paramSnapshotJson(),
+                        created.configSnapshotJson(),
+                        created.sourceSnapshotJson())) {
+            var node = reader.readTree(snapshot);
+            assertEquals(
+                    0,
+                    new BigDecimal("9007199254740993.123456789012345678")
+                            .compareTo(node.get("number").decimalValue()));
+            assertEquals(
+                    0,
+                    new BigDecimal("1.234567890123456789e-40")
+                            .compareTo(node.get("small").decimalValue()));
+            assertEquals(
+                    0,
+                    new BigDecimal("-0.000000000000000000123456789012345678")
+                            .compareTo(node.get("negative").decimalValue()));
+            assertEquals("123456789012345678901234567890", node.get("large").asText());
+            assertEquals(
+                    0,
+                    new BigDecimal("1.000000000000000001")
+                            .compareTo(node.get("list").get(0).decimalValue()));
+            assertEquals("1.000000000000000001", node.get("list").get(1).textValue());
+            assertTrue(node.get("list").get(2).booleanValue());
+            assertTrue(node.get("list").get(3).isNull());
+        }
+        assertTrue(shared.readTree("1.234567890123456789").isDouble());
+        var same =
+                new StrategyVersionService(
+                                definitions,
+                                new InMemoryStrategyVersionRepository(),
+                                shared,
+                                fixedClock)
+                        .create(
+                                new StrategyVersionCreateRequest(
+                                        "demo-strategy",
+                                        "precision",
+                                        "DRAFT",
+                                        raw,
+                                        raw,
+                                        raw,
+                                        "tester"));
+        assertEquals(created.checksum(), same.checksum());
     }
 
     private StrategyDefinition defaultDefinition() {
@@ -117,11 +183,11 @@ class StrategyVersionServiceTest {
                 "{\"risk\":\"low\"}",
                 1,
                 fixedClock.instant(),
-                fixedClock.instant()
-        );
+                fixedClock.instant());
     }
 
-    private static final class InMemoryStrategyDefinitionRepository implements StrategyDefinitionRepository {
+    private static final class InMemoryStrategyDefinitionRepository
+            implements StrategyDefinitionRepository {
         private final Map<String, StrategyDefinition> byCode = new LinkedHashMap<>();
 
         @Override
@@ -131,7 +197,9 @@ class StrategyVersionServiceTest {
 
         @Override
         public Optional<StrategyDefinition> findByStrategyId(String strategyId) {
-            return byCode.values().stream().filter(item -> item.strategyId().equals(strategyId)).findFirst();
+            return byCode.values().stream()
+                    .filter(item -> item.strategyId().equals(strategyId))
+                    .findFirst();
         }
 
         @Override
@@ -150,7 +218,8 @@ class StrategyVersionServiceTest {
         }
     }
 
-    private static final class InMemoryStrategyVersionRepository implements StrategyVersionRepository {
+    private static final class InMemoryStrategyVersionRepository
+            implements StrategyVersionRepository {
         private final Map<String, StrategyVersion> byId = new LinkedHashMap<>();
 
         @Override
@@ -160,7 +229,9 @@ class StrategyVersionServiceTest {
 
         @Override
         public List<StrategyVersion> listByStrategyCode(String strategyCode) {
-            return byId.values().stream().filter(item -> item.strategyCode().equals(strategyCode)).toList();
+            return byId.values().stream()
+                    .filter(item -> item.strategyCode().equals(strategyCode))
+                    .toList();
         }
 
         @Override

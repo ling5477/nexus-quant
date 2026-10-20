@@ -12,6 +12,11 @@ import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRun;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunAuthorizationBoundary;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunStatus;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -20,11 +25,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Repository;
 
 /**
  * JdbcShadowRunOverviewQueryRepository 是验证只读视图 Shadow Run overview 的 JDBC read adapter。
@@ -37,9 +37,11 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class JdbcShadowRunOverviewQueryRepository implements ShadowRunOverviewQueryPort {
 
-    private static final String RUN_SELECT = """
+    private static final String RUN_SELECT =
+            """
             SELECT id, strategy_version_id, dataset_id, evaluation_id, publish_id, artifact_digest, paper_run_id,
-                   status, window_start, window_end, side_effect_policy::text AS side_effect_policy,
+                   status, window_start, window_end, window_start_nanosecond_remainder,
+                   window_end_nanosecond_remainder, side_effect_policy::text AS side_effect_policy,
                    no_order_submission, no_credential_access, no_private_endpoint, no_ledger_mutation,
                    no_account_mutation, no_external_private_io, authorization_boundary, request_id,
                    idempotency_key, trace_id, blockers::text AS blockers, warnings::text AS warnings,
@@ -48,7 +50,8 @@ public class JdbcShadowRunOverviewQueryRepository implements ShadowRunOverviewQu
             FROM shadow_runs
             """;
 
-    private static final String REPORT_SELECT = """
+    private static final String REPORT_SELECT =
+            """
             SELECT id, shadow_run_id, paper_run_id, comparison_status, metric_delta::text AS metric_delta,
                    divergence_reasons::text AS divergence_reasons, limitations::text AS limitations,
                    generated_at, trace_id, created_at
@@ -59,7 +62,8 @@ public class JdbcShadowRunOverviewQueryRepository implements ShadowRunOverviewQu
     private final ObjectMapper objectMapper;
 
     @Autowired
-    public JdbcShadowRunOverviewQueryRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+    public JdbcShadowRunOverviewQueryRepository(
+            JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
     }
@@ -81,7 +85,8 @@ public class JdbcShadowRunOverviewQueryRepository implements ShadowRunOverviewQu
                 count("SELECT COUNT(*) FROM shadow_runs WHERE status = 'BLOCKED'"),
                 count("SELECT COUNT(*) FROM shadow_runs WHERE status = 'FAILED'"),
                 count("SELECT COUNT(*) FROM shadow_runs WHERE status = 'COMPLETED'"),
-                count("""
+                count(
+                        """
                         SELECT COUNT(*)
                         FROM shadow_runs sr
                         WHERE NOT EXISTS (
@@ -91,22 +96,30 @@ public class JdbcShadowRunOverviewQueryRepository implements ShadowRunOverviewQu
                             SELECT 1 FROM shadow_consistency_reports scr WHERE scr.shadow_run_id = sr.id
                         )
                         """),
-                queryOptional(RUN_SELECT + " ORDER BY updated_at DESC, created_at DESC, id DESC LIMIT 1", runRowMapper()),
-                queryOptional(REPORT_SELECT + " ORDER BY generated_at DESC, created_at DESC, id DESC LIMIT 1", reportRowMapper()),
-                queryOptional("""
+                queryOptional(
+                        RUN_SELECT + " ORDER BY updated_at DESC, created_at DESC, id DESC LIMIT 1",
+                        runRowMapper()),
+                queryOptional(
+                        REPORT_SELECT
+                                + " ORDER BY generated_at DESC, created_at DESC, id DESC LIMIT 1",
+                        reportRowMapper()),
+                queryOptional(
+                        """
                         SELECT id::text AS source_id, event_type AS source_version, created_at AS source_timestamp
                         FROM shadow_run_events
                         ORDER BY created_at DESC, id DESC
                         LIMIT 1
-                        """, evidenceRowMapper("SHADOW_EVENT", "source_version", null)),
-                queryOptional("""
+                        """,
+                        evidenceRowMapper("SHADOW_EVENT", "source_version", null)),
+                queryOptional(
+                        """
                         SELECT id::text AS source_id, schema_version AS source_version, captured_at AS source_timestamp,
                                checksum
                         FROM shadow_run_snapshots
                         ORDER BY captured_at DESC, created_at DESC, id DESC
                         LIMIT 1
-                        """, evidenceRowMapper("SHADOW_SNAPSHOT", "source_version", "checksum"))
-        );
+                        """,
+                        evidenceRowMapper("SHADOW_SNAPSHOT", "source_version", "checksum")));
     }
 
     private long count(String sql) {
@@ -128,17 +141,14 @@ public class JdbcShadowRunOverviewQueryRepository implements ShadowRunOverviewQu
     }
 
     private RowMapper<ShadowRunOverviewEvidenceFact> evidenceRowMapper(
-            String sourceType,
-            String versionColumn,
-            String checksumColumn
-    ) {
-        return (rs, rowNum) -> new ShadowRunOverviewEvidenceFact(
-                sourceType,
-                rs.getString("source_id"),
-                rs.getString(versionColumn),
-                toInstant(rs.getTimestamp("source_timestamp")),
-                checksumColumn == null ? null : rs.getString(checksumColumn)
-        );
+            String sourceType, String versionColumn, String checksumColumn) {
+        return (rs, rowNum) ->
+                new ShadowRunOverviewEvidenceFact(
+                        sourceType,
+                        rs.getString("source_id"),
+                        rs.getString(versionColumn),
+                        toInstant(rs.getTimestamp("source_timestamp")),
+                        checksumColumn == null ? null : rs.getString(checksumColumn));
     }
 
     private ShadowRun mapRun(ResultSet rs, int rowNum) throws SQLException {
@@ -151,8 +161,12 @@ public class JdbcShadowRunOverviewQueryRepository implements ShadowRunOverviewQu
                 rs.getString("artifact_digest"),
                 rs.getString("paper_run_id"),
                 ShadowRunStatus.fromDatabase(rs.getString("status")),
-                toInstant(rs.getTimestamp("window_start")),
-                toInstant(rs.getTimestamp("window_end")),
+                ShadowRunWindowPrecision.restore(
+                        rs.getTimestamp("window_start"),
+                        rs.getInt("window_start_nanosecond_remainder")),
+                ShadowRunWindowPrecision.restore(
+                        rs.getTimestamp("window_end"),
+                        rs.getInt("window_end_nanosecond_remainder")),
                 readJson(rs.getString("side_effect_policy")),
                 rs.getBoolean("no_order_submission"),
                 rs.getBoolean("no_credential_access"),
@@ -172,8 +186,7 @@ public class JdbcShadowRunOverviewQueryRepository implements ShadowRunOverviewQu
                 rs.getTimestamp("updated_at").toInstant(),
                 toInstant(rs.getTimestamp("started_at")),
                 toInstant(rs.getTimestamp("stopped_at")),
-                toInstant(rs.getTimestamp("completed_at"))
-        );
+                toInstant(rs.getTimestamp("completed_at")));
     }
 
     private ShadowConsistencyReport mapReport(ResultSet rs, int rowNum) throws SQLException {
@@ -187,8 +200,7 @@ public class JdbcShadowRunOverviewQueryRepository implements ShadowRunOverviewQu
                 readJson(rs.getString("limitations")),
                 rs.getTimestamp("generated_at").toInstant(),
                 rs.getString("trace_id"),
-                rs.getTimestamp("created_at").toInstant()
-        );
+                rs.getTimestamp("created_at").toInstant());
     }
 
     private JsonNode readJson(String value) {

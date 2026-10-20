@@ -20,7 +20,7 @@ nq:
       # Why: 这是后续 O-5 手动 public smoke 的唯一 feature flag；默认 false，O-1 不执行真实 public outbound。
       enabled: ${NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED:false}
       fallback-origin: ${NQ_PUBLIC_MARKETDATA_FALLBACK_ORIGIN:LOCAL_DB}
-      base-url: ${NQ_PUBLIC_MARKETDATA_BASE_URL:http://127.0.0.1:0}
+      # 连续 feed 未配置 origin 时仍使用 https://www.okx.com；完整环境变量名优先于旧名回退。
       connect-timeout: ${NQ_PUBLIC_MARKETDATA_CONNECT_TIMEOUT:PT3S}
       read-timeout: ${NQ_PUBLIC_MARKETDATA_READ_TIMEOUT:PT5S}
       total-request-timeout: ${NQ_PUBLIC_MARKETDATA_TOTAL_REQUEST_TIMEOUT:PT8S}

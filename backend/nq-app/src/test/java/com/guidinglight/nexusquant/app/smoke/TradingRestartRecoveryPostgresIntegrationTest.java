@@ -3,7 +3,16 @@ package com.guidinglight.nexusquant.app.smoke;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationInfo;
+import org.flywaydb.core.api.MigrationVersion;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -19,17 +28,45 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
-import org.flywaydb.core.Flyway;
-import org.junit.jupiter.api.Test;
-
-/** Real two-JVM restart proof for durable trading reconciliation facts. */
+/** 使用真实PostgreSQL和两个独立JVM证明持久化交易对账恢复；输入来自明确的本机SIM夹具。 */
 class TradingRestartRecoveryPostgresIntegrationTest {
 
     private static final Duration PROCESS_TIMEOUT = Duration.ofSeconds(90);
     private static final String RESULT_MARKER = "NQ_F002_RESULT ";
+
+    static NavigableMap<MigrationVersion, String> releaseMigrationScripts(JsonNode manifest) {
+        var scripts = new TreeMap<MigrationVersion, String>();
+        var migration = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
+        assertTrue(manifest.path("groups").isArray(), "正式发行清单必须声明文件分组");
+        for (JsonNode group : manifest.path("groups")) {
+            if (!"INCLUDE_RUNTIME".equals(group.path("category").asText())) continue;
+            for (JsonNode path : group.path("paths")) {
+                var match = migration.matcher(path.asText());
+                if (match.matches()) {
+                    var version = MigrationVersion.fromVersion(match.group(2));
+                    assertNull(scripts.put(version, match.group(1)), "正式迁移版本不可重复");
+                }
+            }
+        }
+        assertFalse(scripts.isEmpty(), "正式发行清单缺少迁移，不能从数据库现状推导预期");
+        return scripts;
+    }
+
+    static void assertReleaseMigrationScripts(
+            Map<MigrationVersion, String> expected, MigrationInfo[] migrations) {
+        var actual = new TreeMap<MigrationVersion, String>();
+        for (MigrationInfo migration : migrations) {
+            assertNotNull(migration.getVersion(), "当前恢复合同只接受正式版本化迁移");
+            assertNull(actual.put(migration.getVersion(), migration.getScript()), "实际迁移版本不可重复");
+        }
+        assertEquals(expected, actual, "实际迁移集合必须逐项匹配正式发行清单");
+    }
 
     @Test
     void recoversDurableTradeAfterLedgerFailureAcrossDistinctJvmProcesses() throws Exception {
@@ -38,10 +75,8 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             ChildRun processA = runChild("R1_A", database, outputDir.resolve("r1-a.log"));
             long processAObservedExit = System.currentTimeMillis();
             assertChildExited(processA);
-            TargetFacts interprocessFacts = database.targetFacts(
-                    processA.value("order"),
-                    processA.value("tradeId")
-            );
+            TargetFacts interprocessFacts =
+                    database.targetFacts(processA.value("order"), processA.value("tradeId"));
             assertEquals(database.databaseName(), interprocessFacts.databaseName());
             assertEquals("FILLED", interprocessFacts.orderStatus());
             assertEquals(1L, interprocessFacts.orderTradeCount());
@@ -50,7 +85,10 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             assertEquals(0L, interprocessFacts.ledgerEvents());
             assertDecimal("0", interprocessFacts.position());
             assertDecimal("0", interprocessFacts.account());
-            assertEquals(1L, database.productionTradeCountForAccountCode("f002-r1-unrelated-" + database.caseId()));
+            assertEquals(
+                    1L,
+                    database.productionTradeCountForAccountCode(
+                            "f002-r1-unrelated-" + database.caseId()));
             printInterprocessProof("R1", processA, interprocessFacts);
             System.out.println("INTERPROCESS_WINDOW_ESTABLISHED=YES scenario=R1");
             System.out.println("INTERPROCESS_DB_IDENTITY_MATCH=PASS scenario=R1");
@@ -76,7 +114,8 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             assertEquals("RECOVERED", processB.value("state"));
             assertEquals("false", processB.value("automatic"));
 
-            TargetFacts recoveredFacts = database.targetFacts(processA.value("order"), processA.value("tradeId"));
+            TargetFacts recoveredFacts =
+                    database.targetFacts(processA.value("order"), processA.value("tradeId"));
             assertEquals(1L, recoveredFacts.orderTradeCount());
             assertEquals(1L, recoveredFacts.targetTradeCount());
             assertEquals(2L, recoveredFacts.ledgerEntries());
@@ -97,9 +136,12 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             String orderId = processA.value("order");
             String fillAExchangeTradeId = exchangeTradeId("A", orderId);
             String fillBExchangeTradeId = exchangeTradeId("B", orderId);
-            TargetFacts interprocessFacts = database.targetFacts(orderId, processA.value("tradeId"));
-            TradeLedgerFacts interprocessFillA = database.tradeLedgerFacts(orderId, fillAExchangeTradeId);
-            TradeLedgerFacts interprocessFillB = database.tradeLedgerFacts(orderId, fillBExchangeTradeId);
+            TargetFacts interprocessFacts =
+                    database.targetFacts(orderId, processA.value("tradeId"));
+            TradeLedgerFacts interprocessFillA =
+                    database.tradeLedgerFacts(orderId, fillAExchangeTradeId);
+            TradeLedgerFacts interprocessFillB =
+                    database.tradeLedgerFacts(orderId, fillBExchangeTradeId);
             assertEquals(database.databaseName(), interprocessFacts.databaseName());
             assertEquals("PARTIALLY_FILLED", interprocessFacts.orderStatus());
             assertEquals(1L, interprocessFacts.orderTradeCount());
@@ -177,40 +219,43 @@ class TradingRestartRecoveryPostgresIntegrationTest {
                 facts.ledgerEntries(),
                 facts.ledgerEvents(),
                 facts.position().toPlainString(),
-                facts.account().toPlainString()
-        );
+                facts.account().toPlainString());
     }
 
-    private void printProof(String scenario, ChildRun processA, ChildRun processB, long processAObservedExit) {
+    private void printProof(
+            String scenario, ChildRun processA, ChildRun processB, long processAObservedExit) {
         System.out.printf(
-                "NQ_F002_RESTART_PROOF scenario=%s pidA=%d pidB=%d aExit=%d bStart=%d stateA=%s stateB=%s%n",
+                "NQ_F002_RESTART_PROOF scenario=%s pidA=%d pidB=%d aExit=%d bStart=%d stateA=%s"
+                    + " stateB=%s%n",
                 scenario,
                 processA.pid(),
                 processB.pid(),
                 processAObservedExit,
                 processB.longValue("start"),
                 processA.value("state"),
-                processB.value("state")
-        );
+                processB.value("state"));
     }
 
-    private ChildRun runChild(String phase, RestartDatabase database, Path logFile) throws Exception {
+    private ChildRun runChild(String phase, RestartDatabase database, Path logFile)
+            throws Exception {
         Files.createDirectories(logFile.getParent());
-        String javaExecutable = Path.of(
-                System.getProperty("java.home"),
-                "bin",
-                System.getProperty("os.name").toLowerCase().contains("win") ? "java.exe" : "java"
-        ).toString();
-        String classpath = System.getProperty(
-                "surefire.test.class.path",
-                System.getProperty("java.class.path")
-        );
-        ProcessBuilder builder = new ProcessBuilder(
-                javaExecutable,
-                "-cp",
-                classpath,
-                TradingRestartRecoveryProcessMain.class.getName()
-        );
+        String javaExecutable =
+                Path.of(
+                                System.getProperty("java.home"),
+                                "bin",
+                                System.getProperty("os.name").toLowerCase().contains("win")
+                                        ? "java.exe"
+                                        : "java")
+                        .toString();
+        String classpath =
+                System.getProperty(
+                        "surefire.test.class.path", System.getProperty("java.class.path"));
+        ProcessBuilder builder =
+                new ProcessBuilder(
+                        javaExecutable,
+                        "-cp",
+                        classpath,
+                        TradingRestartRecoveryProcessMain.class.getName());
         builder.redirectErrorStream(true);
         builder.redirectOutput(logFile.toFile());
         builder.environment().put("NQ_F002_PHASE", phase);
@@ -236,10 +281,14 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             }
             String output = Files.readString(logFile);
             assertEquals(0, process.exitValue(), () -> "forked process failed: " + output);
-            String marker = Arrays.stream(output.split("\\R"))
-                    .filter(line -> line.startsWith(RESULT_MARKER))
-                    .reduce((first, second) -> second)
-                    .orElseThrow(() -> new AssertionError("forked result marker missing: " + output));
+            String marker =
+                    Arrays.stream(output.split("\\R"))
+                            .filter(line -> line.startsWith(RESULT_MARKER))
+                            .reduce((first, second) -> second)
+                            .orElseThrow(
+                                    () ->
+                                            new AssertionError(
+                                                    "forked result marker missing: " + output));
             Map<String, String> values = parseMarker(marker.substring(RESULT_MARKER.length()));
             assertEquals(Long.toString(process.pid()), values.get("pid"));
             return new ChildRun(process.pid(), values);
@@ -251,7 +300,8 @@ class TradingRestartRecoveryPostgresIntegrationTest {
         }
     }
 
-    private void assertProcessBoundary(ChildRun processA, ChildRun processB, long processAObservedExit) {
+    private void assertProcessBoundary(
+            ChildRun processA, ChildRun processB, long processAObservedExit) {
         assertNotEquals(processA.pid(), processB.pid());
         assertTrue(processA.longValue("exit") <= processAObservedExit);
         assertTrue(processAObservedExit < processB.longValue("start"));
@@ -275,7 +325,9 @@ class TradingRestartRecoveryPostgresIntegrationTest {
         while (System.currentTimeMillis() <= timestamp && System.nanoTime() < deadline) {
             Thread.onSpinWait();
         }
-        assertTrue(System.currentTimeMillis() > timestamp, "wall clock did not advance before Process B launch");
+        assertTrue(
+                System.currentTimeMillis() > timestamp,
+                "wall clock did not advance before Process B launch");
     }
 
     private Path outputDirectory(String caseId) throws IOException {
@@ -314,15 +366,12 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             long ledgerEntries,
             long ledgerEvents,
             BigDecimal position,
-            BigDecimal account
-    ) {
-    }
+            BigDecimal account) {}
 
-    record TradeLedgerFacts(String tradeId, long tradeCount, long ledgerEntries, long ledgerEvents) {
-    }
+    record TradeLedgerFacts(
+            String tradeId, long tradeCount, long ledgerEntries, long ledgerEvents) {}
 
-    record OrderIdentity(Long accountId, String status) {
-    }
+    record OrderIdentity(Long accountId, String status) {}
 
     static final class RestartDatabase implements AutoCloseable {
         private final String caseId;
@@ -338,8 +387,7 @@ class TradingRestartRecoveryPostgresIntegrationTest {
                 String databaseUrl,
                 String user,
                 String password,
-                String databaseName
-        ) {
+                String databaseName) {
             this.caseId = caseId;
             this.maintenanceUrl = maintenanceUrl;
             this.databaseUrl = databaseUrl;
@@ -350,38 +398,51 @@ class TradingRestartRecoveryPostgresIntegrationTest {
 
         static RestartDatabase create(String scenario) throws Exception {
             String baseUrl = System.getProperty("nq.restart.pg.url");
-            if (baseUrl == null || baseUrl.isBlank()) baseUrl = requiredEnvironment("SPRING_DATASOURCE_URL");
+            if (baseUrl == null || baseUrl.isBlank())
+                baseUrl = requiredEnvironment("SPRING_DATASOURCE_URL");
             String user = System.getProperty("nq.restart.pg.user");
-            if (user == null || user.isBlank()) user = requiredEnvironment("SPRING_DATASOURCE_USERNAME");
+            if (user == null || user.isBlank())
+                user = requiredEnvironment("SPRING_DATASOURCE_USERNAME");
             String password = System.getProperty("nq.restart.pg.password");
-            if (password == null) password = System.getenv().getOrDefault("SPRING_DATASOURCE_PASSWORD", "");
+            if (password == null)
+                password = System.getenv().getOrDefault("SPRING_DATASOURCE_PASSWORD", "");
             return create(scenario, baseUrl, user, password);
         }
 
         // B0 复用生命周期，但显式传入本轮创建的 disposable 实例，不继承机器 datasource。
-        static RestartDatabase create(String scenario, String baseUrl, String user, String password) throws Exception {
+        static RestartDatabase create(String scenario, String baseUrl, String user, String password)
+                throws Exception {
             String caseId = scenario + "_" + UUID.randomUUID().toString().replace("-", "");
             String databaseName = "nq_f002_" + caseId;
             String maintenanceUrl = replaceDatabase(baseUrl, "postgres");
             String databaseUrl = replaceDatabase(baseUrl, databaseName);
             boolean created = false;
             try {
-                try (Connection connection = DriverManager.getConnection(maintenanceUrl, user, password);
+                try (Connection connection =
+                                DriverManager.getConnection(maintenanceUrl, user, password);
                         Statement statement = connection.createStatement()) {
                     statement.execute("CREATE DATABASE " + databaseName);
                     created = true;
                 }
-                Flyway flyway = Flyway.configure()
-                        .dataSource(databaseUrl, user, password)
-                        .locations("classpath:db/migration")
-                        .baselineOnMigrate(false)
-                        .cleanDisabled(true)
-                        .load();
+                Flyway flyway =
+                        Flyway.configure()
+                                .dataSource(databaseUrl, user, password)
+                                .locations("classpath:db/migration")
+                                .baselineOnMigrate(false)
+                                .cleanDisabled(true)
+                                .load();
+                var expected = releaseMigrationScripts(
+                        new ObjectMapper().readTree(
+                                B0Processes.root().resolve("release/source-manifest.json").toFile()));
+                // 当前schema合同在迁移前核对解析集合；历史固定target夹具不使用此预期。
+                assertReleaseMigrationScripts(expected, flyway.info().all());
                 flyway.migrate();
                 flyway.validate();
-                assertEquals("58", flyway.info().current().getVersion().getVersion());
+                assertEquals(expected.lastKey(), flyway.info().current().getVersion());
+                assertReleaseMigrationScripts(expected, flyway.info().applied());
                 assertEquals(0, flyway.info().pending().length);
-                return new RestartDatabase(caseId, maintenanceUrl, databaseUrl, user, password, databaseName);
+                return new RestartDatabase(
+                        caseId, maintenanceUrl, databaseUrl, user, password, databaseName);
             } catch (Exception | AssertionError ex) {
                 if (created) {
                     try {
@@ -401,42 +462,47 @@ class TradingRestartRecoveryPostgresIntegrationTest {
                 return new TargetFacts(
                         actualDatabase,
                         order.status(),
-                        queryLong(connection, "SELECT COUNT(*) FROM trades WHERE order_id=?", orderId),
-                        queryLong(connection, "SELECT COUNT(*) FROM trades WHERE order_id=? AND trade_id=?", orderId, tradeId),
                         queryLong(
                                 connection,
-                                "SELECT COUNT(*) FROM ledger_entries WHERE ref_type='TRADE' AND ref_id=?",
-                                tradeId
-                        ),
+                                "SELECT COUNT(*) FROM trades WHERE order_id=?",
+                                orderId),
                         queryLong(
                                 connection,
-                                "SELECT COUNT(*) FROM ledger_events event "
-                                        + "JOIN ledger_entries entry ON entry.entry_id=event.entry_id "
-                                        + "WHERE entry.ref_type='TRADE' AND entry.ref_id=?",
-                                tradeId
-                        ),
+                                "SELECT COUNT(*) FROM trades WHERE order_id=? AND trade_id=?",
+                                orderId,
+                                tradeId),
+                        queryLong(
+                                connection,
+                                "SELECT COUNT(*) FROM ledger_entries WHERE ref_type='TRADE' AND"
+                                    + " ref_id=?",
+                                tradeId),
+                        queryLong(
+                                connection,
+                                "SELECT COUNT(*) FROM ledger_events event JOIN ledger_entries entry"
+                                    + " ON entry.entry_id=event.entry_id WHERE"
+                                    + " entry.ref_type='TRADE' AND entry.ref_id=?",
+                                tradeId),
                         queryDecimal(
                                 connection,
-                                "SELECT COALESCE(MAX(qty),0) FROM positions WHERE account_id=? AND symbol='BTC-USDT'",
-                                order.accountId()
-                        ),
+                                "SELECT COALESCE(MAX(qty),0) FROM positions WHERE account_id=? AND"
+                                    + " symbol='BTC-USDT'",
+                                order.accountId()),
                         queryDecimal(
                                 connection,
                                 "SELECT COALESCE((SELECT balance FROM account_snapshots "
                                         + "WHERE account_id=? AND currency='BTC' "
                                         + "ORDER BY ts DESC,snapshot_id DESC LIMIT 1),0)",
-                                order.accountId()
-                        )
-                );
+                                order.accountId()));
             }
         }
 
-        TradeLedgerFacts tradeLedgerFacts(String orderId, String exchangeTradeId) throws SQLException {
+        TradeLedgerFacts tradeLedgerFacts(String orderId, String exchangeTradeId)
+                throws SQLException {
             try (Connection connection = DriverManager.getConnection(databaseUrl, user, password);
-                    PreparedStatement statement = connection.prepareStatement(
-                            "SELECT COUNT(*),MIN(trade_id) FROM trades "
-                                    + "WHERE order_id=? AND exchange='OKX' AND exchange_trade_id=?"
-                    )) {
+                    PreparedStatement statement =
+                            connection.prepareStatement(
+                                    "SELECT COUNT(*),MIN(trade_id) FROM trades WHERE order_id=? AND"
+                                        + " exchange='OKX' AND exchange_trade_id=?")) {
                 statement.setString(1, orderId);
                 statement.setString(2, exchangeTradeId);
                 try (ResultSet resultSet = statement.executeQuery()) {
@@ -446,18 +512,19 @@ class TradingRestartRecoveryPostgresIntegrationTest {
                     if (tradeId == null) {
                         return new TradeLedgerFacts(null, tradeCount, 0, 0);
                     }
-                    long ledgerEntries = queryLong(
-                            connection,
-                            "SELECT COUNT(*) FROM ledger_entries WHERE ref_type='TRADE' AND ref_id=?",
-                            tradeId
-                    );
-                    long ledgerEvents = queryLong(
-                            connection,
-                            "SELECT COUNT(*) FROM ledger_events event "
-                                    + "JOIN ledger_entries entry ON entry.entry_id=event.entry_id "
-                                    + "WHERE entry.ref_type='TRADE' AND entry.ref_id=?",
-                            tradeId
-                    );
+                    long ledgerEntries =
+                            queryLong(
+                                    connection,
+                                    "SELECT COUNT(*) FROM ledger_entries WHERE ref_type='TRADE' AND"
+                                        + " ref_id=?",
+                                    tradeId);
+                    long ledgerEvents =
+                            queryLong(
+                                    connection,
+                                    "SELECT COUNT(*) FROM ledger_events event JOIN ledger_entries"
+                                        + " entry ON entry.entry_id=event.entry_id WHERE"
+                                        + " entry.ref_type='TRADE' AND entry.ref_id=?",
+                                    tradeId);
                     return new TradeLedgerFacts(tradeId, tradeCount, ledgerEntries, ledgerEvents);
                 }
             }
@@ -467,12 +534,12 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             try (Connection connection = DriverManager.getConnection(databaseUrl, user, password)) {
                 return queryLong(
                         connection,
-                        "SELECT COUNT(*) FROM trades trade "
-                                + "JOIN orders local_order ON local_order.order_id=trade.order_id "
-                                + "JOIN exchange_accounts account ON account.legacy_account_id=local_order.account_id "
-                                + "WHERE account.account_alias=? AND account.trade_env='SIM' AND local_order.trade_env='SIM'",
-                        accountCode
-                );
+                        "SELECT COUNT(*) FROM trades trade JOIN orders local_order ON"
+                            + " local_order.order_id=trade.order_id JOIN exchange_accounts account"
+                            + " ON account.legacy_account_id=local_order.account_id WHERE"
+                            + " account.account_alias=? AND account.trade_env='SIM' AND"
+                            + " local_order.trade_env='SIM'",
+                        accountCode);
             }
         }
 
@@ -496,16 +563,18 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             return password;
         }
 
-        private static OrderIdentity orderIdentity(Connection connection, String orderId) throws SQLException {
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "SELECT account_id,status FROM orders WHERE order_id=?"
-            )) {
+        private static OrderIdentity orderIdentity(Connection connection, String orderId)
+                throws SQLException {
+            try (PreparedStatement statement =
+                    connection.prepareStatement(
+                            "SELECT account_id,status FROM orders WHERE order_id=?")) {
                 statement.setString(1, orderId);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     if (!resultSet.next()) {
                         throw new AssertionError("target order missing from scenario database");
                     }
-                    OrderIdentity identity = new OrderIdentity(resultSet.getLong(1), resultSet.getString(2));
+                    OrderIdentity identity =
+                            new OrderIdentity(resultSet.getLong(1), resultSet.getString(2));
                     if (resultSet.next()) {
                         throw new AssertionError("duplicate target order identity");
                     }
@@ -514,7 +583,8 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             }
         }
 
-        private static long queryLong(Connection connection, String sql, Object... parameters) throws SQLException {
+        private static long queryLong(Connection connection, String sql, Object... parameters)
+                throws SQLException {
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 bind(statement, parameters);
                 try (ResultSet resultSet = statement.executeQuery()) {
@@ -524,8 +594,8 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             }
         }
 
-        private static BigDecimal queryDecimal(Connection connection, String sql, Object... parameters)
-                throws SQLException {
+        private static BigDecimal queryDecimal(
+                Connection connection, String sql, Object... parameters) throws SQLException {
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 bind(statement, parameters);
                 try (ResultSet resultSet = statement.executeQuery()) {
@@ -547,7 +617,8 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             }
         }
 
-        private static void bind(PreparedStatement statement, Object... parameters) throws SQLException {
+        private static void bind(PreparedStatement statement, Object... parameters)
+                throws SQLException {
             for (int index = 0; index < parameters.length; index++) {
                 statement.setObject(index + 1, parameters[index]);
             }
@@ -559,12 +630,17 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             deleteOutputDirectory();
         }
 
-        private static void dropDatabase(String maintenanceUrl, String user, String password, String databaseName)
+        private static void dropDatabase(
+                String maintenanceUrl, String user, String password, String databaseName)
                 throws Exception {
-            try (Connection connection = DriverManager.getConnection(maintenanceUrl, user, password);
+            try (Connection connection =
+                            DriverManager.getConnection(maintenanceUrl, user, password);
                     Statement statement = connection.createStatement()) {
-                statement.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
-                        + "WHERE datname='" + databaseName + "' AND pid<>pg_backend_pid()");
+                statement.execute(
+                        "SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
+                                + "WHERE datname='"
+                                + databaseName
+                                + "' AND pid<>pg_backend_pid()");
                 statement.execute("DROP DATABASE IF EXISTS " + databaseName);
             }
         }
@@ -576,13 +652,14 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             }
             try (var paths = Files.walk(directory)) {
                 paths.sorted((left, right) -> right.getNameCount() - left.getNameCount())
-                        .forEach(path -> {
-                            try {
-                                Files.deleteIfExists(path);
-                            } catch (IOException ex) {
-                                throw new IllegalStateException(ex);
-                            }
-                        });
+                        .forEach(
+                                path -> {
+                                    try {
+                                        Files.deleteIfExists(path);
+                                    } catch (IOException ex) {
+                                        throw new IllegalStateException(ex);
+                                    }
+                                });
             }
         }
 

@@ -10,10 +10,13 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Repository
 public class JdbcEmergencyStopEventRepository implements EmergencyStopEventRepository {
@@ -23,6 +26,27 @@ public class JdbcEmergencyStopEventRepository implements EmergencyStopEventRepos
 
     public JdbcEmergencyStopEventRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Override
+    public void lockOperation(UUID operationId) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive())
+            throw new IllegalStateException("PAPER_EMERGENCY_TRANSACTION_REQUIRED");
+        // 仅锁原请求，不提前锁运行行，避免颠倒既有发布准入协调器的加锁顺序。
+        if (!Boolean.TRUE.equals(jdbcTemplate.queryForObject(
+                "SELECT pg_try_advisory_xact_lock(hashtextextended(?,9257))",
+                Boolean.class, "paper-emergency-stop:" + operationId)))
+            throw new IllegalStateException("PAPER_EMERGENCY_OPERATION_BUSY");
+    }
+
+    @Override
+    public Optional<EmergencyStopEvent> findById(String emergencyStopId) {
+        return jdbcTemplate.query("""
+                SELECT emergency_stop_id, paper_run_id, trigger_type, status, reason, triggered_by,
+                       triggered_at, resolved_at, request_json::text AS request_json,
+                       result_json::text AS result_json, created_at
+                FROM emergency_stop_events WHERE emergency_stop_id = ?
+                """, ROW_MAPPER, emergencyStopId).stream().findFirst();
     }
 
     @Override

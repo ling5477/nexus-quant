@@ -7,6 +7,11 @@ import com.guidinglight.nexusquant.ledger.infra.jdbc.JdbcLedgerPostingRepository
 import com.guidinglight.nexusquant.ledger.application.service.SimCashFundingService;
 import com.guidinglight.nexusquant.scheduler.infra.jdbc.JdbcLedgerReconcileRepository;
 import com.guidinglight.nexusquant.trading.infra.query.JdbcTradingQueryFacade;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.file.Path;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
+import org.flywaydb.core.api.MigrationVersion;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -55,16 +60,16 @@ class AccountSnapshotSemanticsPostgresIntegrationTest {
         JdbcTemplate admin = new JdbcTemplate(adminSource);
         try {
             Flyway old = Flyway.configure().dataSource(adminSource).locations("classpath:db/migration")
-                    .schemas(schema).defaultSchema(schema).createSchemas(true).target("54").load();
+                    .schemas(schema).defaultSchema(schema).createSchemas(true).target("1").load();
             old.migrate();
             old.validate();
-            assertEquals("54", old.info().current().getVersion().getVersion());
+            assertEquals("1", old.info().current().getVersion().getVersion());
             long accountId = jdbc.queryForObject("""
                     INSERT INTO accounts(account_code,venue,status) VALUES (?, 'OKX', 'ACTIVE') RETURNING account_id
                     """, Long.class, "synthetic-" + UUID.randomUUID());
             jdbc.update("""
-                    INSERT INTO account_snapshots(account_id,currency,balance,available,frozen,ts,trace_id)
-                    VALUES (?,'BTC',1,1,0,?,'legacy')
+                    INSERT INTO account_snapshots(account_id,currency,balance,available,frozen,ts,trace_id,recorded_at)
+                    VALUES (?,'BTC',1,1,0,?,'legacy',NULL)
                     """, accountId, Timestamp.from(Instant.parse("2026-08-26T00:00:00Z")));
             long legacyId = jdbc.queryForObject("SELECT max(snapshot_id) FROM account_snapshots", Long.class);
 
@@ -72,7 +77,30 @@ class AccountSnapshotSemanticsPostgresIntegrationTest {
                     .schemas(schema).defaultSchema(schema).createSchemas(true).load();
             latest.migrate();
             latest.validate();
-            assertEquals("58", latest.info().current().getVersion().getVersion());
+            // 旧行由V1创建；升级后逐项匹配当前正式迁移，不能继续断言历史版本。
+            var manifest = new ObjectMapper().readTree(Path.of("../../release/source-manifest.json").toFile());
+            var expected = new TreeMap<MigrationVersion, String>();
+            var pattern = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
+            for (var group : manifest.path("groups")) {
+                if (!"INCLUDE_RUNTIME".equals(group.path("category").asText())) continue;
+                for (var path : group.path("paths")) {
+                    var match = pattern.matcher(path.asText());
+                    if (match.matches()) assertNull(expected.put(MigrationVersion.fromVersion(match.group(2)), match.group(1)));
+                }
+            }
+            assertFalse(expected.isEmpty());
+            var applied = new TreeMap<MigrationVersion, String>();
+            for (var migration : latest.info().applied()) {
+                assertEquals("SUCCESS", migration.getState().name());
+                if (migration.getVersion() == null) {
+                    assertEquals("SCHEMA", migration.getType().name());
+                    continue;
+                }
+                assertNull(applied.put(migration.getVersion(), migration.getScript()));
+            }
+            assertEquals(expected, applied);
+            assertEquals(expected.lastKey(), latest.info().current().getVersion());
+            assertEquals(0, latest.info().pending().length);
             assertNull(jdbc.queryForObject("SELECT trade_env FROM account_snapshots WHERE snapshot_id=?",
                     String.class, legacyId));
             assertNull(jdbc.queryForObject("SELECT recorded_at FROM account_snapshots WHERE snapshot_id=?",

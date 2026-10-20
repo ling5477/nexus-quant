@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.paper.api.dto;
 
 import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -20,8 +21,7 @@ public record PaperStrategyEvaluationResponse(
         List<StrategyEvaluationResponse> strategyEvaluations,
         List<PublishEvaluationResponse> publishEvaluations,
         RankingsResponse rankings,
-        SafetyResponse safety
-) {
+        SafetyResponse safety) {
 
     public record OverviewResponse(
             int strategyCount,
@@ -29,13 +29,12 @@ public record PaperStrategyEvaluationResponse(
             int evaluatedRunCount,
             int comparableRunCount,
             int sampleInsufficientStrategyCount,
-            int profitableStrategyCount,
-            int lossStrategyCount,
+            Integer profitableStrategyCount,
+            Integer lossStrategyCount,
             int highRiskStrategyCount,
             int backtestDeviationStrategyCount,
             Integer topCompositeScore,
-            Integer worstCompositeScore
-    ) {}
+            Integer worstCompositeScore) {}
 
     public record BacktestDeviationResponse(
             BigDecimal backtestReturn,
@@ -45,8 +44,7 @@ public record PaperStrategyEvaluationResponse(
             BigDecimal paperMaxDrawdown,
             BigDecimal drawdownDeviation,
             String deviationLevel,
-            String deviationExplanation
-    ) {}
+            String deviationExplanation) {}
 
     public record StrategyEvaluationResponse(
             String strategyVersionId,
@@ -81,8 +79,7 @@ public record PaperStrategyEvaluationResponse(
             String evaluationConfidence,
             String primaryWeakness,
             List<String> warnings,
-            BacktestDeviationResponse backtestDeviation
-    ) {}
+            BacktestDeviationResponse backtestDeviation) {}
 
     public record PublishEvaluationResponse(
             String publishId,
@@ -103,8 +100,7 @@ public record PaperStrategyEvaluationResponse(
             String ratingLabel,
             String evaluationConfidence,
             List<String> warnings,
-            BacktestDeviationResponse backtestDeviation
-    ) {}
+            BacktestDeviationResponse backtestDeviation) {}
 
     public record RankingsResponse(
             List<String> topCompositeStrategies,
@@ -113,68 +109,131 @@ public record PaperStrategyEvaluationResponse(
             List<String> worstDrawdownStrategies,
             List<String> sampleInsufficientStrategies,
             List<String> highDeviationStrategies,
-            List<String> highRiskStrategies
-    ) {}
+            List<String> highRiskStrategies) {}
 
     public record SafetyResponse(
-            String environment,
-            boolean liveEnabled,
-            boolean realExchangeTouched,
-            String message
-    ) {}
+            String environment, boolean liveEnabled, boolean realExchangeTouched, String message) {}
 
     public static PaperStrategyEvaluationResponse from(PaperStrategyEvaluation evaluation) {
         PaperStrategyEvaluation.Overview o = evaluation.overview();
-        var overview = new OverviewResponse(
-                o.strategyCount(), o.publishCount(), o.evaluatedRunCount(), o.comparableRunCount(),
-                o.sampleInsufficientStrategyCount(), o.profitableStrategyCount(), o.lossStrategyCount(),
-                o.highRiskStrategyCount(), o.backtestDeviationStrategyCount(), o.topCompositeScore(), o.worstCompositeScore());
+        var overview =
+                new OverviewResponse(
+                        o.strategyCount(),
+                        o.publishCount(),
+                        o.evaluatedRunCount(),
+                        o.comparableRunCount(),
+                        o.sampleInsufficientStrategyCount(),
+                        o.profitableStrategyCount(),
+                        o.lossStrategyCount(),
+                        o.highRiskStrategyCount(),
+                        o.backtestDeviationStrategyCount(),
+                        o.topCompositeScore(),
+                        o.worstCompositeScore());
 
         PaperStrategyEvaluation.Rankings r = evaluation.rankings();
-        var rankings = new RankingsResponse(
-                r.topCompositeStrategies(), r.worstCompositeStrategies(), r.topReturnStrategies(),
-                r.worstDrawdownStrategies(), r.sampleInsufficientStrategies(), r.highDeviationStrategies(),
-                r.highRiskStrategies());
+        var rankings =
+                new RankingsResponse(
+                        r.topCompositeStrategies(),
+                        r.worstCompositeStrategies(),
+                        r.topReturnStrategies(),
+                        r.worstDrawdownStrategies(),
+                        r.sampleInsufficientStrategies(),
+                        r.highDeviationStrategies(),
+                        r.highRiskStrategies());
 
-        var safety = new SafetyResponse(
-                "SIM/PAPER", false, false,
-                "该策略评估仅基于 Paper 模拟运行与本地执行事实做 Paper 内部启发式评分，不是真实投资评级，不构成投资建议，不代表 LIVE 或真实交易表现");
+        var safety =
+                new SafetyResponse(
+                        "SIM/PAPER",
+                        false,
+                        false,
+                        "该策略评估仅基于 Paper 模拟运行与本地执行事实做 Paper 内部启发式评分，不是真实投资评级，不构成投资建议，不代表 LIVE 或真实交易表现");
 
         return new PaperStrategyEvaluationResponse(
                 overview,
-                evaluation.strategyEvaluations().stream().map(PaperStrategyEvaluationResponse::strategy).toList(),
-                evaluation.publishEvaluations().stream().map(PaperStrategyEvaluationResponse::publish).toList(),
-                rankings, safety);
+                evaluation.strategyEvaluations().stream()
+                        .map(PaperStrategyEvaluationResponse::strategy)
+                        .toList(),
+                evaluation.publishEvaluations().stream()
+                        .map(PaperStrategyEvaluationResponse::publish)
+                        .toList(),
+                rankings,
+                safety);
     }
 
-    private static BacktestDeviationResponse deviation(PaperStrategyEvaluation.BacktestDeviation d) {
+    private static BacktestDeviationResponse deviation(
+            PaperStrategyEvaluation.BacktestDeviation d) {
         if (d == null) {
             return null;
         }
         return new BacktestDeviationResponse(
-                d.backtestReturn(), d.paperReturn(), d.returnDeviation(),
-                d.backtestMaxDrawdown(), d.paperMaxDrawdown(), d.drawdownDeviation(),
-                d.deviationLevel().name(), d.deviationExplanation());
+                d.backtestReturn(),
+                d.paperReturn(),
+                d.returnDeviation(),
+                d.backtestMaxDrawdown(),
+                d.paperMaxDrawdown(),
+                d.drawdownDeviation(),
+                d.deviationLevel().name(),
+                d.deviationExplanation());
     }
 
-    private static StrategyEvaluationResponse strategy(PaperStrategyEvaluation.StrategyEvaluation s) {
+    private static StrategyEvaluationResponse strategy(
+            PaperStrategyEvaluation.StrategyEvaluation s) {
         return new StrategyEvaluationResponse(
-                s.strategyVersionId(), s.runCount(), s.comparableRunCount(), s.publishCount(), s.latestRunTime(),
-                s.currentEquity(), s.initialEquity(), s.totalPnl(), s.totalReturn(), s.maxDrawdown(),
-                s.winRunCount(), s.lossRunCount(), s.winRate(), s.averageReturn(), s.averageDrawdown(),
-                s.riskBlockedCount(), s.dataInsufficientCount(), s.noOrderCount(), s.orderNoFillCount(),
-                s.filledRunCount(), s.filledLossCount(), s.failedRunCount(),
-                s.sampleScore(), s.riskScore(), s.returnScore(), s.executionScore(), s.backtestDeviationScore(),
-                s.compositeScore(), s.ratingLabel().name(), s.evaluationConfidence().name(), s.primaryWeakness(),
-                s.warnings(), deviation(s.backtestDeviation()));
+                s.strategyVersionId(),
+                s.runCount(),
+                s.comparableRunCount(),
+                s.publishCount(),
+                s.latestRunTime(),
+                s.currentEquity(),
+                s.initialEquity(),
+                s.totalPnl(),
+                s.totalReturn(),
+                s.maxDrawdown(),
+                s.winRunCount(),
+                s.lossRunCount(),
+                s.winRate(),
+                s.averageReturn(),
+                s.averageDrawdown(),
+                s.riskBlockedCount(),
+                s.dataInsufficientCount(),
+                s.noOrderCount(),
+                s.orderNoFillCount(),
+                s.filledRunCount(),
+                s.filledLossCount(),
+                s.failedRunCount(),
+                s.sampleScore(),
+                s.riskScore(),
+                s.returnScore(),
+                s.executionScore(),
+                s.backtestDeviationScore(),
+                s.compositeScore(),
+                s.ratingLabel().name(),
+                s.evaluationConfidence().name(),
+                s.primaryWeakness(),
+                s.warnings(),
+                deviation(s.backtestDeviation()));
     }
 
     private static PublishEvaluationResponse publish(PaperStrategyEvaluation.PublishEvaluation p) {
         return new PublishEvaluationResponse(
-                p.publishId(), p.strategyVersionId(), p.runCount(), p.comparableRunCount(), p.latestRunTime(),
-                p.totalPnl(), p.totalReturn(), p.maxDrawdown(), p.winRate(),
-                p.sampleScore(), p.riskScore(), p.returnScore(), p.executionScore(), p.backtestDeviationScore(),
-                p.compositeScore(), p.ratingLabel().name(), p.evaluationConfidence().name(),
-                p.warnings(), deviation(p.backtestDeviation()));
+                p.publishId(),
+                p.strategyVersionId(),
+                p.runCount(),
+                p.comparableRunCount(),
+                p.latestRunTime(),
+                p.totalPnl(),
+                p.totalReturn(),
+                p.maxDrawdown(),
+                p.winRate(),
+                p.sampleScore(),
+                p.riskScore(),
+                p.returnScore(),
+                p.executionScore(),
+                p.backtestDeviationScore(),
+                p.compositeScore(),
+                p.ratingLabel().name(),
+                p.evaluationConfidence().name(),
+                p.warnings(),
+                deviation(p.backtestDeviation()));
     }
 }

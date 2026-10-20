@@ -29,7 +29,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * JdbcHistoricalMarketDataPort 提供 DB-backed historical bars 查询。
  * <p>
  * Why:
- * RC1-5 要把 `exchangeCode` 纳入 marketdata canonical 查询口径，因此 JDBC 查询必须同步收口
+ * 要把 `exchangeCode` 纳入 marketdata canonical 查询口径，因此 JDBC 查询必须同步收口
  * 到 `exchange_code + symbol + interval + range`，不能再依赖隐式默认交易所。
  */
 public class JdbcHistoricalMarketDataPort implements HistoricalMarketDataPort {

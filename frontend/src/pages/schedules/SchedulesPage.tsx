@@ -1,17 +1,14 @@
-import {useLocalizedForm} from '@/i18n/useLocalizedForm';
-import {useTranslation} from 'react-i18next';
-import {t} from '@/i18n';
 import {
     Alert,
-    App,
     Button,
     Card,
     Col,
-    Descriptions,
     Drawer,
     Empty,
     Form,
+    Grid,
     Input,
+    List,
     Row,
     Select,
     Space,
@@ -20,323 +17,308 @@ import {
     Typography,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import {useState} from 'react';
-
-import {formatApiError, showApiError} from '@/api/errors';
+import {useEffect, useState} from 'react';
+import {useSearchParams} from 'react-router-dom';
+import {useTranslation} from 'react-i18next';
+import {useLocalizedForm} from '@/i18n/useLocalizedForm';
+import {formatApiError} from '@/api/errors';
 import {NqPageHeader} from '@/components/nq/NqPageHeader';
-import {BOOLEAN_FILTER_OPTIONS, SCHEDULE_STATUS_OPTIONS, SCHEDULE_TYPE_OPTIONS} from '@/constants/filter-options';
-import {
-    useScheduleDetailQuery,
-    useScheduleListQuery,
-    useUpdateScheduleStatusMutation,
-} from '@/features/schedules/hooks/useScheduleListQuery';
-import type {AppApiError} from '@/types/api';
+import {SCHEDULE_STATUS_OPTIONS} from '@/constants/filter-options';
+import {useScheduleListQuery} from '@/features/schedules/hooks/useScheduleListQuery';
+import {useAuthStore} from '@/store/auth-store';
+import {StrategyDefinitionPicker} from '@/features/strategies/components/StrategyDefinitionPicker';
+import {ScheduleCreationWorkspace} from '@/features/schedules/components/ScheduleCreationWorkspace';
+import {StrategyScheduleDetails} from '@/features/schedules/components/StrategyScheduleDetails';
 import {
     defaultStrategyScheduleListFilters,
     type StrategyScheduleListFilters,
-    type StrategyScheduleListItem,
+    type StrategyScheduleSummary,
 } from '@/features/schedules/types/schedules';
-import {containsIgnoreCase, formatDateTime, matchesBooleanFilter, normalizeOptionalText} from '@/utils/formatters';
+import {formatDateTime, normalizeOptionalText} from '@/utils/formatters';
+import type {AppApiError} from '@/types/api';
 
-type ScheduleRow = StrategyScheduleListItem;
-
+/** 计划目录使用服务端筛选与真实总数；详情返回后保留当前查询，手机保留主要调度信息。 */
 export function SchedulesPage() {
-    useTranslation('pages');
-    const {message} = App.useApp();
+    const {t} = useTranslation('pages');
+    const screens = Grid.useBreakpoint();
+    const owner = useAuthStore((state) => state.currentUser?.userId);
     const [form] = useLocalizedForm<StrategyScheduleListFilters>();
-    const [submittedFilters, setSubmittedFilters] = useState<StrategyScheduleListFilters>(defaultStrategyScheduleListFilters);
-    const [searchVersion, setSearchVersion] = useState(0);
-    const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
-    const schedulesQuery = useScheduleListQuery(submittedFilters.strategyId, searchVersion);
-    const scheduleDetailQuery = useScheduleDetailQuery(selectedScheduleId);
-    const updateStatusMutation = useUpdateScheduleStatusMutation();
-    const hasSearched = searchVersion > 0;
-
-    const visibleItems = (schedulesQuery.data ?? []).filter((item) => (
-        containsIgnoreCase(item.scheduleType, submittedFilters.scheduleType)
-        && containsIgnoreCase(item.status, submittedFilters.status)
-        && matchesBooleanFilter(item.enabled, submittedFilters.enabled)
-    ));
-
-    const scheduleColumns: ColumnsType<ScheduleRow> = [
+    const [filters, setFilters] = useState(defaultStrategyScheduleListFilters);
+    const [revision, setRevision] = useState(0);
+    const [page, setPage] = useState(1);
+    const [params, setParams] = useSearchParams();
+    const selectedId = params.get('scheduleId');
+    const source = params.get('strategyId');
+    useEffect(() => {
+        if (source) {
+            const next = {...defaultStrategyScheduleListFilters, strategyId: source};
+            form.setFieldsValue(next);
+            setFilters(next);
+            setPage(1);
+            setRevision((value) => value + 1);
+        }
+    }, [source, form]);
+    const query = useScheduleListQuery({...filters, limit: 10, offset: (page - 1) * 10}, revision);
+    const open = (id: string | null) => {
+        const next = new URLSearchParams(params);
+        if (id) next.set('scheduleId', id);
+        else next.delete('scheduleId');
+        setParams(next);
+    };
+    const status = (row: StrategyScheduleSummary) => (
+        <Tag color={row.enabled ? 'success' : 'default'}>
+            {t(row.enabled ? 'enabled' : 'disabled')}
+        </Tag>
+    );
+    const columns: ColumnsType<StrategyScheduleSummary> = [
         {
-            title: t('pages:scheduleId'),
+            title: t('scheduleId'),
             dataIndex: 'scheduleJobId',
-            key: 'scheduleJobId',
-            width: 220,
-            render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
+            width: 250,
+            render: (id: string) => <Typography.Text copyable>{id}</Typography.Text>,
         },
+        {title: t('status'), key: 'status', width: 110, render: (_, row) => status(row)},
         {
-            title: t('pages:strategyId'),
-            dataIndex: 'strategyId',
-            key: 'strategyId',
-            width: 220,
-            render: (value: string) => <Typography.Text copyable>{value}</Typography.Text>,
-        },
-        {
-            title: t('pages:scheduleType'),
+            title: t('scheduleType'),
             dataIndex: 'scheduleType',
-            key: 'scheduleType',
-            width: 140,
+            width: 130,
+            render: (value: string) => t(`scheduleCreation.type.${value}`, {defaultValue: value}),
         },
+        {title: 'Cron', dataIndex: 'cronExpr', width: 160},
+        {title: t('timeZone'), dataIndex: 'timezone', width: 160},
         {
-            title: 'Cron',
-            dataIndex: 'cronExpr',
-            key: 'cronExpr',
-            width: 180,
-            render: (value: string) => value || '-',
-        },
-        {
-            title: t('pages:status'),
-            dataIndex: 'status',
-            key: 'status',
-            width: 120,
-            render: (value: string) => <Tag color="blue">{value}</Tag>,
-        },
-        {
-            title: t('pages:enable'),
-            dataIndex: 'enabled',
-            key: 'enabled',
-            width: 100,
-            render: (value: boolean) => <Tag color={value ? 'success' : 'default'}>{value ? t('pages:yes') : t('pages:no')}</Tag>,
-        },
-        {
-            title: t('pages:lastTriggered'),
+            title: t('lastTriggered'),
             dataIndex: 'lastTriggeredAt',
-            key: 'lastTriggeredAt',
             width: 180,
-            render: (value: string | null) => formatDateTime(value),
+            render: formatDateTime,
         },
+        {title: t('updatedAt'), dataIndex: 'updatedAt', width: 180, render: formatDateTime},
         {
-            title: t('pages:updatedAt'),
-            dataIndex: 'updatedAt',
-            key: 'updatedAt',
-            width: 180,
-            render: (value: string) => formatDateTime(value),
-        },
-        {
-            title: t('pages:actions'),
+            title: t('actions'),
             key: 'action',
             fixed: 'right',
-            width: 120,
-            render: (_, record) => (
-                <Button type="link" onClick={() => setSelectedScheduleId(record.scheduleJobId)}>
-                    {t('pages:viewDetails')}</Button>
+            width: 100,
+            render: (_, row) => (
+                <Button type="link" onClick={() => open(row.scheduleJobId)}>
+                    {t('viewDetails')}
+                </Button>
             ),
         },
     ];
-
-    const handleSearch = (values: StrategyScheduleListFilters) => {
-        setSubmittedFilters({
-            strategyId: normalizeOptionalText(values.strategyId),
-            scheduleType: normalizeOptionalText(values.scheduleType),
-            status: normalizeOptionalText(values.status),
-            enabled: values.enabled ?? 'all',
-        });
-        setSearchVersion((value) => value + 1);
-    };
-
-    const handleReset = () => {
+    const reset = () => {
         form.resetFields();
-        setSubmittedFilters(defaultStrategyScheduleListFilters);
-        setSearchVersion(0);
+        setFilters(defaultStrategyScheduleListFilters);
+        setPage(1);
+        setRevision(0);
     };
-
-    const handleStatusUpdate = (enabled: boolean) => {
-        if (!scheduleDetailQuery.data) {
-            return;
-        }
-
-        updateStatusMutation.mutate(
-            {
-                scheduleId: scheduleDetailQuery.data.scheduleJobId,
-                request: {enabled},
-            },
-            {
-                onSuccess: () => {
-                    message.success(enabled ? t('pages:scheduleEnabled') : t('pages:scheduleDisabled'));
-                    scheduleDetailQuery.refetch();
-                },
-                onError: (error) => {
-                    showApiError(error as AppApiError, message);
-                },
-            },
-        );
-    };
-
     return (
         <>
             <Space direction="vertical" size={16} style={{display: 'flex'}}>
                 <Card className="page-card" bordered={false}>
                     <NqPageHeader
-                        title={t('pages:schedules')}
-                        description={t('pages:viewSchedulesRunStatusAndEnableOrDisableActionsByStrategyDuringTheFreezeOnlyExistingSchedulingCapabi')}
-                        badge="Schedules"
+                        title={t('schedules')}
+                        description={t('scheduleWorkspaceHint')}
+                        badge={t('schedules')}
                     />
                 </Card>
-                <Card
-                    className="page-section"
-                    bordered={false}
-                    title={t('pages:filters')}
-                    extra={(
-                        <Space>
-                            <Button type="primary" onClick={() => form.submit()}>
-                                {t('pages:search')}</Button>
-                            <Button onClick={handleReset}>
-                                {t('pages:reset')}</Button>
-                        </Space>
-                    )}
-                >
+                <Card className="page-section" bordered={false}>
+                    <ScheduleCreationWorkspace
+                        key={owner ?? 'anonymous'}
+                        onView={(receipt) => {
+                            const next = new URLSearchParams(params);
+                            next.set('strategyId', receipt.request.strategyId);
+                            next.set('scheduleId', receipt.result.scheduleJobId);
+                            setParams(next);
+                            const nextFilters = {
+                                ...defaultStrategyScheduleListFilters,
+                                strategyId: receipt.request.strategyId,
+                            };
+                            form.setFieldsValue(nextFilters);
+                            setFilters(nextFilters);
+                            setPage(1);
+                            setRevision((value) => value + 1);
+                        }}
+                    />
+                </Card>
+                <Card className="page-section workspace-filter-panel" bordered={false} title={t('filters')}>
                     <Form
+                        name="schedule-query"
                         form={form}
                         layout="vertical"
                         initialValues={defaultStrategyScheduleListFilters}
-                        onFinish={handleSearch}
+                        onFinish={(values) => {
+                            setFilters({
+                                strategyId: normalizeOptionalText(values.strategyId),
+                                scheduleId: normalizeOptionalText(values.scheduleId),
+                                status: normalizeOptionalText(values.status),
+                                scheduleType: normalizeOptionalText(values.scheduleType),
+                            });
+                            setPage(1);
+                            setRevision((value) => value + 1);
+                        }}
                     >
-                        <Row gutter={[16, 0]}>
-                            <Col xs={24} md={12} xl={6}>
+                        <Row gutter={16}>
+                            <Col xs={24} lg={9}>
                                 <Form.Item
-                                    label={t('pages:strategyId')}
                                     name="strategyId"
-                                    rules={[{required: true, message: t('pages:enterStrategyid')}]}
+                                    label={t('strategy')}
+                                    rules={[{required: true, message: t('enterStrategyid')}]}
                                 >
-                                    <Input placeholder={t('pages:requiredForExampleStrategy001')}/>
+                                    <StrategyDefinitionPicker active purpose="schedule" />
                                 </Form.Item>
                             </Col>
-                            <Col xs={24} md={12} xl={6}>
-                                <Form.Item label={t('pages:scheduleType')} name="scheduleType">
-                                    <Select allowClear placeholder={t('pages:allTypes')} options={SCHEDULE_TYPE_OPTIONS}/>
+                            <Col xs={24} md={12} lg={5}>
+                                <Form.Item name="scheduleId" label={t('scheduleExactIdentity')}>
+                                    <Input maxLength={128} placeholder={t('optional')} />
                                 </Form.Item>
                             </Col>
-                            <Col xs={24} md={12} xl={6}>
-                                <Form.Item label={t('pages:status')} name="status">
-                                    <Select allowClear placeholder={t('pages:allStatuses')} options={SCHEDULE_STATUS_OPTIONS}/>
-                                </Form.Item>
-                            </Col>
-                            <Col xs={24} md={12} xl={6}>
-                                <Form.Item label={t('pages:enabledStatus')} name="enabled">
+                            <Col xs={24} md={12} lg={5}>
+                                <Form.Item name="status" label={t('scheduleConfigurationStatus')}>
                                     <Select
-                                        options={BOOLEAN_FILTER_OPTIONS}
+                                        allowClear
+                                        options={SCHEDULE_STATUS_OPTIONS.map((option) => ({
+                                            ...option,
+                                            label: t(
+                                                option.value === 'ENABLED' ? 'enabled' : 'disabled',
+                                            ),
+                                        }))}
+                                        placeholder={t('allStatuses')}
+                                    />
+                                </Form.Item>
+                            </Col>
+                            <Col xs={24} md={12} lg={5}>
+                                <Form.Item name="scheduleType" label={t('scheduleType')}>
+                                    <Select
+                                        allowClear
+                                        placeholder={t('scheduleCreation.allTypes')}
+                                        options={['CRON', 'INTERVAL', 'MANUAL'].map((value) => ({
+                                            value,
+                                            label: t(`scheduleCreation.type.${value}`),
+                                        }))}
                                     />
                                 </Form.Item>
                             </Col>
                         </Row>
+                        <Space wrap>
+                            <Button type="primary" htmlType="submit">
+                                {t('search')}
+                            </Button>
+                            <Button onClick={reset}>{t('reset')}</Button>
+                            <Button
+                                disabled={!revision}
+                                loading={query.isFetching}
+                                onClick={() => void query.refetch()}
+                            >
+                                {t('refresh')}
+                            </Button>
+                        </Space>
                     </Form>
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-results-panel"
                     bordered={false}
-                    title={t('pages:results')}
-                    extra={hasSearched ?
-                        <Typography.Text type="secondary">{t('pages:total')}{visibleItems.length} {t('pages:records')}</Typography.Text> : null}
+                    title={t('results')}
+                    extra={
+                        revision && query.data ? (
+                            <Typography.Text type="secondary">
+                                {t('scheduleRecordCount', {total: query.data.total})}
+                            </Typography.Text>
+                        ) : null
+                    }
                 >
-                    {!hasSearched ? (
-                        <Empty description={t('pages:enterAStrategyIdAndSearch')}/>
-                    ) : schedulesQuery.error ? (
+                    {!revision ? (
+                        <Empty description={t('scheduleCreation.selectAndSearch')} />
+                    ) : query.isError ? (
                         <Alert
                             type="error"
                             showIcon
-                            message={t('pages:failedToQuerySchedules')}
-                            description={formatApiError(schedulesQuery.error as AppApiError)}
-                            action={(
-                                <Button size="small" onClick={() => setSearchVersion((value) => value + 1)}>
-                                    {t('pages:retry')}</Button>
+                            message={t('failedToQuerySchedules')}
+                            description={formatApiError(query.error as AppApiError)}
+                            action={
+                                <Button onClick={() => void query.refetch()}>{t('retry')}</Button>
+                            }
+                        />
+                    ) : !screens.md ? (
+                        <List
+                            loading={query.isFetching}
+                            dataSource={query.data?.items ?? []}
+                            rowKey="scheduleJobId"
+                            locale={{emptyText: t('noSchedulesMatchTheseFilters')}}
+                            pagination={{
+                                current: page,
+                                pageSize: 10,
+                                total: query.data?.total ?? 0,
+                                showSizeChanger: false,
+                                onChange: setPage,
+                            }}
+                            renderItem={(row) => (
+                                <List.Item data-schedule-id={row.scheduleJobId}>
+                                    <Card
+                                        size="small"
+                                        style={{width: '100%'}}
+                                        title={
+                                            <Typography.Text
+                                                copyable
+                                                style={{overflowWrap: 'anywhere'}}
+                                            >
+                                                {row.scheduleJobId}
+                                            </Typography.Text>
+                                        }
+                                    >
+                                        <Space direction="vertical" style={{display: 'flex'}}>
+                                            {status(row)}
+                                            <Typography.Text>
+                                                {t('scheduleType')}:{' '}
+                                                {t(`scheduleCreation.type.${row.scheduleType}`, {
+                                                    defaultValue: row.scheduleType,
+                                                })}
+                                            </Typography.Text>
+                                            <Typography.Text>
+                                                Cron: {row.cronExpr || '—'}
+                                            </Typography.Text>
+                                            <Typography.Text>
+                                                {t('timeZone')}: {row.timezone}
+                                            </Typography.Text>
+                                            <Typography.Text>
+                                                {t('lastTriggered')}:{' '}
+                                                {formatDateTime(row.lastTriggeredAt)}
+                                            </Typography.Text>
+                                            <Button block onClick={() => open(row.scheduleJobId)}>
+                                                {t('viewDetails')}
+                                            </Button>
+                                        </Space>
+                                    </Card>
+                                </List.Item>
                             )}
                         />
                     ) : (
                         <Table
                             rowKey="scheduleJobId"
-                            columns={scheduleColumns}
-                            dataSource={visibleItems}
-                            loading={schedulesQuery.isFetching}
-                            pagination={{pageSize: 10, showSizeChanger: false}}
-                            scroll={{x: 1540}}
-                            locale={{
-                                emptyText: t('pages:noSchedulesMatchTheseFilters'),
+                            size="small"
+                            columns={columns}
+                            dataSource={query.data?.items ?? []}
+                            loading={query.isFetching}
+                            pagination={{
+                                current: page,
+                                pageSize: 10,
+                                total: query.data?.total ?? 0,
+                                showSizeChanger: false,
+                                onChange: setPage,
                             }}
+                            scroll={{x: 1270}}
+                            locale={{emptyText: t('noSchedulesMatchTheseFilters')}}
                         />
                     )}
                 </Card>
             </Space>
             <Drawer
-                open={Boolean(selectedScheduleId)}
-                width={720}
-                title={t('pages:scheduleDetails')}
-                onClose={() => setSelectedScheduleId(null)}
-                destroyOnClose
+                open={Boolean(selectedId)}
+                width={900}
+                title={t('scheduleDetails')}
+                onClose={() => open(null)}
+                destroyOnHidden
             >
-                {scheduleDetailQuery.isLoading ? (
-                    <Alert type="info" showIcon message={t('pages:loadingScheduleDetails')}/>
-                ) : scheduleDetailQuery.error ? (
-                    <Alert
-                        type="error"
-                        showIcon
-                        message={t('pages:failedToLoadScheduleDetails')}
-                        description={formatApiError(scheduleDetailQuery.error as AppApiError)}
-                    />
-                ) : scheduleDetailQuery.data ? (
-                    <Space direction="vertical" size={16} style={{display: 'flex'}}>
-                        <Descriptions bordered column={2} size="small">
-                            <Descriptions.Item
-                                label={t('pages:scheduleId')}>{scheduleDetailQuery.data.scheduleJobId}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:strategyId')}>{scheduleDetailQuery.data.strategyId}</Descriptions.Item>
-                            <Descriptions.Item
-                                label={t('pages:scheduleType')}>{scheduleDetailQuery.data.scheduleType}</Descriptions.Item>
-                            <Descriptions.Item
-                                label="Cron">{scheduleDetailQuery.data.cronExpr || '-'}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:timeZone')}>{scheduleDetailQuery.data.timezone}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:status')}>
-                                <Tag color="blue">{scheduleDetailQuery.data.status}</Tag>
-                            </Descriptions.Item>
-                            <Descriptions.Item label={t('pages:enabledStatus')}>
-                                <Tag color={scheduleDetailQuery.data.enabled ? 'success' : 'default'}>
-                                    {scheduleDetailQuery.data.enabled ? t('pages:enabled') : t('pages:disabled')}
-                                </Tag>
-                            </Descriptions.Item>
-                            <Descriptions.Item
-                                label={t('pages:lastTriggered')}>{formatDateTime(scheduleDetailQuery.data.lastTriggeredAt)}</Descriptions.Item>
-                            <Descriptions.Item
-                                label={t('pages:exchange')}>{scheduleDetailQuery.data.exchangeCode}</Descriptions.Item>
-                            <Descriptions.Item
-                                label={t('pages:account')}>{scheduleDetailQuery.data.accountId ?? '-'}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:tradingEnvironment')}>{scheduleDetailQuery.data.tradeEnv}</Descriptions.Item>
-                            <Descriptions.Item
-                                label={t('pages:createdAt')}>{formatDateTime(scheduleDetailQuery.data.createdAt)}</Descriptions.Item>
-                            <Descriptions.Item
-                                label={t('pages:updatedAt')}>{formatDateTime(scheduleDetailQuery.data.updatedAt)}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:windowConfiguration')} span={2}>
-                                <Typography.Paragraph style={{marginBottom: 0}}>
-                                    {scheduleDetailQuery.data.windowConfig || '-'}
-                                </Typography.Paragraph>
-                            </Descriptions.Item>
-                            <Descriptions.Item label={t('pages:deduplicationScope')} span={2}>
-                                <Typography.Paragraph style={{marginBottom: 0}}>
-                                    {scheduleDetailQuery.data.dedupScope || '-'}
-                                </Typography.Paragraph>
-                            </Descriptions.Item>
-                        </Descriptions>
-                        <Card title={t('pages:actions2')} size="small">
-                            <Space wrap>
-                                <Button
-                                    type="primary"
-                                    disabled={scheduleDetailQuery.data.enabled}
-                                    loading={updateStatusMutation.isPending}
-                                    onClick={() => handleStatusUpdate(true)}
-                                >
-                                    {t('pages:enableSchedule')}</Button>
-                                <Button
-                                    danger
-                                    disabled={!scheduleDetailQuery.data.enabled}
-                                    loading={updateStatusMutation.isPending}
-                                    onClick={() => handleStatusUpdate(false)}
-                                >
-                                    {t('pages:disableSchedule')}</Button>
-                                <Button onClick={() => scheduleDetailQuery.refetch()}>
-                                    {t('pages:refreshDetails')}</Button>
-                            </Space>
-                        </Card>
-                    </Space>
-                ) : null}
+                {selectedId && <StrategyScheduleDetails key={selectedId} scheduleId={selectedId} />}
             </Drawer>
         </>
     );

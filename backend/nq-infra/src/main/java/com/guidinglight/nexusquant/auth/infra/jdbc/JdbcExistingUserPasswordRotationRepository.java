@@ -54,15 +54,17 @@ public final class JdbcExistingUserPasswordRotationRepository implements Existin
             connection.setAutoCommit(false);
             try (PreparedStatement statement = connection.prepareStatement("""
                     UPDATE users
-                    SET password_hash = ?, updated_at = ?
+                    SET password_hash = ?, updated_at = ?, password_changed_at = ?, auth_version = auth_version + 1
                     WHERE id = ? AND username = ? AND enabled = TRUE AND password_hash = ?
                     """)) {
                 statement.setQueryTimeout(15);
                 statement.setString(1, newPasswordHash);
                 statement.setTimestamp(2, Timestamp.from(updatedAt));
-                statement.setLong(3, exactUserId);
-                statement.setString(4, expectedUsername);
-                statement.setString(5, expectedCurrentHash);
+                // 维护改密也必须持久化失效旧令牌；保持首次登录标志与原有身份 CAS 不变。
+                statement.setTimestamp(3, Timestamp.from(updatedAt));
+                statement.setLong(4, exactUserId);
+                statement.setString(5, expectedUsername);
+                statement.setString(6, expectedCurrentHash);
                 int affected = statement.executeUpdate();
                 if (affected != 1) {
                     throw new PasswordRotationException(affected == 0

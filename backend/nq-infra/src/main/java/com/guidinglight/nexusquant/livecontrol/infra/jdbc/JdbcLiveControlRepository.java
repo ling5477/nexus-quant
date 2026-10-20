@@ -34,7 +34,7 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
 
     private static final String SESSION_SELECT = """
             SELECT session_id, owner_id, exchange_account_id, venue, authority_type,
-                   operator_pilot_authority_id, operator_pilot_authority_digest, strategy_release_id,
+                   operator_execution_authority_id, operator_execution_authority_digest, strategy_release_id,
                    release_digest, release_admission_revision, risk_limit_set_id,
                    risk_limit_set_digest, credential_reference, symbol_allowlist, capital_cap,
                    execution_window_start, execution_window_end, state, version,
@@ -50,7 +50,7 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
             FROM risk_limit_sets
             """;
     private static final String APPROVAL_SELECT = """
-            SELECT approval_id, session_id, scope_schema_version, pilot_scope_id,
+            SELECT approval_id, session_id, scope_schema_version, execution_scope_id,
                    scope_hash, release_digest, risk_limit_set_digest,
                    approver_id, approver_role, decision, reason, approved_at, expires_at
             FROM operator_approvals
@@ -120,14 +120,14 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
 
     @Override
     public boolean lockAndValidateSessionReferences(LiveSession value) {
-        if (value.authorityType() == LiveSessionAuthorityType.OPERATOR_PILOT) {
+        if (value.authorityType() == LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION) {
             List<Integer> matches = jdbcTemplate.query("""
                               SELECT 1
                               FROM exchange_accounts account
                               JOIN exchange_account_credentials credential
                                 ON credential.credential_id = ?
                                AND credential.exchange_account_id = account.exchange_account_id
-                              JOIN operator_pilot_authorities authority
+                              JOIN operator_execution_authorities authority
                                 ON authority.authority_id = ?
                               WHERE account.exchange_account_id = ?
                                 AND account.owner_user_id = ?
@@ -158,12 +158,12 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
                                 AND authority.canonical_digest = ?
                               FOR UPDATE OF account, credential, authority
                             """, (resultSet, rowNumber) -> resultSet.getInt(1),
-                    value.credentialReference(), value.operatorPilotAuthorityId(),
+                    value.credentialReference(), value.operatorExecutionAuthorityId(),
                     value.exchangeAccountId(), value.ownerId(), value.ownerId(),
                     value.exchangeAccountId(), value.credentialReference(),
                     value.symbolAllowlist().getFirst(), value.capitalCap(),
                     timestamp(value.executionWindowStart()), timestamp(value.executionWindowEnd()),
-                    value.operatorPilotAuthorityDigest());
+                    value.operatorExecutionAuthorityDigest());
             return matches.size() == 1;
         }
         List<Integer> matches = jdbcTemplate.query("""
@@ -198,8 +198,8 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
     public boolean lockAndValidatePostExecutionReconciliation(LiveSession session, UUID leaseId) {
         List<Integer> matches = jdbcTemplate.query("""
                 SELECT 1
-                FROM pilot_execution_leases lease
-                JOIN pilot_execution_lease_intents link
+                FROM controlled_execution_leases lease
+                JOIN controlled_execution_lease_intents link
                   ON link.lease_id=lease.lease_id AND link.action='PLACE'
                 JOIN execution_intents intent
                   ON intent.intent_id=link.intent_id AND intent.state='RECONCILED'
@@ -224,7 +224,7 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
             var statement = connection.prepareStatement("""
                     INSERT INTO live_sessions (
                         session_id, owner_id, exchange_account_id, venue, authority_type,
-                        operator_pilot_authority_id, operator_pilot_authority_digest, strategy_release_id,
+                        operator_execution_authority_id, operator_execution_authority_digest, strategy_release_id,
                         release_digest, release_admission_revision, risk_limit_set_id,
                         risk_limit_set_digest, credential_reference, symbol_allowlist, capital_cap,
                         execution_window_start, execution_window_end, state, version,
@@ -238,8 +238,8 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
             statement.setLong(index++, value.exchangeAccountId());
             statement.setString(index++, value.venue());
             statement.setString(index++, value.authorityType().name());
-            statement.setObject(index++, value.operatorPilotAuthorityId());
-            statement.setString(index++, value.operatorPilotAuthorityDigest());
+            statement.setObject(index++, value.operatorExecutionAuthorityId());
+            statement.setString(index++, value.operatorExecutionAuthorityDigest());
             statement.setString(index++, value.strategyReleaseId());
             statement.setString(index++, value.releaseDigest());
             if (value.authorityType() == LiveSessionAuthorityType.STRATEGY) {
@@ -349,7 +349,7 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
     public void appendApproval(OperatorApproval value) {
         jdbcTemplate.update("""
                         INSERT INTO operator_approvals (
-                            approval_id, session_id, scope_schema_version, pilot_scope_id,
+                            approval_id, session_id, scope_schema_version, execution_scope_id,
                             scope_hash, release_digest, risk_limit_set_digest,
                             approver_id, approver_role, decision, reason, approved_at, expires_at
                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -371,7 +371,7 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
         return first(jdbcTemplate.query(APPROVAL_SELECT + """
                         WHERE session_id = ?
                           AND scope_schema_version = 'approval-scope.v1'
-                          AND pilot_scope_id IS NULL
+                          AND execution_scope_id IS NULL
                           AND scope_hash = ?
                           AND release_digest = ?
                           AND risk_limit_set_digest = ?
@@ -388,8 +388,8 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
                 row.getObject("session_id", UUID.class), row.getLong("owner_id"),
                 row.getLong("exchange_account_id"), row.getString("venue"),
                 LiveSessionAuthorityType.valueOf(row.getString("authority_type")),
-                row.getObject("operator_pilot_authority_id", UUID.class),
-                row.getString("operator_pilot_authority_digest"),
+                row.getObject("operator_execution_authority_id", UUID.class),
+                row.getString("operator_execution_authority_digest"),
                 row.getString("strategy_release_id"), row.getString("release_digest"),
                 row.getLong("release_admission_revision"), row.getObject("risk_limit_set_id", UUID.class),
                 row.getString("risk_limit_set_digest"), row.getLong("credential_reference"),
@@ -417,7 +417,7 @@ public class JdbcLiveControlRepository implements LiveControlRepository {
     private OperatorApproval mapApproval(ResultSet row, int rowNumber) throws SQLException {
         return new OperatorApproval(
                 row.getObject("approval_id", UUID.class), row.getObject("session_id", UUID.class),
-                row.getString("scope_schema_version"), row.getObject("pilot_scope_id", UUID.class),
+                row.getString("scope_schema_version"), row.getObject("execution_scope_id", UUID.class),
                 row.getString("scope_hash"), row.getString("release_digest"),
                 row.getString("risk_limit_set_digest"), row.getLong("approver_id"),
                 row.getString("approver_role"), OperatorApproval.Decision.valueOf(row.getString("decision")),

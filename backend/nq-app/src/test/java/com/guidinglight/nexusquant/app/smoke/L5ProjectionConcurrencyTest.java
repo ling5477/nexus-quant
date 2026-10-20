@@ -113,7 +113,7 @@ class L5ProjectionConcurrencyTest {
         }
     }
 
-    @Test void pausedOldWriterCannotPublishAfterNewerStateAndUnrelatedAssetsProgress() throws Exception {
+    @Test void pausedOldWriterSerializesAccountEnvironmentWhileOtherAccountsProgress() throws Exception {
         try (var pg = B0Processes.Pg.start(); var f = new Fixture(pg);
              var a = f.child("paused"); var b = f.child("same-base"); var c = f.child("other-asset");
              var d = f.child("other-account")) {
@@ -121,22 +121,24 @@ class L5ProjectionConcurrencyTest {
             long other = f.account("other");
             String old = f.trade(account, "BTC-USDT", "BUY", "0.1", "100", "0", "USDT", TIME);
             String newer = f.trade(account, "BTC-USDC", "BUY", "0.2", "110", "0", "USDC", TIME.minusSeconds(60));
+            // 先提交各账户的源事实，屏障期间只比较并发投影，避免源事实写入占用屏障时限。
+            String isolated = f.trade(account, "ETH-USD", "BUY", "3", "30", "0", "USD", TIME);
+            String separate = f.trade(other, "BTC-USDT", "BUY", "4", "40", "0", "USDT", TIME);
             assertEquals("ARMED", a.send("ARM findAssetPosition"));
             a.startCommand("APPLY " + old);
             f.cut(a);
             b.startCommand("APPLY " + newer);
-            f.waiters(1);
-            String isolated = f.trade(account, "ETH-USD", "BUY", "3", "30", "0", "USD", TIME);
-            String separate = f.trade(other, "BTC-USDT", "BUY", "4", "40", "0", "USDT", TIME);
-            assertEquals("POSTED", c.send("APPLY " + isolated));
+            // 当前生产账户锁覆盖跨币种环境一致性；同账户另一资产也应等待，其他账户可继续提交。
+            c.startCommand("APPLY " + isolated);
+            f.waiters(2);
             assertEquals("POSTED", d.send("APPLY " + separate));
-            assertEquals(0, f.jdbc.queryForObject("SELECT count(*) FROM ledger_entries WHERE ref_id IN (?,?)", Integer.class, old, newer));
+            assertEquals(0, f.jdbc.queryForObject("SELECT count(*) FROM ledger_entries WHERE ref_id IN (?,?,?)", Integer.class, old, newer, isolated));
             f.release(a);
-            assertEquals("POSTED", a.result()); assertEquals("POSTED", b.result());
+            assertEquals("POSTED", a.result()); assertEquals("POSTED", b.result()); assertEquals("POSTED", c.result());
             f.exact(); decimal("0.3", f.balance(account, "BTC"));
             assertTrue(f.jdbc.queryForObject("SELECT ts FROM account_snapshots WHERE account_id=? AND currency='BTC' ORDER BY snapshot_id DESC LIMIT 1",
                     Timestamp.class, account).toInstant().isBefore(TIME));
-            System.out.println("L5_PROJECTION_PASS stale_writer_blocked different_asset_and_account_progress multi_symbol_snapshot");
+            System.out.println("L5_PROJECTION_PASS stale_writer_blocked account_environment_serialized other_account_progress multi_symbol_snapshot");
         }
     }
 

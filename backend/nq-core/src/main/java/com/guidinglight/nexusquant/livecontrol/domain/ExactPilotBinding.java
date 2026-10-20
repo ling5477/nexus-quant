@@ -31,8 +31,8 @@ public record ExactPilotBinding(
         Instant bindingExpiresAt,
         String bindingDigest
 ) {
-    public static final String SCHEMA_VERSION = "exact-pilot-binding.v2";
-    public static final String OPERATOR_PILOT_SCHEMA_VERSION = "exact-pilot-binding.operator-pilot.v1";
+    public static final String SCHEMA_VERSION = "exact-execution-binding.v2";
+    public static final String OPERATOR_CONTROLLED_EXECUTION_SCHEMA_VERSION = "exact-execution-binding.operator.v1";
     public static final Duration MAXIMUM_LIFETIME = Duration.ofMinutes(15);
     private static final String ZERO_DIGEST = "0".repeat(64);
 
@@ -191,7 +191,7 @@ public record ExactPilotBinding(
             String serverIdentity,
             String runtimeProfile
     ) {
-        public static final String RUNTIME_PROFILE = "gatey-readonly-qualification";
+        public static final String RUNTIME_PROFILE = "scoped-okx-private-readonly";
 
         public DeploymentIdentity {
             requireCommit(sourceCommit, "sourceCommit");

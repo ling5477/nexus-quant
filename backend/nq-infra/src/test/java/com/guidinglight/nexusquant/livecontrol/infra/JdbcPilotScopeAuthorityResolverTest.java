@@ -122,7 +122,7 @@ class JdbcPilotScopeAuthorityResolverTest {
                 LiveControlException.class,
                 () -> resolver().resolve(new AuthenticatedLiveControlActor(11), command));
 
-        assertEquals("PILOT_CREDENTIAL_REFERENCE_MISMATCH", failure.code());
+        assertEquals("EXECUTION_CREDENTIAL_REFERENCE_MISMATCH", failure.code());
     }
 
     @Test
@@ -133,7 +133,7 @@ class JdbcPilotScopeAuthorityResolverTest {
         LiveControlException releaseFailure = assertThrows(
                 LiveControlException.class,
                 () -> resolver().resolve(new AuthenticatedLiveControlActor(11), command));
-        assertEquals("PILOT_RELEASE_REFERENCE_MISMATCH", releaseFailure.code());
+        assertEquals("EXECUTION_RELEASE_REFERENCE_MISMATCH", releaseFailure.code());
 
         when(admissions.loadByPublishRecordId("release-immutable-1")).thenReturn(new StrategyReleaseAdmissionState(
                 "release-immutable-1", 7, 1, A, B, "strategy-release-manifest.v1", NOW, NOW, NOW));
@@ -141,7 +141,7 @@ class JdbcPilotScopeAuthorityResolverTest {
         LiveControlException riskFailure = assertThrows(
                 LiveControlException.class,
                 () -> resolver().resolve(new AuthenticatedLiveControlActor(11), command));
-        assertEquals("PILOT_RISK_REFERENCE_MISMATCH", riskFailure.code());
+        assertEquals("EXECUTION_RISK_REFERENCE_MISMATCH", riskFailure.code());
     }
 
     @Test
@@ -150,7 +150,7 @@ class JdbcPilotScopeAuthorityResolverTest {
                 LiveControlException.class,
                 () -> resolver().resolve(new AuthenticatedLiveControlActor(11), command));
 
-        assertEquals("PILOT_RUNTIME_AUTHORITY_NOT_CONFIGURED", failure.code());
+        assertEquals("EXECUTION_RUNTIME_AUTHORITY_NOT_CONFIGURED", failure.code());
     }
 
     @Test
@@ -160,14 +160,14 @@ class JdbcPilotScopeAuthorityResolverTest {
         LiveControlException malformed = assertThrows(
                 LiveControlException.class,
                 () -> resolver().resolve(new AuthenticatedLiveControlActor(11), command));
-        assertEquals("PILOT_RUNTIME_AUTHORITY_NOT_CONFIGURED", malformed.code());
+        assertEquals("EXECUTION_RUNTIME_AUTHORITY_NOT_CONFIGURED", malformed.code());
 
         properties.put(prefix("balance-maximum-age-ms"), String.valueOf(bindings.balanceMaximumAgeMs()));
         properties.put(prefix("worker-identity"), "latest");
         LiveControlException drifting = assertThrows(
                 LiveControlException.class,
                 () -> resolver().resolve(new AuthenticatedLiveControlActor(11), command));
-        assertEquals("PILOT_RUNTIME_AUTHORITY_NOT_CONFIGURED", drifting.code());
+        assertEquals("EXECUTION_RUNTIME_AUTHORITY_NOT_CONFIGURED", drifting.code());
     }
 
     private JdbcPilotScopeAuthorityResolver resolver() {

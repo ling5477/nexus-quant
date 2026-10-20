@@ -280,7 +280,9 @@ public final class TradingRestartRecoveryProcessMain {
         Scenario placeOrder(String accountCode) {
             String traceId = "trc-" + accountCode;
             // 原场景是隔离的 SIM 恢复；使用正式账户创建与桥接合同，不能依赖缺失绑定的旧账户。
-            Long ownerId = jdbc.queryForObject("SELECT id FROM users WHERE username='system-migrated'", Long.class);
+            // 用户只由一次性恢复夹具创建，不能依赖开发期 SQL seed。
+            jdbc.update("INSERT INTO users(username,password_hash) VALUES ('restart-synthetic-owner','NON_LOGIN_TEST_FIXTURE') ON CONFLICT(username) DO NOTHING");
+            Long ownerId = jdbc.queryForObject("SELECT id FROM users WHERE username='restart-synthetic-owner'", Long.class);
             var exchangeAccount = accounts.create(ownerId, "OKX", "SIM", accountCode, null, TEST_CLOCK.instant());
             Long accountId = accountBridge.resolveOrCreateSim(exchangeAccount, traceId, TEST_CLOCK.instant());
             int killUpdated = jdbc.update(

@@ -36,12 +36,15 @@ jobs:
           set -euo pipefail
 
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            git diff --check "origin/${{ github.base_ref }}...HEAD"
+            python3 scripts/ci/check-whitespace.py --base "origin/${{ github.base_ref }}" --merge-base
           elif [[ "${{ github.event_name }}" == "push" && "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
-            git diff --check "${{ github.event.before }}" "${{ github.sha }}"
+            python3 scripts/ci/check-whitespace.py --base "${{ github.event.before }}" --head "${{ github.sha }}"
           else
-            git show --check --pretty=format: HEAD
+            python3 scripts/ci/check-whitespace.py
           fi
+
+      - name: Test scoped whitespace contract
+        run: python3 -m unittest discover -s scripts/ci/tests -p test_whitespace.py -v
 
       - name: Run blocking governance regression
         shell: pwsh
@@ -69,6 +72,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python3 -m unittest discover -s scripts/docs/tests -p test_stage_semantics.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Validate deterministic release source exporter
+        shell: bash
+        run: python3 -m unittest discover -s scripts/release/tests -v
 
       - name: Validate canonical delivery workflow contract
         shell: pwsh
@@ -291,7 +298,7 @@ jobs:
         shell: bash
         run: mvn -f backend/pom.xml -pl nq-app -am test -Dtest=ProductionConfigurationApplicationContextInitializerTest,ProductionSecretProfileRegressionTest -Dsurefire.failIfNoSpecifiedTests=false
 
-      - name: Prepare backend CI legacy account fixture
+      - name: Prepare backend CI account fixture
         shell: bash
         run: |
           set -euo pipefail
@@ -307,8 +314,8 @@ jobs:
           app_cp="$(cat backend/nq-app/target/backend-ci-fixture-classpath.txt)"
           classpath="backend/nq-app/target/classes:backend/nq-infra/target/classes:${app_cp}"
 
-          javac -cp "${classpath}" -d "${fixture_dir}" scripts/ci/BackendCiLegacyAccountFixture.java
-          java -cp "${fixture_dir}:${classpath}" BackendCiLegacyAccountFixture
+          javac -cp "${classpath}" -d "${fixture_dir}" scripts/ci/BackendCiAccountFixture.java
+          java -cp "${fixture_dir}:${classpath}" BackendCiAccountFixture
 
       - name: Run backend tests
         shell: bash
@@ -346,7 +353,7 @@ jobs:
 
     env:
       CI: "true"
-      NQ_FLYWAY_DB_URL: jdbc:postgresql://localhost:5432/nq_ci
+      NQ_FLYWAY_DB_URL: jdbc:postgresql://127.0.0.1:5432/nq_ci
       NQ_FLYWAY_DB_USER: nq_ci_user
       NQ_FLYWAY_DB_PASSWORD: nq_ci_password
 
@@ -396,87 +403,23 @@ jobs:
           smoke_dir="${RUNNER_TEMP}/nq-flyway-smoke"
           mkdir -p "${smoke_dir}"
 
-          cat > "${smoke_dir}/FlywaySmoke.java" <<'JAVA'
-          import java.sql.Connection;
-          import java.sql.DriverManager;
-          import java.sql.ResultSet;
-          import java.sql.Statement;
-
-          import org.flywaydb.core.Flyway;
-          import org.flywaydb.core.api.MigrationInfo;
-
-          public final class FlywaySmoke {
-              private FlywaySmoke() {
-              }
-
-              public static void main(String[] args) throws Exception {
-                  String url = requireEnv("NQ_FLYWAY_DB_URL");
-                  String user = requireEnv("NQ_FLYWAY_DB_USER");
-                  String password = requireEnv("NQ_FLYWAY_DB_PASSWORD");
-
-                  Flyway flyway = Flyway.configure()
-                          .dataSource(url, user, password)
-                          .locations("classpath:db/migration")
-                          .baselineOnMigrate(false)
-                          .cleanDisabled(true)
-                          .outOfOrder(false)
-                          .load();
-
-                  flyway.migrate();
-                  flyway.validate();
-
-                  MigrationInfo current = flyway.info().current();
-                  if (current == null || current.getVersion() == null) {
-                      throw new IllegalStateException(
-                              "Flyway did not produce a current schema version");
-                  }
-
-                  MigrationInfo[] pending = flyway.info().pending();
-                  if (pending.length != 0) {
-                      throw new IllegalStateException(
-                              "Flyway still has " + pending.length + " pending migrations");
-                  }
-
-                  String currentVersion = current.getVersion().getVersion();
-
-                  try (Connection connection = DriverManager.getConnection(url, user, password);
-                          Statement statement = connection.createStatement();
-                          ResultSet resultSet = statement.executeQuery("""
-                                  SELECT installed_rank, version, description, type, script, checksum, success
-                                  FROM flyway_schema_history
-                                  ORDER BY installed_rank
-                                  """)) {
-                      System.out.println("installed_rank|version|description|type|script|checksum|success");
-                      while (resultSet.next()) {
-                          System.out.printf("%d|%s|%s|%s|%s|%s|%s%n",
-                                  resultSet.getInt("installed_rank"),
-                                  resultSet.getString("version"),
-                                  resultSet.getString("description"),
-                                  resultSet.getString("type"),
-                                  resultSet.getString("script"),
-                                  resultSet.getString("checksum"),
-                                  resultSet.getBoolean("success"));
-                      }
-                  }
-
-                  System.out.println("Flyway empty database smoke reached V" + currentVersion);
-              }
-
-              private static String requireEnv(String name) {
-                  String value = System.getenv(name);
-                  if (value == null || value.isBlank()) {
-                      throw new IllegalStateException("Missing required environment variable: " + name);
-                  }
-                  return value;
-              }
-          }
-          JAVA
+          python3 scripts/ci/verify-release-schema.py
 
           app_cp="$(cat backend/nq-app/target/flyway-classpath.txt)"
           classpath="backend/nq-app/target/classes:backend/nq-infra/target/classes:${app_cp}"
 
-          javac -cp "${classpath}" "${smoke_dir}/FlywaySmoke.java"
-          java -cp "${smoke_dir}:${classpath}" FlywaySmoke
+          javac -cp "${classpath}" -d "${smoke_dir}" scripts/ci/ReleaseMigrationSmoke.java
+          java -cp "${smoke_dir}:${classpath}" ReleaseMigrationSmoke
+
+      - name: Verify reviewed release schema and static facts
+        shell: bash
+        run: |
+          set -euo pipefail
+          export PGPASSWORD="${NQ_FLYWAY_DB_PASSWORD}"
+          python3 ./scripts/ci/verify-release-schema.py \
+            --psql-url "host=127.0.0.1 port=5432 dbname=nq_ci user=${NQ_FLYWAY_DB_USER} sslmode=disable" \
+            --output artifacts/postgres-flyway/release-schema-contract.json
+          python3 -m unittest discover -s scripts/ci/tests -p test_release_schema.py
 
       - name: Prove continuous SIM on isolated PostgreSQL schemas
         shell: bash
@@ -719,7 +662,7 @@ jobs:
         run: |
           set -euo pipefail
           mvn -f backend/pom.xml -pl nq-app -am test \
-            -Dtest=AccountSnapshotSemanticsPostgresIntegrationTest,OkxAccountFactsPostgresIntegrationTest,StrategySimPostgresIntegrationTest \
+            -Dtest=AccountSnapshotSemanticsPostgresIntegrationTest,OkxAccountFactsPostgresIntegrationTest,StrategySimPostgresIntegrationTest,SchemaSemanticConsolidationPostgresIntegrationTest,RecoveryScanCursorPostgresIntegrationTest \
             -Dsurefire.failIfNoSpecifiedTests=false \
             -Dnq.postgres.smoke.required=true \
             -Dnq.postgres.smoke.url="${NQ_FLYWAY_DB_URL}" \
@@ -821,9 +764,17 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Run frontend unit regression
+        working-directory: frontend
+        run: npm run test:unit
+
       - name: Build frontend production artifact
         working-directory: frontend
         run: npm run build
+
+      - name: Build isolated frontend component test fixtures
+        working-directory: frontend
+        run: npm exec --offline -- vite build --config tests/e2e/fixtures/vite.config.ts
 
       - name: Generate normalized frontend CycloneDX SBOM and artifact manifest
         shell: bash

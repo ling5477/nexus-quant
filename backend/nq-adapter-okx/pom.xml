@@ -12,7 +12,7 @@
 
     <artifactId>nq-adapter-okx</artifactId>
     <name>nq-adapter-okx</name>
-    <description>Gate A skeleton module: nq-adapter-okx</description>
+    <description>NexusQuant module: nq-adapter-okx</description>
     <packaging>jar</packaging>
 
     <dependencies>

@@ -2,7 +2,6 @@ package com.guidinglight.nexusquant.account.application.service;
 
 import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountCredentialNotFoundException;
 import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountNotFoundException;
-
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialMaterial;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialSummary;
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountCredentialVerificationResult;
@@ -10,19 +9,19 @@ import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredential
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountCredentialVerifier;
 import com.guidinglight.nexusquant.account.domain.port.ExchangeAccountRepository;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.springframework.transaction.annotation.Transactional;
-
 /**
  * ExchangeAccountCredentialVerificationService 提供 active 凭证结构性校验闭环。
  * <p>
  * Why:
- * RC1-4 首版虽然不要求真实外网探活，但 verification 状态流必须真实成立，
+ * 首版虽然不要求真实外网探活，但 verification 状态流必须真实成立，
  * 因此成功/失败都必须回写到 active 凭证版本上，而不是只在 controller 返回文案。
  */
 public class ExchangeAccountCredentialVerificationService {
@@ -35,34 +34,30 @@ public class ExchangeAccountCredentialVerificationService {
     public ExchangeAccountCredentialVerificationService(
             ExchangeAccountRepository exchangeAccountRepository,
             ExchangeAccountCredentialRepository exchangeAccountCredentialRepository,
-            ExchangeAccountCredentialVerifier exchangeAccountCredentialVerifier
-    ) {
+            ExchangeAccountCredentialVerifier exchangeAccountCredentialVerifier) {
         this(
                 exchangeAccountRepository,
                 exchangeAccountCredentialRepository,
                 exchangeAccountCredentialVerifier,
-                Clock.systemUTC()
-        );
+                Clock.systemUTC());
     }
 
     ExchangeAccountCredentialVerificationService(
             ExchangeAccountRepository exchangeAccountRepository,
             ExchangeAccountCredentialRepository exchangeAccountCredentialRepository,
             ExchangeAccountCredentialVerifier exchangeAccountCredentialVerifier,
-            Clock clock
-    ) {
-        this.exchangeAccountRepository = Objects.requireNonNull(
-                exchangeAccountRepository,
-                "exchangeAccountRepository must not be null"
-        );
-        this.exchangeAccountCredentialRepository = Objects.requireNonNull(
-                exchangeAccountCredentialRepository,
-                "exchangeAccountCredentialRepository must not be null"
-        );
-        this.exchangeAccountCredentialVerifier = Objects.requireNonNull(
-                exchangeAccountCredentialVerifier,
-                "exchangeAccountCredentialVerifier must not be null"
-        );
+            Clock clock) {
+        this.exchangeAccountRepository =
+                Objects.requireNonNull(
+                        exchangeAccountRepository, "exchangeAccountRepository must not be null");
+        this.exchangeAccountCredentialRepository =
+                Objects.requireNonNull(
+                        exchangeAccountCredentialRepository,
+                        "exchangeAccountCredentialRepository must not be null");
+        this.exchangeAccountCredentialVerifier =
+                Objects.requireNonNull(
+                        exchangeAccountCredentialVerifier,
+                        "exchangeAccountCredentialVerifier must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
     }
 
@@ -79,52 +74,85 @@ public class ExchangeAccountCredentialVerificationService {
      * 不允许按 `updated_at` 静默选错。</p>
      */
     @Transactional
-    public ExchangeAccountCredentialSummary verifyActive(Long ownerUserId, Long exchangeAccountId, String credentialType) {
+    public ExchangeAccountCredentialSummary verifyActive(
+            Long ownerUserId, Long exchangeAccountId, String credentialType) {
         requireOwnedAccount(ownerUserId, exchangeAccountId);
         String normalizedCredentialType = normalizeOptionalCredentialType(credentialType);
-        ExchangeAccountCredentialMaterial material = findActiveMaterial(ownerUserId, exchangeAccountId, normalizedCredentialType)
-                .orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(exchangeAccountId));
+        ExchangeAccountCredentialMaterial material =
+                findActiveMaterial(ownerUserId, exchangeAccountId, normalizedCredentialType)
+                        .orElseThrow(
+                                () ->
+                                        new ExchangeAccountCredentialNotFoundException(
+                                                exchangeAccountId));
         Instant now = Instant.now(clock);
-        ExchangeAccountCredentialVerificationResult verificationResult = exchangeAccountCredentialVerifier.verify(material);
+        ExchangeAccountCredentialVerificationResult verificationResult =
+                exchangeAccountCredentialVerifier.verify(material);
         String verificationStatus = verificationResult.verified() ? "VERIFIED" : "FAILED";
         exchangeAccountCredentialRepository.markVerificationResult(
                 material.credentialId(),
                 verificationStatus,
                 now,
                 verificationResult.verified() ? null : verificationResult.errorMessage(),
-                now
-        );
+                now);
         return findActiveSummary(ownerUserId, exchangeAccountId, normalizedCredentialType)
-                .orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(exchangeAccountId));
+                .orElseThrow(
+                        () -> new ExchangeAccountCredentialNotFoundException(exchangeAccountId));
     }
 
     private void requireOwnedAccount(Long ownerUserId, Long exchangeAccountId) {
-        exchangeAccountRepository.findByIdForOwner(ownerUserId, exchangeAccountId)
+        exchangeAccountRepository
+                .findByIdForOwner(ownerUserId, exchangeAccountId)
                 .orElseThrow(() -> new ExchangeAccountNotFoundException(exchangeAccountId));
     }
 
+    /** 锁住明确版本再校验，轮换和校验竞争时不得回写另一版本的结果。 */
+    @Transactional
+    public ExchangeAccountCredentialSummary verifyVersion(
+            Long owner, Long account, Long credentialId) {
+        requireOwnedAccount(owner, account);
+        var material =
+                exchangeAccountCredentialRepository
+                        .findByCredentialIdForOwnerForUpdate(owner, account, credentialId)
+                        .orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(account));
+        if (!material.isActive() || !"ACTIVE".equals(material.credentialStatus()))
+            throw new IllegalStateException(
+                    "credential verification requires selected ACTIVE version");
+        var result = exchangeAccountCredentialVerifier.verify(material);
+        Instant now = Instant.now(clock);
+        if (!exchangeAccountCredentialRepository.markVerificationResult(
+                credentialId,
+                result.verified() ? "VERIFIED" : "FAILED",
+                now,
+                result.verified() ? null : result.errorMessage(),
+                now))
+            throw new IllegalStateException("credential verification result was not stored");
+        return exchangeAccountCredentialRepository
+                .findByCredentialIdForOwner(owner, account, credentialId)
+                .orElseThrow(() -> new ExchangeAccountCredentialNotFoundException(account));
+    }
+
     private Optional<ExchangeAccountCredentialMaterial> findActiveMaterial(
-            Long ownerUserId,
-            Long exchangeAccountId,
-            String credentialType
-    ) {
+            Long ownerUserId, Long exchangeAccountId, String credentialType) {
         return credentialType == null
-                ? exchangeAccountCredentialRepository.findActiveMaterial(ownerUserId, exchangeAccountId)
-                : exchangeAccountCredentialRepository.findActiveMaterial(ownerUserId, exchangeAccountId, credentialType);
+                ? exchangeAccountCredentialRepository.findActiveMaterial(
+                        ownerUserId, exchangeAccountId)
+                : exchangeAccountCredentialRepository.findActiveMaterial(
+                        ownerUserId, exchangeAccountId, credentialType);
     }
 
     private Optional<ExchangeAccountCredentialSummary> findActiveSummary(
-            Long ownerUserId,
-            Long exchangeAccountId,
-            String credentialType
-    ) {
+            Long ownerUserId, Long exchangeAccountId, String credentialType) {
         return credentialType == null
-                ? exchangeAccountCredentialRepository.findActiveSummary(ownerUserId, exchangeAccountId)
-                : exchangeAccountCredentialRepository.findActiveSummary(ownerUserId, exchangeAccountId, credentialType);
+                ? exchangeAccountCredentialRepository.findActiveSummary(
+                        ownerUserId, exchangeAccountId)
+                : exchangeAccountCredentialRepository.findActiveSummary(
+                        ownerUserId, exchangeAccountId, credentialType);
     }
 
     private String normalizeOptionalCredentialType(String credentialType) {
-        return credentialType == null || credentialType.isBlank() ? null : normalizeCredentialType(credentialType);
+        return credentialType == null || credentialType.isBlank()
+                ? null
+                : normalizeCredentialType(credentialType);
     }
 
     private String normalizeCredentialType(String credentialType) {

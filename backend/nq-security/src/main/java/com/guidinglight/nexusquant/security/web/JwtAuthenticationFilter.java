@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.security.web;
 
 import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 import com.guidinglight.nexusquant.security.token.port.TokenService;
+import com.guidinglight.nexusquant.security.token.port.TokenUserValidator;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,9 +28,11 @@ import java.util.Objects;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenService tokenService;
+    private final TokenUserValidator userValidator;
     private final AuthenticationEntryPoint authenticationEntryPoint;
 
-    public JwtAuthenticationFilter(TokenService tokenService, AuthenticationEntryPoint authenticationEntryPoint) {
+    public JwtAuthenticationFilter(TokenService tokenService, AuthenticationEntryPoint authenticationEntryPoint, TokenUserValidator userValidator) {
+        this.userValidator = Objects.requireNonNull(userValidator, "userValidator");
         this.tokenService = Objects.requireNonNull(tokenService, "tokenService must not be null");
         this.authenticationEntryPoint = Objects.requireNonNull(authenticationEntryPoint, "authenticationEntryPoint must not be null");
     }
@@ -56,11 +59,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         TokenClaims claims = parsedClaims.get();
+        var userState = userValidator.validate(claims);
+        if (userState.isEmpty()) {
+            authenticationEntryPoint.commence(request, response, new BadCredentialsException("user or token generation invalid"));
+            return;
+        }
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                 claims,
                 token,
-                claims.roles().stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role)).toList()
+                userState.get().roles().stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role)).toList()
         );
+        authentication.setDetails(userState.get());
         SecurityContextHolder.getContext().setAuthentication(authentication);
         try {
             filterChain.doFilter(request, response);

@@ -15,7 +15,7 @@ import java.util.UUID;
 public record PilotExecutionLease(
         UUID id,
         UUID liveSessionId,
-        UUID operatorPilotAuthorityId,
+        UUID operatorExecutionAuthorityId,
         UUID bindingId,
         String bindingDigest,
         Status status,
@@ -129,7 +129,7 @@ public record PilotExecutionLease(
         PilotExecutionLease original = created(
                 id, binding, maxNotional, createdBy, validFrom, expiresAt);
         return new PilotExecutionLease(
-                original.id(), original.liveSessionId(), original.operatorPilotAuthorityId(),
+                original.id(), original.liveSessionId(), original.operatorExecutionAuthorityId(),
                 original.bindingId(), original.bindingDigest(), original.status(), original.maxNotional(),
                 original.validFrom(), original.expiresAt(), null, null, original.createdBy(),
                 original.version(), original.createdAt(), original.updatedAt(), predecessorLeaseId,

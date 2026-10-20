@@ -36,6 +36,43 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $checked = 0
 $warnings = 0
 $errors = 0
+$retiredSourceCache = @{}
+
+function Test-RetiredMigrationSource {
+    param([string] $Target, [string] $SourceDocument)
+    # 冻结证据继续引用当时源码；只按精确 manifest + Git blob 解析已退休迁移，不豁免其他断链。
+    $frozenSource = $SourceDocument.StartsWith('docs/audit/') -or
+        $SourceDocument.StartsWith('docs/gates/') -or $SourceDocument.StartsWith('docs/archive/')
+    if (-not $frozenSource -and $SourceDocument -notin @('docs/current/WORKLOG.md', 'docs/current/TESTING.md')) {
+        return $false
+    }
+    $absolute = [IO.Path]::GetFullPath($Target)
+    if (-not $absolute.StartsWith($repoRoot + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+        return $false
+    }
+    $relative = $absolute.Substring($repoRoot.Length + 1).Replace('\', '/')
+    $prefix = 'backend/nq-infra/src/main/resources/db/migration/'
+    if (-not $relative.StartsWith($prefix, [StringComparison]::Ordinal)) { return $false }
+    if ($retiredSourceCache.ContainsKey($relative)) { return $retiredSourceCache[$relative] }
+    $manifestPath = Join-Path $repoRoot 'docs/archive/db-migrations/retired-development-migrations.json'
+    if (-not (Test-Path -LiteralPath $manifestPath)) { return $false }
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($manifest.disposition -cne 'RETIRED_FROM_ACTIVE_FLYWAY' -or $manifest.pathPrefix -cne $prefix -or
+            $manifest.historicalHead -cnotmatch '^[a-f0-9]{40}$') { throw 'Invalid retired migration identity' }
+    $filename = $relative.Substring($prefix.Length)
+    $property = $manifest.migrations.PSObject.Properties[$filename]
+    if ($null -eq $property) { return $false }
+    $expected = [string]$property.Value.gitBlob
+    if ($expected -cnotmatch '^[a-f0-9]{40}$') { throw 'Invalid retired migration blob identity' }
+    $resolved = @(& git -C $repoRoot rev-parse --verify ($manifest.historicalHead + ':' + $relative) 2>$null)
+    $valid = $LASTEXITCODE -eq 0 -and $resolved.Count -eq 1 -and $resolved[0] -ceq $expected
+    if ($valid) {
+        & git -C $repoRoot cat-file -e ($expected + '^{blob}') 2>$null
+        $valid = $LASTEXITCODE -eq 0
+    }
+    $retiredSourceCache[$relative] = $valid
+    return $valid
+}
 
 function Write-LinkFinding {
     param(
@@ -114,6 +151,10 @@ foreach ($rootInput in $Roots) {
                 }
 
                 if (Test-Path -LiteralPath $target) {
+                    continue
+                }
+                if (Test-RetiredMigrationSource -Target $target -SourceDocument $relativeFile) {
+                    Write-Output ("HISTORICAL_SOURCE_RESOLVED {0}:{1} -> {2}" -f $relativeFile, $lineNumber, $rawLink)
                     continue
                 }
 

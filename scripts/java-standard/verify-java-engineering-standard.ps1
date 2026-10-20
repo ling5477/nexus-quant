@@ -295,12 +295,6 @@ try {
     Assert-Condition ($links.Count -eq 0) "CONFIG_INVALID" "reparse point or cross-repository link found"
     Assert-JavaShadowCiContract $ciText
 
-    $v40VerifierPath = Join-Path $PSScriptRoot 'verify-v40-migration-git-blob.ps1'
-    Assert-Condition (Test-Path -LiteralPath $v40VerifierPath -PathType Leaf) "CONFIG_INVALID" "V40 exact Git blob verifier is missing"
-    $currentPwsh = [Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
-    $v40VerifierOutput = @(& $currentPwsh -NoProfile -File $v40VerifierPath -RepositoryRoot $repoRoot 2>&1 | ForEach-Object { $_.ToString() })
-    Assert-Condition ($LASTEXITCODE -eq 0 -and $v40VerifierOutput -contains 'V40_GIT_BLOB_CONTRACT=PASS') "CONFIG_INVALID" "V40 exact Git blob contract failed"
-
     $commonHash = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $standardRoot 'common-java-engineering-standard.md')).Hash.ToLowerInvariant()
     Write-Output 'GOVERNANCE_CHECKER_RESULT=PASS'
     Write-Output "JAVA_PLATFORM=release-$($platform.java.compiler_release)"
@@ -318,7 +312,6 @@ try {
     Write-Output "QUALITY_PROFILE=$qualityProfileStatus"
     Write-Output 'CURRENT_ACTIVE_SONGSHAN_INPUT_COUNT=0'
     Write-Output 'SONGSHAN_MAPPING_STATUS=HISTORY_ONLY'
-    $v40VerifierOutput | Write-Output
     Write-Output "COMMON_STANDARD_SHA256=$commonHash"
     exit 0
 }

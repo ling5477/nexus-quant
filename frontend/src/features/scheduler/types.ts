@@ -2,6 +2,8 @@ export interface ScheduledJobControl {
     jobKey: string;
     enabled: boolean;
     fixedDelayMs: number;
+    minFixedDelayMs?: number;
+    maxFixedDelayMs?: number;
     nextRunAt: string | null;
     lastStartedAt: string | null;
     lastFinishedAt: string | null;

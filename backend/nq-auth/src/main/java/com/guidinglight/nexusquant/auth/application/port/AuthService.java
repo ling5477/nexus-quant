@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.auth.application.port;
 
 import com.guidinglight.nexusquant.auth.application.command.LoginRequest;
 import com.guidinglight.nexusquant.auth.application.result.LoginResponse;
+import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 
 /**
  * AuthService 定义认证服务占位接口。
@@ -15,6 +16,10 @@ public interface AuthService {
      * @return 访问令牌响应
      */
     LoginResponse login(LoginRequest request);
+
+    LoginResponse renew(TokenClaims claims);
+
+    void logout(TokenClaims claims);
 }
 
 

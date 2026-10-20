@@ -41,6 +41,15 @@ class ProductionConfigurationApplicationContextInitializerTest {
     private static final String VALID_USERNAME = "synthetic_user";
     private static final String SYNTHETIC_SECRET = "synthetic-secret-never-emit";
 
+    @Test
+    void productPublicProfileKeepsProductionValidationAndRejectsSeedProfiles() {
+        var environment = productionEnvironment(validStringProperties());
+        environment.setActiveProfiles("prod", "public-marketdata-manual");
+        assertDoesNotThrow(() -> ProductionConfigurationApplicationContextInitializer.validate(environment));
+        environment.setActiveProfiles("prod", "public-marketdata-manual", "local");
+        assertThrows(IllegalStateException.class, () -> ProductionConfigurationApplicationContextInitializer.validate(environment));
+    }
+
     @BeforeEach
     void resetOutboundProbe() {
         CountingDataSource.constructionAttempts.set(0);

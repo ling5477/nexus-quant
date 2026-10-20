@@ -2,9 +2,9 @@ import {expect, test} from 'playwright/test';
 
 test.describe('design system table smoke (B0.2)', () => {
     test('表格密度切换 + 列格式(右对齐数字 / 涨跌方向色)', async ({page}) => {
-        // Why: /dev/design-system 是公开自检路由,不依赖登录/后端;
+        // Why: 独立组件测试入口不属于正式路由,不依赖登录/后端;
         // smoke 只验证 B0.2 表格密度与列格式渲染,不伪造数据、不打后端。
-        await page.goto('/dev/design-system');
+        await page.goto('/tests/e2e/fixtures/design-system.html');
 
         const table = page.getByRole('table', {name: '表格密度自检'});
         await expect(table).toBeVisible();

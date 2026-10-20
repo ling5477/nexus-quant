@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * InMemoryOrderStateMachine 提供 Gate A 最小状态机实现。
+ * InMemoryOrderStateMachine 提供 最小状态机实现。
  * <p>
  * Why:
  * 即使没有真实撮合，也需要一份可编译、可测试的状态迁移骨架，

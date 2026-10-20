@@ -87,7 +87,7 @@ public class PilotScopeFactTransactionService {
                 if (!existing.equals(session)
                         || !liveControlRepository.lockAndValidateSessionReferences(existing)) {
                     throw new LiveControlException(
-                            "PILOT_MATERIALIZATION_IDEMPOTENCY_CONFLICT",
+                            "EXECUTION_MATERIALIZATION_IDEMPOTENCY_CONFLICT",
                             "operator pilot session is bound to different or stale facts");
                 }
             } else {
@@ -124,7 +124,7 @@ public class PilotScopeFactTransactionService {
                         || existing.createdBy() != actor.userId()
                         || !liveControlRepository.lockAndValidateSessionReferences(existing)) {
                     throw new LiveControlException(
-                            "PILOT_MATERIALIZATION_IDEMPOTENCY_CONFLICT",
+                            "EXECUTION_MATERIALIZATION_IDEMPOTENCY_CONFLICT",
                             "session identity is already bound to different or stale facts"
                     );
                 }
@@ -148,7 +148,7 @@ public class PilotScopeFactTransactionService {
             Objects.requireNonNull(approval, "approval must not be null");
             if (!OperatorApproval.PILOT_SCOPE_SCHEMA.equals(approval.scopeSchemaVersion())
                     || !authorization.lockAndCheckRole(actor.userId(), OperatorApproval.REQUIRED_ROLE)) {
-                throw new LiveControlException("PILOT_APPROVAL_FORBIDDEN", "pilot approval authorization failed");
+                throw new LiveControlException("EXECUTION_APPROVAL_FORBIDDEN", "pilot approval authorization failed");
             }
             var replay = liveControlRepository.findApproval(approval.id());
             if (replay.isPresent()) {
@@ -160,11 +160,11 @@ public class PilotScopeFactTransactionService {
             LiveSession session = liveControlRepository.lockSession(approval.sessionId()).orElseThrow(() ->
                     new LiveControlException("LIVE_SESSION_NOT_FOUND", "pilot approval session was not found"));
             PilotScopeBinding scope = pilotScopeRepository.lockBySessionId(approval.sessionId()).orElseThrow(() ->
-                    new LiveControlException("PILOT_SCOPE_NOT_FOUND", "pilot approval scope was not found"));
+                    new LiveControlException("EXECUTION_SCOPE_NOT_FOUND", "pilot approval scope was not found"));
             if (session.createdBy() == actor.userId()
                     || approval.approverId() != actor.userId()
                     || !approval.validFor(scope, session, liveControlRepository.currentTime())) {
-                throw new LiveControlException("PILOT_APPROVAL_INVALID", "pilot approval facts are invalid or expired");
+                throw new LiveControlException("EXECUTION_APPROVAL_INVALID", "pilot approval facts are invalid or expired");
             }
             liveControlRepository.appendApproval(approval);
             return approval;

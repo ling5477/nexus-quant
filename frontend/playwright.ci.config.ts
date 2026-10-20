@@ -52,9 +52,9 @@ export default defineConfig({
         // 不注入 storageState:5A 无认证态、无 token。
     },
     webServer: {
-        // 仅在 production build 产物上启动 loopback preview;只绑定 127.0.0.1,不绑定 0.0.0.0。
-        // 不经 dev server,preview 无 `/api` proxy —— 正符合 5A 不接 backend 的边界。
-        command: 'node ./node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 5179',
+        // 组件夹具与正式页面入口共用受测代码，独立构建；正式发行 dist 不包含开发演示页。
+        // 不注入认证及业务 API 数据，仅绑定 loopback。
+        command: 'node ./node_modules/vite/bin/vite.js preview --config tests/e2e/fixtures/vite.config.ts --outDir dist-component-tests --host 127.0.0.1 --port 5179',
         url: baseURL,
         reuseExistingServer: false,
         timeout: 120_000,

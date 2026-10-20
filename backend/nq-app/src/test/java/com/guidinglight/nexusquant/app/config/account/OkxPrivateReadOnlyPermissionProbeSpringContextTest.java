@@ -77,7 +77,7 @@ class OkxPrivateReadOnlyPermissionProbeSpringContextTest {
         candidateRunner(new String[]{"scoped-okx-private-readonly"}).run(context -> {
             assertTrue(context.getStartupFailure() == null);
             assertSelected(context, OkxRealReadonlyPermissionProbePort.class);
-            assertEquals(CredentialPermissionExpectation.GATEY_PILOT_READINESS,
+            assertEquals(CredentialPermissionExpectation.SCOPED_TRADE_READINESS,
                     context.getBean(OkxRealReadonlyPermissionProbePort.class).permissionExpectation());
         });
     }
@@ -98,25 +98,51 @@ class OkxPrivateReadOnlyPermissionProbeSpringContextTest {
     @Test
     void conflictingGateWAndGateYProfilesFailClosedToNoReal() {
         candidateRunner(new String[]{"okx-private-readonly-diagnostics", "scoped-okx-private-readonly"})
-                .run(context -> assertSelected(context, NoRealExchangeCredentialPermissionProbePort.class));
+                .run(context -> org.assertj.core.api.Assertions.assertThat(context).hasFailed());
     }
 
     @Test
     void legacyProfileAndKeysAreRejected() {
-        legacyCandidateRunner().run(context -> assertSelected(context, NoRealExchangeCredentialPermissionProbePort.class));
+        legacyCandidateRunner().run(context -> org.assertj.core.api.Assertions.assertThat(context).hasFailed());
     }
 
     @Test
     void conflictingStableAndLegacyPermissionKeysFailClosed() {
         realCandidateRunner(
                 "nq.gatew.okx-private-readonly.permission-probe.expected-ip=203.0.113.9"
-        ).run(context -> assertSelected(context, NoRealExchangeCredentialPermissionProbePort.class));
+        ).run(context -> org.assertj.core.api.Assertions.assertThat(context).hasFailed());
     }
 
     @Test
     void liveTrueRejectsRealComposition() {
         realCandidateRunner("nq.env-safety.live-enabled=true")
                 .run(context -> assertSelected(context, NoRealExchangeCredentialPermissionProbePort.class));
+    }
+
+    @Test
+    void missingInvalidOrEnabledSafetyFlagsCannotSelectRealPort() {
+        for (String key : new String[]{"nq.env-safety.ci", "nq.env-safety.live-enabled",
+                "nq.env-safety.real-exchange-enabled", "nq.env-safety.real-client-enabled",
+                "nq.env-safety.real-provider-enabled", "nq.env-safety.no-outbound",
+                "nq.okx.private-readonly-diagnostics.order-submission-enabled",
+                "nq.okx.private-readonly-diagnostics.transfer-enabled",
+                "nq.okx.private-readonly-diagnostics.withdraw-enabled"}) {
+            for (String value : new String[]{"true", "invalid", ""}) {
+                realCandidateRunner(key + "=" + value)
+                        .run(context -> assertSelected(context, NoRealExchangeCredentialPermissionProbePort.class));
+            }
+            realCandidateRunner().withInitializer(context -> {
+                var original = context.getEnvironment().getPropertySources().get("test");
+                if (original instanceof org.springframework.core.env.MapPropertySource source) {
+                    var values = new java.util.HashMap<String, Object>(source.getSource());
+                    values.remove(key);
+                    context.getEnvironment().getPropertySources().replace("test",
+                            new org.springframework.core.env.MapPropertySource("test", values));
+                } else {
+                    throw new AssertionError("expected isolated test property source");
+                }
+            }).run(context -> assertSelected(context, NoRealExchangeCredentialPermissionProbePort.class));
+        }
     }
 
     @Test

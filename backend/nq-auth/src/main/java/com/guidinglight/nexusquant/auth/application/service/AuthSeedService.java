@@ -25,8 +25,7 @@ public class AuthSeedService {
     }
 
     public void bootstrapAdmin(SeedUserCommand command) {
-        authUserRepository.upsertSeedUser(command);
+        authUserRepository.createInitialAdminIfAbsent(command);
     }
 }
-
 

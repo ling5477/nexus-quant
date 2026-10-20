@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.paper.api.dto;
 
 import com.guidinglight.nexusquant.research.application.paper.model.PaperPortfolioSummary;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
@@ -21,8 +22,7 @@ public record PaperPortfolioSummaryResponse(
         HighlightsResponse highlights,
         DataQualityResponse dataQuality,
         SafetyResponse safety,
-        PortfolioCurveResponse portfolioCurve
-) {
+        PortfolioCurveResponse portfolioCurve) {
 
     public record OverviewResponse(
             int totalRuns,
@@ -44,8 +44,7 @@ public record PaperPortfolioSummaryResponse(
             // Loop-18 向后兼容新增：把「无交易」拆为「无订单」「有订单无成交」，并显式给出「有成交」run 数。
             int noOrderRunCount,
             int orderNoFillRunCount,
-            int filledRunCount
-    ) {}
+            int filledRunCount) {}
 
     public record GroupResponse(
             String key,
@@ -70,8 +69,7 @@ public record PaperPortfolioSummaryResponse(
             int tradeCount,
             int noOrderCount,
             int orderNoFillCount,
-            int filledRunCount
-    ) {}
+            int filledRunCount) {}
 
     public record RunRefResponse(
             String paperRunId,
@@ -92,8 +90,7 @@ public record PaperPortfolioSummaryResponse(
             boolean noOrder,
             boolean orderNoFill,
             boolean hasFill,
-            Instant lastActivityAt
-    ) {}
+            Instant lastActivityAt) {}
 
     public record HighlightsResponse(
             RunRefResponse topWinner,
@@ -101,22 +98,16 @@ public record PaperPortfolioSummaryResponse(
             RunRefResponse highestRisk,
             RunRefResponse mostRecent,
             List<RunRefResponse> noTradeRuns,
-            List<RunRefResponse> riskBlockedRuns
-    ) {}
+            List<RunRefResponse> riskBlockedRuns) {}
 
     public record DataQualityResponse(
             List<RunRefResponse> missingEquityRuns,
             List<RunRefResponse> dataInsufficientRuns,
             List<RunRefResponse> missingBacktestSourceRuns,
-            List<RunRefResponse> missingPublishSourceRuns
-    ) {}
+            List<RunRefResponse> missingPublishSourceRuns) {}
 
     public record SafetyResponse(
-            String environment,
-            boolean liveEnabled,
-            boolean realExchangeTouched,
-            String message
-    ) {}
+            String environment, boolean liveEnabled, boolean realExchangeTouched, String message) {}
 
     /**
      * 组合级 equity / drawdown 时间序列响应（Loop-15 向后兼容新增）。
@@ -129,8 +120,7 @@ public record PaperPortfolioSummaryResponse(
             BigDecimal currentDrawdown,
             BigDecimal maxDrawdown,
             int pointCount,
-            CurveCoverageResponse coverage
-    ) {}
+            CurveCoverageResponse coverage) {}
 
     public record CurvePointResponse(
             Instant timestamp,
@@ -141,82 +131,153 @@ public record PaperPortfolioSummaryResponse(
             BigDecimal peakEquity,
             BigDecimal drawdown,
             int sourceRunCount,
-            int missingRunCount
-    ) {}
+            int missingRunCount) {}
 
     public record CurveCoverageResponse(
-            int comparableRunCount,
-            int missingEquityRunCount,
-            int incompletePointCount
-    ) {}
+            int comparableRunCount, int missingEquityRunCount, int incompletePointCount) {}
 
     public static PaperPortfolioSummaryResponse from(PaperPortfolioSummary summary) {
         PaperPortfolioSummary.Overview o = summary.overview();
-        var overview = new OverviewResponse(
-                o.totalRuns(), o.runningCount(), o.stoppedCount(), o.failedCount(), o.cancelledCount(), o.createdCount(),
-                o.totalInitialEquity(), o.totalCurrentEquity(), o.totalPnl(), o.totalReturn(), o.returnEligibleRunCount(),
-                o.worstRunDrawdown(), o.openAlertCount(), o.riskBlockedRunCount(), o.noTradeRunCount(), o.dataInsufficientRunCount(),
-                o.noOrderRunCount(), o.orderNoFillRunCount(), o.filledRunCount());
+        var overview =
+                new OverviewResponse(
+                        o.totalRuns(),
+                        o.runningCount(),
+                        o.stoppedCount(),
+                        o.failedCount(),
+                        o.cancelledCount(),
+                        o.createdCount(),
+                        o.totalInitialEquity(),
+                        o.totalCurrentEquity(),
+                        o.totalPnl(),
+                        o.totalReturn(),
+                        o.returnEligibleRunCount(),
+                        o.worstRunDrawdown(),
+                        o.openAlertCount(),
+                        o.riskBlockedRunCount(),
+                        o.noTradeRunCount(),
+                        o.dataInsufficientRunCount(),
+                        o.noOrderRunCount(),
+                        o.orderNoFillRunCount(),
+                        o.filledRunCount());
 
         PaperPortfolioSummary.Highlights h = summary.highlights();
-        var highlights = new HighlightsResponse(
-                runRef(h.topWinner()), runRef(h.worstDrawdown()), runRef(h.highestRisk()), runRef(h.mostRecent()),
-                runRefs(h.noTradeRuns()), runRefs(h.riskBlockedRuns()));
+        var highlights =
+                new HighlightsResponse(
+                        runRef(h.topWinner()),
+                        runRef(h.worstDrawdown()),
+                        runRef(h.highestRisk()),
+                        runRef(h.mostRecent()),
+                        runRefs(h.noTradeRuns()),
+                        runRefs(h.riskBlockedRuns()));
 
         PaperPortfolioSummary.DataQuality dq = summary.dataQuality();
-        var dataQuality = new DataQualityResponse(
-                runRefs(dq.missingEquityRuns()), runRefs(dq.dataInsufficientRuns()),
-                runRefs(dq.missingBacktestSourceRuns()), runRefs(dq.missingPublishSourceRuns()));
+        var dataQuality =
+                new DataQualityResponse(
+                        runRefs(dq.missingEquityRuns()), runRefs(dq.dataInsufficientRuns()),
+                        runRefs(dq.missingBacktestSourceRuns()),
+                                runRefs(dq.missingPublishSourceRuns()));
 
-        var safety = new SafetyResponse(
-                "SIM/PAPER", false, false,
-                "该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现");
+        var safety =
+                new SafetyResponse(
+                        "SIM/PAPER", false, false, "该组合看板仅基于 Paper 模拟运行与本地执行事实，不代表 LIVE 或真实交易表现");
 
         return new PaperPortfolioSummaryResponse(
                 overview,
-                summary.strategyGroups().stream().map(PaperPortfolioSummaryResponse::group).toList(),
+                summary.strategyGroups().stream()
+                        .map(PaperPortfolioSummaryResponse::group)
+                        .toList(),
                 summary.publishGroups().stream().map(PaperPortfolioSummaryResponse::group).toList(),
-                highlights, dataQuality, safety, portfolioCurve(summary.portfolioCurve()));
+                highlights,
+                dataQuality,
+                safety,
+                portfolioCurve(summary.portfolioCurve()));
     }
 
-    private static PortfolioCurveResponse portfolioCurve(PaperPortfolioSummary.PortfolioCurve curve) {
+    private static PortfolioCurveResponse portfolioCurve(
+            PaperPortfolioSummary.PortfolioCurve curve) {
         if (curve == null) {
             // 兼容防御：理论上 assembler 总返回非空曲线（含空结构），此处仍保证响应稳定不为 null。
-            return new PortfolioCurveResponse(List.of(), null, null, null, null, 0,
-                    new CurveCoverageResponse(0, 0, 0));
+            return new PortfolioCurveResponse(
+                    List.of(), null, null, null, null, 0, new CurveCoverageResponse(0, 0, 0));
         }
         PaperPortfolioSummary.PortfolioCurve.Coverage c = curve.coverage();
         return new PortfolioCurveResponse(
                 curve.points().stream().map(PaperPortfolioSummaryResponse::curvePoint).toList(),
-                curve.latestEquity(), curve.peakEquity(), curve.currentDrawdown(), curve.maxDrawdown(),
+                curve.latestEquity(),
+                curve.peakEquity(),
+                curve.currentDrawdown(),
+                curve.maxDrawdown(),
                 curve.pointCount(),
-                new CurveCoverageResponse(c.comparableRunCount(), c.missingEquityRunCount(), c.incompletePointCount()));
+                new CurveCoverageResponse(
+                        c.comparableRunCount(),
+                        c.missingEquityRunCount(),
+                        c.incompletePointCount()));
     }
 
-    private static CurvePointResponse curvePoint(PaperPortfolioSummary.PortfolioCurve.CurvePoint p) {
+    private static CurvePointResponse curvePoint(
+            PaperPortfolioSummary.PortfolioCurve.CurvePoint p) {
         return new CurvePointResponse(
-                p.timestamp(), p.totalEquity(), p.totalInitialEquity(), p.totalPnl(), p.totalReturn(),
-                p.peakEquity(), p.drawdown(), p.sourceRunCount(), p.missingRunCount());
+                p.timestamp(),
+                p.totalEquity(),
+                p.totalInitialEquity(),
+                p.totalPnl(),
+                p.totalReturn(),
+                p.peakEquity(),
+                p.drawdown(),
+                p.sourceRunCount(),
+                p.missingRunCount());
     }
 
     private static GroupResponse group(PaperPortfolioSummary.Group g) {
         return new GroupResponse(
-                g.key(), g.runCount(), g.currentEquity(), g.totalPnl(), g.totalReturn(),
-                g.worstDrawdown(), g.riskBlockedCount(), g.openAlertCount(), g.lastRunTime(),
-                g.noTradeCount(), g.dataInsufficientCount(), g.comparableRunCount(),
-                g.runningCount(), g.stoppedCount(), g.failedCount(), g.cancelledCount(), g.createdCount(),
-                g.orderCount(), g.tradeCount(), g.noOrderCount(), g.orderNoFillCount(), g.filledRunCount());
+                g.key(),
+                g.runCount(),
+                g.currentEquity(),
+                g.totalPnl(),
+                g.totalReturn(),
+                g.worstDrawdown(),
+                g.riskBlockedCount(),
+                g.openAlertCount(),
+                g.lastRunTime(),
+                g.noTradeCount(),
+                g.dataInsufficientCount(),
+                g.comparableRunCount(),
+                g.runningCount(),
+                g.stoppedCount(),
+                g.failedCount(),
+                g.cancelledCount(),
+                g.createdCount(),
+                g.orderCount(),
+                g.tradeCount(),
+                g.noOrderCount(),
+                g.orderNoFillCount(),
+                g.filledRunCount());
     }
 
-    private static RunRefResponse runRef(PaperPortfolioSummary.RunRef r) {
+    /** 历史完整窗口与重点清单共用同一白名单映射，不暴露原始配置或私有费用载荷。 */
+    public static RunRefResponse runRef(PaperPortfolioSummary.RunRef r) {
         if (r == null) {
             return null;
         }
         return new RunRefResponse(
-                r.paperRunId(), r.status(), r.symbol(), r.strategyVersionId(), r.publishId(),
-                r.currentEquity(), r.initialEquity(), r.totalPnl(), r.totalReturn(), r.maxDrawdown(),
-                r.riskBlocked(), r.openAlertCount(), r.orderCount(), r.tradeCount(),
-                r.noOrder(), r.orderNoFill(), r.hasFill(), r.lastActivityAt());
+                r.paperRunId(),
+                r.status(),
+                r.symbol(),
+                r.strategyVersionId(),
+                r.publishId(),
+                r.currentEquity(),
+                r.initialEquity(),
+                r.totalPnl(),
+                r.totalReturn(),
+                r.maxDrawdown(),
+                r.riskBlocked(),
+                r.openAlertCount(),
+                r.orderCount(),
+                r.tradeCount(),
+                r.noOrder(),
+                r.orderNoFill(),
+                r.hasFill(),
+                r.lastActivityAt());
     }
 
     private static List<RunRefResponse> runRefs(List<PaperPortfolioSummary.RunRef> refs) {

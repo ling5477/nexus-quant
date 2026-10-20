@@ -1,210 +1,332 @@
-import {useTranslation} from 'react-i18next';
-import {t} from '@/i18n';
-import {Alert, Button, Card, Space, Table, Tag, Typography} from 'antd';
+import {
+    Alert,
+    Button,
+    Card,
+    Collapse,
+    Descriptions,
+    Drawer,
+    Select,
+    Space,
+    Tag,
+    Typography,
+} from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-
+import {useMemo, useState, type HTMLAttributes} from 'react';
+import {useTranslation} from 'react-i18next';
+import {Link} from 'react-router-dom';
 import {formatApiError} from '@/api/errors';
 import {NqPageHeader} from '@/components/nq/NqPageHeader';
+import {NqDataTable} from '@/components/nq/NqDataTable';
+import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
+import {ExchangeIcon} from '@/nq-design-system/brand/ExchangeBadge';
 import {useAdapterReadinessQuery} from '@/hooks/useAdapterReadinessQuery';
-import type {AppApiError} from '@/types/api';
 import type {AdapterReadinessItem} from '@/types/adapter-readiness';
 import {formatDateTime} from '@/utils/formatters';
+import {
+    adapterCapabilityKey,
+    adapterStatusView,
+    adapterVenueRows,
+} from './adapterReadinessPresentation';
 
-const {Text, Paragraph} = Typography;
-
-// 真实交易所 venue：必须明显展示为未就绪 / 未授权，绝不暗示可真实交易。
-const EXCHANGE_VENUES = new Set(['OKX', 'BINANCE']);
-
-interface LabeledTone {
-    label: string;
-    color: string;
-}
-
-/**
- * status → 展示标签与颜色。任何未知 status 一律按 fail-closed（红色）处理，避免把未知误显示成可用。
- */
-function statusPresentation(status: string): LabeledTone {
-    switch (status) {
-        case 'READY':
-            // 当前 baseline 不会出现；保留映射但不作为默认。
-            return {label: t('pages:readyReady'), color: 'green'};
-        case 'NOT_READY':
-            return {label: t('pages:notReadyNotReady'), color: 'red'};
-        case 'NO_REAL':
-            return {label: t('pages:simulationOnlyNoReal'), color: 'default'};
-        case 'DISABLED_SENTINEL':
-            return {label: t('pages:endpointDisabledDisabledSentinel'), color: 'orange'};
-        case 'CREDENTIAL_UNCONFIGURED':
-            return {label: t('pages:credentialsNotConfiguredCredentialUnconfigured'), color: 'orange'};
-        case 'LIVE_NOT_AUTHORIZED':
-            return {label: t('pages:liveNotAuthorizedLiveNotAuthorized'), color: 'red'};
-        case 'CAPABILITY_NOT_IMPLEMENTED':
-            return {label: t('pages:capabilityNotImplementedCapabilityNotImplemented'), color: 'orange'};
-        case 'UNKNOWN_REQUIRES_REVIEW':
-            return {label: t('pages:unknownReviewRequiredUnknownRequiresReview'), color: 'red'};
-        default:
-            return {label: t('pages:notReadyValue1', {value1: status}), color: 'red'};
-    }
-}
-
-const REASON_LABELS: Record<string, string> = {
-    get NO_REAL_DISABLED() { return t('pages:noopHasNoRealCapability'); },
-    get ENDPOINT_DISABLED_SENTINEL() { return t('pages:endpointDisabledSentinel'); },
-    get CREDENTIALS_MISSING() { return t('pages:credentialsNotConfigured'); },
-    get REAL_PROVIDER_NOT_IMPLEMENTED() { return t('pages:realProviderNotImplemented2'); },
-    get LIVE_DISABLED() { return t('pages:liveDisabled3'); },
-    get CAPABILITY_FORBIDDEN_IN_GATEL() { return t('pages:prohibitedInTheCurrentPhase'); },
-    get RAW_PAYLOAD_SUPPRESSED() { return t('pages:rawPayloadSuppressed'); },
-    get UNKNOWN_REQUIRES_REVIEW() { return t('pages:unknownReviewRequired'); },
+const reasonKeys: Record<string, string> = {
+    NO_REAL_DISABLED: 'noReal',
+    NO_REAL_PROVIDER: 'noReal',
+    ENDPOINT_DISABLED_SENTINEL: 'endpointDisabled',
+    CREDENTIALS_MISSING: 'credentialsMissing',
+    CREDENTIAL_UNCONFIGURED: 'credentialsMissing',
+    REAL_PROVIDER_NOT_IMPLEMENTED: 'providerMissing',
+    LIVE_DISABLED: 'liveDisabled',
+    CAPABILITY_FORBIDDEN_IN_GATEL: 'policyRestricted',
+    RAW_PAYLOAD_SUPPRESSED: 'sourceSuppressed',
+    UNKNOWN_REQUIRES_REVIEW: 'unknown',
+    READY_FOR_PAPER_ONLY: 'paperOnly',
+    PAPER_ARTIFACT_NOT_REAL_AUTHORIZATION: 'paperNotAuthority',
+    LIVE_NOT_AUTHORIZED: 'liveUnauthorized',
+    PERMISSION_PROBE_DISABLED: 'probeDisabled',
+    FUTURE_REAL_DISABLED: 'providerMissing',
+    FAKE_ADAPTER_DISABLED: 'testOnly',
+    STUB_ADAPTER_DISABLED: 'testOnly',
 };
+const venueOrder: Record<string, number> = {OKX: 0, BINANCE: 1, NOOP: 2, PAPER: 3, SIM: 4};
 
-function reasonLabel(reason: string): string {
-    return REASON_LABELS[reason] ?? reason;
-}
-
-function buildColumns(): ColumnsType<AdapterReadinessItem> {
-    return [
+/** 完整保留正式venue×capability快照；筛选与分页只改善呈现，静态策略不冒充历史行情覆盖或LIVE授权。 */
+export function AdapterReadinessPage() {
+    const {t} = useTranslation();
+    const readiness = useAdapterReadinessQuery();
+    const [venue, setVenue] = useState('ALL');
+    const [selected, setSelected] = useState<{row: AdapterReadinessItem; at: string | null} | null>(
+        null,
+    );
+    const items = readiness.data?.items ?? [];
+    const venues = useMemo(() => Array.from(new Set(items.map((item) => item.venue))), [items]);
+    // 默认先展示用户关心的交易所；仅排序副本，原快照、所有模拟/未知venue记录和授权字段都保留。
+    const rows = adapterVenueRows(items, venue).sort(
+        (left, right) =>
+            (Object.hasOwn(venueOrder, left.venue) ? venueOrder[left.venue] : 99) -
+            (Object.hasOwn(venueOrder, right.venue) ? venueOrder[right.venue] : 99),
+    );
+    const columns: ColumnsType<AdapterReadinessItem> = [
         {
-            title: t('pages:venue'),
+            title: t('adapterCapabilities.venue'),
             dataIndex: 'venue',
             key: 'venue',
-            width: 130,
-            render: (venue: string) => (
-                <Tag color={EXCHANGE_VENUES.has(venue) ? 'blue' : 'default'}>{venue}</Tag>
+            width: 140,
+            render: (value: string) => (
+                <Space size={6}>
+                    <ExchangeIcon code={value} />
+                    <Typography.Text>{value}</Typography.Text>
+                </Space>
             ),
         },
         {
-            title: t('pages:capability'),
+            title: t('adapterCapabilities.capability'),
             dataIndex: 'capability',
             key: 'capability',
-            width: 200,
-            render: (capability: string) => <Text code>{capability}</Text>,
+            width: 180,
+            render: (value: string) => (
+                <Typography.Text>{t(adapterCapabilityKey(value))}</Typography.Text>
+            ),
         },
         {
-            title: t('pages:status2'),
+            title: t('adapterCapabilities.status'),
             dataIndex: 'status',
             key: 'status',
-            width: 280,
-            render: (status: string) => {
-                const {label, color} = statusPresentation(status);
-                return <Tag color={color}>{label}</Tag>;
+            width: 150,
+            render: (value: string) => {
+                const view = adapterStatusView(value);
+                return <Tag color={view.color}>{t(view.key)}</Tag>;
             },
         },
         {
-            title: t('pages:allowed'),
+            title: t('adapterCapabilities.allowed'),
             dataIndex: 'allowed',
             key: 'allowed',
             width: 130,
-            render: (allowed: boolean) => (
-                allowed
-                    ? <Tag color="green">{t('pages:available')}</Tag>
-                    : <Tag color="red">{t('pages:unavailable')}</Tag>
-            ),
+            render: (value: boolean) =>
+                value === true ? (
+                    <Tag color="green">{t('adapterCapabilities.permitted')}</Tag>
+                ) : (
+                    <Tag color="red">{t('adapterCapabilities.notPermitted')}</Tag>
+                ),
         },
         {
-            title: t('pages:liveAuthorization'),
+            title: t('adapterCapabilities.live'),
             dataIndex: 'liveAuthorized',
             key: 'liveAuthorized',
-            width: 140,
-            render: (liveAuthorized: boolean) => (
-                liveAuthorized
-                    ? <Tag color="green">{t('pages:liveAuthorized')}</Tag>
-                    : <Tag color="red">{t('pages:liveNotAuthorized')}</Tag>
-            ),
+            width: 130,
+            render: (value: boolean) =>
+                value === true ? (
+                    <Tag color="green">{t('adapterCapabilities.authorized')}</Tag>
+                ) : (
+                    <Tag color="red">{t('adapterCapabilities.notAuthorized')}</Tag>
+                ),
         },
         {
-            title: t('pages:reasons'),
+            title: t('adapterCapabilities.reasons'),
             dataIndex: 'reasons',
             key: 'reasons',
-            width: 320,
-            render: (reasons: string[]) => (
-                <Space size={[4, 4]} wrap>
-                    {(reasons ?? []).map((reason) => (
-                        <Tag key={reason} color="default" title={reason}>{reasonLabel(reason)}</Tag>
+            width: 240,
+            render: (values: string[]) => (
+                <Space direction="vertical" size={2}>
+                    {Array.from(
+                        new Set(
+                            (values ?? []).map((value) =>
+                                Object.hasOwn(reasonKeys, value) ? reasonKeys[value] : 'unknown',
+                            ),
+                        ),
+                    ).map((key) => (
+                        <Typography.Text key={key} type="secondary">
+                            {t(`adapterCapabilities.reasonsMap.${key}`)}
+                        </Typography.Text>
                     ))}
                 </Space>
             ),
         },
         {
-            title: t('pages:explanation'),
-            dataIndex: 'message',
-            key: 'message',
-            render: (message: string) => <Text type="secondary">{message}</Text>,
+            title: t('adapterCapabilities.details'),
+            key: 'details',
+            width: 120,
+            render: (_, row) => (
+                <Button
+                    size="small"
+                    onClick={() => setSelected({row, at: readiness.data?.generatedAt ?? null})}
+                >
+                    {t('adapterCapabilities.view')}
+                </Button>
+            ),
         },
     ];
-}
-
-/**
- * AdapterReadinessPage 是适配器就绪策略的只读 adapter readiness 面板。
- *
- * Why:
- * 给运维 / 操作者一个明确入口，确认当前 OKX / Binance / Noop 各能力是否可实盘及原因。页面表达的核心事实：
- * 当前不是 ready、不是 real-trading enabled、不是 LIVE。所有 `allowed=false` 一律显示为「不可用」，
- * 失败态显示 "readiness API unavailable" 并按 fail-closed 处理，绝不回退成可用 / 可交易。
- */
-export function AdapterReadinessPage() {
-    useTranslation('pages');
-    const readinessQuery = useAdapterReadinessQuery();
-    const items = readinessQuery.data?.items ?? [];
-
     return (
-        <Space direction="vertical" size={16} style={{display: 'flex'}}>
-            <Card className="page-card" bordered={false}>
-                <NqPageHeader
-                    title={t('pages:adapterReadiness')}
-                    description={t('pages:readOnlyRuntimeReadinessForExchangeAdaptersAndCapabilitiesUnderTheNoRealLiveDisabledBaselineCapabili')}
-                    badge={t('pages:readOnlySafetyBoundaries')}
-                />
-            </Card>
-
-            <Alert
-                type="warning"
-                showIcon
-                message={t('pages:allExchangeAdaptersAreNotReadyNotFrozenNotAuthorized')}
-                description={t('pages:liveIsDisabledOkxBinanceCannotPlaceOrCancelRealOrdersOrSubscribeToMarketDataNoopPaperSimAreSimulatio')}
+        <NqPageScaffold>
+            <NqPageHeader
+                title={t('adapterCapabilities.title')}
+                description={t('adapterCapabilities.description')}
+                badge={t('adapterCapabilities.readonly')}
             />
-
-            <Card
-                className="page-section"
-                bordered={false}
-                title={t('pages:adapterReadinessStatus')}
-                extra={(
-                    <Space size={12}>
-                        {readinessQuery.data?.generatedAt ? (
-                            <Text type="secondary">{t('pages:generatedAt2')}{formatDateTime(readinessQuery.data.generatedAt)}</Text>
-                        ) : null}
-                        <Button
-                            onClick={() => readinessQuery.refetch()}
-                            loading={readinessQuery.isFetching}
-                        >
-                            {t('pages:refresh')}</Button>
+            <Alert
+                type="info"
+                showIcon
+                message={t('adapterCapabilities.scope')}
+                description={
+                    <Space wrap>
+                        <Link to="/marketdata">{t('adapterCapabilities.marketLink')}</Link>
+                        <Link to="/runtime/readiness">{t('adapterCapabilities.runtimeLink')}</Link>
                     </Space>
-                )}
+                }
+            />
+            <Card
+                title={t('adapterCapabilities.matrix')}
+                extra={
+                    <Button loading={readiness.isFetching} onClick={() => void readiness.refetch()}>
+                        {t('adapterCapabilities.refresh')}
+                    </Button>
+                }
             >
-                {readinessQuery.isError ? (
+                <Space wrap size={12} style={{marginBottom: 12, width: '100%'}}>
+                    <label>
+                        {t('adapterCapabilities.filter')}{' '}
+                        <Select
+                            aria-label={t('adapterCapabilities.filter')}
+                            value={venue}
+                            style={{minWidth: 190, maxWidth: '100%'}}
+                            onChange={setVenue}
+                            options={[
+                                {
+                                    value: 'ALL',
+                                    label: t('adapterCapabilities.all', {count: items.length}),
+                                },
+                                ...venues.map((value) => ({
+                                    value,
+                                    label: `${value} · ${items.filter((item) => item.venue === value).length}`,
+                                })),
+                            ]}
+                        />
+                    </label>
+                    <Typography.Text type="secondary">
+                        {t('adapterCapabilities.rowCount', {
+                            shown: rows.length,
+                            total: items.length,
+                        })}
+                    </Typography.Text>
+                    {readiness.data?.generatedAt && (
+                        <Typography.Text type="secondary">
+                            {t('adapterCapabilities.snapshot')}{' '}
+                            {formatDateTime(readiness.data.generatedAt)}
+                        </Typography.Text>
+                    )}
+                </Space>
+                {readiness.isError ? (
                     <Alert
                         type="error"
                         showIcon
-                        message={t('pages:readinessApiUnavailable')}
-                        description={(
-                            <Paragraph style={{marginBottom: 0}}>
-                                {t('pages:adapterReadinessCouldNotBeRetrievedSafetyPolicyTreatsItAs')}<strong>{t('pages:notReadyFailClosed')}</strong>{t('pages:noVenueIsConsideredReadyOrPermittedToPlaceOrdersTryAgainLaterOrContactOperations')}<br />
-                                <Text type="secondary">{formatApiError(readinessQuery.error as AppApiError)}</Text>
-                            </Paragraph>
-                        )}
+                        message={t('adapterCapabilities.queryFailed')}
+                        description={formatApiError(readiness.error)}
                     />
                 ) : (
-                    <Table<AdapterReadinessItem>
-                        rowKey={(record) => `${record.venue}-${record.capability}`}
-                        columns={buildColumns()}
-                        dataSource={items}
-                        loading={readinessQuery.isLoading || readinessQuery.isFetching}
-                        pagination={false}
-                        scroll={{x: 1280}}
-                        locale={{emptyText: t('pages:noAdapterReadinessData')}}
+                    <NqDataTable<AdapterReadinessItem>
+                        rowKey={(row) => `${row.venue}-${row.capability}`}
+                        columns={columns}
+                        dataSource={rows}
+                        onRow={(row) =>
+                            ({
+                                'data-venue': row.venue,
+                                'data-capability': row.capability,
+                            }) as HTMLAttributes<HTMLTableRowElement>
+                        }
+                        loading={readiness.isFetching}
+                        scroll={{x: 1230}}
+                        pagination={{pageSize: 9, showSizeChanger: false, hideOnSinglePage: true}}
+                        locale={{emptyText: t('adapterCapabilities.empty')}}
                     />
                 )}
             </Card>
-        </Space>
+            <Drawer
+                open={Boolean(selected)}
+                onClose={() => setSelected(null)}
+                width={640}
+                destroyOnClose
+                title={
+                    selected
+                        ? `${selected.row.venue} · ${t(adapterCapabilityKey(selected.row.capability))}`
+                        : t('adapterCapabilities.details')
+                }
+            >
+                {selected && (
+                    <Space
+                        direction="vertical"
+                        size={12}
+                        style={{width: '100%', overflowWrap: 'anywhere'}}
+                    >
+                        {/* 详情绑定点击时的完整快照；刷新或换筛选不能将已有状态暗换成另一对象。 */}
+                        <Descriptions column={1} size="small">
+                            <Descriptions.Item label={t('adapterCapabilities.venue')}>
+                                {selected.row.venue}
+                            </Descriptions.Item>
+                            <Descriptions.Item label={t('adapterCapabilities.capability')}>
+                                {t(adapterCapabilityKey(selected.row.capability))}
+                            </Descriptions.Item>
+                            <Descriptions.Item label={t('adapterCapabilities.snapshot')}>
+                                {selected.at ? formatDateTime(selected.at) : '—'}
+                            </Descriptions.Item>
+                            <Descriptions.Item label={t('adapterCapabilities.status')}>
+                                {t(adapterStatusView(selected.row.status).key)}
+                            </Descriptions.Item>
+                            <Descriptions.Item label={t('adapterCapabilities.allowed')}>
+                                {t(
+                                    selected.row.allowed === true
+                                        ? 'adapterCapabilities.permitted'
+                                        : 'adapterCapabilities.notPermitted',
+                                )}
+                            </Descriptions.Item>
+                            <Descriptions.Item label={t('adapterCapabilities.live')}>
+                                {t(
+                                    selected.row.liveAuthorized === true
+                                        ? 'adapterCapabilities.authorized'
+                                        : 'adapterCapabilities.notAuthorized',
+                                )}
+                            </Descriptions.Item>
+                        </Descriptions>
+                        <Alert type="info" message={t('adapterCapabilities.scope')} />
+                        <Collapse
+                            size="small"
+                            items={[
+                                {
+                                    key: 'raw',
+                                    label: t('adapterCapabilities.original'),
+                                    children: (
+                                        <Space
+                                            direction="vertical"
+                                            size={4}
+                                            style={{overflowWrap: 'anywhere'}}
+                                        >
+                                            <Typography.Text code>
+                                                {selected.row.venue} · {selected.row.capability}
+                                            </Typography.Text>
+                                            <Typography.Text code>
+                                                {selected.row.status}
+                                            </Typography.Text>
+                                            <Typography.Text code>
+                                                {JSON.stringify({
+                                                    allowed: selected.row.allowed,
+                                                    liveAuthorized: selected.row.liveAuthorized,
+                                                })}
+                                            </Typography.Text>
+                                            {(selected.row.reasons ?? []).map((reason) => (
+                                                <Typography.Text code key={reason}>
+                                                    {reason}
+                                                </Typography.Text>
+                                            ))}
+                                            <Typography.Text type="secondary">
+                                                {selected.row.message}
+                                            </Typography.Text>
+                                        </Space>
+                                    ),
+                                },
+                            ]}
+                        />
+                    </Space>
+                )}
+            </Drawer>
+        </NqPageScaffold>
     );
 }

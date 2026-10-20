@@ -58,7 +58,8 @@ public class EnvSafetyGuardConfiguration {
             Map.entry("NQ_BINANCE_REAL_BASE_URL", "nq.binance.real.base-url"),
             Map.entry("NQ_BINANCE_DOME_WS_URL", "nq.binance.dome.ws-url"),
             Map.entry("NQ_BINANCE_REAL_WS_URL", "nq.binance.real.ws-url"),
-            Map.entry("NQ_PUBLIC_MARKETDATA_BASE_URL", "nq.public-marketdata.outbound.base-url")
+            Map.entry("NQ_PUBLIC_MARKETDATA_BASE_URL", "nq.public-marketdata.outbound.base-url"),
+            Map.entry("NQ_PUBLIC_MARKETDATA_OUTBOUND_BASE_URL", "nq.public-marketdata.outbound.base-url")
     );
 
     @Bean

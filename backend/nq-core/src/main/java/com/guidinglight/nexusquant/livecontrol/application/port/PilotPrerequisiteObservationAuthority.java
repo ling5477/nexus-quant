@@ -21,7 +21,7 @@ public interface PilotPrerequisiteObservationAuthority {
     );
 
     /**
-     * OPERATOR_PILOT 专用 bootstrap：trusted authority 必须从同一次只读采集同时产生 scope 与 observations。
+     * OPERATOR_CONTROLLED_EXECUTION 专用 bootstrap：trusted authority 必须从同一次只读采集同时产生 scope 与 observations。
      */
     default TrustedOperatorPilotBootstrap bootstrapTrustedOperatorPilotScope(
             LiveSession session,
@@ -30,7 +30,7 @@ public interface PilotPrerequisiteObservationAuthority {
             Instant resolvedAt
     ) {
         throw new LiveControlException(
-                "TRUSTED_OPERATOR_PILOT_SCOPE_BOOTSTRAP_UNAVAILABLE",
+                "TRUSTED_OPERATOR_CONTROLLED_EXECUTION_SCOPE_BOOTSTRAP_UNAVAILABLE",
                 "trusted operator pilot scope bootstrap is unavailable"
         );
     }

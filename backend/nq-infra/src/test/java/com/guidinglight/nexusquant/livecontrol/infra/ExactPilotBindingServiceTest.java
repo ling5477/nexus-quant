@@ -89,7 +89,7 @@ class ExactPilotBindingServiceTest {
         LiveControlException secondUse = assertThrows(LiveControlException.class, () -> service.consume(
                 actor, new ExactPilotBindingConsumptionCommand(
                         binding.sessionId(), binding.id(), binding.order(), correlation("consume-2"))));
-        assertEquals("EXACT_PILOT_BINDING_ALREADY_CONSUMED", secondUse.code());
+        assertEquals("EXACT_EXECUTION_BINDING_ALREADY_CONSUMED", secondUse.code());
         assertEquals(0, authority.credentialMaterialReads);
         assertEquals(0, authority.providerCalls);
         assertEquals(0, authority.orders);
@@ -140,7 +140,7 @@ class ExactPilotBindingServiceTest {
         authority.creation = () -> withOrder(facts,
                 order(100L, "BTC-USDT", ExactPilotBinding.Side.SELL, "100.00000000", "0.10000000"));
         LiveControlException expansion = assertThrows(LiveControlException.class, () -> service.create(actor, command));
-        assertEquals("EXACT_PILOT_BINDING_SCOPE_EXPANSION_REJECTED", expansion.code());
+        assertEquals("EXACT_EXECUTION_BINDING_SCOPE_EXPANSION_REJECTED", expansion.code());
 
         authority.creation = () -> facts;
         ExactPilotBinding binding = service.create(actor, command);
@@ -149,7 +149,7 @@ class ExactPilotBindingServiceTest {
                         binding.sessionId(), binding.id(),
                         order(100L, "BTC-USDT", ExactPilotBinding.Side.BUY,
                                 "100.00000000", "0.20000000"), correlation("changed"))));
-        assertEquals("EXACT_PILOT_ATTEMPT_ORDER_MISMATCH", changedAttempt.code());
+        assertEquals("EXACT_EXECUTION_ATTEMPT_ORDER_MISMATCH", changedAttempt.code());
 
         assertThrows(IllegalArgumentException.class, () -> new ExactPilotBinding.OrderEnvelope(
                 100L, "BTC-USDT", ExactPilotBinding.Side.BUY, ExactPilotBinding.OrderType.LIMIT,
@@ -182,7 +182,7 @@ class ExactPilotBindingServiceTest {
                 command.bindingExpiresAt());
         LiveControlException rejected = assertThrows(LiveControlException.class,
                 () -> service.create(actor, conflict));
-        assertEquals("EXACT_PILOT_BINDING_IDEMPOTENCY_CONFLICT", rejected.code());
+        assertEquals("EXACT_EXECUTION_BINDING_IDEMPOTENCY_CONFLICT", rejected.code());
     }
 
     @Test
@@ -400,7 +400,7 @@ class ExactPilotBindingServiceTest {
                 return value;
             }
             if (!binding.equals(value)) {
-                throw new LiveControlException("EXACT_PILOT_BINDING_IDEMPOTENCY_CONFLICT", "binding conflict");
+                throw new LiveControlException("EXACT_EXECUTION_BINDING_IDEMPOTENCY_CONFLICT", "binding conflict");
             }
             return binding;
         }
@@ -424,7 +424,7 @@ class ExactPilotBindingServiceTest {
                 Instant consumedAt
         ) {
             if (consumed) {
-                throw new LiveControlException("EXACT_PILOT_BINDING_ALREADY_CONSUMED", "already consumed");
+                throw new LiveControlException("EXACT_EXECUTION_BINDING_ALREADY_CONSUMED", "already consumed");
             }
             consumed = true;
             return new ExactPilotBindingConsumption(

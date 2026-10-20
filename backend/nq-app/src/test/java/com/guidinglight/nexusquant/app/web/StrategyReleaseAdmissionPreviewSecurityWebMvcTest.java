@@ -4,6 +4,7 @@ import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.app.config.auth.SecurityConfiguration;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
+import com.guidinglight.nexusquant.paper.api.web.PaperRunReadAccess;
 import com.guidinglight.nexusquant.strategy.api.web.StrategyReleaseAdmissionPreviewController;
 import com.guidinglight.nexusquant.strategy.application.evaluationgate.model.StrategyValidationDecision;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunReleaseBindingMode;
@@ -43,6 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @WebMvcTest(controllers = StrategyReleaseAdmissionPreviewController.class)
 class StrategyReleaseAdmissionPreviewSecurityWebMvcTest {
+    @MockitoBean private PaperRunReadAccess paperRunReadAccess;
 
     private static final String ROUTE =
             "/api/strategy-releases/publish-preview-001/shadow-admission-preview";

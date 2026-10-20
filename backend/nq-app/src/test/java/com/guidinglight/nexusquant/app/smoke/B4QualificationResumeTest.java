@@ -88,7 +88,7 @@ class B4QualificationResumeTest {
                         nq.ready(); proof.put("nqPid", nq.process.pid());
                         proof.put("postgres", value(reader, "SHOW server_version")).put("schema", value(reader,
                                 "SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1"));
-                        assertTrue(proof.path("postgres").asText().startsWith("16.")); assertEquals("50", proof.path("schema").asText());
+                        assertTrue(proof.path("postgres").asText().startsWith("16.")); assertEquals("1", proof.path("schema").asText());
                         assertNotEquals(nq.process.pid(), venue.process.pid());
                         String place = environment.equals("SIM") ? "PLACE_B2" : "PLACE_B2_LIVE";
                         if (row == Row.HEALTHY) {

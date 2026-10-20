@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 /**
- * NumericPolicy 固化 Gate A 默认数值精度策略。
+ * NumericPolicy 固化 默认数值精度策略。
  *
  * Why:
  * docs/NUMERIC_POLICY.md 要求所有价格/数量/金额统一归一化，防止跨模块结果不一致。

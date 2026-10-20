@@ -63,18 +63,18 @@ public class JdbcPilotScopeAuthorityResolver implements PilotScopeAuthorityResol
 
         ExchangeAccountSummary account = accountRepository.findByIdForOwner(
                         actor.userId(), command.exchangeAccountId())
-                .orElseThrow(() -> denied("PILOT_ACCOUNT_REFERENCE_MISMATCH"));
+                .orElseThrow(() -> denied("EXECUTION_ACCOUNT_REFERENCE_MISMATCH"));
         if (!"OKX".equals(account.exchangeCode()) || !"LIVE".equals(account.tradeEnv())
                 || !"ACTIVE".equals(account.status())) {
-            throw denied("PILOT_ACCOUNT_REFERENCE_MISMATCH");
+            throw denied("EXECUTION_ACCOUNT_REFERENCE_MISMATCH");
         }
 
         ExchangeAccountCredentialSummary credential = credentialRepository.findByCredentialIdForOwner(
                         actor.userId(), command.exchangeAccountId(), command.credentialReference())
-                .orElseThrow(() -> denied("PILOT_CREDENTIAL_REFERENCE_MISMATCH"));
+                .orElseThrow(() -> denied("EXECUTION_CREDENTIAL_REFERENCE_MISMATCH"));
         if (!eligibleCredential(credential, command.exchangeAccountId(), command.credentialReference())
         ) {
-            throw denied("PILOT_CREDENTIAL_REFERENCE_MISMATCH");
+            throw denied("EXECUTION_CREDENTIAL_REFERENCE_MISMATCH");
         }
 
         StrategyReleaseAdmissionState admission = admissionRepository.loadByPublishRecordId(
@@ -82,13 +82,13 @@ public class JdbcPilotScopeAuthorityResolver implements PilotScopeAuthorityResol
         if (!admission.identityBound()
                 || admission.admissionRevision() != command.releaseAdmissionRevision()
                 || !same(admission.releaseArtifactDigest(), command.releaseDigest())) {
-            throw denied("PILOT_RELEASE_REFERENCE_MISMATCH");
+            throw denied("EXECUTION_RELEASE_REFERENCE_MISMATCH");
         }
 
         RiskLimitSet risk = liveControlRepository.findRiskLimitSet(command.risk().riskLimitSetId())
-                .orElseThrow(() -> denied("PILOT_RISK_REFERENCE_MISMATCH"));
+                .orElseThrow(() -> denied("EXECUTION_RISK_REFERENCE_MISMATCH"));
         if (!same(risk.canonicalDigest(), command.risk().riskLimitSetDigest())) {
-            throw denied("PILOT_RISK_REFERENCE_MISMATCH");
+            throw denied("EXECUTION_RISK_REFERENCE_MISMATCH");
         }
         return new ResolvedAuthority(risk, resolveRuntimeAuthority());
     }
@@ -101,17 +101,17 @@ public class JdbcPilotScopeAuthorityResolver implements PilotScopeAuthorityResol
         Objects.requireNonNull(actor, "actor must not be null");
         Objects.requireNonNull(command, "command must not be null");
         ExchangeAccountSummary account = accountRepository.findById(command.exchangeAccountId())
-                .orElseThrow(() -> denied("PILOT_ACCOUNT_REFERENCE_MISMATCH"));
+                .orElseThrow(() -> denied("EXECUTION_ACCOUNT_REFERENCE_MISMATCH"));
         if (!Objects.equals(account.ownerUserId(), actor.userId())
                 || !"OKX".equals(account.exchangeCode()) || !"LIVE".equals(account.tradeEnv())
                 || !"ACTIVE".equals(account.status())) {
-            throw denied("PILOT_ACCOUNT_REFERENCE_MISMATCH");
+            throw denied("EXECUTION_ACCOUNT_REFERENCE_MISMATCH");
         }
         ExchangeAccountCredentialSummary credential = credentialRepository.findByCredentialIdForOwner(
                         actor.userId(), command.exchangeAccountId(), command.credentialReferenceId())
-                .orElseThrow(() -> denied("PILOT_CREDENTIAL_REFERENCE_MISMATCH"));
+                .orElseThrow(() -> denied("EXECUTION_CREDENTIAL_REFERENCE_MISMATCH"));
         if (!eligibleCredential(credential, command.exchangeAccountId(), command.credentialReferenceId())) {
-            throw denied("PILOT_CREDENTIAL_REFERENCE_MISMATCH");
+            throw denied("EXECUTION_CREDENTIAL_REFERENCE_MISMATCH");
         }
         OperatorPilotAuthority authority = OperatorPilotAuthority.active(
                 UUID.randomUUID(), actor.userId(), command.exchangeAccountId(),
@@ -172,7 +172,7 @@ public class JdbcPilotScopeAuthorityResolver implements PilotScopeAuthorityResol
             );
         } catch (IllegalArgumentException | IllegalStateException exception) {
             throw new LiveControlException(
-                    "PILOT_RUNTIME_AUTHORITY_NOT_CONFIGURED",
+                    "EXECUTION_RUNTIME_AUTHORITY_NOT_CONFIGURED",
                     "exact server-owned pilot runtime authority is not configured"
             );
         }
@@ -205,7 +205,7 @@ public class JdbcPilotScopeAuthorityResolver implements PilotScopeAuthorityResol
                 || "latest".equalsIgnoreCase(value.trim())
                 || "current".equalsIgnoreCase(value.trim())
                 || "HEAD".equalsIgnoreCase(value.trim())) {
-            throw denied("PILOT_DRIFTING_REFERENCE_FORBIDDEN");
+            throw denied("EXECUTION_DRIFTING_REFERENCE_FORBIDDEN");
         }
     }
 

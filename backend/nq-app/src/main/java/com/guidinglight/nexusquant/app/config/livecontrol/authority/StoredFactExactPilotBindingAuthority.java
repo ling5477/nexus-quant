@@ -125,7 +125,7 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
             PilotObservationSet observations = requireObservations(scope, observationSetId);
             RiskLimitSet risk = session.authorityType() == LiveSessionAuthorityType.STRATEGY
                     ? requireRisk(session) : null;
-            OperatorPilotAuthority operatorAuthority = session.authorityType() == LiveSessionAuthorityType.OPERATOR_PILOT
+            OperatorPilotAuthority operatorAuthority = session.authorityType() == LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION
                     ? requireOperatorAuthority(session, decisionAt) : null;
             requireFreshness(scope, observations, session, decisionAt);
             requireCurrentReferences(session, actor, risk, operatorAuthority, decisionAt);
@@ -169,10 +169,10 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
     }
 
     private OperatorPilotAuthority requireOperatorAuthority(LiveSession session, Instant decisionAt) {
-        OperatorPilotAuthority authority = operatorAuthorityRepository.find(session.operatorPilotAuthorityId())
+        OperatorPilotAuthority authority = operatorAuthorityRepository.find(session.operatorExecutionAuthorityId())
                 .orElseThrow(StoredFactExactPilotBindingAuthority::denied);
         if (!authority.activeAt(decisionAt) || !authority.hasCanonicalDigest()
-                || !authority.canonicalDigest().equals(session.operatorPilotAuthorityDigest())) {
+                || !authority.canonicalDigest().equals(session.operatorExecutionAuthorityDigest())) {
             throw denied();
         }
         return authority;
@@ -382,7 +382,7 @@ public final class StoredFactExactPilotBindingAuthority implements ExactPilotBin
 
     private static LiveControlException denied() {
         return new LiveControlException(
-                "EXACT_PILOT_BINDING_AUTHORITY_REJECTED",
+                "EXACT_EXECUTION_BINDING_AUTHORITY_REJECTED",
                 "current authoritative facts do not permit exact binding"
         );
     }

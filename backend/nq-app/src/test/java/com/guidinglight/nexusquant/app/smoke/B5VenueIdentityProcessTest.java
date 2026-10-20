@@ -41,7 +41,7 @@ class B5VenueIdentityProcessTest {
                         proof.put("database", fixture.name()).put("nqPid", nq.process.pid()).put("venuePid", venue.process.pid());
                         proof.put("postgres", value(reader, "SHOW server_version"));
                         assertTrue(proof.path("postgres").asText().startsWith("16."));
-                        assertEquals("50", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
+                        assertEquals("1", value(reader, "SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1"));
                         for (String invalid : List.of("unsupported", "foo", "okx-test", "", " ", "\t\n", "OKX_SPOT", "SIM")) {
                             setVenue(nq, invalid);
                             assertEquals("INVALID_VENUE_REJECTED", nq.send("TRY_PLACE_B5"));
