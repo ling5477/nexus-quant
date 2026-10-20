@@ -4,7 +4,7 @@ NexusQuant 是面向 OKX Spot 的研究与模拟交易工作台。Java Control P
 
 ## V1.0.0 发行准备状态
 
-尚未公开发布。Windows 11 amd64 / 已运行 Docker Desktop 的本地隔离安装、PG16、备份恢复和重启已验证；升级仍为 `UPGRADE_NOT_VERIFIED`。72小时 C4 观察已执行，原审查因定点 UI 证据缺口未接受；用户已作 `ACCEPT_WITH_EVIDENCE_EXCEPTION` 决定并豁免72小时重跑，原审查不改判。历史UI缺口以 `ADMITTED_WITH_DOCUMENTED_EXCEPTION` 单列准入，当前运行差异另经定向验证覆盖。发行文档与新包共同冻结，每个包使用其独立Manifest；公开发布仍须完成准确源码身份的CI。
+尚未公开发布。Windows 11 amd64 / 已运行 Docker Desktop 的本地隔离安装、PG16、备份恢复和重启已验证；升级仍为 `UPGRADE_NOT_VERIFIED`。72小时 长时运行观察 观察已执行，原审查因定点 UI 证据缺口未接受；用户已作 `ACCEPT_WITH_EVIDENCE_EXCEPTION` 决定并豁免72小时重跑，原审查不改判。历史UI缺口以 `ADMITTED_WITH_DOCUMENTED_EXCEPTION` 单列准入，当前运行差异另经定向验证覆盖。发行文档与新包共同冻结，每个包使用其独立Manifest；公开发布仍须完成准确源码身份的CI。
 
 普通账户缺可信权益来源时不显示虚构收益；真实手续费必须有可信来源；OHLC 不能提供真实事件发生时点；旧 Paper 未知币种权益不改写。
 
