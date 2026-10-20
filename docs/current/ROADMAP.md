@@ -1,231 +1,35 @@
 # Roadmap
 
-本文件只定义下一允许动作与已验证的后续输入。current Gate、安全状态和work batch必须解析 [STATUS.md](STATUS.md) 的 `nq-current-authority` 区块。
+当前阶段和安全状态由 [STATUS.md](STATUS.md) 的机器区块唯一拥有。本文件解释发布准备的剩余动作，不授予提交、公开发行或部署权限。
 
-## 当前产品方向：NQ V1 PRODUCT CLOSURE
+## 当前状态
 
-GateZ=`FROZEN / ACCEPTED / TAGGED`。13-role [strict archive](../gates/gate-z/README.md) 保留 pre-tag 历史快照；冻结提交、tree、annotated tag、远端回读与 exact-head CI 由 [STATUS](STATUS.md) 和 [FACT_SOURCE_INDEX](FACT_SOURCE_INDEX.md) 记录。V1 计划已由 PR #59 与合并后 exact-head CI 接受；当前唯一下一动作是 `NQ-V1-C1-FRESH-INSTALL-GOLDEN-PATH-CLOSURE-IMPLEMENTATION`，本次不启动 C1。
+截至 2026-10-20，dev 集成源码为 `565764cce5862ecc02ca7d1ce18d56fc382d8841`，tree=`39d472ade2d678e0e053875fcd425611f991614f`；PR #64 已合并，同一 head 的 CI `39373837941` 为 completed/success、9/9 SUCCESS。该CI只绑定集成基线，新文档与Snapshot提交的远端CI必须单独获得。
 
-V1 的可执行范围、事实归属、阻塞项、四个产品包及关键路径见 [NQ V1 产品收敛计划](NQ_V1_CLOSURE_PLAN.md)。首个实现任务定义为 `NQ-V1-C1-FRESH-INSTALL-GOLDEN-PATH-CLOSURE`：从空库用正式 UI/API 闭合整条主链；OKX public capture UI 是已知第一断点，不是 C1 的独立产品目标。本次不启动 C1。第二策略、组合、Binance、衍生品、AI/DH 与 LIVE 自动交易不属于 V1。
+C1/C2/C3 已完成；下一阶段是解决 Release 发布门槛，再进入版本迭代。C4 的实际原始终态为 **72小时观察完成 / NOT_ACCEPTED / EVIDENCE_GAPS / SAFE_STOP_CONFIRMED**：候选 `064b6801f08486943c6e4691537de641dcd25c4d`、release=`nq-064b6801f084-04b6ffbe6403e926`，缺 T+12/18/36/60h 定点 UI 证据。当前候选的撮合、记账、调度与 schema 差异已按正式白名单逐项绑定已有集成/CI证据及39项定向PG/HTTP/跨JVM证明；原C4不承担新增代码的正确性证明。旧 V58 不作为新 V34 的运行升级来源，正式安装仍要求空库。用户随后明确决定：`C4_OWNER_DECISION=ACCEPT_WITH_EVIDENCE_EXCEPTION`、`C4_72H_RERUN=WAIVED`，接受历史定点 UI 证据缺口并豁免72小时重跑；原审查仍为 `NOT_ACCEPTED / EVIDENCE_GAPS`，没有后续独立改判报告。这是单独的 owner 决定，不追认缺失证据、不改写历史审查；新增运行路径另由本次定向证据证明。
 
-## 当前路线
+本次用户已授权Release Admission裁定；现有合同不禁止在保留原审查的前提下单列历史证据例外。历史定点UI缺口按 `ADMITTED_WITH_DOCUMENTED_EXCEPTION` 准入，新增行为由独立定向审查与上述证据覆盖，未降低或修改validator。`C4_REVIEW=NOT_ACCEPTED/EVIDENCE_GAPS`、`C4_72H_RERUN=WAIVED` 均保留。新文档提交及独立Release Snapshot仍须完成其准确SHA的远端CI，不能用565764cc旧CI代替；本地包冻结与公开发布分开记录。
 
-```text
-GateY FROZEN / ACCEPTED / TAGGED
-  ↓
-GateAUDIT Phase 0 ACCEPTED / CI_GREEN / COMPLETE
-  ↓
-Phase 1 inventory + Phase 2 AS-IS + Phase 3 disposition COMPLETE
-  ↓
-F-001 / F-002 foundation / F-003 / F-004 ACCEPTED / CI_GREEN
-  ↓
-Phase4 remaining disposition closeout ACCEPTED / CI_GREEN
-  ↓
-7ca1fc92f8900e3e9d19184fccd40569f233823f / 33405549149
-  ↓
-NQ-GATEAUDIT-PHASE5A-CANONICAL-CI-AND-SUPPLY-CHAIN
-  ↓
-d1d20f4087cd337e0b21037b38b377bcbe25499f / 33505000903 ACCEPTED / CI_GREEN
-  ↓
-NQ-GATEAUDIT-PHASE5B-CANONICAL-DEPLOYMENT-AND-RESTORE
-  ↓
-a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848 ACCEPTED / CI_GREEN
-  ↓
-GateAUDIT-PHASE5-F008-PROD-CONFIG-FAIL-CLOSED ACCEPTED / CLOSED
-614359fc7f25227f736fbb1c11c7d584da1f0627 / 33978394774 ACCEPTED / CI_GREEN
-  ↓
-GateAUDIT-PHASE5-F007-MINIMUM-OPERATIONAL-OBSERVABILITY ACCEPTED / CLOSED
-0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836 ACCEPTED / CI_GREEN
-  ↓
-GateAUDIT-PHASE5-F009-LEGACY-GATE-SPECIFIC-ACTIVE-ASSET-CONSOLIDATION ACCEPTED / CLOSED
-dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455 ACCEPTED / CI_GREEN
-  ↓
-P5-F001 ACCEPTED / CLOSED / ruleset 22381941 / refs/heads/dev / effective 9/9
-  ↓
-Phase5 ACCEPTED / CLOSED / remaining blocking 0 / F005 DEFERRED NON_BLOCKING
-  ↓
-Phase6 ACCEPTED / COMPLETE
-  ↓
-L4 plan ACCEPTED / CI_GREEN
-d79408228ce31c97802afbb674eb2e3d0a2e7bfd / 34071672665
-  ↓
-C1(P1-2) ACCEPTED / CI_GREEN / CLOSED
-  ↓
-C2(P1-3) ACCEPTED / CI_GREEN / CLOSED
-  ↓
-Phase6 L4 ACCEPTED / B0–B5 ACCEPTED / B6 AGGREGATE_ACCEPTED
-3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297 / 9 of 9 SUCCESS
-  ↓
-Phase6 L5 / L6-A / L6-B / L6 ACCEPTED
-  ↓
-NQ-GATEAUDIT-FRONTEND-LOCALIZATION-ERROR-UX-CATALOG-IMPLEMENTATION / COMPLETED / ACCEPTED / CI_GREEN
-1b4c87129f2a79e13e379aa56501042ddd5bd42f / 35684433673 / 9 of 9 SUCCESS
-  ↓
-NQ-GATEAUDIT-FRONTEND-CONSOLE-VISUAL-SYSTEM-V3-IMPLEMENTATION / ACCEPTED / CI_GREEN
-07453f8b16e798bd580070a3727aa9eb7e88a193 / 35720426791 / 9 of 9 SUCCESS
-  ↓
-Phase7-A final baseline inventory ACCEPTED / CI_GREEN
-baa01f0f0034bb46a24f9fe8f62acf60bb56e3f6 / 35729125034 / 9 of 9 SUCCESS
-  ↓
-Phase7 B-F governance taxonomy normalization ACCEPTED / CI_GREEN
-8868edb248b614e360377317c9c17e8f1d7d8404 / 35734048380 / 9 of 9 SUCCESS
-  ↓
-Phase7-B historical projection baseline verification ACCEPTED / CI_GREEN
-fea0f1ce228ac7079a7873393daba2d1294fec58 / 35748394188 / 9 of 9 SUCCESS
-  ↓
-Phase7-C readiness repository AUDIT ACCEPTED / CI_GREEN
-82f1afc43664a327eea2fcfd7046bcef099e621b / 35761394744 / 9 of 9 SUCCESS
-  ↓
-Phase7-D canonical archive and closeout ACCEPTED / CI_GREEN
-4800ab1d9407eeb527182328263c0bae9e6c3087 / 35803472376 / 9 of 9 SUCCESS
-  ↓
-Original Scope logging sensitive-data negative-proof AUDIT = BLOCKED / IMPLEMENTATION_GAP
-  ↓
-Logging sensitive-data protection IMPLEMENTATION = ACCEPTED / CI_GREEN
-48c1b1cd4c84e1429be82093e460984b6d1c805c / 35817828506 / 9 of 9 SUCCESS
-  ↓
-SQL ownership and duplication audit = ACCEPTED / CI_GREEN
-  ↓
-Phase7-E candidate delivery and tag = COMPLETE / FAST_FORWARD / CI_GREEN / TAGGED
-  ↓
-Phase7-F post-tag authority synchronization = COMPLETE / FROZEN / ACCEPTED / TAGGED
-  ↓
-post-GateAUDIT Git cleanup = COMPLETE / accepted disposition
-  ↓
-repository topology / shared capability consolidation = MERGED / PR #21 / dev CI GREEN
-  ↓
-GateZ = FROZEN / ACCEPTED / TAGGED
-  ↓
-GateZ-1 through Paper Detail canonical projection = ACCEPTED; account divergence root cause = historical BLOCKED; freeze commit = d106775b6c8a9e17cddb6b99e96c9420fa46df63; then next_action = NQ-V1-CLOSURE-PLAN
-  ↓
-V1 Closure Plan = ACCEPTED / CI_GREEN; PR #59 merge = 7efb9efb33ecad512d6dfb5180a890c07ad960d2; exact-head CI = 36549515053; next_action = NQ-V1-C1-FRESH-INSTALL-GOLDEN-PATH-CLOSURE-IMPLEMENTATION
-```
+本地包 `C:/nq-v1-final-20261020-565764cc/package-amd64-final` 的 Release ID 为 `53dc4bd18e2797cfb1327a1c04c3ce374d7565d7db7c5b03d90b517b608f1949`，Windows 11 amd64 / 已运行 Docker Desktop 的隔离全新安装、PG16.15/V34、备份恢复和恢复后重启已通过，范围为 `QUALIFIED_LOCAL_SCOPED`，不等于公开发布或 C4 接受。运行入口 http://127.0.0.1:18580；保持 Web 请求/回执人工交接，不授予 Web 宿主执行权限。严格更新版本条件不满足，保留 `UPGRADE_NOT_VERIFIED`。
 
-## Phase4 accepted foundation
+保留四项外部数据限制：`ACCOUNT-PERFORMANCE` 普通账户缺可信权益来源时不编造收益；`ACCOUNT-FEE-SOURCE` 不编造真实手续费；`PRICE-EVENTS` 不从 OHLC 编造实际发生时点；`LEGACY-VALUATION` 不更改旧 Paper 未知币种权益。`LIVE=DISABLED`、kill=`ENGAGED`，真实 provider/client/交易所写入关闭。
 
-| Finding | Accepted pair | Current meaning |
-| --- | --- | --- |
-| F-001 | `95b859ee61a8e7f0a725e29877e7303ea4453b1a / 33347091147` | L3 causal order→fill→trade→ledger proof accepted |
-| F-002 | `0651a7365d1a6afe453d75c8abd3975d458e0b7a / 33387882472` | Phase4 forked-JVM restart foundation accepted；不等于Phase6 full L4 |
-| F-003 | `327c2229e89c076eace60046b79ec02c622a7fe4 / 33399190770` | Order/ExecutionIntent identity convergence accepted |
-| F-004 | `18efc06c380d2b411ba7d5f651e7e441247a1b96 / 33358364678` | Trade/fill/ledger convergence与recovery identity accepted |
-| Phase4 closeout | `7ca1fc92f8900e3e9d19184fccd40569f233823f / 33405549149` | Remaining disposition accepted；Phase4 complete，P0/P1=`0/0` |
+清理结果为 `NQ_V1_LOCAL_CLEANUP_PARTIAL / EXACT_RETAINED_RESOURCES`，不是全部完成。以 `E:/nq-v1-cleanup-20261020-565764cc/NQ_V1_FINAL_CLEANUP_REPORT.md` 为准；18580、18099 Demo、正式包、必要备份、C4与恢复证据保留。本轮未清理资产。
 
-## Capability disposition matrix
+本轮正式清单内产品文档随新的本地开发提交、独立白名单Snapshot和新目录发行包共同冻结；来源及最终摘要见 `C:/nq-v1-freeze-20261020-565764cc/NQ_V1_FINAL_RELEASE_ADMISSION_AND_PACKAGE_FREEZE_REPORT.md`。旧包不修改、不复用旧摘要代表新内容。开发文档不进入Release，精确白名单不扩大。当前机器work batch指向尚未公开发布的新候选；远端exact-head CI未经执行，不声明已通过。
 
-| Capability | Current State | Required Baseline | Disposition | Reason | Owner | Trigger | Phase |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| F-013 current authority/current-doc consistency | canonical owners曾有10条stale claim | drift/stale/history-authority=`0/0/0` | `IMPLEMENT_NOW` | current authority correctness | current docs owner / governance contract | Phase4 closeout | Phase4 |
-| Phase4 proof foundation | F-001～F-004 accepted | four immutable pairs green | `NOT_REQUIRED` | 不重复实现或Review accepted proof | GateAUDIT | accepted pair失效时才重开 | Phase4 |
-| Legacy Phase3 identifier F-005 | title/source/owner/consumer均不可恢复 | 不产生任何新语义或implementation mapping | `LEGACY_FINDING_IDENTITY_UNRECOVERABLE / RETIRED` | 保留历史ledger记录，但禁止Phase5继承或猜测未知语义 | Historical evidence only | 仅在找到可验证canonical source时重新审计identity | Retired |
-| Legacy Phase3 identifier F-011 | title/source/owner/consumer均不可恢复 | 不产生任何新语义或implementation mapping | `LEGACY_FINDING_IDENTITY_UNRECOVERABLE / RETIRED` | 保留历史ledger记录，但禁止Phase5继承或猜测未知语义 | Historical evidence only | 仅在找到可验证canonical source时重新审计identity | Retired |
-| All historical-stage active runtime assets | legacy entrypoints已退役；capability callers已迁移；兼容合同逐项保留 | canonical release/deploy/restore与稳定runtime mode | `ACCEPTED / CLOSED` | F009 local review与最终9/9 exact-head CI已接受；不改变accepted deployment语义 | Phase5 legacy consolidation owner | 仅当accepted technical pair失效时重开 | Phase5 |
-| Historical plans与attempt evidence | 明确non-authoritative、保留append-only链接 | history不得参与authority/runtime | `NOT_REQUIRED` | 已通过fact-source分类隔离，不改写历史正文 | docs/archive owners | 仅引用迁移有独立授权时 | Historical |
-| Supply-chain immutable action pinning | 24处Actions、工具consumer与3处PostgreSQL image已由lock和exact-head CI验证 | immutable action/SBOM/provenance baseline | `NOT_REQUIRED` | Phase5A baseline已接受，不重复实现 | Phase5 CI owner | acceptance pair失效时才重开 | Phase5A |
-| Canonical deployment rebuild | immutable pair=`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848` | single canonical deploy/release/restore path | `NOT_REQUIRED` | P5-F002与P5-F003已由9/9 exact-head CI接受并关闭 | Phase5 deployment/recovery owner | acceptance pair失效时才重开 | Phase5B |
-| Minimum observability baseline | F007最小运行观测已由immutable technical pair接受 | deployment health/log/metric/alert minimum | `NOT_REQUIRED` | F007已ACCEPTED / CLOSED，不重复实现 | Phase5 observability owner | accepted pair失效时才重开 | Phase5 |
-| Selected frontend E2E expansion | Phase5A historical pair接受`5 specs / 20 cases`；Phase5B current baseline=`5 specs / 27 cases` | Phase5 selected critical-flow matrix | `NOT_REQUIRED` | 当前loopback=`25/25`、real-backend=`2/2`、skip/fixme=`0/0`，不重复扩展 | Phase5 frontend QA owner | acceptance pair或critical scope失效时才重开 | Phase5A/Phase5B |
-| Current eligible L4 correctness obligations | 28/28 accepted；missing=0、invalid=0 | 最终technical SHA及B6 aggregate evidence | `ACCEPTED` | B0–B5与B6聚合均已接受；inactive/future不计PASS | Phase6 qualification owner | 不重开L4 | Phase6 L4 |
-| L5/L6 scale、故障与长期运行验证 | ACCEPTED | L5 A/B/C、L6-A 60min、L6-B 180min | `ACCEPTED` | mandatory全部满足，见[最终接受矩阵](../audit/evidence/GATEAUDIT_PHASE6_L5_L6_FINAL_ACCEPTANCE.md) | Phase6 qualification owner | 无剩余mandatory；不追加optional soak | Phase6 L5/L6 |
-| 第二pilot、通用LIVE、真实交易扩展、transfer/withdraw | 未授权 | explicit future authority + safety review | `REJECT` | 超出GateAUDIT与Phase4/5/6 proof边界 | future trading governance | 新任务与显式授权同时存在 | Not scheduled |
+## 下一允许工作
 
-## Phase5 inputs
+1. 保留已接受的历史UI证据例外和重跑豁免，复用已完成的39项定向证明及独立审查；后续发布前取得新SOURCE_SHA和Release Snapshot准确身份的远端CI，不重跑72小时。
+2. 本轮已授权文档本地提交及新包冻结；最终源码、包与安装恢复身份由本轮最终报告记录，原包保持不变。
+3. release/1.0.0采用独立白名单Snapshot历史；包SOURCE_SHA绑定完整开发提交，Snapshot只作精确投影，映射见最终报告。远端CI和发布动作仍须明确授权；没有Tag或GitHub Release。
+4. 发布后版本迭代继续保留 canonical Java 交易 authority；多交易所、完整研究框架、AI/DH、LIVE 自动执行及历史兼容列清理另行规划。
 
-- 当前accepted CI基线为9 jobs；Phase5A exact-head pair=`d1d20f4087cd337e0b21037b38b377bcbe25499f / 33505000903`，run=`completed / success / 9 of 9 / failed 0 / skipped 0`。
-- Legacy Phase3 IDs F-005/F-011的canonical source不可恢复，已退休；Phase5只使用以下inventory seed，不继承未知语义。
-- Gate-specific release/deploy helpers只作为输入inventory；Phase5不得为兼容历史路径修改canonical implementation。
-- Phase5A已建立immutable supply-chain pinning、internal SBOM/provenance与selected E2E scope；Phase5B canonical deployment与current-schema backup/restore已由`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`接受。当前critical E2E baseline=`5 specs / 27 cases`；P5-F008已由`614359fc7f25227f736fbb1c11c7d584da1f0627 / 33978394774`接受并关闭，P5-F007已由`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`接受并关闭，F009已由`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`接受并关闭；F001远端enforcement已由ruleset `22381941 / refs/heads/dev / effective 9/9`接受并关闭，F005 platform attestation仍非阻断延期。
-- LIVE保持`DISABLED`、kill switch保持`ENGAGED`；不读取credential、不触发真实provider。
+C1 空库主链、C2 benchmark/OOS、C3 同源 UX 不再列为下一实现任务。历史工作包定义见 [V1计划](NQ_V1_CLOSURE_PLAN.md)，其原始计划语句不覆盖本页。
 
-### Phase5 finding seed
+## 证据索引
 
-以下 finding 来自 `NQ-GATEAUDIT-PHASE5-CI-CD-DEPLOYMENT-HARDENING` 只读 inventory；Phase5A已接受F001 local baseline与F004/F005/F006，Phase5B已接受并关闭F002/F003，F008已通过独立Final Closure Review与9/9 exact-head CI，正式`ACCEPTED / CLOSED`，F007与F009均已正式`ACCEPTED / CLOSED`。F001已通过本轮post-remote readback正式ACCEPTED/CLOSED；F005保留internal acceptance与明确非阻断延期。
-
-| ID | Severity | Finding | Status | Evidence summary |
-| --- | --- | --- | --- | --- |
-| P5-F001 | P1 | `CI_REQUIRED_CHECK_ENFORCEMENT_ABSENT` | `ACCEPTED / CLOSED` | Local canonical baseline已接受；remote ruleset=`22381941`、target=`refs/heads/dev`、ACTIVE/effective checks=`9/9`，missing/unexpected/duplicate=`0/0/0`，app=15368；本轮GET readback无漂移，详见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md) |
-| P5-F002 | P1 | `CANONICAL_RELEASE_DEPLOYMENT_PATH_ABSENT` | `ACCEPTED / CLOSED` | Exact-head `33615809848`接受COMMITTED_CLEAN source、external admission、immutable install、atomic activation、authorized rollback/recovery与跨进程单一authority chain |
-| P5-F003 | P1 | `CURRENT_SCHEMA_RESTORE_NOT_PROVEN` | `ACCEPTED / CLOSED` | PostgreSQL 16.15 server/pg_dump/pg_restore完成V1→V46、backup integrity/restore、Flyway pending=0、canary、repository/app-context smoke；PG17 wrong-major拒绝；exact-head CI接受 |
-| P5-F004 | P2 | `SUPPLY_CHAIN_IDENTITIES_MUTABLE` | `ACCEPTED / CLOSED` | lock对24处Actions、gitleaks/CycloneDX真实consumer与3处PostgreSQL image双向enforce；exact-head CI已验证digest pull、consumer与fail-closed contracts |
-| P5-F005 | P2 | `SBOM_PROVENANCE_ATTESTATION_ABSENT` | `INTERNAL_SBOM_PROVENANCE_ACCEPTED`；`DEFERRED / NON_BLOCKING` | backend/frontend artifact、SBOM、manifest与provenance已完成pre-upload admission、upload与post-upload readback；platform attestation继续`DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION` |
-| P5-F006 | P2 | `CI_DUPLICATION_AND_CRITICAL_E2E_COVERAGE_GAP` | `ACCEPTED / CLOSED` | Phase5A historical baseline=`5 specs / 20 cases`；最新Phase5B accepted baseline=`5 specs / 27 cases`，loopback 25/25、real-backend 2/2，两个NoSkip reporter均PASS |
-| P5-F007 | P2 | `MINIMUM_OPERATIONAL_OBSERVABILITY_INCOMPLETE` | `ACCEPTED / CLOSED` | implementation/accepted technical head=`0e2efdeb236c185dbace67bb22f94c6af64a563a`，exact-head CI=`34009290836 / SUCCESS / 9 of 9 / failed 0 / skipped 0`，observability tests=10/10、Full Maven=1783 tests/0 failures/0 errors/53 conditional test skips，P0/P1=0/0；详见[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F007_POST_CI_AUTHORITY_ACCEPTANCE.md) |
-| P5-F008 | P2 | `PROD_CONFIGURATION_FAIL_CLOSED_GAP` | `ACCEPTED / CLOSED` | Final Closure Review=`PASS / P0_0 / P1_0`；implementation=`716199a7cb836a5eaf43a88b0de6db0f47a75e91`；accepted technical head=`614359fc7f25227f736fbb1c11c7d584da1f0627`，exact-head CI=`33978394774 / SUCCESS / 9 of 9`；mandatory Maven、YAML semantic validator、135/135 mutations拒绝及R06/R09/R10拒绝链通过 |
-| P5-F009 | P2 | `LEGACY_GATE_SPECIFIC_ACTIVE_ASSET_DEBT` | `ACCEPTED / CLOSED` | Local review CLOSED / P0_0 / P1_0，三项P1均CLOSED；accepted technical pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`，9/9 jobs success、failed/skipped/cancelled=0；首次失败delivery与remediation链见[F009 post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F009_POST_CI_AUTHORITY_ACCEPTANCE.md) |
-
-### Phase5 closure reconciliation
-
-- Total=9；完整accepted/closed=8（F001/F002/F003/F004/F006/F007/F008/F009）；open/unclosed=1，仅F005 deferred/non-blocking；blocked=0，非延期open=0，remaining blocking=0。Deferred是open/unclosed的子集，不重复计数；互斥口径为8 closed + 1 deferred = 9。
-- P5-F001 remote enforcement已接受；原P1 finding关闭，不改其historical severity。F005保留`INTERNAL_SBOM_PROVENANCE_ACCEPTED`，platform attestation=`DEFERRED_UNTIL_EXPLICIT_AUTHORIZATION / NON_BLOCKING / id-token NOT_GRANTED`，未自动关闭或授予权限。
-- Closure依据：既有本节要求remaining blocking=0，F005此前已明确非阻断延期；current machine lifecycle只约束工作状态/next-action，未规定所有deferred finding必须关闭。Phase5A/Phase5B与F007/F008/F009 accepted prerequisites均已具备，未发现其他Phase5 closure prerequisite；不修改lifecycle定义。
-- Phase5=`ACCEPTED / CLOSED`；逐项accepted evidence与remaining action见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。F005 remains deferred as explicitly non-blocking follow-on work.
-
-## Phase6 accepted / complete
-
-Phase6=`ACCEPTED / COMPLETE`，L4=`ACCEPTED`；B0–B5=`ACCEPTED`，B6=`AGGREGATE_ACCEPTED`。最终technical pair=`3d103cea2072b3c2d9d1009cc5841c18a958ee80 / 34501806297 / 9 of 9 SUCCESS`，current eligible matrix=`28/28 / missing=0 / invalid=0`，P0=0、P1=0；接受依据为[B6 aggregate evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_B6_AGGREGATE_QUALIFICATION_ACCEPTANCE.md)，不由本次docs-only同步替换。P2 ordinary concurrent INSERT loser与P3 wildcard-import residual保持`OPEN / NON_BLOCKING`。
-
-L5 A/B/C与Kill-under-load已接受，20/20、missing=0、invalid=0；L6-A 60min 360/360及L6-B 180min 1080/1080、3次restart/12个连续性边界已接受。Phase6 mandatory remaining=0、P0/P1=0/0；技术身份、hash与历史保留见[最终接受矩阵](../audit/evidence/GATEAUDIT_PHASE6_L5_L6_FINAL_ACCEPTANCE.md)。该 Phase6 acceptance 时 GateAUDIT 尚未冻结；当前由 Phase7-F 同步为 `FROZEN / ACCEPTED / TAGGED`。
-
-| Observation | Current disposition | Current blocker / owner | Boundary |
-| --- | --- | --- | --- |
-| P1-2 stale PLACE/CANCEL ACK | REMEDIATED / REVIEWED / CI_GREEN / CLOSED | CLOSED / C1 | durable generation与atomic status/version CAS拒绝旧ACK与ABA，保留较新terminal；关闭绑定implementation、独立review及exact-head CI |
-| P1-3 CANCELLED reconciliation | ACCEPTED / CI_GREEN / CLOSED | CLOSED / C2 | immutable pair=`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`；不重开实现或 PostgreSQL 验证 |
-| P1-1 typed terminal mapping | RETIRED_COMPATIBILITY_ONLY | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 历史缺陷观察保留，未宣称修复或false positive |
-| PB1 retained pilot recovery | RETIRED_COMPATIBILITY_ONLY | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 不把普通kill恢复positive control误作PB1缺陷复现 |
-| PB2 sender dispatch | DORMANT_NO_CURRENT_ENTRYPOINT | NON_BLOCKING_FOR_CURRENT_CANONICAL_RUNTIME | 当前无sender入口，历史观察保留 |
-
-Future trigger：对应retired/dormant路径再次成为canonical时，重新运行R1–R4 reachability，不能自动恢复blocking finding或新增compatibility caller。历史失败pair=`378de657ac33b9f9fd666288d489181ac0147b2e / 34038345304`保持FAILED DELIVERY；接受的是后续remediation pair，详见[authority acceptance evidence](../audit/evidence/GATEAUDIT_PHASE6_L4_PLAN_POST_CI_AUTHORITY_TRANSITION_TO_C1.md)。
-
-当前依赖链已完成：**Phase6 ACCEPTED → Frontend localization / Error UX / Error Catalog / stable error identity ACCEPTED → NQ Console Visual System V3 ACCEPTED → Phase7-A final baseline inventory ACCEPTED / CI_GREEN → governance taxonomy normalization ACCEPTED / CI_GREEN → Phase7-B historical projection baseline verification ACCEPTED / CI_GREEN → Phase7-C readiness repository audit ACCEPTED / CI_GREEN → Phase7-D canonical archive and closeout ACCEPTED / CI_GREEN → SQL ownership audit ACCEPTED / CI_GREEN → Phase7-E candidate delivery and annotated tag COMPLETE → Phase7-F post-tag authority synchronization COMPLETE**。GateAUDIT=`FROZEN / ACCEPTED / TAGGED`；用户已接受 post-GateAUDIT Git cleanup disposition，PR #21 的 repository topology / shared capability consolidation 已合并并取得 dev CI。GateZ-1 已完成并通过合并后 dev exact-head CI；公开市场数据可重放 smoke 已由 PR #27 合并并通过 dev exact-head CI（b253dc19124d26cd8b2aab5685d773adc03e3687 / 36141910575 / 9 of 9 SUCCESS）；OKX 只读账户事实实现及 canonical current 一次性 bootstrap 已合并并通过各自 dev exact-head CI；bootstrap technical pair=`6181d0c06e993ed2c21e0e338c6ce0af025562b7 / 36211818734 / 9 of 9 SUCCESS`。runtime identity 修复已由 PR #36 合并并通过 dev exact-head CI=`ca23090af446cb2b186138cfa6e656d6a613a924 / 36233115450 / 9 of 9 SUCCESS`；生产普通 canonical activation 与 scoped 启动已通过。PR #38 的现有 owner 窄密码轮换已合并，technical pair=`ba43b961c3f5a2ec3579f239f4fdc8c8bcf762c3 / 36289608733 / 9 of 9 SUCCESS`；owner 登录及 permission probe 已通过，账户事实部分观察成功，交易事实未变。后续 PR #40 已关闭模式 2 仓位/偏差与当前公开规则覆盖缺口，真实只读资格已接受，当时 divergence=DIVERGED；本轮根因检查另见下文，当时机器 next_action 指向账户快照语义解阻；详见[本轮只读资格证据](../archive/gate-z/evidence/gate-z/OKX_ACCOUNT_FACTS_READONLY_COVERAGE.md)。UI V3 固定 technical pair=`07453f8b16e798bd580070a3727aa9eb7e88a193 / 35720426791`，不由 Phase7-A docs candidate 替换。Phase7-A immutable pair=`baa01f0f0034bb46a24f9fe8f62acf60bb56e3f6 / 35729125034 / 9 of 9 SUCCESS`；21 行 acceptance owner、17 组 technical/CI binding、ancestry、17 行 residual、historical projection handoff、release boundary 与 B～F historical taxonomy preflight均完成。taxonomy normalization pair=`8868edb248b614e360377317c9c17e8f1d7d8404 / 35734048380 / 9 of 9 SUCCESS`，不替代 Phase7-A pair。Phase7-B immutable pair=`fea0f1ce228ac7079a7873393daba2d1294fec58 / 35748394188 / 9 of 9 SUCCESS`，Position/latest Snapshot exact match，mandatory before/after=`1/0`，其余 16 residual 不变；详见[Phase7-B evidence](../audit/evidence/GATEAUDIT_PHASE7_B_HISTORICAL_PROJECTION_BASELINE_VERIFICATION.md)。Phase7-C immutable pair=`82f1afc43664a327eea2fcfd7046bcef099e621b / 35761394744 / 9 of 9 SUCCESS`，结论=`PASS / GATEAUDIT_FREEZE_READY / PRETAG_ARCHIVE_AUTHORIZED`；详见[Phase7-C readiness evidence](../audit/evidence/GATEAUDIT_FREEZE_READINESS_REVIEW.md)。Phase7-D immutable pair=`4800ab1d9407eeb527182328263c0bae9e6c3087 / 35803472376 / 9 of 9 SUCCESS`，strict canonical archive 13/13 roles、pre-tag errors=0，capability/governance closeout=`COMPLETE / PRETAG / TAG_PENDING`；详见[GateAUDIT archive](../gates/gate-audit/README.md)。Logging immutable pair=`48c1b1cd4c84e1429be82093e460984b6d1c805c / 35817828506 / 9 of 9 SUCCESS`；修复前 13/13 与修复后 13/0 证据分开保留，L07 已核销。既有 AntD deprecation 与 JS bundle-size warning 保持 observation；14个历史inactive scenario继续保留future obligation，不算PASS或静默skip。
-
-C1接受身份：implementation=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd`；既有独立review=`PASS / PHASE6_L4_C1_VERSIONED_OCC_INDEPENDENT_REVIEW_ACCEPTED / P0_0 / P1_0 / READY_FOR_C1_DELIVERY`；acceptance head=`eb9740b7519f48ffc1e32968cbb0950261b871ef`、CI=`34098902705 / 9/9 SUCCESS`。首次delivery=`41c3bbcb210a65bf2b7b5aad9885d6f9e7bdccdd / 34086018265 = FAILED DELIVERY`另行保留；完整证据见[C1 authority acceptance](../audit/evidence/GATEAUDIT_PHASE6_L4_C1_POST_CI_AUTHORITY_TRANSITION_TO_C2.md)。C1历史接受身份不由后续文档同步替代。C2已由`612c2f5887a2e6b3a8b3138d9ae9b193c20e298f / 34183851797`接受关闭，本轮不重复其实现或正确性审查。
-
-交付历史68/68=3个known-defect reproduction PASS + 1个kill-engaged normal regression PASS + 64个既有回归PASS。该历史PASS只证明当时两个P1成功复现和既有行为保留，不是L4 qualification acceptance；当前C1/C2已分别接受，旧P1-3 reproduction描述仅属于历史交付，不作为当前开放缺陷；本轮不重跑这些测试。
-
-## 下一允许动作
-
-本轮账户差异根因检查技术 PR #42 已合并，`dev=f7a5faa782e55a87f263f7fefba4b717599396d9` 的 exact-head CI `36302559099` 为 9/9 SUCCESS；新 release 已普通 install/activate、PG16/V54 只读 validate 通过且迁移执行数 0。唯一新 OKX 观察返回 `UNKNOWN / BALANCE_SEMANTIC_MISMATCH`；采集器原始结果为 `QUALIFICATION_BLOCKED_COLLECTOR_ATTRIBUTEERROR`。外部 7 种正余额资产中有 5 种没有本地快照行，本地 BTC/USDT 快照已超过 31 天，但余额同义性及时间因果尚未证明。当时下一步 `NQ-GATEZ-ACCOUNT-SNAPSHOT-SEMANTICS-UNBLOCK`：先定义并证明账户快照的 LIVE/SIM 归属、余额口径与新鲜度来源，再以新候选决定是否需要一次新的只读资格验证；本轮证据不得推导为 `ACCOUNT_DIVERGENCE=EXPLAINED`。详见[只读根因检查证据](../archive/gate-z/evidence/gate-z/OKX_ACCOUNT_DIVERGENCE_READONLY_ROOT_CAUSE.md)。
-
-账户快照 provenance 解阻已通过技术 PR #44：`dev=5197b128131aa21be7705ee6cf3619db3cec00bb / exact-head CI 36314244328 / 9 of 9 SUCCESS`。生产 PG16/V54 先完成 canonical backup 与隔离恢复，然后唯一执行 V55；Flyway validate 为 V55/pending=0/failed=0，历史两行的新 provenance 字段全为 NULL，旧字段指纹不变。release `nq-5197b128131a-39f54b083d7e0571` 已普通 install/activate，终态 LIVE=DISABLED、kill=ENGAGED。原正式 divergence collector 源码尚未找回，`COLLECTOR_SOURCE_UNAVAILABLE / DEFERRED_NON_BLOCKING_FOR_SNAPSHOT_SEMANTICS`；本次没有新的 OKX private observation，也不将历史 divergence 改判为 EXPLAINED。当时机器 next_action 指向 `NQ-GATEZ-ACCOUNT-DIVERGENCE-READONLY-REQUALIFICATION-PLAN`；详见[生产 V55 与 release 证据](../archive/gate-z/evidence/gate-z/ACCOUNT_SNAPSHOT_PROVENANCE_PRODUCTION_V55.md)。
-
-账户只读对账模型已由技术 PR #46 修复并通过合并后 `dev=dc0b01e5653d6718a00b0d667bc2440c47b49b55 / exact-head CI 36326961228 / 9 of 9 SUCCESS`：全账户余额、额外资产、BTC dust、未归属外部订单和非现货仓位归外部上下文；NQ managed reconciliation 只读比较已证明归属的同义 LIVE 活跃订单。历史真实只读账户事实资格保持有效，本任务未重新观察 OKX、未部署、未改变 LIVE 与 kill 边界。账户语义阻塞关闭后，当时唯一下一任务为 `NQ-GATEZ-PUBLIC-MARKET-FULL-WINDOW-SIM-REPLAY`；其全窗口 P2 已由后续技术验收关闭。
-
-公开市场全窗口 SIM 回放已通过技术 PR #48：`dev=1ace052903b6bf70af41f1cf77c72b5157e3c6c8 / exact-head CI 36370231759 / 9 of 9 SUCCESS`。隔离 PG16/V55 中同一冻结公开输入的 A/B 独立 72/72 重算，其决策、Order/Trade/Ledger 与现金/仓位/PnL 轨迹逐项一致；同一 run 幂等、bar 60 反事实因果及数据/身份负例通过，独立只读审查 P0/P1/P2/P3=`0/0/0/0`。历史 smoke 当时遗留的 `FULL_WINDOW_SIM_DECISION_STABILITY_P2` 现为 `CLOSED`；公开规则和费用仍仅是冻结回放假设，本轮无 OKX 调用、生产动作或 migration。该历史验收时机器 `next_action=NONE`。
-
-GateZ 历史范围、验收边界和后续扩展见 [GATEZ_PLAN.md](../gates/gate-z/GATEZ_PLAN.md)。2026-09-27 的新只读资格验证已通过：`REAL_ACCOUNT_READONLY_FACTS_QUALIFIED`。coverage unblock 技术 PR #40 的合并提交/精确 HEAD CI 为 `e9df23f079f0aaec1eff5b38269f4b18c7e9dae3 / 36295009039 / 9 of 9 SUCCESS`；canonical release=`nq-e9df23f079f0-5a401cd983263e6d` 已普通 install/activate，PG16/V54 validate 通过，migration 执行数为 0。复用现有 owner 登录来源，密码、角色和 owner 链未变；permission probe 为 `SUCCEEDED / TRADE / WITHDRAW=false / IP PASSED`。新 snapshot 的模式 2、BTC/USDT 与全部返回余额、positions、挂单、费率、交易所时间、当前公开规则和偏差均为 OBSERVED；positions=`NO_ACTIVE_POSITION / 0`，open orders=`0`，divergence=`DIVERGED`，完整分类不要求 MATCH。观察时间为 `2026-09-27T05:38:23.820031102Z`；私有事实 60s、公开规则 24h，验收时全部新鲜，历史快照不能作为后续实时输入。成功轮 10 次固定 GET、其他 endpoint 0、交易 mutation 0，五类 canonical 交易事实数量及内容不变。runtime 已停止，Java/MainPID=0，LIVE=DISABLED，kill=ENGAGED。首轮采集器阶段计数错误导致的失败原位保留，修正后以独立 run 身份重新验证；不追认旧失败为成功。详情见[模式 2 与公开规则只读资格证据](../archive/gate-z/evidence/gate-z/OKX_ACCOUNT_FACTS_READONLY_COVERAGE.md)。 该资格验证的当时机器 next_action=`NONE`；后续机器 next_action 已变更，以 STATUS 为准。此项资格没有授权 LIVE、解除 kill switch 或账户/交易数据修复。
-
-- Phase5B immutable technical acceptance pair=`a12ec821fee9dcadaa11428f1db0a065614fb58b / 33615809848`；不得由本次current-fact synchronization commit或其CI替代。
-- F008 immutable technical acceptance pair=`614359fc7f25227f736fbb1c11c7d584da1f0627 / 33978394774`；implementation=`716199a7cb836a5eaf43a88b0de6db0f47a75e91`，后续head属于`accepted CI test-harness compatibility remediation`，不是新的implementation finding。详见[post-CI acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F008_POST_CI_AUTHORITY_ACCEPTANCE.md)。
-- F007 immutable technical acceptance pair=`0e2efdeb236c185dbace67bb22f94c6af64a563a / 34009290836`；implementation与accepted technical head相同，不由本轮docs-only authority commit替代。
-- F009 immutable technical acceptance pair=`dbb8b9c6a2319338f5ca90b566ad494142a55e20 / 34024427455`；首次delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12`、failed CI=`34024011663`保留，不由后续authority commit替代。
-- F001 remote acceptance绑定ruleset `22381941 / refs/heads/dev / ACTIVE / effective 9/9`；本次只读readback与authority synchronization commit是独立事件，不能写成新的remote mutation。
-- Phase7-A=`ACCEPTED / CI_GREEN`；source HEAD/tree=`02357cd904af787b410e6ad7cd0fd661980913e4 / ac39412c8ea7e71dd57469b02eafbb98b4050593`，immutable pair=`baa01f0f0034bb46a24f9fe8f62acf60bb56e3f6 / 35729125034`，见[Phase7-A inventory](../audit/evidence/GATEAUDIT_PHASE7_A_FINAL_BASELINE_INVENTORY.md)。taxonomy normalization 与本次 authority sync 均不替代该 pair。
-- GateAUDIT 历史 accepted workstream=`NQ-GATEAUDIT-PHASE7-PRETAG-DELTA-REBIND-AND-ARCHIVE-REFRESH-IMPLEMENTATION`，implementation pair=`c91f26487caf92f963fab36486efa2aebe666ccb / 35832860696 / 9 of 9 SUCCESS`。Phase7-D 后 7 个提交已全部分类并纳入 [13-role pre-tag archive](../gates/gate-audit/README.md)；初次提交 `5bf244b8f4dbf4d857cc6d2f45eeb23ead21f3fc / 35831845804` 的 secret scan 失败 8/9 保留，修复为文档排版且未改扫描规则。Phase7-A 21-row capability matrix、17-row residual 均未改动；原始范围 TOTAL=39 / UNCLASSIFIED=0 / REMAINING_GAPS=0，P0/P1=0/0。该 refresh pair=`c91f26487caf92f963fab36486efa2aebe666ccb / 35832860696 / 9 of 9 SUCCESS` 仍是 GateAUDIT 的最后一个 immutable technical pair。Phase7-E 使用 freeze commit=`a4cf8516382b47112852fc3f8dd9e5a65a80f993`、tag object=`4ee65d68471c5e25874ab6a08c3e9fc420f667b7`、dev push CI=`35840126216 / 9 of 9 SUCCESS` 完成；Phase7-F 已同步 current authority。GateAUDIT 历史冻结身份不变；GateZ-0 已建立当前计划；GateZ-1 已接受，technical merge/exact-head pair=`09b7e1cd9c68033b54b75cf361cdda70b584f3a4 / 36111701008 / 9 of 9 SUCCESS`。公开市场数据可重放 smoke 的 technical merge/exact-head pair=`b253dc19124d26cd8b2aab5685d773adc03e3687 / 36141910575 / 9 of 9 SUCCESS`；机器 next_action 为只读账户事实资格验证的部署授权解除。
-- Phase5 ACCEPTED/CLOSED，remaining blocking=0；F005仍DEFERRED/NON_BLOCKING，平台attestation须未来显式授权。详见[F001 post-remote acceptance evidence](../audit/evidence/GATEAUDIT_PHASE5_F001_POST_REMOTE_AUTHORITY_ACCEPTANCE.md)。
-
-
-## Pre-B0 residual P2
-
-以下均为 `OPEN / P2 / NON_BLOCKING_FOR_B0`，本任务未修改：
-
-| Finding | 保留的触发条件 |
-| --- | --- |
-| F3 restore proof identity | POST_RESTORE_VALIDATION 输入错误 commit/proof schema/schema target 或相等的空 canary 时仍可能接受。 |
-| F4 SBOM array shape | 规范化遇到单元素数组或空嵌套数组时可能输出对象/null。 |
-| F5 Java shadow committed-change classification | 新增违规提交后，干净 checkout 的 git status 不再将其标记为 NEW_CODE_FINDING。 |
-| F6 manual seed SQL scope | 在含非 fixture admin 账号的数据库手工运行 seed，其默认账号 UPDATE 范围过宽；静态风险，未执行。 |
-
-上述pre-B0历史残余来源保留；其旧审查/交付next action已由最终L4接受事实推进，不再作为当前前置。不宣称整个GateAUDIT已结束。
-
-## Persistent boundary
-
-- `LIVE=DISABLED`、kill switch=`ENGAGED`；历史只读观察资格不授权本轮或后续再次访问 OKX；新的真实观察须另获当前授权。禁止再次 pilot、PLACE、CANCEL、transfer、withdraw、credential/生产数据库写入或未经授权的生产部署。
-- GateY frozen archive与published tags不可改写。
-- P5-F001/P5-F007/P5-F008/P5-F009均为`ACCEPTED / CLOSED`；Phase5已关闭，Phase6 ACCEPTED/COMPLETE，L4 ACCEPTED，L5/L6 ACCEPTED，Phase7-A 至 Phase7-F 已完成，GateAUDIT=`FROZEN / ACCEPTED / TAGGED`；GateZ-1、公开行情回放 smoke 与 72-bar 全窗口 SIM 回放均已接受，该历史时点 next_action=`NONE`；此前公开行情 smoke 的接受身份保持不变。remote enforcement为APPLIED/VERIFIED/ACCEPTED，platform attestation保持DEFERRED/NON_BLOCKING。
-
-## F009 accepted delivery lineage
-
-- Local review=`CLOSED / PASS / P0_0 / P1_0`；P1-1/P1-2/P1-3均CLOSED，不追加review。
-- Failed delivery=`85d11984d0c65b464ffe4858fe7fd1da51885f12 / 34024011663`；precommit ROADMAP authority delta造成stage-asset exception digest stale。
-- Remediation与accepted technical head=`dbb8b9c6a2319338f5ca90b566ad494142a55e20`；exact-head CI=`34024427455 / completed / success / 9 of 9 / failed 0 / skipped 0 / cancelled 0`。
-- 本轮authority/docs commit仅同步已接受事实与ROADMAP guard binding，不替换technical pair，不重跑technical qualification。
+- C4 原始终态（本地证据，非Git文件）：`E:/Project/nexus-quant/artifacts/runtime/v1-c4-064b6801-20261006/attempt-02/evidence/final-rc-report.md`；JSON、final-evidence-index、controlled-restart 与 final-facts-review-confirmed 在同目录，均为只读历史。
+- 本地发行：`C:/nq-v1-final-20261020-565764cc/NQ_V1_FINAL_LOCAL_RELEASE_REPORT.md`。
+- 清理：`E:/nq-v1-cleanup-20261020-565764cc/NQ_V1_FINAL_CLEANUP_REPORT.md`。
+- 本轮闭包/文档报告：`E:/nq-v1-release-closure-20261020-565764cc/` 下两份 NQ_V1_*_REPORT.md；机器证据在其 evidence 目录，独立 Git-blob 快照为 release-source-565764cc。

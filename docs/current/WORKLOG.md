@@ -1,3 +1,18 @@
+# V1 Release 准备摘要（2026-10-20）
+
+- 基线 `565764cce5862ecc02ca7d1ce18d56fc382d8841` / PR #64 / exact-head CI `39373837941`：9/9 SUCCESS；本轮新文档/Snapshot提交不在该CI内；其远端exact-head CI为待发布门槛。
+- 已复用本地全新安装、PG16/V34、HTTP、备份恢复及重启证据；不重跑 M2/M3/C4。`UPGRADE_NOT_VERIFIED`、四项数据限制与 `LIVE=DISABLED` 保留。
+- C4 已运行72小时；原终态 `NOT_ACCEPTED / EVIDENCE_GAPS / SAFE_STOP_CONFIRMED` 保留。用户决定 `C4_OWNER_DECISION=ACCEPT_WITH_EVIDENCE_EXCEPTION`、`C4_72H_RERUN=WAIVED`；无独立改判报告。历史UI缺口按ADMITTED_WITH_DOCUMENTED_EXCEPTION准入，当前代码差异以39项定向PG/HTTP/跨JVM证明及独立审查覆盖；不重跑72小时。
+- 清理为 PARTIAL；正式文档随新提交及新包冻结，原包及Manifest保持原样；准确身份见本轮最终报告。
+- 当前 authority 见 [STATUS.md](STATUS.md)，后续工作见 [ROADMAP.md](ROADMAP.md)。本轮必要校验与精确身份见仓库外两份最终报告，本轮已授权本地提交/包冻结，未远端发布。
+
+- C4 原始终态（本地证据，非Git文件）：`E:/Project/nexus-quant/artifacts/runtime/v1-c4-064b6801-20261006/attempt-02/evidence/final-rc-report.md`；JSON、final-evidence-index、controlled-restart 与 final-facts-review-confirmed 在同目录，均为只读历史。
+- 本地发行：`C:/nq-v1-final-20261020-565764cc/NQ_V1_FINAL_LOCAL_RELEASE_REPORT.md`。
+- 清理：`E:/nq-v1-cleanup-20261020-565764cc/NQ_V1_FINAL_CLEANUP_REPORT.md`。
+- 本轮闭包/文档报告：`E:/nq-v1-release-closure-20261020-565764cc/` 下两份 NQ_V1_*_REPORT.md；机器证据在其 evidence 目录，独立 Git-blob 快照为 release-source-565764cc。
+
+## 以下为原有历史 ledger（按原内容保留，不参与当前阶段判定）
+
 ## NQ-DOCS-GATES-CURRENT-RESIDUAL-MOVE-BATCH
 
 - date: 2026-07-10
