@@ -13,7 +13,7 @@ import {
 import {useTranslation} from 'react-i18next';
 import {formatApiError} from '@/api/errors';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
 import {
     acknowledgeMaintenance,
@@ -41,7 +41,7 @@ export function MaintenanceOperationDrawer({
 }) {
     const {t} = useTranslation('pages');
     const owner = useAuthStore((state) => state.currentUser?.userId);
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const [form] = useLocalizedForm<MaintenanceRequest>();
     const [record, setRecord] = useState<{
         owner?: number;
@@ -89,7 +89,7 @@ export function MaintenanceOperationDrawer({
             const receipt = await work();
             if (
                 useAuthStore.getState().currentUser?.userId === owner &&
-                useAuthStore.getState().accessToken === token
+                selectSessionIdentity(useAuthStore.getState()) === token
             ) {
                 setOutcome({owner, token, receipt: receipt || undefined});
                 if (receipt?.state === 'COMPLETED') onCompleted(receipt);

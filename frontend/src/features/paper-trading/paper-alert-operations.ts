@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {notificationInstant} from '@/features/notifications/read-state';
 import type {AppApiError} from '@/types/api';
 import type {PaperRunAlertItem} from './types/paper-trading';
@@ -62,15 +62,16 @@ export function canOperatePaperAlerts(): boolean {
 }
 function session(owner?: number) {
     const auth = useAuthStore.getState();
+    const token = selectSessionIdentity(auth);
     if (
         !auth.currentUser?.authenticated ||
-        !auth.accessToken ||
+        !token ||
         !Number.isSafeInteger(auth.currentUser.userId) ||
         auth.currentUser.userId <= 0 ||
         (owner !== undefined && auth.currentUser.userId !== owner)
     )
         throw failure('PAPER_ALERT_SESSION_CHANGED');
-    return {owner: auth.currentUser.userId, token: auth.accessToken};
+    return {owner: auth.currentUser.userId, token};
 }
 function unchanged(scope: ReturnType<typeof session>) {
     const current = session(scope.owner);
@@ -361,7 +362,7 @@ async function execute(
         const problem = error as AppApiError;
         const current = useAuthStore.getState();
         const sameSession =
-            current.currentUser?.userId === scope.owner && current.accessToken === scope.token;
+            current.currentUser?.userId === scope.owner && selectSessionIdentity(current) === scope.token;
         if (!recovery && sameSession && [400, 401, 403, 404, 422].includes(problem.status))
             confirm(pending);
         else if (problem.code !== 'PAPER_ALERT_STORAGE_UNAVAILABLE')

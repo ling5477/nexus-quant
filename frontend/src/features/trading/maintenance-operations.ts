@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 
 export type MaintenanceKind = 'RECONCILE' | 'RECOVERY';
 export interface MaintenanceRequest {
@@ -74,7 +74,7 @@ function scope(owner: number, token: string | null) {
     const current = useAuthStore.getState();
     if (
         current.currentUser?.userId !== owner ||
-        current.accessToken !== token ||
+        selectSessionIdentity(current) !== token ||
         !token ||
         !current.currentUser.roles.some((role) =>
             ['ADMIN', 'OPERATOR', 'ROLE_ADMIN', 'ROLE_OPERATOR'].includes(role),
@@ -113,7 +113,7 @@ async function locked<T>(owner: number, work: () => Promise<T>) {
 
 /** 跨标签页只允许一个原身份；写入本地身份失败时禁止发起服务端命令。 */
 export async function submitMaintenance(owner: number, request: MaintenanceRequest) {
-    const token = useAuthStore.getState().accessToken;
+    const token = selectSessionIdentity(useAuthStore.getState());
     return locked(owner, async () => {
         scope(owner, token);
         if (readMaintenance(owner)) throw problem('MAINTENANCE_PENDING');
@@ -143,7 +143,7 @@ export async function submitMaintenance(owner: number, request: MaintenanceReque
 }
 
 export async function lookupMaintenance(original: PendingMaintenance) {
-    const token = useAuthStore.getState().accessToken;
+    const token = selectSessionIdentity(useAuthStore.getState());
     scope(original.owner, token);
     const {data} = await apiClient.get<MaintenanceReceipt>(
         `/trading/maintenance/operations/${original.operationId}`,
@@ -154,7 +154,7 @@ export async function lookupMaintenance(original: PendingMaintenance) {
 
 /** 只在正式原结果已确认或提交前置拒绝后收起记录；404和查询失败都不允许解锁。 */
 export async function acknowledgeMaintenance(original: PendingMaintenance) {
-    const token = useAuthStore.getState().accessToken;
+    const token = selectSessionIdentity(useAuthStore.getState());
     return locked(original.owner, async () => {
         scope(original.owner, token);
         const current = readMaintenance(original.owner);

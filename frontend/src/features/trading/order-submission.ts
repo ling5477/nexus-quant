@@ -1,5 +1,5 @@
 import {accountsApi} from '@/features/accounts/api/accounts';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {useAccountContextStore} from '@/store/account-context-store';
 import type {AppApiError} from '@/types/api';
 import {tradingWorkbenchApi} from './api/trading-workbench';
@@ -135,12 +135,13 @@ export function readOrderSubmission(owner: number | undefined): OrderSubmissionS
 
 function scope(pending?: PendingOrderSubmission, write = false) {
     const auth = useAuthStore.getState();
+    const token = selectSessionIdentity(auth);
     const context = useAccountContextStore.getState();
     const user = auth.currentUser;
     if (
         !user?.authenticated ||
         !positiveId(user.userId) ||
-        !auth.accessToken ||
+        !token ||
         (write &&
             !user.roles.some((role) =>
                 ['ADMIN', 'OPERATOR', 'ROLE_ADMIN', 'ROLE_OPERATOR'].includes(role),
@@ -165,7 +166,7 @@ function scope(pending?: PendingOrderSubmission, write = false) {
         throw error('ORDER_SUBMISSION_SCOPE_CHANGED');
     return {
         owner: user.userId,
-        token: auth.accessToken,
+        token,
         accountId: context.selectedExchangeAccountId,
         legacyAccountId: context.legacyAccountId,
         venue: context.exchangeCode,

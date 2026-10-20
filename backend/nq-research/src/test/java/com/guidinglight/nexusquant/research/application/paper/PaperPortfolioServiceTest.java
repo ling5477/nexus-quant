@@ -75,6 +75,18 @@ class PaperPortfolioServiceTest {
     }
 
     @Test
+    void canonicalRunsNeverEnterLegacyAggregateOrDiagnosticsRefs() {
+        var canonical = org.mockito.Mockito.mock(PaperTradingRun.class);
+        org.mockito.Mockito.when(canonical.canonicalAccountId()).thenReturn(9L);
+        runRepo.runs.add(canonical);
+        assertEquals(0, service.summarize().overview().totalRuns());
+        assertTrue(service.listRunRefs().isEmpty());
+        runRepo.runs.add(run("legacy", "pub", "version", PaperTradingRunStatus.STOPPED, Instant.now()));
+        assertEquals(1, service.summarize().overview().totalRuns());
+        assertEquals("legacy", service.listRunRefs().getFirst().paperRunId());
+    }
+
+    @Test
     void summarizeShouldReturnStableEmptyStructureWhenNoRuns() {
         PaperPortfolioSummary summary = service.summarize();
 

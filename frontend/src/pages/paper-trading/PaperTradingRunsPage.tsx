@@ -1,3 +1,5 @@
+import {ObjectConfigurationInput} from '@/components/configuration/ObjectConfigurationInput';
+import {configurationObject} from '@/components/configuration/object-configuration';
 import {ResearchResultRecovery, usePendingResultAction} from '@/features/ResearchResultRecovery';
 import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
@@ -190,7 +192,7 @@ export function PaperTradingRunsPage() {
     const [submittedFilters, setSubmittedFilters] = useState<PaperTradingListFilters>(
         defaultPaperTradingListFilters,
     );
-    const [searchVersion, setSearchVersion] = useState(0);
+    const [searchVersion, setSearchVersion] = useState(1);
     const [selectedRow, setSelectedRow] = useState<PaperRunRow | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
     // 切换运行时优先读取订单，明细 tab 按激活项懒加载，避免首屏扇出事实查询。
@@ -282,7 +284,7 @@ export function PaperTradingRunsPage() {
     const handleReset = () => {
         queryForm.resetFields();
         setSubmittedFilters(defaultPaperTradingListFilters);
-        setSearchVersion(0);
+        setSearchVersion(1);
     };
 
     const handleStart = (paperRunId: string) => {
@@ -448,7 +450,11 @@ export function PaperTradingRunsPage() {
                         }
                     />
                 )}
-                <NqFilterBar
+
+
+                <Row gutter={[12, 12]} align="top">
+                    <Col xs={24} xl={focusedWithoutList ? 24 : 7} xxl={focusedWithoutList ? 24 : 6}>
+                        <div className="nq-sim-run-filter">                <NqFilterBar
                     actions={
                         <Space wrap className="paper-runs-query-actions">
                             <Button type="primary" onClick={() => queryForm.submit()}>
@@ -469,12 +475,12 @@ export function PaperTradingRunsPage() {
                         onFinish={handleSearch}
                     >
                         <Row gutter={[16, 0]}>
-                            <Col xs={24} md={12} xl={8}>
+                            <Col xs={24}>
                                 <Form.Item label={t('pages:publishId')} name="publishId">
                                     <Input placeholder={t('pages:filterByPublishRecordId')} />
                                 </Form.Item>
                             </Col>
-                            <Col xs={24} md={12} xl={6}>
+                            <Col xs={24}>
                                 <Form.Item label={t('pages:status')} name="status">
                                     <Select
                                         allowClear
@@ -485,10 +491,7 @@ export function PaperTradingRunsPage() {
                             </Col>
                         </Row>
                     </Form>
-                </NqFilterBar>
-
-                <Row gutter={[12, 12]} align="top">
-                    <Col xs={24} xl={focusedWithoutList ? 24 : 7} xxl={focusedWithoutList ? 24 : 6}>
+                </NqFilterBar></div>
                         <Card
                             className="page-section"
                             variant="borderless"
@@ -1038,13 +1041,11 @@ export function PaperTradingRunsPage() {
                         <Select options={localizedPaperOptions(INTERVAL_OPTIONS)} />
                     </Form.Item>
                     <Form.Item
-                        label={t('pages:runConfigurationSnapshotJsonOptional')}
+                        label={t('product:configRuntimeExtra')}
                         name="configSnapshotJson"
-                    >
-                        <Input.TextArea
-                            rows={3}
-                            placeholder='{"feeRate":"0.001","slippageBps":"10"}'
-                        />
+                        extra={t('product:configLegacyPaperHelp')}
+                        rules={[{validator: async (_, value?: string) => {try {configurationObject(value);} catch {throw new Error(t('product:configIncomplete'));}}}]}>
+                        <ObjectConfigurationInput label={t('pages:runConfigurationSnapshotJsonOptional')} />
                     </Form.Item>
                 </Form>
             </Modal>

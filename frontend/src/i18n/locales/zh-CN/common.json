@@ -1,4 +1,12 @@
 {
+  "sessionLifetime": {
+    "warning": "登录状态将在约 {{minutes}} 分钟后到期。",
+    "maximum": "本次登录即将达到最长时限（约 {{minutes}} 分钟后）。",
+    "signInAgain": "为保护账户，需要重新登录；继续操作不会延长最长时限。",
+    "failed": "会话续期暂未成功，请检查网络并重试。当前有效期不会因此延长。",
+    "continue": "继续使用",
+    "logoutFailed": "安全退出未完成，请检查网络后重试。"
+  },
   "dashboardEvidence": {
     "unknown": "运行观测状态未知",
     "incomplete": "运行列表、焦点运行告警或心跳证据尚未完整确认；加载、刷新、查询失败及缺失数据均不代表健康。",

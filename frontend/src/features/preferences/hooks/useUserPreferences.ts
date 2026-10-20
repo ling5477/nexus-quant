@@ -1,17 +1,23 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {preferencesApi, type UserPreferences} from '@/features/preferences/api/preferences';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
+import {CanceledError} from 'axios';
 
 export function useUserPreferences() {
     const userId = useAuthStore((state) => state.currentUser?.userId ?? 0);
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const mustChangePassword = useAuthStore((state) => state.currentUser?.mustChangePassword);
     const client = useQueryClient();
     const key = ['user-preferences', userId] as const;
     const query = useQuery<UserPreferences, AppApiError>({
         queryKey: key,
-        queryFn: ({signal}) => preferencesApi.read(token!, signal),
+        queryFn: ({signal}) => {
+            const current = useAuthStore.getState();
+            if (selectSessionIdentity(current) !== token || !current.accessToken)
+                throw new CanceledError('Session changed before reading preferences.');
+            return preferencesApi.read(current.accessToken, signal);
+        },
         enabled: Boolean(token && userId > 0 && !mustChangePassword),
     });
     const save = useMutation<
@@ -20,7 +26,9 @@ export function useUserPreferences() {
         Partial<UserPreferences> & {expectedVersion?: number}
     >({
         mutationFn: (patch) => {
-            if (!query.data || !token || useAuthStore.getState().currentUser?.userId !== userId)
+            const current = useAuthStore.getState();
+            if (!query.data || !token || current.currentUser?.userId !== userId
+                || selectSessionIdentity(current) !== token || !current.accessToken)
                 return Promise.reject(
                     new Error('Read the current user preferences before saving.'),
                 );
@@ -28,7 +36,7 @@ export function useUserPreferences() {
             const {expectedVersion, ...value} = patch;
             return preferencesApi.save(
                 {...query.data, ...value, version: expectedVersion ?? query.data.version},
-                token,
+                current.accessToken,
             );
         },
         onSuccess: (value) => {

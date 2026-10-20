@@ -133,12 +133,27 @@ class AuthSecurityWebMvcTest {
     @MockitoBean private StrategyScheduleService strategyScheduleService;
     @MockitoBean private StrategyScheduleScanService strategyScheduleScanService;
     @MockitoBean private AuthUserRepository authUserRepository;
+    @MockitoBean private com.guidinglight.nexusquant.paper.api.web.PaperRunReadAccess paperRunReadAccess;
     @MockitoBean private ExchangeAccountQueryService exchangeAccountQueryService;
     @MockitoBean private ScheduledJobManagementService scheduledJobManagementService;
     @MockitoBean private ScheduledJobRegistry scheduledJobRegistry;
 
     @BeforeEach
     void setUpAuthRepository() {
+        when(authUserRepository.findByUsernameForUpdate(org.mockito.ArgumentMatchers.anyString()))
+                .thenAnswer(call -> authUserRepository.findByUsername(call.getArgument(0)));
+        var sessions = new java.util.HashMap<String, com.guidinglight.nexusquant.auth.domain.AuthSession>();
+        org.mockito.Mockito.doAnswer(call -> {
+            com.guidinglight.nexusquant.auth.domain.AuthSession session = call.getArgument(0);
+            sessions.put(session.sessionId(), session); return null;
+        }).when(authUserRepository).createSession(any(), any());
+        when(authUserRepository.isSessionActive(any(), any(), org.mockito.ArgumentMatchers.anyLong(), any(), any()))
+                .thenAnswer(call -> {
+                    var session = sessions.get((String) call.getArgument(0));
+                    return session != null && session.authVersion() == (long) call.getArgument(2)
+                            && session.expiresAt().isAfter(call.getArgument(3))
+                            && session.lastActiveAt().isAfter(call.getArgument(4));
+                });
         when(authUserRepository.hasAdminUser()).thenReturn(true);
         when(authUserRepository.findByUsername("admin"))
                 .thenReturn(Optional.of(profile(1L, "admin", true, "ADMIN", "OPERATOR", "VIEWER")));

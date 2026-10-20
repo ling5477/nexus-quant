@@ -78,6 +78,8 @@ nq:
     issuer: ${NQ_SECURITY_ISSUER:nexus-quant}
     secret: ${NQ_SECURITY_SECRET:change-me-change-me-change-me-change-me}
     access-token-ttl: ${NQ_SECURITY_ACCESS_TOKEN_TTL:PT1H}
+    session-idle-timeout: ${NQ_SECURITY_SESSION_IDLE_TIMEOUT:PT30M}
+    session-max-lifetime: ${NQ_SECURITY_SESSION_MAX_LIFETIME:PT8H}
     users: []
   instrument:
     catalog-sync:

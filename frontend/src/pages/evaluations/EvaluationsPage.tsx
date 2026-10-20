@@ -1,3 +1,4 @@
+import {businessColumns} from '@/components/layout/business-columns';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
@@ -277,7 +278,7 @@ export function EvaluationsPage() {
     const [submittedFilters, setSubmittedFilters] = useState<EvaluationsListFilters>(
         defaultEvaluationsListFilters,
     );
-    const [searchVersion, setSearchVersion] = useState(0);
+    const [searchVersion, setSearchVersion] = useState(1);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const currentUser = useAuthStore((state) => state.currentUser);
@@ -440,7 +441,7 @@ export function EvaluationsPage() {
     const handleReset = () => {
         form.resetFields();
         setSubmittedFilters(defaultEvaluationsListFilters);
-        setSearchVersion(0);
+        setSearchVersion(1);
         setCurrentPage(1);
     };
 
@@ -480,7 +481,7 @@ export function EvaluationsPage() {
                     />
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-filter-panel"
                     bordered={false}
                     title={t('pages:filters')}
                     extra={
@@ -548,7 +549,7 @@ export function EvaluationsPage() {
                     </Form>
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-results-panel"
                     bordered={false}
                     title={t('pages:results')}
                     extra={
@@ -561,7 +562,7 @@ export function EvaluationsPage() {
                     }
                 >
                     {!hasSearched ? (
-                        <Empty description={t('pages:workflowManualSearch')} />
+                        <Empty description={t('product:loaded')} />
                     ) : evaluationsQuery.error ? (
                         <Alert
                             type="error"
@@ -581,7 +582,7 @@ export function EvaluationsPage() {
                         <Table
                             className="evaluation-result-list-table"
                             rowKey="evalReportId"
-                            columns={evaluationColumns}
+                            columns={businessColumns(evaluationColumns)}
                             dataSource={visibleItems}
                             loading={evaluationsQuery.isFetching}
                             pagination={{

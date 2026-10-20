@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
 import type {ContinuousSimStatus} from './types/paper-trading';
 import {parseContinuousSimStatus} from './continuous-state';
@@ -142,7 +142,9 @@ export function canOperateContinuous(): boolean {
     );
 }
 function session(write: boolean, pending?: PendingContinuousOperation): Session {
-    const {currentUser: user, accessToken: token} = useAuthStore.getState();
+    const authState = useAuthStore.getState();
+    const user = authState.currentUser;
+    const token = selectSessionIdentity(authState);
     if (
         !user?.authenticated ||
         !Number.isSafeInteger(user.userId) ||
@@ -327,7 +329,7 @@ async function execute(pending: PendingContinuousOperation, original: Session, r
         const current = useAuthStore.getState();
         if (
             current.currentUser?.userId === original.owner &&
-            current.accessToken === original.token &&
+            selectSessionIdentity(current) === original.token &&
             canOperateContinuous() &&
             rejectedInitially(problem, restoring)
         )

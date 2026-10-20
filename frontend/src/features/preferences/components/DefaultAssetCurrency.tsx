@@ -4,7 +4,7 @@ import {useQuery} from '@tanstack/react-query';
 import {useTranslation} from 'react-i18next';
 import {readAccountPerformance} from '@/features/accounts/api/performance';
 import {accountQueryKeys} from '@/api/query-keys';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {accountValuationCurrency, readCurrencyRegistry} from '../currencies';
 
 /** 资产计价读取正式估值口径，不能从交易对名称推导，也不能把USDT改名成人民币或假装可配置汇率。 */
@@ -18,7 +18,7 @@ export function DefaultAssetCurrency({
     loading: boolean;
 }) {
     const {t} = useTranslation();
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const userId = useAuthStore((state) => state.currentUser?.userId);
     const registry = useQuery({
         queryKey: ['currency-registry', userId],

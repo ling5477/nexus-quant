@@ -8,7 +8,7 @@ import {describeApiError, formatApiError} from '@/api/errors';
 import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {ResearchResultRecovery, usePendingResultAction} from '@/features/ResearchResultRecovery';
 import {readResultAction} from '@/features/research-result-recovery';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {
     useValidationReviewDetailQuery,
     useValidationReviewEventsQuery,
@@ -59,7 +59,7 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
     const eventsQuery = useValidationReviewEventsQuery(caseId);
     const mutation = useValidationReviewLifecycleMutation();
     const currentUser = useAuthStore((state) => state.currentUser);
-    const accessToken = useAuthStore((state) => state.accessToken);
+    const accessToken = useAuthStore(selectSessionIdentity);
     const actionScope = useRef<object | null>(null);
     const canOperate = currentUser?.roles.some((role) =>
         ['ADMIN', 'OPERATOR', 'ROLE_ADMIN', 'ROLE_OPERATOR'].includes(role.toUpperCase()),

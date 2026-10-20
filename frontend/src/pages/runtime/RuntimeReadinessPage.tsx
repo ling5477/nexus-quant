@@ -34,6 +34,7 @@ import type {
 import {formatDateTime} from '@/utils/formatters';
 import {runtimeReadinessReasonKey} from './runtimeReadinessPresentation';
 import {ResourceTrendsPanel} from '@/features/runtime/components/ResourceTrendsPanel';
+import {RuntimeOperationsPanel} from '@/features/runtime/components/RuntimeOperationsPanel';
 import './RuntimeReadinessPage.css';
 
 const {Paragraph, Text} = Typography;
@@ -742,43 +743,6 @@ const operationalColumns: ColumnsType<OperationalReadinessItem> = [
     },
 ];
 
-const operationalSummaryColumns: ColumnsType<OperationalReadinessItem> = [
-    {
-        get title() {
-            return t('pages:operationalArea');
-        },
-        dataIndex: 'area',
-        key: 'area',
-        width: 180,
-    },
-    {
-        get title() {
-            return t('pages:status');
-        },
-        dataIndex: 'status',
-        key: 'status',
-        width: 180,
-        render: (status: string, row) => (
-            <StatusTag
-                label={t(runtimeReadinessReasonKey(status, 'status'), {code: status})}
-                title={status}
-                tone={row.tone}
-                variant="pill"
-            />
-        ),
-    },
-    {
-        get title() {
-            return t('pages:safeReason');
-        },
-        dataIndex: 'reasonCode',
-        key: 'reason',
-        render: (reasonCode: string) => (
-            <Text>{t(runtimeReadinessReasonKey(reasonCode), {code: reasonCode})}</Text>
-        ),
-    },
-];
-
 const fakeDryRunOperationsColumns: ColumnsType<FakeDryRunOperationsRow> = [
     {
         get title() {
@@ -1069,23 +1033,11 @@ export function RuntimeReadinessPage() {
                                                 })}
                                             </Text>
                                         ) : null}
-                                        <Button
-                                            onClick={() => operationalReadinessQuery.refetch()}
-                                            loading={operationalReadinessQuery.isFetching}
-                                        >
-                                            {t('pages:refreshOperationalSummary')}
-                                        </Button>
-                                        <Link to={MARKETDATA_READINESS_PATH}>
-                                            {t('pages:viewMarketDataReadiness')}
-                                        </Link>
-                                        <Link to={DASHBOARD_RUNTIME_SUMMARY_PATH}>
-                                            {t('pages:viewDashboardRuntimeSummary')}
-                                        </Link>
                                     </Space>
                                 }
                             >
                                 <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                                    <Alert
+                                    {operationalReadinessUnavailable && <Alert
                                         type={operationalReadinessUnavailable ? 'error' : 'warning'}
                                         showIcon
                                         message={
@@ -1102,19 +1054,11 @@ export function RuntimeReadinessPage() {
                                                       'pages:actuatorHealthIsProcessHealthOnlyNotLiveAuthorizationRuntimeUiDoesNotEstablishRealProviderReadinessP',
                                                   )
                                         }
-                                    />
-                                    <Table<OperationalReadinessItem>
-                                        rowKey="key"
-                                        columns={operationalSummaryColumns}
-                                        dataSource={operationalReadinessItems}
-                                        loading={
-                                            operationalReadinessQuery.isLoading ||
-                                            operationalReadinessQuery.isFetching
-                                        }
-                                        pagination={false}
-                                        size="small"
-                                        scroll={{x: 620}}
-                                    />
+                                    />}
+                                    <RuntimeOperationsPanel items={operationalReadinessItems.map(item => ({...item,
+                                        status: t(runtimeReadinessReasonKey(item.status, 'status'), {code: item.status}),
+                                        reason: t(runtimeReadinessReasonKey(item.reasonCode), {code: item.reasonCode}),
+                                    }))} />
                                     <Collapse
                                         items={[
                                             {

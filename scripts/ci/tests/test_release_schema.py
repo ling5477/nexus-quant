@@ -18,29 +18,74 @@ class ReleaseSchemaContractTests(unittest.TestCase):
     def test_current_source_identity(self):
         CONTRACT.verify_source(ROOT, MANIFEST)
 
-    def test_modified_or_duplicate_sql_is_rejected(self):
-        source = ROOT / "backend/nq-infra/src/main/resources/db/migration" / MANIFEST["baselineFile"]
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            directory = root / "backend/nq-infra/src/main/resources/db/migration"
-            directory.mkdir(parents=True)
-            target = directory / MANIFEST["baselineFile"]
-            target.write_bytes(source.read_bytes() + b"\nSELECT 1;\n")
-            with self.assertRaisesRegex(ValueError, "checksum"):
-                CONTRACT.verify_source(root, MANIFEST)
-            target.write_bytes(source.read_bytes())
-            (directory / "V2__unexpected.sql").write_text("SELECT 1;", encoding="utf8")
-            with self.assertRaisesRegex(ValueError, "exactly"):
-                CONTRACT.verify_source(root, MANIFEST)
+    def copy_source(self, root, crlf=False):
+        directory = root / 'backend/nq-infra/src/main/resources/db/migration'
+        directory.mkdir(parents=True)
+        for row in MANIFEST['migrations']:
+            raw = (ROOT / 'backend/nq-infra/src/main/resources/db/migration' / row['script']).read_bytes()
+            if crlf:
+                raw = raw.replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
+            (directory / row['script']).write_bytes(raw)
+        (root / 'release').mkdir()
+        (root / 'release/source-manifest.json').write_bytes((ROOT / 'release/source-manifest.json').read_bytes())
+        return directory
+
+    def test_modified_missing_duplicate_and_additional_sql_are_rejected(self):
+        for mutation in ('modified', 'missing', 'duplicate', 'additional'):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                directory = self.copy_source(root)
+                target = directory / MANIFEST['migrations'][1]['script']
+                if mutation == 'modified':
+                    target.write_bytes(target.read_bytes() + b'\\nSELECT 1;\\n')
+                elif mutation == 'missing':
+                    target.unlink()
+                else:
+                    (directory / ('V2__duplicate.sql' if mutation == 'duplicate' else 'V999__unexpected.sql')).write_text('SELECT 1;', encoding='utf8')
+                with self.assertRaises(ValueError):
+                    CONTRACT.verify_source(root, MANIFEST)
 
     def test_line_endings_do_not_change_source_identity(self):
-        source = ROOT / "backend/nq-infra/src/main/resources/db/migration" / MANIFEST["baselineFile"]
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            directory = root / "backend/nq-infra/src/main/resources/db/migration"
-            directory.mkdir(parents=True)
-            (directory / MANIFEST["baselineFile"]).write_bytes(source.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
+            self.copy_source(root, crlf=True)
             CONTRACT.verify_source(root, MANIFEST)
+
+    def test_omitted_release_entry_and_manifest_gap_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self.copy_source(root)
+            policy_path = root / 'release/source-manifest.json'
+            policy = json.loads(policy_path.read_bytes())
+            name = MANIFEST['migrations'][-1]['script']
+            for group in policy['groups']:
+                group['paths'] = [p for p in group['paths'] if not p.endswith('/' + name)]
+            policy_path.write_text(json.dumps(policy), encoding='utf8')
+            with self.assertRaisesRegex(ValueError, 'coverage'):
+                CONTRACT.verify_source(root, MANIFEST)
+        damaged = copy.deepcopy(MANIFEST)
+        damaged['migrations'].pop(1)
+        with self.assertRaisesRegex(ValueError, 'sequence'):
+            CONTRACT.verify_source(ROOT, damaged)
+
+    def test_original_baseline_snapshot_is_preserved(self):
+        baseline = json.loads((ROOT / 'scripts/ci/release-schema-baseline-manifest.json').read_bytes())
+        self.assertEqual(baseline['baselineSqlSha256'], MANIFEST['migrations'][0]['sha256'])
+        self.assertEqual('1', baseline['flywayVersion'])
+
+    def test_database_checksum_failure_or_missing_history_is_rejected(self):
+        for mutation in ('checksum', 'failed', 'missing'):
+            history = copy.deepcopy(MANIFEST['flywayHistory'])
+            if mutation == 'checksum':
+                history[0]['checksum'] += 1
+            elif mutation == 'failed':
+                history[-1]['success'] = False
+            else:
+                history.pop()
+            def execute(query):
+                return [{'version': 160015}] if 'server_version_num' in query else history
+            with self.subTest(mutation=mutation), self.assertRaisesRegex(ValueError, 'successful'):
+                CONTRACT.verify_database(execute, MANIFEST)
 
     def test_development_history_is_rejected_before_catalog_queries(self):
         history = copy.deepcopy(MANIFEST["flywayHistory"])
@@ -51,7 +96,7 @@ class ReleaseSchemaContractTests(unittest.TestCase):
             if "flyway_schema_history" in query:
                 return history
             self.fail("Development database must fail before schema/seed inspection")
-        with self.assertRaisesRegex(ValueError, "single successful"):
+        with self.assertRaisesRegex(ValueError, "complete successful"):
             CONTRACT.verify_database(execute, MANIFEST)
 
     def test_wrong_postgres_major_is_rejected(self):

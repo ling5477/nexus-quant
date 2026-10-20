@@ -127,22 +127,43 @@ def seeds(execute, model):
 
 def verify_source(root, manifest):
     directory = root / 'backend/nq-infra/src/main/resources/db/migration'
-    paths = sorted(p.name for p in directory.iterdir() if p.is_file())
-    if paths != [manifest['baselineFile']]:
-        raise ValueError('Active migration directory must contain exactly the release V1 SQL')
-    sql = (directory / manifest['baselineFile']).read_bytes().replace(b'\r\n', b'\n')
-    if hashlib.sha256(sql).hexdigest() != manifest['baselineSqlSha256']:
-        raise ValueError('Release baseline source checksum mismatch')
-    if re.search(rb'(?i)\b(?:gate(?:audit|[a-z][0-9]*|[a-z]-[a-z0-9]+)|phase[0-9]*|stage[0-9]*|attempt[0-9]*|pilot)\b', sql):
-        raise ValueError('Historical stage semantics in release baseline')
+    migrations = manifest['migrations']
+    versions = [int(row['version']) for row in migrations]
+    if versions != list(range(1, len(migrations) + 1)) or not versions:
+        raise ValueError('Invalid reviewed migration sequence')
+    expected = [row['script'] for row in migrations]
+    if sorted(p.name for p in directory.iterdir() if p.is_file()) != sorted(expected):
+        raise ValueError('Active migrations must exactly match the reviewed inventory')
+    release = json.loads((root / 'release/source-manifest.json').read_bytes())
+    prefix = 'backend/nq-infra/src/main/resources/db/migration/'
+    formal = [p[len(prefix):] for group in release['groups']
+              if group['category'] == 'INCLUDE_RUNTIME' for p in group['paths']
+              if p.startswith(prefix) and p.endswith('.sql')]
+    if sorted(formal) != sorted(expected):
+        raise ValueError('Formal release migration coverage mismatch')
+    for row in migrations:
+        if not re.fullmatch(r'V' + row['version'] + r'__[^/]+\.sql', row['script']):
+            raise ValueError('Migration filename/version mismatch')
+        sql = (directory / row['script']).read_bytes().replace(b'\r\n', b'\n')
+        if hashlib.sha256(sql).hexdigest() != row['sha256']:
+            raise ValueError('Reviewed migration source checksum mismatch: ' + row['script'])
+        if re.search(rb'(?i)\b(?:gate(?:audit|[a-z][0-9]*|[a-z]-[a-z0-9]+)|phase[0-9]*|stage[0-9]*|attempt[0-9]*|pilot)\b', sql):
+            raise ValueError('Historical stage semantics in release migration')
+    history = manifest['flywayHistory']
+    if ([(r['version'], r['script']) for r in history] !=
+            [(r['version'], r['script']) for r in migrations]
+            or manifest['flywayVersion'] != migrations[-1]['version']
+            or any(r['type'] != 'SQL' or r['success'] is not True or not isinstance(r['checksum'], int) for r in history)):
+        raise ValueError('Reviewed Flyway history/inventory mismatch')
+
 
 def verify_database(execute, manifest):
     version = execute("SELECT current_setting('server_version_num')::integer AS version")[0]['version']
     if version // 10000 != manifest['postgresqlMajor']:
         raise ValueError('Release baseline requires PostgreSQL 16')
-    history = execute('SELECT version,description,type,script,success FROM flyway_schema_history ORDER BY installed_rank')
+    history = execute('SELECT version,description,type,script,checksum,success FROM flyway_schema_history ORDER BY installed_rank')
     if history != manifest['flywayHistory']:
-        raise ValueError('Database is not a single successful release V1 installation')
+        raise ValueError('Database is not the complete successful reviewed migration installation')
     model = catalog(execute)
     normalized = normalize(model)
     if model['counts'] != manifest['schemaCounts'] or sha(normalized) != manifest['normalizedSchemaSha256']:

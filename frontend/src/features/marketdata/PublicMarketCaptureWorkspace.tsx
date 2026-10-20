@@ -19,7 +19,7 @@ import {useTranslation} from 'react-i18next';
 import dayjs, {type Dayjs} from 'dayjs';
 import {marketdataQueryKeys} from '@/api/query-keys';
 import {formatApiError} from '@/api/errors';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {formatDateTime} from '@/utils/formatters';
 import {confirmTimeWithoutSubmittingForm, endAfterStartRule} from '@/utils/time-range';
@@ -44,7 +44,7 @@ export function PublicMarketCaptureWorkspace({active}: {active: boolean}) {
     const {t} = useTranslation('pages');
     const user = useAuthStore((state) => state.currentUser);
     const owner = user?.userId;
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const canWrite = Boolean(
         user?.roles.some((role) =>
             ['ADMIN', 'OPERATOR', 'ROLE_ADMIN', 'ROLE_OPERATOR'].includes(role),
@@ -93,7 +93,7 @@ export function PublicMarketCaptureWorkspace({active}: {active: boolean}) {
     async function received(value: PublicCaptureOperation) {
         // 旧会话的延迟回执不能导航或更新后来登录用户的工作区。
         const current = useAuthStore.getState();
-        if (current.currentUser?.userId !== owner || current.accessToken !== token) return;
+        if (current.currentUser?.userId !== owner || selectSessionIdentity(current) !== token) return;
         const key = marketdataQueryKeys.publicCapture(owner, value.captureId);
         await client.cancelQueries({queryKey: key, exact: true});
         client.setQueryData(key, value);

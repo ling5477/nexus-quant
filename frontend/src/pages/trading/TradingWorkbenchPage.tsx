@@ -4,6 +4,7 @@ import {t} from '@/i18n';
 import {
     Alert,
     App,
+    AutoComplete,
     Button,
     Card,
     Col,
@@ -26,6 +27,8 @@ import {useEffect, useMemo, useState} from 'react';
 import {useSearchParams} from 'react-router-dom';
 import {useQuery} from '@tanstack/react-query';
 import {accountsApi} from '@/features/accounts/api/accounts';
+import {instrumentsApi} from '@/features/instruments/api/instruments';
+import {instrumentQueryKeys} from '@/api/query-keys';
 import {useAuthStore} from '@/store/auth-store';
 import {CanonicalSimFacts} from '@/features/paper-trading/components/CanonicalSimFacts';
 import {TradingPreflightPanel} from '@/features/trading/components/TradingPreflightPanel';
@@ -78,6 +81,7 @@ interface TradingOrderListForm {
  * `/trade-validation` 只作为过渡入口复用本页，不再成为独立业务模式。
  */
 export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPageProps) {
+    const catalog = useQuery({queryKey: instrumentQueryKeys.list(), queryFn: () => instrumentsApi.list()});
     const {i18n: pageI18n} = useTranslation('pages');
     const {message} = App.useApp();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -467,7 +471,7 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
                     }
                 />
 
-                <Card className="page-section" bordered={false} title={t('pages:accountContext')}>
+                <Card className="page-section trading-account-context" bordered={false} title={t('pages:accountContext')}>
                     {accountContextReady ? (
                         <Descriptions
                             bordered
@@ -540,7 +544,7 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
                 />
 
                 <Card
-                    className="page-section"
+                    className="page-section workspace-filter-panel"
                     bordered={false}
                     title={t('pages:orderSearch')}
                     extra={
@@ -572,8 +576,13 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
-                                <Form.Item label={t('pages:tradingPair')} name="symbol">
-                                    <Input placeholder={t('pages:forExampleBtcUsdt')} />
+                                <Form.Item label={t('pages:tradingPair')} name="symbol" tooltip={t('product:historicalSymbolQuery')}>
+                                    <AutoComplete
+                                        allowClear
+                                        placeholder={t('pages:forExampleBtcUsdt')}
+                                        options={(catalog.data ?? []).filter(item => item.exchangeCode === exchangeCode).map(item => ({value: item.internalSymbol}))}
+                                        filterOption={(input, option) => String(option?.value).toUpperCase().includes(input.toUpperCase())}
+                                    />
                                 </Form.Item>
                             </Col>
                             <Col xs={24} md={12} xl={8}>
@@ -592,7 +601,7 @@ export function TradingWorkbenchPage({legacyAlias = false}: TradingWorkbenchPage
                 </Card>
 
                 <Card
-                    className="page-section"
+                    className="page-section workspace-results-panel"
                     bordered={false}
                     title={t('pages:orders')}
                     extra={

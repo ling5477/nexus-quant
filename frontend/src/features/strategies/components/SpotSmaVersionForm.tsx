@@ -1,3 +1,5 @@
+import {ObjectConfigurationInput} from '@/components/configuration/ObjectConfigurationInput';
+import {configurationObject} from '@/components/configuration/object-configuration';
 import {
     Button,
     Col,
@@ -78,6 +80,7 @@ export function SpotSmaVersionForm({
                     <Form.Item
                         label={t('pages:smaWindow')}
                         name="window"
+                        extra={t('product:configWindowHelp')}
                         rules={[{required: true}, {type: 'integer', min: 2, max: 200}]}
                     >
                         <InputNumber min={2} max={200} precision={0} style={{width: '100%'}} />
@@ -87,6 +90,7 @@ export function SpotSmaVersionForm({
                     <Form.Item
                         label={t('pages:smaExposure')}
                         name="investedExposure"
+                        extra={t('product:configExposureHelp')}
                         rules={[
                             {required: true},
                             {
@@ -108,37 +112,20 @@ export function SpotSmaVersionForm({
                 items={[
                     {
                         key: 'advanced',
-                        label: t('pages:workflowStrategyConfig'),
+                        label: t('product:configVersionExtra'),
                         children: (
                             <Form.Item
                                 name="configSnapshotJson"
-                                label={t('pages:configurationSnapshotJson')}
+                                label={t('product:configVersionConfiguration')}
                                 rules={[
                                     {
                                         validator: async (_, value?: string) => {
-                                            if (value) {
-                                                try {
-                                                    const parsed: unknown = JSON.parse(value);
-                                                    if (
-                                                        !parsed ||
-                                                        typeof parsed !== 'object' ||
-                                                        Array.isArray(parsed)
-                                                    )
-                                                        throw new Error();
-                                                } catch {
-                                                    throw new Error(t('pages:workflowJsonObject'));
-                                                }
-                                            }
+                                            try {configurationObject(value);} catch {throw new Error(t('product:configIncomplete'));}
                                         },
                                     },
                                 ]}
                             >
-                                <Input.TextArea
-                                    rows={3}
-                                    placeholder={t(
-                                        'pages:leaveEmptyToUseTheCurrentStrategyConfigurationSnapshot',
-                                    )}
-                                />
+                                <ObjectConfigurationInput label={t('product:configVersionConfiguration')} disabled={disabled} />
                             </Form.Item>
                         ),
                     },

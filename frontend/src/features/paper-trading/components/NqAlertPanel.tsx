@@ -4,7 +4,7 @@ import {Alert, App, Button, Card, Descriptions, Space, Typography} from 'antd';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {paperTradingApi} from '../api/paper-trading';
 import {paperTradingQueryKeys} from '@/api/query-keys';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import {NqDataTable, NqEmptyState, NqErrorState, NqLoadingState} from '@/components/nq';
 import {
@@ -33,7 +33,7 @@ export function NqAlertPanel({
     const {message, modal} = App.useApp();
     const queryClient = useQueryClient();
     const user = useAuthStore((state) => state.currentUser);
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const stored = usePendingPaperAlertOperation();
     const root = useRef<HTMLDivElement>(null);
     const [expanded, setExpanded] = useState<Key[]>(focusAlertId ? [focusAlertId] : []);
@@ -98,7 +98,7 @@ export function NqAlertPanel({
                 if (
                     currentRun.current !== scope.paperRunId ||
                     useAuthStore.getState().currentUser?.userId !== scope.owner ||
-                    useAuthStore.getState().accessToken !== scope.token
+                    selectSessionIdentity(useAuthStore.getState()) !== scope.token
                 ) {
                     message.error(t('paperAlerts.sessionChanged'));
                     return;

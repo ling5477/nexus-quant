@@ -4,7 +4,7 @@ import {
     MenuFoldOutlined,
     MenuUnfoldOutlined,
 } from '@ant-design/icons';
-import {Avatar, Button, Dropdown, Space, Tag, Tooltip, Typography} from 'antd';
+import {App, Avatar, Button, Dropdown, Space, Tag, Tooltip, Typography} from 'antd';
 import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
@@ -12,9 +12,9 @@ import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {accountsApi} from '@/features/accounts/api/accounts';
 import {accountQueryKeys} from '@/api/query-keys';
 import type {ExchangeAccountSummary} from '@/features/accounts/types/accounts';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
+import {authApi} from '@/api/auth';
 import {useAccountContextStore} from '@/store/account-context-store';
-import {appEnv} from '@/utils/env';
 import {useTranslation} from 'react-i18next';
 import {LanguageSelect} from '@/i18n/LanguageSelect';
 import {ExchangeIcon} from '@/nq-design-system/brand/ExchangeBadge';
@@ -30,8 +30,9 @@ interface AppHeaderProps {
 export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
     const {t} = useTranslation();
     const navigate = useNavigate();
+    const {message} = App.useApp();
     const queryClient = useQueryClient();
-    const accessToken = useAuthStore((state) => state.accessToken);
+    const accessToken = useAuthStore(selectSessionIdentity);
     const currentUser = useAuthStore((state) => state.currentUser);
     const clearAuth = useAuthStore((state) => state.clearAuth);
     const clearAccountContext = useAccountContextStore((state) => state.clearAccountContext);
@@ -88,6 +89,11 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
     ]);
 
     const handleLogout = async () => {
+        // 服务端先撤销当前登录会话；撤销失败时保留错误并允许重试，不能假报已安全退出。
+        try { await authApi.logout(); } catch {
+            void message.error(t('sessionLifetime.logoutFailed'));
+            return;
+        }
         clearAuth('manual');
         clearAccountContext();
         // 业务查询并非都以认证前缀命名，退出必须取消并清理整个身份范围缓存。
@@ -118,17 +124,9 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                     onClick={onToggleCollapsed}
                     aria-label={collapsed ? t('shell.expand') : t('shell.collapse')}
                 />
-                <div className="app-shell__context-title">
-                    <Typography.Text strong>{appEnv.appTitle}</Typography.Text>
-                    <br />
-                    {/* 副标题保持中性描述，不声明 Gate 阶段，避免阶段推进后文案过期 */}
-                    <Typography.Text type="secondary" style={{fontSize: 12}}>
-                        {t('shell.subtitle')}
-                    </Typography.Text>
-                </div>
+                <ObjectSearch />
             </div>
             <div className="app-shell__header-right">
-                <ObjectSearch />
                 <NotificationCenter />
                 <span className="app-shell__timezone" title={t('workspace.timezoneAutomatic')}>
                     {Intl.DateTimeFormat().resolvedOptions().timeZone} · {t('workspace.automatic')}

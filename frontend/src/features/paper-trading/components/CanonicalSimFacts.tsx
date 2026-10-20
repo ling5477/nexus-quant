@@ -3,7 +3,7 @@ import {useQuery} from '@tanstack/react-query';
 import {Link, useSearchParams} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import {paperTradingQueryKeys, schedulerQueryKeys} from '@/api/query-keys';
-import {NqAmountText} from '@/components/nq';
+import {NqAmountText, NqMetricCard} from '@/components/nq';
 import {paperTradingApi} from '@/features/paper-trading/api/paper-trading';
 import {schedulerApi} from '@/features/scheduler/api/scheduler';
 import type {StrategySimFacts} from '@/features/paper-trading/types/paper-trading';
@@ -75,6 +75,16 @@ export function CanonicalSimFacts({
             )}
             {facts && (
                 <>
+                    <div className="nq-sim-fact-summary">
+                        {(['equity', 'cash', 'positionQuantity', 'pnl'] as const).map(key => <NqMetricCard
+                            key={key} label={t(`pages:simFact_${key}`)}
+                            value={<>{number(
+                                (discountPriceUnavailable && ['equity','pnl'].includes(key)) ||
+                                (['equity','pnl'].includes(key) && !facts.markAsOf)
+                                    ? null : (facts.exactValues?.[key] ?? facts[key])
+                            )} <small>{key === 'positionQuantity' ? 'BTC' : 'USDT'}</small></>}
+                        />)}
+                    </div>
                     <Descriptions size="small" bordered column={{xs: 1, md: 2, xl: 3}}>
                         <Descriptions.Item label={t('pages:runStatus')}>
                             {run.isError
@@ -84,7 +94,7 @@ export function CanonicalSimFacts({
                         <Descriptions.Item label={t('pages:strategySimBudget')}>
                             {number(facts.initialBudget)} USDT
                         </Descriptions.Item>
-                        {(['cash', 'positionQuantity', 'equity', 'pnl', 'markPrice'] as const).map(
+                        {(['markPrice'] as const).map(
                             (key) => (
                                 <Descriptions.Item key={key} label={t(`pages:simFact_${key}`)}>
                                     {number(
@@ -95,7 +105,7 @@ export function CanonicalSimFacts({
                                             ? null
                                             : (facts.exactValues?.[key] ?? facts[key]),
                                     )}{' '}
-                                    {key === 'positionQuantity' ? 'BTC' : 'USDT'}
+                                    USDT
                                 </Descriptions.Item>
                             ),
                         )}

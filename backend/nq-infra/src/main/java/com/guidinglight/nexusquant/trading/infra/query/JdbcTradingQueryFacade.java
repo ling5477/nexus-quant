@@ -31,6 +31,75 @@ public class JdbcTradingQueryFacade implements TradingQueryFacade {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    private OrderWhereClause accountFactWhere(Long accountId, String venue, String environment,
+            String symbol, boolean trades) {
+        if (accountId == null || accountId <= 0 || venue == null
+                || !List.of("SIM", "LIVE").contains(environment))
+            throw new IllegalArgumentException("explicit account scope required");
+        String alias = trades ? "t" : "p";
+        StringBuilder sql = new StringBuilder(" WHERE " + alias + ".account_id=? AND a.venue=?"
+                + " AND EXISTS (SELECT 1 FROM exchange_accounts ea WHERE ea.legacy_account_id=a.account_id"
+                + " AND ea.exchange_code=a.venue AND ea.trade_env=?)"
+                + " AND NOT EXISTS (SELECT 1 FROM paper_trading_runs r WHERE r.canonical_account_id=a.account_id)");
+        List<Object> args = new ArrayList<>(List.of(accountId, venue, environment));
+        if (trades) {
+            // 成交必须与父订单的账户、市场和环境一致；孤立或错配事实不跨账户展示。
+            sql.append(" AND o.account_id=t.account_id AND o.venue=t.exchange AND t.exchange=a.venue"
+                    + " AND o.symbol=t.symbol AND o.trade_env=t.trade_env AND o.trade_env=?");
+            args.add(environment);
+        }
+        appendTextFilter(sql, args, alias + ".symbol", symbol);
+        return new OrderWhereClause(sql.toString(), args);
+    }
+
+    private static final String TRADE_FROM = " FROM trades t JOIN orders o ON o.order_id=t.order_id"
+            + " JOIN accounts a ON a.account_id=t.account_id";
+    private static final String POSITION_FROM = " FROM positions p JOIN accounts a ON a.account_id=p.account_id";
+
+    private List<Object> factPageArgs(OrderWhereClause where, int page, int size) {
+        if (page < 0 || size < 1 || size > 100) throw new IllegalArgumentException("invalid fact page");
+        List<Object> args = new ArrayList<>(where.args());
+        args.add(size);
+        args.add((long) page * size);
+        return args;
+    }
+
+    @Override
+    public List<TradeQueryView> listAccountTrades(Long accountId, String venue, String environment,
+            String symbol, int page, int size) {
+        var where = accountFactWhere(accountId, venue, environment, symbol, true);
+        return jdbcTemplate.query("SELECT t.*" + TRADE_FROM + where.sql()
+                + " ORDER BY t.ts DESC,t.trade_id DESC LIMIT ? OFFSET ?", (rs, n) -> new TradeQueryView(
+                        rs.getString("trade_id"), rs.getString("order_id"), rs.getLong("account_id"),
+                        rs.getString("exchange"), rs.getString("symbol"), rs.getString("external_order_id"),
+                        rs.getString("exchange_trade_id"), rs.getBigDecimal("price"), rs.getBigDecimal("qty"),
+                        rs.getBigDecimal("fee"), rs.getString("fee_currency"), toInstant(rs.getTimestamp("ts")),
+                        rs.getString("trace_id")), factPageArgs(where, page, size).toArray());
+    }
+
+    @Override
+    public long countAccountTrades(Long accountId, String venue, String environment, String symbol) {
+        var where = accountFactWhere(accountId, venue, environment, symbol, true);
+        return jdbcTemplate.queryForObject("SELECT count(*)" + TRADE_FROM + where.sql(), Long.class, where.args().toArray());
+    }
+
+    @Override
+    public List<PositionQueryView> listAccountPositions(Long accountId, String venue, String environment,
+            String symbol, int page, int size) {
+        var where = accountFactWhere(accountId, venue, environment, symbol, false);
+        return jdbcTemplate.query("SELECT p.*,a.venue" + POSITION_FROM + where.sql()
+                + " ORDER BY p.symbol ASC LIMIT ? OFFSET ?", (rs, n) -> new PositionQueryView(
+                        rs.getLong("account_id"), rs.getString("venue"), rs.getString("symbol"),
+                        rs.getBigDecimal("qty"), rs.getBigDecimal("available_qty"), rs.getBigDecimal("avg_price"),
+                        rs.getString("trace_id")), factPageArgs(where, page, size).toArray());
+    }
+
+    @Override
+    public long countAccountPositions(Long accountId, String venue, String environment, String symbol) {
+        var where = accountFactWhere(accountId, venue, environment, symbol, false);
+        return jdbcTemplate.queryForObject("SELECT count(*)" + POSITION_FROM + where.sql(), Long.class, where.args().toArray());
+    }
+
     @Override
     public List<OrderQueryView> listOrders(
             Long accountId,

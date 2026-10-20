@@ -29,7 +29,7 @@ import {accountQueryKeys, authQueryKeys} from '@/api/query-keys';
 import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {ExchangeBadge} from '@/nq-design-system/brand/ExchangeBadge';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {useAccountContextStore} from '@/store/account-context-store';
 import type {ExchangeAccountSummary} from '@/features/accounts/types/accounts';
 import type {AppApiError} from '@/types/api';
@@ -56,7 +56,7 @@ export function AccountsPage() {
     useTranslation('pages');
     const {message, modal} = App.useApp();
     const queryClient = useQueryClient();
-    const accessToken = useAuthStore((state) => state.accessToken);
+    const accessToken = useAuthStore(selectSessionIdentity);
     const currentUser = useAuthStore((state) => state.currentUser);
     const pendingAccountCommand = usePendingAccountCommand();
     const pendingCredentialOperation = usePendingCredentialOperation();

@@ -458,6 +458,11 @@ export const publishesQueryKeys = {
 
 export const tradingWorkbenchQueryKeys = {
     all: ['trading-workbench'] as const,
+    accountFacts: (
+        owner: number | undefined,
+        kind: 'orders' | 'trades' | 'positions',
+        request: {accountId: number; page: number; size: number; symbol?: string; venue?: string; environment?: string} | null,
+    ) => ['trading-workbench', 'account-facts', owner ?? '', kind, request] as const,
     cancelTarget: (
         owner: number | undefined,
         account: number | null,

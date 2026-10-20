@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
 import type {PublicCaptureOperation} from '@/types/marketdata';
 
@@ -184,7 +184,9 @@ export function readCapture(owner?: number): CaptureStorage {
 }
 
 function session(write = false) {
-    const {currentUser: user, accessToken: token} = useAuthStore.getState();
+    const authState = useAuthStore.getState();
+    const user = authState.currentUser;
+    const token = selectSessionIdentity(authState);
     if (
         !user?.authenticated ||
         !token ||

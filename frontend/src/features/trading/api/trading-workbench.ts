@@ -1,5 +1,5 @@
 import {apiClient} from '@/api/client';
-import {parseTradingWorkbenchResponse} from '../trading-response';
+import {parseTradingWorkbenchResponse, validateAccountFactPage} from '../trading-response';
 import type {
     TradingPreflightRequest,
     TradingPreflightReadiness,
@@ -12,11 +12,20 @@ import type {
     OrderView,
     PositionView,
     TradeView,
+    AccountFactPage,
 } from '@/features/trading/types/trading-workbench';
 
 const exactResponse = {transformResponse: [parseTradingWorkbenchResponse]};
 
 export const tradingWorkbenchApi = {
+    async listAccountTrades(request: {accountId: number; symbol?: string; page: number; size: number}): Promise<AccountFactPage<TradeView>> {
+        const {data} = await apiClient.get<AccountFactPage<TradeView>>('/trading/trades', {params: request, ...exactResponse});
+        return validateAccountFactPage(data, request, 'LOCAL_CANONICAL_TRADES');
+    },
+    async listAccountPositions(request: {accountId: number; symbol?: string; page: number; size: number}): Promise<AccountFactPage<PositionView>> {
+        const {data} = await apiClient.get<AccountFactPage<PositionView>>('/trading/positions', {params: request, ...exactResponse});
+        return validateAccountFactPage(data, request, 'LOCAL_CANONICAL_POSITION_PROJECTION');
+    },
     /** 只读检查与提交订单分开，读取不隐式探活或调用任何交易命令。 */
     async readPreflight(request: TradingPreflightRequest): Promise<TradingPreflightReadiness> {
         const {data} = await apiClient.get<TradingPreflightReadiness>(

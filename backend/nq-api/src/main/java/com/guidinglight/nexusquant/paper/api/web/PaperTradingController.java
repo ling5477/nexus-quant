@@ -63,9 +63,11 @@ import java.util.Objects;
 public class PaperTradingController {
 
     private final PaperTradingApiService apiService;
+    private final PaperRunReadAccess readAccess;
 
-    public PaperTradingController(PaperTradingApiService apiService) {
+    public PaperTradingController(PaperTradingApiService apiService, PaperRunReadAccess readAccess) {
         this.apiService = Objects.requireNonNull(apiService, "apiService must not be null");
+        this.readAccess = Objects.requireNonNull(readAccess);
     }
 
     @GetMapping
@@ -77,7 +79,9 @@ public class PaperTradingController {
             @RequestParam(required = false) String publishId,
             @RequestParam(required = false) String status) {
         TraceIdContext.getOrCreate();
-        return apiService.list(publishId, status).stream()
+        var runs = apiService.list(publishId, status);
+        var readable = readAccess.readableIds(runs.stream().map(run -> run.paperRunId()).toList());
+        return runs.stream().filter(run -> readable.contains(run.paperRunId()))
                 .map(PaperTradingRunResponse::from)
                 .toList();
     }

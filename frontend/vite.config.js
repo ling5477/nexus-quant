@@ -46,6 +46,7 @@ export default defineConfig(function (_a) {
         preview: {
             host: '127.0.0.1',
             port: 51888,
+            proxy: { '/api': { target: proxyTarget, changeOrigin: true, timeout: 15000, proxyTimeout: 15000 } },
         },
     };
 });

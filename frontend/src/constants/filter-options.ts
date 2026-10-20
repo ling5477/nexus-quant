@@ -57,7 +57,9 @@ export const STRATEGY_TYPE_OPTIONS = [
         },
         value: 'SPOT_SMA_TARGET_V1',
     },
-    ...['GRID', 'BUY_AND_HOLD_FIXTURE', 'E2E_SMOKE'].map((value) => ({label: value, value})),
+    ...([
+        ['GRID', 'grid'], ['BUY_AND_HOLD_FIXTURE', 'fixture'], ['E2E_SMOKE', 'smoke'],
+    ] as const).map(([value, label]) => ({get label() {return t('product:' + label);}, value})),
 ];
 
 export const SCHEDULE_TYPE_OPTIONS = ['CRON'].map((value) => ({label: value, value}));

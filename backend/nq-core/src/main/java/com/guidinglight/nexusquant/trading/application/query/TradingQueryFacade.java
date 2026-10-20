@@ -13,6 +13,18 @@ import java.util.Optional;
  */
 public interface TradingQueryFacade {
 
+    /** 只读查询一个已授权账户的本地成交事实；不调用交易所或合并独立SIM账户。 */
+    List<TradeQueryView> listAccountTrades(Long accountId, String venue, String tradeEnv,
+            String symbol, int page, int size);
+
+    long countAccountTrades(Long accountId, String venue, String tradeEnv, String symbol);
+
+    /** 持仓沿用canonical投影；币种和估值来源缺失时不得推断外部账户收益。 */
+    List<PositionQueryView> listAccountPositions(Long accountId, String venue, String tradeEnv,
+            String symbol, int page, int size);
+
+    long countAccountPositions(Long accountId, String venue, String tradeEnv, String symbol);
+
     /**
      * 查询正式交易工作台订单列表。
      *

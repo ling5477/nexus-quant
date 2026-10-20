@@ -59,12 +59,15 @@ vi.mock('@tanstack/react-query', () => ({
     },
     useQueryClient: () => ({invalidateQueries: fixture.invalidations}),
 }));
-vi.mock('@/store/auth-store', () => ({
+vi.mock('@/store/auth-store', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/store/auth-store')>()),
     useAuthStore: (
-        select: (value: {currentUser: {userId: number; roles: string[]} | null}) => unknown,
+        select: (value: {currentUser: {userId: number; roles: string[]} | null; sessionId: string | null; accessToken: string | null}) => unknown,
     ) =>
         select({
             currentUser: fixture.owner == null ? null : {userId: fixture.owner, roles: ['ADMIN']},
+            sessionId: fixture.owner == null ? null : `fixture-session-${fixture.owner}`,
+            accessToken: fixture.owner == null ? null : 'synthetic-access-token',
         }),
 }));
 

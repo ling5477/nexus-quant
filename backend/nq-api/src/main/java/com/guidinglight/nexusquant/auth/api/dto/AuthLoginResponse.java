@@ -23,7 +23,11 @@ public record AuthLoginResponse(
         @Schema(description = "角色列表")
         List<String> roles,
         @Schema(description = "是否必须先修改密码")
-        boolean mustChangePassword
+        boolean mustChangePassword,
+        String sessionId,
+        Instant idleExpiresAt,
+        Instant sessionExpiresAt,
+        Instant serverTime
 ) {
 }
 

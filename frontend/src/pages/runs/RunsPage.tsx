@@ -43,7 +43,7 @@ export function RunsPage() {
     const [submittedFilters, setSubmittedFilters] = useState<StrategyRunListFilters>(
         defaultStrategyRunListFilters,
     );
-    const [searchVersion, setSearchVersion] = useState(0);
+    const [searchVersion, setSearchVersion] = useState(1);
     const [page, setPage] = useState(1);
     const [params, setParams] = useSearchParams();
     const [selectedRunId, setSelectedRunId] = useState<string | null>(params.get('runId'));
@@ -164,7 +164,7 @@ export function RunsPage() {
         form.resetFields();
         setSubmittedFilters(defaultStrategyRunListFilters);
         setPage(1);
-        setSearchVersion(0);
+        setSearchVersion(1);
     };
 
     return (
@@ -180,7 +180,7 @@ export function RunsPage() {
                     />
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-filter-panel"
                     bordered={false}
                     title={t('pages:filters')}
                     extra={
@@ -269,7 +269,7 @@ export function RunsPage() {
                     </Form>
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-results-panel"
                     bordered={false}
                     title={t('pages:results')}
                     extra={

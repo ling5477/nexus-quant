@@ -4,6 +4,11 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+    sessionId?: string;
+    idleExpiresAt?: string;
+    sessionExpiresAt?: string;
+    serverTime?: string;
+    serverTimeOffsetMs?: number;
     accessToken: string;
     tokenType: string;
     expiresIn: number;

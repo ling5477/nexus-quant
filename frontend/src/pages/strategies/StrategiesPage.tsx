@@ -1,3 +1,7 @@
+import {ObjectConfigurationSummary} from '@/components/configuration/ObjectConfigurationSummary';
+import {ObjectConfigurationInput} from '@/components/configuration/ObjectConfigurationInput';
+import {configurationObject} from '@/components/configuration/object-configuration';
+import {businessColumns} from '@/components/layout/business-columns';
 import {useAuthStore} from '@/store/auth-store';
 import {StrategyExecutionRelations} from '@/features/strategies/components/StrategyRelations';
 import {CreationRecoveryPanel} from '@/features/research/components/CreationRecoveryPanel';
@@ -10,6 +14,7 @@ import {
     Button,
     Card,
     Col,
+    Steps,
     Descriptions,
     Drawer,
     Empty,
@@ -72,6 +77,7 @@ export function StrategiesPage() {
     const [versionForm] = useLocalizedForm<StrategyVersionCreateRequest>();
     const [createForm] = useLocalizedForm<StrategyDefinitionCreateRequest>();
     const [createOpen, setCreateOpen] = useState(false);
+    const createStrategyType = Form.useWatch('strategyType', createForm);
     const [params, setParams] = useSearchParams();
     // 详情身份由地址唯一拥有；刷新和前进/后退应恢复同一对象，关闭时清除旧版本定位。
     const selectedStrategyCode = params.get('strategyCode');
@@ -96,6 +102,7 @@ export function StrategiesPage() {
             if (!canCreate) throw new Error(t('pages:workflowAccountRequired'));
             return strategiesApi.create({
                 ...values,
+                configSnapshot: configurationObject(values.configSnapshot),
                 accountId: context.legacyAccountId!,
                 exchangeCode: context.exchangeCode!,
                 tradeEnv: 'SIM',
@@ -113,7 +120,7 @@ export function StrategiesPage() {
     const [submittedFilters, setSubmittedFilters] = useState<StrategyListFilters>(
         defaultStrategyListFilters,
     );
-    const [searchVersion, setSearchVersion] = useState(0);
+    const [searchVersion, setSearchVersion] = useState(1);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const strategiesQuery = useStrategyListQuery(
@@ -154,6 +161,7 @@ export function StrategiesPage() {
             title: t('pages:type'),
             dataIndex: 'strategyType',
             key: 'strategyType',
+            render: (value: string) => STRATEGY_TYPE_OPTIONS.find(option => option.value === value)?.label ?? value,
             width: 140,
         },
         {
@@ -270,7 +278,7 @@ export function StrategiesPage() {
     const handleReset = () => {
         form.resetFields();
         setSubmittedFilters(defaultStrategyListFilters);
-        setSearchVersion(0);
+        setSearchVersion(1);
         setCurrentPage(1);
     };
 
@@ -342,8 +350,7 @@ export function StrategiesPage() {
                             'pages:searchInspectEnableAndDisableStrategyDefinitionsStrategyStatusAccountEnvironmentAndVersionSnapshotsR',
                         )}
                         badge="Strategies"
-                    />
-                    <Space direction="vertical">
+                        extra={
                         <Button
                             disabled={!canWrite}
                             type="primary"
@@ -351,13 +358,12 @@ export function StrategiesPage() {
                         >
                             {t('pages:workflowCreateStrategy')}
                         </Button>
-                        <Typography.Text type="secondary">
-                            {t('pages:workflowManualSearch')}
-                        </Typography.Text>
-                    </Space>
+                        }
+                    />
+                    <Typography.Text type="secondary">{t('product:loaded')}</Typography.Text>
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-filter-panel"
                     bordered={false}
                     title={t('pages:filters')}
                     extra={
@@ -386,6 +392,7 @@ export function StrategiesPage() {
                                 {/* 空字符串仍表示无筛选，传给Select时映射为空值以显示完整提示。 */}
                                 <Form.Item
                                     label={t('pages:strategyType')}
+                                    tooltip={t('product:strategyTypeHelp')}
                                     name="strategyType"
                                     getValueProps={(value?: string) => ({
                                         value: value || undefined,
@@ -395,7 +402,7 @@ export function StrategiesPage() {
                                         allowClear
                                         showSearch
                                         placeholder={t('pages:allTypes')}
-                                        options={STRATEGY_TYPE_OPTIONS}
+                                        options={STRATEGY_TYPE_OPTIONS.map(({value, label}) => ({value, label}))}
                                     />
                                 </Form.Item>
                             </Col>
@@ -438,7 +445,7 @@ export function StrategiesPage() {
                     </Form>
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-results-panel"
                     bordered={false}
                     title={t('pages:results')}
                     extra={
@@ -471,7 +478,7 @@ export function StrategiesPage() {
                         <Table
                             className="strategy-definition-list-table"
                             rowKey="strategyId"
-                            columns={strategyColumns}
+                            columns={businessColumns(strategyColumns)}
                             dataSource={visibleItems}
                             loading={strategiesQuery.isFetching}
                             pagination={{
@@ -568,9 +575,7 @@ export function StrategiesPage() {
                                 {formatDateTime(strategyDetailQuery.data.updatedAt)}
                             </Descriptions.Item>
                             <Descriptions.Item label={t('pages:configurationSnapshot')} span={2}>
-                                <Typography.Paragraph style={{marginBottom: 0}}>
-                                    {strategyDetailQuery.data.configSnapshot || '-'}
-                                </Typography.Paragraph>
+                                <ObjectConfigurationSummary value={strategyDetailQuery.data.configSnapshot} />
                             </Descriptions.Item>
                         </Descriptions>
                         <Card title={t('pages:actions2')} size="small">
@@ -658,6 +663,7 @@ export function StrategiesPage() {
                                     }}
                                     onFinish={handleCreateVersion}
                                 >
+                                    <Alert type="warning" showIcon message={t('product:configLegacyTypeHelp')} style={{marginBottom: 16}} />
                                     <Row gutter={[16, 0]}>
                                         <Col xs={24} md={12}>
                                             <Form.Item
@@ -684,46 +690,38 @@ export function StrategiesPage() {
                                             >
                                                 <Select
                                                     options={[
-                                                        {label: 'DRAFT', value: 'DRAFT'},
-                                                        {label: 'ACTIVE', value: 'ACTIVE'},
-                                                        {label: 'ARCHIVED', value: 'ARCHIVED'},
+                                                        {label: t('pages:versionStateDRAFT'), value: 'DRAFT'},
+                                                        {label: t('pages:versionStateACTIVE'), value: 'ACTIVE'},
+                                                        {label: t('pages:versionStateARCHIVED'), value: 'ARCHIVED'},
                                                     ]}
                                                 />
                                             </Form.Item>
                                         </Col>
                                         <Col xs={24}>
                                             <Form.Item
-                                                label={t('pages:parameterSnapshotJson')}
+                                                label={t('product:configVersionParameters')}
                                                 name="paramSnapshotJson"
+                                                rules={[{validator: async (_, value?: string) => {try {configurationObject(value);} catch {throw new Error(t('product:configIncomplete'));}}}]}
                                             >
-                                                <Input.TextArea
-                                                    rows={3}
-                                                    placeholder='{"threshold":1}'
-                                                />
+                                                <ObjectConfigurationInput label={t('pages:parameterSnapshotJson')} disabled={!canWrite} />
                                             </Form.Item>
                                         </Col>
                                         <Col xs={24}>
                                             <Form.Item
-                                                label={t('pages:configurationSnapshotJson')}
+                                                label={t('product:configVersionConfiguration')}
                                                 name="configSnapshotJson"
+                                                rules={[{validator: async (_, value?: string) => {try {configurationObject(value);} catch {throw new Error(t('product:configIncomplete'));}}}]}
                                             >
-                                                <Input.TextArea
-                                                    rows={3}
-                                                    placeholder={t(
-                                                        'pages:leaveEmptyToUseTheCurrentStrategyConfigurationSnapshot',
-                                                    )}
-                                                />
+                                                <ObjectConfigurationInput label={t('pages:configurationSnapshotJson')} disabled={!canWrite} />
                                             </Form.Item>
                                         </Col>
                                         <Col xs={24}>
                                             <Form.Item
-                                                label={t('pages:sourceSnapshotJson')}
+                                                label={t('product:configVersionSource')}
                                                 name="sourceSnapshotJson"
+                                                rules={[{validator: async (_, value?: string) => {try {configurationObject(value);} catch {throw new Error(t('product:configIncomplete'));}}}]}
                                             >
-                                                <Input.TextArea
-                                                    rows={3}
-                                                    placeholder='{"source":"manual"}'
-                                                />
+                                                <ObjectConfigurationInput label={t('pages:sourceSnapshotJson')} disabled={!canWrite} />
                                             </Form.Item>
                                         </Col>
                                     </Row>
@@ -760,7 +758,7 @@ export function StrategiesPage() {
                     name="strategy-create"
                     form={createForm}
                     layout="vertical"
-                    initialValues={{configSnapshot: '{}'}}
+                    initialValues={{configSnapshot: '{}', strategyType: 'SPOT_SMA_TARGET_V1'}}
                     onFinish={(values) => {
                         // 编码唯一性由后端裁决；这里先阻止一次用户动作被双击发送两遍。
                         if (createRequestInFlight.current) return;
@@ -772,6 +770,11 @@ export function StrategiesPage() {
                         });
                     }}
                 >
+                    <Steps size="small" current={0} style={{marginBottom: 16}} items={[
+                        {title: t('product:configDefinitionStep')},
+                        {title: t('product:configVersionStep')},
+                    ]} />
+                    <Typography.Paragraph type="secondary">{t('product:configDefinitionHelp')}</Typography.Paragraph>
                     <Form.Item
                         name="strategyCode"
                         label={t('pages:strategyCode')}
@@ -789,34 +792,17 @@ export function StrategiesPage() {
                     <Form.Item
                         name="strategyType"
                         label={t('pages:strategyType')}
+                        tooltip={t('product:strategyTypeHelp')}
                         rules={[{required: true}]}
                     >
                         {/* 创建与筛选复用同一份真实类型，避免相同value重复出现。 */}
-                        <Select options={STRATEGY_TYPE_OPTIONS} />
+                        <Select options={STRATEGY_TYPE_OPTIONS.map(({value, label}) => ({value, label}))} />
                     </Form.Item>
-                    <Form.Item
-                        name="configSnapshot"
-                        label={t('pages:workflowStrategyConfig')}
-                        rules={[
-                            {required: true},
-                            {
-                                validator: async (_, value) => {
-                                    try {
-                                        const parsed: unknown = JSON.parse(value);
-                                        if (
-                                            !parsed ||
-                                            typeof parsed !== 'object' ||
-                                            Array.isArray(parsed)
-                                        )
-                                            throw new Error();
-                                    } catch {
-                                        throw new Error(t('pages:workflowJsonObject'));
-                                    }
-                                },
-                            },
-                        ]}
-                    >
-                        <Input.TextArea rows={5} />
+                    <Alert type={createStrategyType === 'SPOT_SMA_TARGET_V1' ? 'info' : 'warning'} showIcon style={{marginBottom: 16}}
+                        message={t(createStrategyType === 'SPOT_SMA_TARGET_V1' ? 'product:configSmaNext' : 'product:configLegacyTypeHelp')} />
+                    <Form.Item name="configSnapshot" label={t('product:configExtraDefinition')} extra={t('product:configDefinitionExtraHelp')}
+                        rules={[{validator: async (_, value?: string) => {try {configurationObject(value);} catch {throw new Error(t('product:configIncomplete'));}}}]}>
+                        <ObjectConfigurationInput label={t('product:configExtraDefinition')} disabled={!canWrite} />
                     </Form.Item>
                     <Typography.Paragraph>
                         {context.exchangeCode ?? '—'} / SIM / {t('pages:account')}:{' '}

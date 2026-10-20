@@ -6,6 +6,8 @@ import zhErrors from './locales/zh-CN/errors.json';
 import enErrors from './locales/en-US/errors.json';
 import zhPages from './locales/zh-CN/pages.json';
 import enPages from './locales/en-US/pages.json';
+import zhProduct from './locales/zh-CN/product.json';
+import enProduct from './locales/en-US/product.json';
 
 const LOCALE_STORAGE_KEY = 'nq.locale';
 export type AppLocale = 'zh-CN' | 'en-US';
@@ -18,8 +20,8 @@ export function readLocale(): AppLocale {
 }
 
 export const resources = {
-    'zh-CN': {common: zhCommon, errors: zhErrors, pages: zhPages},
-    'en-US': {common: enCommon, errors: enErrors, pages: enPages},
+    'zh-CN': {common: zhCommon, errors: zhErrors, pages: zhPages, product: zhProduct},
+    'en-US': {common: enCommon, errors: enErrors, pages: enPages, product: enProduct},
 };
 
 void i18n.use(initReactI18next).init({

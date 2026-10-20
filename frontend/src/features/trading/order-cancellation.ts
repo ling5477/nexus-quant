@@ -1,5 +1,5 @@
 import {accountsApi} from '@/features/accounts/api/accounts';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {useAccountContextStore} from '@/store/account-context-store';
 import type {AppApiError} from '@/types/api';
 import {tradingWorkbenchApi} from './api/trading-workbench';
@@ -197,12 +197,13 @@ function replace(pending: PendingOrderCancellation) {
 }
 function scope(pending?: PendingOrderCancellation, writing = false): CancellationSession {
     const auth = useAuthStore.getState();
+    const token = selectSessionIdentity(auth);
     const account = useAccountContextStore.getState();
     const user = auth.currentUser;
     if (
         !user?.authenticated ||
         !positiveId(user.userId) ||
-        !auth.accessToken ||
+        !token ||
         (writing &&
             !user.roles.some((role) =>
                 ['ADMIN', 'OPERATOR', 'ROLE_ADMIN', 'ROLE_OPERATOR'].includes(role),
@@ -227,7 +228,7 @@ function scope(pending?: PendingOrderCancellation, writing = false): Cancellatio
         throw error('ORDER_CANCELLATION_SCOPE_CHANGED');
     return {
         owner: user.userId,
-        token: auth.accessToken,
+        token,
         accountId: account.selectedExchangeAccountId,
         legacyAccountId: account.legacyAccountId,
         venue: account.exchangeCode,

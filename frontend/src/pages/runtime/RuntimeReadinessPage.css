@@ -58,3 +58,11 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+/* 运行边界主区与最近任务事件分栏，窄屏保留完整诊断入口。 */
+.nq-runtime-operations {display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:16px;align-items:start}
+.nq-runtime-boundaries {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.nq-runtime-events {display:grid;gap:16px;min-width:0}
+.nq-runtime-boundaries .ant-card-extra {max-width:70%}
+@media(max-width:1100px){.nq-runtime-operations{grid-template-columns:1fr}.nq-runtime-events{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.nq-runtime-boundaries,.nq-runtime-events{grid-template-columns:1fr}}

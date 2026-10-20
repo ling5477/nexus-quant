@@ -1,5 +1,5 @@
 import {marketdataApi} from '@/api/marketdata';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
 
 /** 默认名称只取当前完整选择；用户输入独立保留，目录缺项时不猜测交易对。 */
@@ -332,7 +332,9 @@ export function readDatasetOperation(owner?: number): DatasetOperationStorage {
     }
 }
 function session(write = false) {
-    const {currentUser: user, accessToken: token} = useAuthStore.getState();
+    const authState = useAuthStore.getState();
+    const user = authState.currentUser;
+    const token = selectSessionIdentity(authState);
     if (
         !user?.authenticated ||
         !token ||

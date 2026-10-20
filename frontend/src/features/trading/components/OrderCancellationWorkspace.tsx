@@ -18,7 +18,7 @@ import {formatApiError} from '@/api/errors';
 import {tradingWorkbenchQueryKeys} from '@/api/query-keys';
 import {NqAmountText} from '@/components/nq';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {useAccountContextStore} from '@/store/account-context-store';
 import type {AppApiError} from '@/types/api';
 import {tradingWorkbenchApi} from '../api/trading-workbench';
@@ -86,7 +86,7 @@ function CancellationRecord({
     const {t} = useTranslation('pages');
     const describe = useCancellationError();
     const owner = useAuthStore((state) => state.currentUser?.userId);
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const account = useAccountContextStore((state) => state.selectedExchangeAccountId);
     const venue = useAccountContextStore((state) => state.exchangeCode);
     const environment = useAccountContextStore((state) => state.tradeEnv);
@@ -98,7 +98,7 @@ function CancellationRecord({
     const accept = (order: OrderView) => {
         if (
             useAuthStore.getState().currentUser?.userId === owner &&
-            useAuthStore.getState().accessToken === token &&
+            selectSessionIdentity(useAuthStore.getState()) === token &&
             useAccountContextStore.getState().selectedExchangeAccountId === account
         )
             onUpdated(order);
@@ -245,7 +245,7 @@ export function OrderCancellationWorkspace({
     const {modal} = App.useApp();
     const describe = useCancellationError();
     const owner = useAuthStore((state) => state.currentUser?.userId);
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const roles = useAuthStore((state) => state.currentUser?.roles);
     const account = useAccountContextStore((state) => state.selectedExchangeAccountId);
     const alias = useAccountContextStore((state) => state.accountAlias);
@@ -279,7 +279,7 @@ export function OrderCancellationWorkspace({
         onSuccess: (value) => {
             if (
                 useAuthStore.getState().currentUser?.userId === owner &&
-                useAuthStore.getState().accessToken === token &&
+                selectSessionIdentity(useAuthStore.getState()) === token &&
                 useAccountContextStore.getState().selectedExchangeAccountId === account
             ) {
                 onUpdated(value);

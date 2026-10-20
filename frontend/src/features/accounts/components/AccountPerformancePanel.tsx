@@ -19,7 +19,7 @@ import type {AccountEquitySample} from '../types/performance';
 import {accountValuationCurrency} from '@/features/preferences/currencies';
 
 /** 单账户真实采样视图；用户、账户及时间参与缓存身份，缺失/过期数据保留状态，不汇总独立SIM。 */
-export function AccountPerformancePanel() {
+export function AccountPerformancePanel({compact = false}: {compact?: boolean}) {
     const {t} = useTranslation();
     const [params, setParams] = useSearchParams();
     const [form] = Form.useForm<{from: Dayjs; to: Dayjs}>();
@@ -86,7 +86,7 @@ export function AccountPerformancePanel() {
     ];
     return (
         <Card
-            className="page-section nq-dashboard__account"
+            className={'page-section nq-dashboard__account' + (compact ? ' nq-account-overview' : '')}
             bordered={false}
             data-testid="account-performance-panel"
             title={
@@ -201,12 +201,11 @@ export function AccountPerformancePanel() {
                             loading={query.isPending}
                         />
                     </div>
-                    {query.data && (
-                        <PerformanceStatisticsCards
-                            sharpe={query.data.sharpe}
-                            outcomes={query.data.outcomes}
-                        />
-                    )}
+                    {query.data && (compact ? (
+                        <Collapse size="small" items={[{key: 'statistics', label: t('product:secondary'), children:
+                            <PerformanceStatisticsCards sharpe={query.data.sharpe} outcomes={query.data.outcomes} />
+                        }]} />
+                    ) : <PerformanceStatisticsCards sharpe={query.data.sharpe} outcomes={query.data.outcomes} />)}
                     {query.isSuccess &&
                         (!summary?.samples.length ? (
                             <NqEmptyState description={t('accountPerformance.noHistory')} />

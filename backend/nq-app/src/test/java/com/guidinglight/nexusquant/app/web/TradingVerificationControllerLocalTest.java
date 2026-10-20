@@ -93,6 +93,8 @@ class TradingVerificationControllerLocalTest {
     @MockitoBean private AuthUserRepository authUserRepository;
     @MockitoBean private CurrentUserProfileService currentUserProfileService;
     @MockitoBean private GatewayAuthFacade gatewayAuthFacade;
+    // 该切片只验证交易工作台；SIM 所有者守卫由独立目标测试验证。
+    @MockitoBean private com.guidinglight.nexusquant.paper.api.web.PaperRunReadAccess paperRunReadAccess;
 
     @BeforeEach
     void bindCurrentOwner() {
@@ -756,6 +758,32 @@ class TradingVerificationControllerLocalTest {
 """))
                 .andExpect(status().isNotFound());
         verifyNoInteractions(orderCommandService);
+    }
+
+    @Test
+    void accountFactPagesResolveOwnedBridgeAndReturnExplicitSource() throws Exception {
+        mockExchangeAccount(1001L, 9001L);
+        when(tradingQueryFacade.listAccountTrades(9001L,"OKX","SIM",null,0,10)).thenReturn(List.of());
+        when(tradingQueryFacade.listAccountPositions(9001L,"OKX","SIM",null,0,10)).thenReturn(List.of());
+        mockMvc.perform(get("/api/trading/trades").param("accountId","1001").param("size","10"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.exchangeAccountId").value(1001))
+            .andExpect(jsonPath("$.tradingAccountId").value(9001)).andExpect(jsonPath("$.source").value("LOCAL_CANONICAL_TRADES"));
+        mockMvc.perform(get("/api/trading/positions").param("accountId","1001").param("size","10"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.source").value("LOCAL_CANONICAL_POSITION_PROJECTION"));
+        verify(tradingQueryFacade).listAccountTrades(9001L,"OKX","SIM",null,0,10);
+        verify(tradingQueryFacade).listAccountPositions(9001L,"OKX","SIM",null,0,10);
+    }
+
+    @Test
+    void accountFactPagesRejectUnownedAccountsAndInvalidWindows() throws Exception {
+        mockMvc.perform(get("/api/trading/trades").param("accountId","999"))
+            .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/trading/positions").param("accountId","999"))
+            .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/trading/trades").param("accountId","1001").param("size","101"))
+            .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/trading/positions").param("accountId","1001").param("page","-1"))
+            .andExpect(status().isBadRequest());
     }
 
     /** 所有者正例仍使用真实legacy映射，避免夹具以相同数字绕过归属校验。 */

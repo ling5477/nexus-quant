@@ -2394,8 +2394,8 @@ export function MarketdataPage() {
                         key: 'market',
                         label: t('pages:marketdataQueryAndCharts'),
                         children: (
-                            <Space direction="vertical" size={16} style={{display: 'flex'}}>
-                                <Card className="page-section" bordered={false}>
+                            <Space className="market-terminal-grid" direction="vertical" size={16} style={{display: 'flex'}}>
+                                <Card className="page-section market-terminal-controls" bordered={false}>
                                     <Form<MarketdataBarsFormValues>
                                         name="marketdata-query"
                                         form={form}
@@ -2523,7 +2523,7 @@ export function MarketdataPage() {
                                     ) : null}
                                 </Card>
                                 <Card
-                                    className="page-section"
+                                    className="page-section market-terminal-chart"
                                     bordered={false}
                                     title={t('pages:ohlcvCandlesticks')}
                                     extra={
@@ -2705,7 +2705,7 @@ export function MarketdataPage() {
                                                 sourceLabel={chartSourceLabel}
                                                 title={t('pages:ohlcvCandlesticks')}
                                                 emptyText={chartEmptyText}
-                                                height={320}
+                                                height={400}
                                                 intervalSeconds={intervalSeconds(
                                                     submittedQuery?.interval,
                                                 )}
@@ -2726,7 +2726,7 @@ export function MarketdataPage() {
                                                           )
                                                         : t('pages:searchToViewVolume')
                                                 }
-                                                height={180}
+                                                height={140}
                                                 visibleRange={visibleRange}
                                                 onVisibleRangeChange={changeRange}
                                             />

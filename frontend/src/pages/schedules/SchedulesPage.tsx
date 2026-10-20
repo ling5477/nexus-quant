@@ -140,7 +140,7 @@ export function SchedulesPage() {
                         }}
                     />
                 </Card>
-                <Card className="page-section" bordered={false} title={t('filters')}>
+                <Card className="page-section workspace-filter-panel" bordered={false} title={t('filters')}>
                     <Form
                         name="schedule-query"
                         form={form}
@@ -215,7 +215,7 @@ export function SchedulesPage() {
                     </Form>
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-results-panel"
                     bordered={false}
                     title={t('results')}
                     extra={

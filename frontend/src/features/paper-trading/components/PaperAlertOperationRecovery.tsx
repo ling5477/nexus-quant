@@ -5,7 +5,7 @@ import {useTranslation} from 'react-i18next';
 import {Link} from 'react-router-dom';
 import {formatApiError} from '@/api/errors';
 import {paperTradingQueryKeys} from '@/api/query-keys';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {notificationRunPath} from '@/features/notifications/read-state';
 import type {AppApiError} from '@/types/api';
 import {
@@ -59,7 +59,7 @@ export function PaperAlertOperationRecovery() {
     const queryClient = useQueryClient();
     const stored = usePendingPaperAlertOperation();
     const user = useAuthStore((state) => state.currentUser);
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const pending = stored.kind === 'pending' ? stored.pending : null;
     const [session, setSession] = useState({owner: user?.userId, token, revision: 0});
     useEffect(() => {

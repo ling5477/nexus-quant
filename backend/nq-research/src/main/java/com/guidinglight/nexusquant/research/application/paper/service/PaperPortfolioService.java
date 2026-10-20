@@ -156,7 +156,9 @@ public class PaperPortfolioService {
      * alert / order / trade 一次 countOpenByRunIds() / countByRunIds() 批量聚合计数；循环内仅做内存 Map 查找。
      */
     private List<PaperPortfolioAssembler.RunInput> loadRunInputs() {
-        List<PaperTradingRun> runs = new ArrayList<>(runRepository.list(null, null));
+        // 旧聚合只读取legacy经济表；独立SIM必须走已授权的canonical分析，不能漏出身份或被误报零成交。
+        List<PaperTradingRun> runs = new ArrayList<>(runRepository.list(null, null).stream()
+                .filter(run -> run.canonicalAccountId() == null).toList());
         // 按更新时间倒序截断到上限，保证「最近活跃」优先纳入聚合，并保护查询规模。
         runs.sort(
                 Comparator.comparing(

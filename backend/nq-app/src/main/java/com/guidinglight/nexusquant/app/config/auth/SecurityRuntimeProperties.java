@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.AssertTrue;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -27,6 +28,25 @@ public class SecurityRuntimeProperties {
 
     @NotNull
     private Duration accessTokenTtl = Duration.ofHours(1);
+
+    @NotNull
+    private Duration sessionIdleTimeout = Duration.ofMinutes(30);
+
+    @NotNull
+    private Duration sessionMaxLifetime = Duration.ofHours(8);
+
+    public Duration getSessionIdleTimeout() { return sessionIdleTimeout; }
+    public void setSessionIdleTimeout(Duration value) { sessionIdleTimeout = value; }
+    public Duration getSessionMaxLifetime() { return sessionMaxLifetime; }
+    public void setSessionMaxLifetime(Duration value) { sessionMaxLifetime = value; }
+
+    @AssertTrue(message = "session durations must be positive, idle <= maximum, maximum <= 24 hours")
+    public boolean isSessionDurationsValid() {
+        return accessTokenTtl != null && sessionIdleTimeout != null && sessionMaxLifetime != null
+                && accessTokenTtl.toSeconds() > 0 && sessionIdleTimeout.toSeconds() > 0
+                && sessionIdleTimeout.compareTo(sessionMaxLifetime) <= 0
+                && sessionMaxLifetime.compareTo(Duration.ofHours(24)) <= 0;
+    }
 
     @Valid
     private List<LocalUserProperties> users = new ArrayList<>();

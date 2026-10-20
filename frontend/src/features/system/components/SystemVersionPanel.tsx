@@ -15,7 +15,7 @@ import {useQuery} from '@tanstack/react-query';
 import {useTranslation} from 'react-i18next';
 import {formatApiError} from '@/api/errors';
 import {systemVersionQueryKeys} from '@/api/query-keys';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {readRuntimeVersion} from '../api/version';
 import {UpdateHandoffPanel} from './UpdateHandoffPanel';
 
@@ -27,7 +27,7 @@ const linuxCheck =
 /** 当前版本来自运行服务，更新步骤复用宿主安装器；按钮只打开说明，不虚报已检查或已更新。 */
 export function SystemVersionPanel() {
     const {t} = useTranslation();
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const version = useQuery({
         queryKey: systemVersionQueryKeys.current(token),
         queryFn: ({signal}) => readRuntimeVersion(signal),

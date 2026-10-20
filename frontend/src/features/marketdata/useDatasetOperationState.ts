@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useSearchParams} from 'react-router-dom';
 import {marketdataQueryKeys} from '@/api/query-keys';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
 import type {CreateMarketdataDatasetRequest, DatasetOperation} from '@/types/marketdata';
 import {
@@ -17,7 +17,7 @@ import {
 export function useDatasetOperationState(active: boolean) {
     const user = useAuthStore((state) => state.currentUser);
     const owner = user?.userId;
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const canWrite = Boolean(
         user?.authenticated &&
             !user.mustChangePassword &&
@@ -45,7 +45,7 @@ export function useDatasetOperationState(active: boolean) {
     const selected = invalid ? null : (rawId ?? pending?.request.operationId ?? null);
     function select(id: string | null) {
         const current = useAuthStore.getState();
-        if (current.currentUser?.userId !== owner || current.accessToken !== token) return;
+        if (current.currentUser?.userId !== owner || selectSessionIdentity(current) !== token) return;
         setParams((previous) => {
             const next = new URLSearchParams(previous);
             next.set('section', 'preparation');
@@ -66,7 +66,7 @@ export function useDatasetOperationState(active: boolean) {
     const result = query.isSuccess && query.data.operationId === selected ? query.data : null;
     const currentSession = () => {
         const current = useAuthStore.getState();
-        return current.currentUser?.userId === owner && current.accessToken === token;
+        return current.currentUser?.userId === owner && selectSessionIdentity(current) === token;
     };
     async function received(value: DatasetOperation) {
         if (!currentSession()) return;

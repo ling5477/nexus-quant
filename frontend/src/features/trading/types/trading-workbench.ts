@@ -83,6 +83,18 @@ export interface TradingOrderListResponse {
     total: number;
 }
 
+export interface AccountFactPage<T> {
+    exchangeAccountId: number;
+    tradingAccountId: number;
+    venue: string;
+    tradeEnv: string;
+    source: string;
+    items: T[];
+    page: number;
+    size: number;
+    total: number;
+}
+
 export interface TradingWorkbenchLookupResult {
     order: OrderView;
     latestTrade: TradeView | null;

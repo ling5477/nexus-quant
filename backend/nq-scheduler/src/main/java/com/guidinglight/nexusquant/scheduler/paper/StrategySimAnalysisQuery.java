@@ -133,6 +133,23 @@ SELECT p.paper_run_id,p.canonical_account_id,p.status,p.symbol,p.interval_code,p
     return owned(owner, paperRunId);
   }
 
+  /** 旧目录沿用同一所有者及费用范围；每批最多100个身份，不逐运行读取经济事实。 */
+  @Transactional(readOnly = true, timeout = 10)
+  public java.util.Set<String> readableRunIds(long owner, List<String> ids) {
+    if (owner <= 0 || ids.size() > 100)
+      throw new IllegalArgumentException("INVALID_SIM_ANALYSIS_IDENTITY");
+    if (ids.isEmpty()) return java.util.Set.of();
+    var args = new java.util.ArrayList<Object>(ids);
+    args.add(owner);
+    args.add(owner);
+    return new java.util.HashSet<>(jdbc.queryForList(
+        "SELECT paper_run_id FROM paper_trading_runs WHERE paper_run_id IN ("
+            + String.join(",", java.util.Collections.nCopies(ids.size(), "?"))
+            + ") AND (canonical_account_id IS NULL OR paper_run_id IN (SELECT p.paper_run_id "
+            + RUNS + " AND " + feeScope.backtest("published.backtest_run_id", owner) + "))",
+        String.class, args.toArray()));
+  }
+
   private Metrics metrics(Run run) {
     long account = run.canonicalAccountId();
     var statuses =

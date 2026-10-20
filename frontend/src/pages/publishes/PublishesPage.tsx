@@ -1,3 +1,4 @@
+import {businessColumns} from '@/components/layout/business-columns';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
@@ -53,7 +54,7 @@ export function PublishesPage() {
     const [submittedFilters, setSubmittedFilters] = useState<PublishesListFilters>(
         defaultPublishesListFilters,
     );
-    const [searchVersion, setSearchVersion] = useState(0);
+    const [searchVersion, setSearchVersion] = useState(1);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [params, setParams] = useSearchParams();
@@ -207,7 +208,7 @@ export function PublishesPage() {
     const handleReset = () => {
         queryForm.resetFields();
         setSubmittedFilters(defaultPublishesListFilters);
-        setSearchVersion(0);
+        setSearchVersion(1);
         setCurrentPage(1);
     };
 
@@ -263,7 +264,7 @@ export function PublishesPage() {
                     />
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-filter-panel"
                     bordered={false}
                     title={t('pages:filters')}
                     extra={
@@ -338,7 +339,7 @@ export function PublishesPage() {
                     </Form>
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-results-panel"
                     bordered={false}
                     title={t('pages:results')}
                     extra={
@@ -371,7 +372,7 @@ export function PublishesPage() {
                         <Table
                             className="publish-result-list-table"
                             rowKey="publishRecordId"
-                            columns={publishColumns}
+                            columns={businessColumns(publishColumns)}
                             dataSource={visibleItems}
                             loading={publishesQuery.isFetching}
                             pagination={{

@@ -1,11 +1,12 @@
-import {Alert, Button, Card, Checkbox, Select, Space, Typography} from 'antd';
+import {useLocation, useNavigate} from 'react-router-dom';
+import {Alert, Button, Card, Checkbox, Select, Space, Tabs, Typography} from 'antd';
 import {useEffect, useState} from 'react';
 import {useQuery, useMutation, useQueryClient} from '@tanstack/react-query';
 import {useTranslation} from 'react-i18next';
 import {useUserPreferences} from '@/features/preferences/hooks/useUserPreferences';
 import {accountsApi} from '@/features/accounts/api/accounts';
 import {accountQueryKeys, authQueryKeys} from '@/api/query-keys';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {NqPageHeader} from '@/components/nq/NqPageHeader';
 import {NqPageScaffold} from '@/nq-design-system/shell/NqPageScaffold';
 import {LegalDocuments} from '@/components/legal/LegalDocuments';
@@ -24,8 +25,12 @@ import {SystemVersionPanel} from '@/features/system/components/SystemVersionPane
 /** 个人偏好与默认账户分别走各自正式接口；时区自动跟随浏览器，默认账户使用稳定命令恢复。 */
 export function SettingsPage() {
     const {t} = useTranslation();
+    const location = useLocation();
+    const navigate = useNavigate();
+    const section = new URLSearchParams(location.search).get('section');
+    const activeSection = location.hash === '#legal' ? 'legal' : ['general', 'watchlist', 'version', 'legal'].includes(section ?? '') ? section! : 'general';
     const {query, save} = useUserPreferences();
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const user = useAuthStore((state) => state.currentUser);
     const pendingAccount = usePendingAccountCommand();
     const client = useQueryClient();
@@ -69,7 +74,12 @@ export function SettingsPage() {
                     ]);
                 }}
             />
-            <div className="settings-grid">
+            <Tabs className="settings-sections" tabBarGutter={12} activeKey={activeSection} onChange={(value) => {
+                const params = new URLSearchParams(location.search);
+                params.set('section', value);
+                navigate({pathname: location.pathname, search: params.toString(), hash: ''});
+            }} items={[
+                {key: 'general', label: t('product:settingsPreferences'), children: <div className="settings-grid">
                 <Card title={t('preferences.personal')} loading={query.isPending}>
                     {query.error && (
                         <Alert
@@ -195,14 +205,11 @@ export function SettingsPage() {
                         />
                     </Space>
                 </Card>
-            </div>
-            <Card title={t('markets.watchlist')}>
-                <WatchlistEditor />
-            </Card>
-            <SystemVersionPanel />
-            <Card id="legal" title={t('preferences.legal')}>
-                <LegalDocuments />
-            </Card>
+            </div>},
+                {key: 'watchlist', label: t('product:watchlistTab'), children: <Card title={t('markets.watchlist')}><WatchlistEditor /></Card>},
+                {key: 'version', label: t('product:versionUpdates'), children: <SystemVersionPanel />},
+                {key: 'legal', label: t('product:legalTab'), children: <Card id="legal" title={t('preferences.legal')}><LegalDocuments /></Card>},
+            ]} />
         </NqPageScaffold>
     );
 }

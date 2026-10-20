@@ -2,7 +2,7 @@
 .nq-login {
     position: relative;
     isolation: isolate;
-    min-height: 100svh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -11,22 +11,14 @@
     background-color: var(--nq-color-bg-page);
 }
 
-/* 装饰画保持原生显示上限；渐隐仅消除画布边缘，不对原图模糊或插值放大。 */
+/* 装饰背景覆盖完整页面并按比例裁切，避免宽屏两侧出现限宽画布的空带。 */
 .nq-login::before {
     content: '';
     position: absolute;
     z-index: -1;
     pointer-events: none;
-    width: min(1670px, 100%);
-    aspect-ratio: 1670 / 942;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    background: url('../../assets/brand/login-earth-kline-hd.png') center / contain no-repeat;
-    mask-image:
-        linear-gradient(to right, transparent, black 10%, black 90%, transparent),
-        linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
-    mask-composite: intersect;
+    inset: 0;
+    background: url('../../assets/brand/login-earth-kline-hd.png') center / cover no-repeat;
 }
 
 .nq-login__masthead,
@@ -36,7 +28,6 @@
     align-items: center;
     gap: 20px;
     width: 100%;
-    max-width: 1670px;
     margin-inline: auto;
 }
 
@@ -61,7 +52,6 @@
     align-items: center;
     flex: 1;
     width: 100%;
-    max-width: 1670px;
     margin-inline: auto;
     padding: 40px 0;
 }
@@ -72,6 +62,13 @@
     max-width: 600px;
     padding-top: clamp(16px, 5vh, 64px);
     text-shadow: 0 2px 10px var(--nq-color-bg-page);
+}
+
+/* 桌面文案避开背景下方的人物；低窗口和手机保留原布局，避免挤压顶部及表单。 */
+@media (min-width: 761px) and (min-height: 800px) {
+    .nq-login__narrative {
+        transform: translateY(clamp(-140px, -11vh, -88px));
+    }
 }
 
 .nq-login__tagline {
@@ -234,8 +231,9 @@
 @media (max-width: 760px) {
     .nq-login {
         padding: 20px;
+    }
+    .nq-login::before {
         background-position: 58% center;
-        background-attachment: fixed;
     }
     .nq-login__masthead .nq-brand__caption {
         display: none;

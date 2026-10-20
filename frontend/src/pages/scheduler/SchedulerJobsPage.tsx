@@ -44,6 +44,7 @@ import {
     validScheduledDelay,
 } from '@/features/scheduler/job-delay';
 
+import {SchedulerActivity} from '@/features/runtime/components/RuntimeOperationsPanel';
 import './SchedulerJobsPage.css';
 
 const DEFERRED_JOBS = new Set([
@@ -418,7 +419,12 @@ export function SchedulerJobsPage() {
                     }
                 />
             ) : null}
+            <div className="nq-scheduler-workspace">
             <Card size="small" title={t('pages:schedulerJobsTitle')}>
+                <div className="nq-monitor-counts">
+                    <span>{t('product:taskEnabled')} <strong>{jobs.isSuccess ? jobs.data.filter(job => job.enabled).length : '—'}</strong></span>
+                    <span>{t('product:taskFailures')} <strong>{jobs.isSuccess ? jobs.data.filter(job => job.lastStatus === 'FAILED').length : '—'}</strong></span>
+                </div>
                 <Table
                     size="small"
                     rowKey="jobKey"
@@ -441,6 +447,8 @@ export function SchedulerJobsPage() {
                     </Typography.Text>
                 ) : null}
             </Card>
+            {!jobs.isError && <SchedulerActivity jobs={jobs.data ?? []} />}
+            </div>
             <Modal
                 title={t('pages:schedulerEditDelay')}
                 open={editing !== null}

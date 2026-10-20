@@ -1,4 +1,12 @@
 {
+  "sessionLifetime": {
+    "warning": "Your session expires in about {{minutes}} minute(s).",
+    "maximum": "This sign-in reaches its maximum lifetime in about {{minutes}} minute(s).",
+    "signInAgain": "Sign in again to protect your account. Activity cannot extend the maximum lifetime.",
+    "failed": "Session renewal failed. Check your connection and retry. The current deadline has not been extended.",
+    "continue": "Continue session",
+    "logoutFailed": "Secure sign-out did not complete. Check your connection and retry."
+  },
   "dashboardEvidence": {
     "unknown": "Runtime observation unknown",
     "incomplete": "Run-list, focused-run alert or heartbeat evidence is not fully confirmed. Loading, refreshes, failed queries and missing data do not establish health.",

@@ -49,6 +49,7 @@ public class JwtTokenService implements TokenService {
                 .claim(USERNAME_CLAIM, claims.username())
                 .claim(ROLES_CLAIM, claims.roles())
                 .claim("authVersion", claims.authVersion())
+                .claim("sid", claims.sessionId())
                 .signWith(signingKey)
                 .compact();
     }
@@ -82,7 +83,8 @@ public class JwtTokenService implements TokenService {
                     claims.getExpiration().toInstant(),
                     claims.getIssuer(),
                     claims.getId(),
-                    version.longValue()
+                    version.longValue(),
+                    claims.get("sid", String.class)
             ));
         } catch (JwtException | IllegalArgumentException ex) {
             return Optional.empty();

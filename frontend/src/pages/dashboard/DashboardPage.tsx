@@ -1,9 +1,8 @@
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
-import {ArrowRightOutlined} from '@ant-design/icons';
-import {Button, Card, Col, List, Row, Space, Tag, Typography} from 'antd';
+import {Card, Col, List, Row, Space, Tag, Typography} from 'antd';
 import {useMemo} from 'react';
-import {Link, useNavigate} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 
 import {
     NqEmptyState,
@@ -22,7 +21,6 @@ import {
     usePaperTradingListQuery,
     usePaperTradingRiskResultsQuery,
 } from '@/features/paper-trading/hooks/usePaperTradingQuery';
-import {appNavItems} from '@/router/navigation';
 import {StatusTag} from '@/nq-design-system/status/StatusTag';
 import type {AppApiError} from '@/types/api';
 import type {PaperTradingRunItem} from '@/features/paper-trading/types/paper-trading';
@@ -32,6 +30,8 @@ import './DashboardPage.css';
 import {hasCurrentFocusEvidence} from './dashboard-evidence';
 import {AccountPerformancePanel} from '@/features/accounts/components/AccountPerformancePanel';
 import {PublicNewsCard} from '@/features/news/PublicNewsCard';
+import {DashboardMarketPanel} from './DashboardMarketPanel';
+import {DashboardWatchlist, DashboardAccountActivity} from './DashboardAccountActivity';
 
 /**
  * DashboardPage — 安全总览。
@@ -43,7 +43,6 @@ import {PublicNewsCard} from '@/features/news/PublicNewsCard';
  */
 export function DashboardPage() {
     const {i18n: pageI18n} = useTranslation('pages');
-    const navigate = useNavigate();
 
     // searchVersion 固定为 1：总览页打开即加载，不需要手动触发查询
     const runsQuery = usePaperTradingListQuery({}, 1);
@@ -228,11 +227,11 @@ export function DashboardPage() {
             <Card className="page-card nq-dashboard__heading" bordered={false}>
                 <NqPageHeader
                     title={t('pages:dashboard')}
-                    description={t(
-                        'pages:safetyOverviewOfSystemHealthTheCurrentEnvironmentPaperTradingStatusAndRiskSignals',
-                    )}
+                    description={t('product:overviewPurpose')}
                     badge={<Tag color="processing">{appEnv.envLabel}</Tag>}
                     tip={
+                        <details className="overview-boundary" open={banner.level === 'danger' || undefined}>
+                        <summary>{banner.message} · {t('pages:liveDisabled2')}</summary>
                         <ApplicationRiskAlert
                             level={banner.level}
                             message={banner.message}
@@ -241,6 +240,7 @@ export function DashboardPage() {
                                 environment: appEnv.envLabel,
                             })}
                         />
+                        </details>
                     }
                 />
                 {(runsQuery.error || heartbeatsQuery.error) && (
@@ -251,10 +251,9 @@ export function DashboardPage() {
                 )}
             </Card>
 
-            <AccountPerformancePanel />
-            <Typography.Title level={5} className="nq-dashboard__sim-heading">
-                {t('accountPerformance.independentSim')}
-            </Typography.Title>
+            <DashboardWatchlist />
+            <Card className="page-section nq-dashboard__sim-summary" bordered={false}
+                title={t('accountPerformance.independentSim')}>
             <div className="nq-status-strip nq-dashboard__metrics">
                 <NqMetricCard
                     label={t('pages:totalPaperRuns')}
@@ -308,6 +307,7 @@ export function DashboardPage() {
                     loading={Boolean(focusRunId) && heartbeatsQuery.isPending}
                 />
             </div>
+            </Card>
 
             <Card
                 data-testid="dashboard-runtime-readiness-card"
@@ -389,6 +389,10 @@ export function DashboardPage() {
                     </Space>
                 </Space>
             </Card>
+
+            <DashboardMarketPanel />
+            <AccountPerformancePanel compact />
+            <DashboardAccountActivity />
 
             <Row className="nq-dashboard__activity" gutter={[12, 12]}>
                 <Col span={24}>
@@ -512,7 +516,7 @@ export function DashboardPage() {
                         ) : null}
                     </Card>
                 </Col>
-                <Col xs={24} xl={12}>
+                <Col xs={24} xl={12} className="nq-dashboard__feed">
                     <Card className="page-section" bordered={false} title={t('pages:recentEvents')}>
                         {!focusRunId ? (
                             <NqEmptyState description={t('pages:noPaperRunsTheEventFeedIsEmpty')} />
@@ -561,48 +565,11 @@ export function DashboardPage() {
                         )}
                     </Card>
                 </Col>
-                <Col xs={24} xl={12}>
+                <Col xs={24} xl={12} className="nq-dashboard__feed">
                     <PublicNewsCard />
                 </Col>
             </Row>
 
-            <Card
-                className="page-section nq-dashboard__workspaces"
-                bordered={false}
-                title={t('pages:workspaces')}
-            >
-                <Row gutter={[12, 12]}>
-                    {appNavItems
-                        .filter((item) => item.key !== 'dashboard')
-                        .map((item) => (
-                            <Col xs={24} md={12} xl={6} key={item.key}>
-                                <Card hoverable size="small" onClick={() => navigate(item.path)}>
-                                    <Space direction="vertical" size={4} style={{width: '100%'}}>
-                                        <Space align="center" size={8}>
-                                            {item.icon}
-                                            <Typography.Text strong>{item.label}</Typography.Text>
-                                        </Space>
-                                        <Typography.Paragraph
-                                            type="secondary"
-                                            style={{margin: 0, fontSize: 12}}
-                                            ellipsis={{rows: 2}}
-                                        >
-                                            {item.description}
-                                        </Typography.Paragraph>
-                                        <Button
-                                            type="link"
-                                            size="small"
-                                            icon={<ArrowRightOutlined />}
-                                            style={{paddingInline: 0}}
-                                        >
-                                            {t('pages:openPage')}
-                                        </Button>
-                                    </Space>
-                                </Card>
-                            </Col>
-                        ))}
-                </Row>
-            </Card>
         </div>
     );
 }

@@ -1,3 +1,8 @@
+import {ObjectConfigurationSummary} from '@/components/configuration/ObjectConfigurationSummary';
+import {ObjectConfigurationInput} from '@/components/configuration/ObjectConfigurationInput';
+import {configurationObject} from '@/components/configuration/object-configuration';
+import {configurationSchema} from '@/components/configuration/object-configuration';
+import {businessColumns} from '@/components/layout/business-columns';
 import {useAuthStore} from '@/store/auth-store';
 import {CreationRecoveryPanel} from '@/features/research/components/CreationRecoveryPanel';
 import {MarketdataDatasetPicker} from '@/features/marketdata/components/MarketdataDatasetPicker';
@@ -68,7 +73,7 @@ export function ResearchPage() {
     const [submittedFilters, setSubmittedFilters] = useState<ResearchListFilters>(
         defaultResearchListFilters,
     );
-    const [searchVersion, setSearchVersion] = useState(0);
+    const [searchVersion, setSearchVersion] = useState(1);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [createOpen, setCreateOpen] = useState(params.get('create') === 'true');
@@ -155,7 +160,7 @@ export function ResearchPage() {
     const handleReset = () => {
         queryForm.resetFields();
         setSubmittedFilters(defaultResearchListFilters);
-        setSearchVersion(0);
+        setSearchVersion(1);
         setCurrentPage(1);
     };
 
@@ -221,7 +226,7 @@ export function ResearchPage() {
                     />
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-filter-panel"
                     bordered={false}
                     title={t('pages:filters')}
                     extra={
@@ -268,7 +273,7 @@ export function ResearchPage() {
                     </Form>
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-results-panel"
                     bordered={false}
                     title={t('pages:results')}
                     extra={
@@ -281,7 +286,7 @@ export function ResearchPage() {
                     }
                 >
                     {!hasSearched ? (
-                        <Empty description={t('pages:workflowManualSearch')} />
+                        <Empty description={t('product:loaded')} />
                     ) : researchQuery.error ? (
                         <Alert
                             type="error"
@@ -301,7 +306,7 @@ export function ResearchPage() {
                         <Table
                             className="research-config-list-table"
                             rowKey="researchConfigId"
-                            columns={researchColumns}
+                            columns={businessColumns(researchColumns)}
                             dataSource={visibleItems}
                             loading={researchQuery.isFetching}
                             pagination={{
@@ -379,19 +384,13 @@ export function ResearchPage() {
                                 {formatDateTime(researchDetailQuery.data.updatedAt)}
                             </Descriptions.Item>
                             <Descriptions.Item label={t('pages:parameterSchema')} span={2}>
-                                <Typography.Paragraph style={{marginBottom: 0}}>
-                                    {researchDetailQuery.data.parameterSchema || '-'}
-                                </Typography.Paragraph>
+                                <ObjectConfigurationSummary value={researchDetailQuery.data.parameterSchema} />
                             </Descriptions.Item>
                             <Descriptions.Item label={t('pages:parameterDefaults')} span={2}>
-                                <Typography.Paragraph style={{marginBottom: 0}}>
-                                    {researchDetailQuery.data.parameterDefaults || '-'}
-                                </Typography.Paragraph>
+                                <ObjectConfigurationSummary value={researchDetailQuery.data.parameterDefaults} />
                             </Descriptions.Item>
                             <Descriptions.Item label={t('pages:datasetSpecification')} span={2}>
-                                <Typography.Paragraph style={{marginBottom: 0}}>
-                                    {researchDetailQuery.data.datasetSpec || '-'}
-                                </Typography.Paragraph>
+                                <ObjectConfigurationSummary value={researchDetailQuery.data.datasetSpec} />
                             </Descriptions.Item>
                         </Descriptions>
                         {/* 研究来源按创建时事实展示，不能用当前定义回填历史快照。 */}
@@ -518,6 +517,14 @@ export function ResearchPage() {
                             }
                         />
                     </Form.Item>
+                    <Alert type="info" showIcon message={t('product:configResearchHelp')} style={{marginBottom: 16}} />
+                    <Form.Item name="parameterDefaults" label={t('product:configResearchDefaults')} rules={[{validator: async (_, value?: string) => {try {configurationObject(value);} catch {throw new Error(t('product:configIncomplete'));}}}]}>
+                        <ObjectConfigurationInput label={t('product:configResearchDefaults')} disabled={!canWrite} />
+                    </Form.Item>
+                    <Button style={{marginBottom: 16}} disabled={!canWrite} onClick={() => {
+                        try {createForm.setFieldValue('parameterSchema', configurationSchema(createForm.getFieldValue('parameterDefaults')));}
+                        catch {message.error(t('product:configIncomplete'));}
+                    }}>{t('product:configGenerateSchema')}</Button>
                     <Collapse
                         items={[
                             {
@@ -529,38 +536,26 @@ export function ResearchPage() {
                                         <Form.Item
                                             label={t('pages:parameterSchema')}
                                             name="parameterSchema"
-                                            rules={[
+                                            rules={[{validator: async (_, value?: string) => {try {configurationObject(value);} catch {throw new Error(t('product:configIncomplete'));}}},
                                                 {
                                                     required: true,
                                                     message: t('pages:enterParameterschema'),
                                                 },
                                             ]}
                                         >
-                                            <Input.TextArea rows={4} />
-                                        </Form.Item>
-                                        <Form.Item
-                                            label={t('pages:parameterDefaults')}
-                                            name="parameterDefaults"
-                                            rules={[
-                                                {
-                                                    required: true,
-                                                    message: t('pages:enterParameterdefaults'),
-                                                },
-                                            ]}
-                                        >
-                                            <Input.TextArea rows={4} />
+                                            <ObjectConfigurationInput label={t('pages:parameterSchema')} disabled={!canWrite} />
                                         </Form.Item>
                                         <Form.Item
                                             label={t('pages:datasetSpecification')}
                                             name="datasetSpec"
-                                            rules={[
+                                            rules={[{validator: async (_, value?: string) => {try {configurationObject(value);} catch {throw new Error(t('product:configIncomplete'));}}},
                                                 {
                                                     required: true,
                                                     message: t('pages:enterDatasetspec'),
                                                 },
                                             ]}
                                         >
-                                            <Input.TextArea rows={4} />
+                                            <ObjectConfigurationInput label={t('pages:datasetSpecification')} disabled={!canWrite} />
                                         </Form.Item>
                                     </>
                                 ),

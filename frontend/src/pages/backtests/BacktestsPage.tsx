@@ -1,3 +1,6 @@
+import {ObjectConfigurationInput} from '@/components/configuration/ObjectConfigurationInput';
+import {configurationObject} from '@/components/configuration/object-configuration';
+import {businessColumns} from '@/components/layout/business-columns';
 import {useAuthStore} from '@/store/auth-store';
 import {CreationRecoveryPanel} from '@/features/research/components/CreationRecoveryPanel';
 import {MarketdataDatasetPicker} from '@/features/marketdata/components/MarketdataDatasetPicker';
@@ -124,7 +127,7 @@ export function BacktestsPage() {
     const [submittedFilters, setSubmittedFilters] = useState<BacktestsListFilters>(
         defaultBacktestsListFilters,
     );
-    const [searchVersion, setSearchVersion] = useState(0);
+    const [searchVersion, setSearchVersion] = useState(1);
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     // 详情、运行与创建身份统一由 URL 拥有，关闭、刷新和浏览器返回不能分叉。
@@ -336,7 +339,7 @@ export function BacktestsPage() {
     const handleReset = () => {
         queryForm.resetFields();
         setSubmittedFilters(defaultBacktestsListFilters);
-        setSearchVersion(0);
+        setSearchVersion(1);
         setCurrentPage(1);
     };
 
@@ -457,7 +460,7 @@ export function BacktestsPage() {
                     />
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-filter-panel"
                     bordered={false}
                     title={t('pages:filters')}
                     extra={
@@ -506,7 +509,7 @@ export function BacktestsPage() {
                     </Form>
                 </Card>
                 <Card
-                    className="page-section"
+                    className="page-section workspace-results-panel"
                     bordered={false}
                     title={t('pages:results')}
                     extra={
@@ -519,7 +522,7 @@ export function BacktestsPage() {
                     }
                 >
                     {!hasSearched ? (
-                        <Empty description={t('pages:workflowManualSearch')} />
+                        <Empty description={t('product:loaded')} />
                     ) : backtestsQuery.error ? (
                         <Alert
                             type="error"
@@ -539,7 +542,7 @@ export function BacktestsPage() {
                         <Table
                             className="backtest-config-list-table"
                             rowKey="backtestConfigId"
-                            columns={backtestColumns}
+                            columns={businessColumns(backtestColumns)}
                             dataSource={visibleItems}
                             loading={backtestsQuery.isFetching}
                             pagination={{
@@ -1082,6 +1085,7 @@ export function BacktestsPage() {
                     initialValues={{
                         researchConfigId: params.get('researchConfigId') ?? '',
                         evaluationSpec: '{}',
+                        executionSpec: JSON.stringify({costSource: 'EXPERIMENT_ASSUMPTION'}),
                     }}
                 >
                     <Form.Item
@@ -1216,6 +1220,7 @@ export function BacktestsPage() {
                     >
                         <ExecutionSpecInput market={createDataset} />
                     </Form.Item>
+                    <Alert type="info" showIcon message={t('product:configEvaluationHelp')} style={{marginBottom: 16}} />
                     <Collapse
                         items={[
                             {
@@ -1226,14 +1231,14 @@ export function BacktestsPage() {
                                     <Form.Item
                                         label={t('pages:evaluationParameters')}
                                         name="evaluationSpec"
-                                        rules={[
+                                        rules={[{validator: async (_, value?: string) => {try {configurationObject(value);} catch {throw new Error(t('product:configIncomplete'));}}},
                                             {
                                                 required: true,
                                                 message: t('pages:enterEvaluationspec'),
                                             },
                                         ]}
                                     >
-                                        <Input.TextArea rows={4} />
+                                        <ObjectConfigurationInput label={t('pages:evaluationParameters')} disabled={!canWrite} />
                                     </Form.Item>
                                 ),
                             },

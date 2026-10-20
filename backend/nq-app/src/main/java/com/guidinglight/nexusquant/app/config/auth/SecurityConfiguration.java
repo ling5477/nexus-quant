@@ -64,7 +64,10 @@ public class SecurityConfiguration {
                 passwordEncoder,
                 authUserRepository,
                 properties.getIssuer(),
-                properties.getAccessTokenTtl().toSeconds());
+                properties.getAccessTokenTtl().toSeconds(),
+                properties.getSessionIdleTimeout().toSeconds(),
+                properties.getSessionMaxLifetime().toSeconds(),
+                java.time.Clock.systemUTC());
     }
 
     @Bean
@@ -111,7 +114,8 @@ public class SecurityConfiguration {
     public JwtAuthenticationFilter jwtAuthenticationFilter(
             TokenService tokenService,
             AuthenticationEntryPoint entryPoint,
-            AuthUserRepository repository) {
+            AuthUserRepository repository,
+            SecurityRuntimeProperties properties) {
         return new JwtAuthenticationFilter(
                 tokenService,
                 entryPoint,
@@ -124,7 +128,10 @@ public class SecurityConfiguration {
                                                         && user.authVersion()
                                                                 == claims.authVersion()
                                                         && user.username()
-                                                                .equals(claims.username()))
+                                                                .equals(claims.username())
+                                                        && (claims.sessionId() == null || repository.isSessionActive(
+                                                                claims.sessionId(), claims.username(), claims.authVersion(),
+                                                                java.time.Instant.now(), java.time.Instant.now().minus(properties.getSessionIdleTimeout()))))
                                 .map(
                                         user ->
                                                 new TokenUserValidator.UserState(
@@ -156,6 +163,7 @@ public class SecurityConfiguration {
                                         .requestMatchers(
                                                 HttpMethod.POST,
                                                 "/api/auth/change-password",
+                                                "/api/auth/renew",
                                                 "/api/auth/logout")
                                         .authenticated()
                                         // 仅写认证主体自己的界面偏好，不扩大任何业务命令或交易权限。

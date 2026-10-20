@@ -13,7 +13,11 @@ public record LoginResponse(
         Instant expiresAt,
         String username,
         List<String> roles,
-        boolean mustChangePassword
+        boolean mustChangePassword,
+        String sessionId,
+        Instant idleExpiresAt,
+        Instant sessionExpiresAt,
+        Instant serverTime
 ) {
 }
 

@@ -71,6 +71,18 @@ public class AuthController {
     })
     public AuthLoginResponse login(@Valid @RequestBody AuthLoginRequestBody request) {
         var loginResponse = authService.login(new LoginRequest(request.username(), request.password()));
+        return response(loginResponse);
+    }
+
+    @PostMapping("/renew")
+    @Operation(summary = "续期当前活跃会话", description = "需要尚未过期的Bearer令牌；空闲、注销、改密或达到最长时限后不可续期。")
+    public AuthLoginResponse renew() {
+        var claims = gatewayAuthFacade.currentUser()
+                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("authentication required"));
+        return response(authService.renew(claims));
+    }
+
+    private AuthLoginResponse response(com.guidinglight.nexusquant.auth.application.result.LoginResponse loginResponse) {
         return new AuthLoginResponse(
                 loginResponse.accessToken(),
                 loginResponse.tokenType(),
@@ -78,7 +90,8 @@ public class AuthController {
                 loginResponse.expiresAt(),
                 loginResponse.username(),
                 loginResponse.roles(),
-                loginResponse.mustChangePassword()
+                loginResponse.mustChangePassword(),
+                loginResponse.sessionId(), loginResponse.idleExpiresAt(), loginResponse.sessionExpiresAt(), loginResponse.serverTime()
         );
     }
 
@@ -92,7 +105,9 @@ public class AuthController {
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout() {
-        // 无服务器会话；客户端清除令牌，改密失效由持久化代际负责。
+        var claims = gatewayAuthFacade.currentUser()
+                .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("authentication required"));
+        authService.logout(claims);
     }
     @GetMapping("/me")
     @Operation(

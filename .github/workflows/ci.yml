@@ -36,12 +36,15 @@ jobs:
           set -euo pipefail
 
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            git diff --check "origin/${{ github.base_ref }}...HEAD"
+            python3 scripts/ci/check-whitespace.py --base "origin/${{ github.base_ref }}" --merge-base
           elif [[ "${{ github.event_name }}" == "push" && "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]]; then
-            git diff --check "${{ github.event.before }}" "${{ github.sha }}"
+            python3 scripts/ci/check-whitespace.py --base "${{ github.event.before }}" --head "${{ github.sha }}"
           else
-            git show --check --pretty=format: HEAD
+            python3 scripts/ci/check-whitespace.py
           fi
+
+      - name: Test scoped whitespace contract
+        run: python3 -m unittest discover -s scripts/ci/tests -p test_whitespace.py -v
 
       - name: Run blocking governance regression
         shell: pwsh
@@ -400,98 +403,15 @@ jobs:
           smoke_dir="${RUNNER_TEMP}/nq-flyway-smoke"
           mkdir -p "${smoke_dir}"
 
-          cat > "${smoke_dir}/FlywaySmoke.java" <<'JAVA'
-          import java.sql.Connection;
-          import java.sql.DriverManager;
-          import java.sql.ResultSet;
-          import java.sql.Statement;
-
-          import org.flywaydb.core.Flyway;
-          import org.flywaydb.core.api.MigrationInfo;
-
-          public final class FlywaySmoke {
-              private FlywaySmoke() {
-              }
-
-              public static void main(String[] args) throws Exception {
-                  String url = requireEnv("NQ_FLYWAY_DB_URL");
-                  String user = requireEnv("NQ_FLYWAY_DB_USER");
-                  String password = requireEnv("NQ_FLYWAY_DB_PASSWORD");
-
-                  Flyway flyway = Flyway.configure()
-                          .dataSource(url, user, password)
-                          .locations("classpath:db/migration")
-                          .baselineOnMigrate(false)
-                          .cleanDisabled(true)
-                          .outOfOrder(false)
-                          .load();
-
-                  if (flyway.migrate().migrationsExecuted != 1) {
-                      throw new IllegalStateException("Fresh database must install exactly the release V1 baseline");
-                  }
-                  flyway.validate();
-                  if (flyway.migrate().migrationsExecuted != 0) {
-                      throw new IllegalStateException("Repeated migration must preserve the installed baseline");
-                  }
-                  flyway.validate();
-
-                  MigrationInfo current = flyway.info().current();
-                  if (current == null || current.getVersion() == null) {
-                      throw new IllegalStateException(
-                              "Flyway did not produce a current schema version");
-                  }
-
-                  MigrationInfo[] pending = flyway.info().pending();
-                  if (pending.length != 0) {
-                      throw new IllegalStateException(
-                              "Flyway still has " + pending.length + " pending migrations");
-                  }
-
-                  String currentVersion = current.getVersion().getVersion();
-                  if (!"1".equals(currentVersion)) {
-                      throw new IllegalStateException("Release schema current version must be V1");
-                  }
-
-                  try (Connection connection = DriverManager.getConnection(url, user, password);
-                          Statement statement = connection.createStatement();
-                          ResultSet resultSet = statement.executeQuery("""
-                                  SELECT installed_rank, version, description, type, script, checksum, success
-                                  FROM flyway_schema_history
-                                  ORDER BY installed_rank
-                                  """)) {
-                      System.out.println("installed_rank|version|description|type|script|checksum|success");
-                      while (resultSet.next()) {
-                          System.out.printf("%d|%s|%s|%s|%s|%s|%s%n",
-                                  resultSet.getInt("installed_rank"),
-                                  resultSet.getString("version"),
-                                  resultSet.getString("description"),
-                                  resultSet.getString("type"),
-                                  resultSet.getString("script"),
-                                  resultSet.getString("checksum"),
-                                  resultSet.getBoolean("success"));
-                      }
-                  }
-
-                  System.out.println("Flyway empty database smoke reached V" + currentVersion);
-              }
-
-              private static String requireEnv(String name) {
-                  String value = System.getenv(name);
-                  if (value == null || value.isBlank()) {
-                      throw new IllegalStateException("Missing required environment variable: " + name);
-                  }
-                  return value;
-              }
-          }
-          JAVA
+          python3 scripts/ci/verify-release-schema.py
 
           app_cp="$(cat backend/nq-app/target/flyway-classpath.txt)"
           classpath="backend/nq-app/target/classes:backend/nq-infra/target/classes:${app_cp}"
 
-          javac -cp "${classpath}" "${smoke_dir}/FlywaySmoke.java"
-          java -cp "${smoke_dir}:${classpath}" FlywaySmoke
+          javac -cp "${classpath}" -d "${smoke_dir}" scripts/ci/ReleaseMigrationSmoke.java
+          java -cp "${smoke_dir}:${classpath}" ReleaseMigrationSmoke
 
-      - name: Verify release baseline schema and static facts
+      - name: Verify reviewed release schema and static facts
         shell: bash
         run: |
           set -euo pipefail
@@ -851,6 +771,10 @@ jobs:
       - name: Build frontend production artifact
         working-directory: frontend
         run: npm run build
+
+      - name: Build isolated frontend component test fixtures
+        working-directory: frontend
+        run: node ./node_modules/vite/bin/vite.js build --config tests/e2e/fixtures/vite.config.ts
 
       - name: Generate normalized frontend CycloneDX SBOM and artifact manifest
         shell: bash

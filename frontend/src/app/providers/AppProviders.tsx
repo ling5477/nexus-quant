@@ -8,7 +8,8 @@ import {authQueryKeys} from '@/api/query-keys';
 import {nqAntdTheme} from '@/nq-design-system/theme/nqAntdTheme';
 import type {AppApiError} from '@/types/api';
 import {subscribeAppError} from '@/utils/error-events';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
+import {readStoredSession} from '@/utils/token-storage';
 import {useAccountContextStore} from '@/store/account-context-store';
 import {appEnv} from '@/utils/env';
 import {useTranslation} from 'react-i18next';
@@ -58,7 +59,7 @@ function ErrorNotificationText({error, title = false}: {error: AppApiError; titl
 }
 
 function AuthBootstrap({children}: PropsWithChildren) {
-    const accessToken = useAuthStore((state) => state.accessToken);
+    const accessToken = useAuthStore(selectSessionIdentity);
     const setBootstrapStatus = useAuthStore((state) => state.setBootstrapStatus);
     const updateCurrentUser = useAuthStore((state) => state.updateCurrentUser);
     const clearAuth = useAuthStore((state) => state.clearAuth);
@@ -114,7 +115,7 @@ export function AppProviders({children}: PropsWithChildren) {
     useEffect(
         () =>
             useAuthStore.subscribe((state, previous) => {
-                if (state.accessToken !== previous.accessToken) {
+                if (selectSessionIdentity(state) !== selectSessionIdentity(previous)) {
                     // 查询身份变更必须同步失效；旧请求即使晚返回也不能成为下一用户的界面数据。
                     void queryClient.cancelQueries();
                     queryClient.clear();
@@ -123,6 +124,19 @@ export function AppProviders({children}: PropsWithChildren) {
             }),
         [],
     );
+    useEffect(() => {
+        const sync = (event: StorageEvent) => {
+            if (event.key !== 'nexus-quant.console.auth') return;
+            const stored = readStoredSession();
+            const state = useAuthStore.getState();
+            if (!stored) state.clearAuth('manual');
+            else if (stored.sessionId && stored.sessionId === state.sessionId)
+                state.renewSession({...stored, expiresIn: 0});
+            else state.setSession({...stored, expiresIn: 0});
+        };
+        window.addEventListener('storage', sync);
+        return () => window.removeEventListener('storage', sync);
+    }, []);
     useEffect(() => {
         document.title = appEnv.appTitle;
         document.documentElement.lang = chinese ? 'zh-CN' : 'en-US';

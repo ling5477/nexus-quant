@@ -5,7 +5,7 @@ import {useQueryClient} from '@tanstack/react-query';
 import {instrumentsApi} from '@/features/instruments/api/instruments';
 import {Alert, App, Button, Space, Typography} from 'antd';
 import {useTranslation} from 'react-i18next';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {evaluationsApi} from '@/api/evaluations';
 import {publishesApi} from '@/features/publishes/api/publishes';
 import {formatApiError} from '@/api/errors';
@@ -56,7 +56,7 @@ export function ResearchResultRecovery({kind}: {kind: ResultAction}) {
         scopeEpoch?: number;
     } | null>(null);
     const location = useLocation();
-    const sessionToken = useAuthStore((state) => state.accessToken);
+    const sessionToken = useAuthStore(selectSessionIdentity);
     const sessionOwner = useAuthStore((state) => state.currentUser?.userId);
     const emergencyScope = useRef({
         active: true,
@@ -105,13 +105,13 @@ export function ResearchResultRecovery({kind}: {kind: ResultAction}) {
     const recover = async () => {
         if (pending === 'UNAVAILABLE') return;
         const epoch = emergencyScope.current.epoch;
-        const token = useAuthStore.getState().accessToken;
+        const token = selectSessionIdentity(useAuthStore.getState());
         // 旧GET在锁释放后仍可能延迟交付；主体、会话、路由及组件生命周期都必须保持原范围。
         const currentScope = () =>
             kind !== 'PAPER_EMERGENCY' ||
             (emergencyScope.current.active &&
                 emergencyScope.current.epoch === epoch &&
-                useAuthStore.getState().accessToken === token &&
+                selectSessionIdentity(useAuthStore.getState()) === token &&
                 useAuthStore.getState().currentUser?.userId === pending.owner);
         const currentOriginal = () =>
             kind !== 'PAPER_EMERGENCY' ||

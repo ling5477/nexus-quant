@@ -1,6 +1,7 @@
 import {Breadcrumb, Spin, Typography} from 'antd';
 import {Suspense, useEffect, useState} from 'react';
-import {Outlet, useMatches} from 'react-router-dom';
+import {Outlet, useMatches, useLocation} from 'react-router-dom';
+import {WorkspaceNavigation, workspaceFamily} from '@/components/layout/WorkspaceNavigation';
 
 import {AppHeader} from '@/components/layout/AppHeader';
 import {AppSiderMenu} from '@/components/layout/AppSiderMenu';
@@ -12,8 +13,10 @@ import {BrandLockup} from '@/nq-design-system/brand/BrandLockup';
 import {LoginDisclosures} from '@/components/legal/LoginDisclosures';
 import {useUserPreferences} from '@/features/preferences/hooks/useUserPreferences';
 import {setLocale} from '@/i18n';
+import {SessionLifecycle} from '@/features/session/SessionLifecycle';
 
 export function ConsoleLayout() {
+    const {pathname} = useLocation();
     const {t} = useTranslation();
     const {query: preferences} = useUserPreferences();
     useEffect(() => {
@@ -53,6 +56,7 @@ export function ConsoleLayout() {
             pageHeader={<Breadcrumb className="app-shell__breadcrumb" items={breadcrumbItems} />}
         >
             <LoginDisclosures />
+            <SessionLifecycle />
             <Suspense
                 fallback={
                     <div
@@ -65,7 +69,10 @@ export function ConsoleLayout() {
                     </div>
                 }
             >
-                <Outlet />
+                <div className="product-workspace" data-family={workspaceFamily(pathname)} data-page={pathname}>
+                    <WorkspaceNavigation />
+                    <Outlet />
+                </div>
             </Suspense>
         </AppShell>
     );

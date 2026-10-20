@@ -20,7 +20,7 @@ import {
 import {useTranslation} from 'react-i18next';
 import {formatApiError} from '@/api/errors';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {useAccountContextStore} from '@/store/account-context-store';
 import type {AppApiError} from '@/types/api';
 import type {OrderView} from '../types/trading-workbench';
@@ -60,7 +60,7 @@ export function ManualOrderWorkspace({
     const {t} = useTranslation('pages');
     const {modal} = App.useApp();
     const owner = useAuthStore((state) => state.currentUser?.userId);
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const roles = useAuthStore((state) => state.currentUser?.roles);
     const account = useAccountContextStore((state) => state.selectedExchangeAccountId);
     const alias = useAccountContextStore((state) => state.accountAlias);
@@ -82,7 +82,7 @@ export function ManualOrderWorkspace({
     const orderType = Form.useWatch('orderType', form) ?? 'LIMIT';
     const isCurrent = () =>
         useAuthStore.getState().currentUser?.userId === owner &&
-        useAuthStore.getState().accessToken === token &&
+        selectSessionIdentity(useAuthStore.getState()) === token &&
         useAccountContextStore.getState().selectedExchangeAccountId === account;
     const accept = (order: OrderView) => {
         if (!isCurrent()) return;

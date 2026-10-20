@@ -7,6 +7,7 @@ import {appRouter} from '@/router/routes';
 
 import '@/styles/index.css';
 import '@/styles/workspace.css';
+import '@/styles/product-workspace.css';
 
 const rootElement = document.getElementById('root');
 

@@ -1,3 +1,4 @@
+import {ObjectConfigurationSummary} from '@/components/configuration/ObjectConfigurationSummary';
 import {VersionPublicationRelations} from './StrategyRelations';
 import {Alert, Button, Descriptions, Space, Spin, Typography} from 'antd';
 import {useTranslation} from 'react-i18next';
@@ -52,17 +53,7 @@ export function StrategyVersionSnapshotPanel({
                                       : 'sourceSnapshotJson',
                             )}
                         </Typography.Text>
-                        <pre
-                            style={{
-                                maxHeight: 280,
-                                overflow: 'auto',
-                                whiteSpace: 'pre-wrap',
-                                overflowWrap: 'anywhere',
-                                marginBottom: 8,
-                            }}
-                        >
-                            {row[key]}
-                        </pre>
+                        <ObjectConfigurationSummary value={row[key]} />
                     </div>
                 ),
             )}

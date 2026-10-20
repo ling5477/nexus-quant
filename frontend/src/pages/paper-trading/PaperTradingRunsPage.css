@@ -62,3 +62,9 @@
         margin: 8px 0 0 24px;
     }
 }
+
+.nq-sim-run-filter{margin-bottom:12px}
+.nq-sim-run-filter .ant-card-head-wrapper{flex-direction:column;align-items:stretch;gap:8px;padding-block:12px}
+.nq-sim-run-filter .ant-form-item{margin-bottom:12px}
+.nq-sim-run-filter .paper-runs-query-actions{padding-block:0}
+.nq-sim-run-filter .ant-card-extra{margin-inline-start:0;max-width:100%}

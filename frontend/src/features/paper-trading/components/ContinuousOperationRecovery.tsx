@@ -3,7 +3,7 @@ import {Alert, App, Button, Descriptions, Space, Typography} from 'antd';
 import {useMutation, useQuery} from '@tanstack/react-query';
 import {useTranslation} from 'react-i18next';
 import {formatApiError} from '@/api/errors';
-import {useAuthStore} from '@/store/auth-store';
+import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
 import {
     canOperateContinuous,
@@ -42,7 +42,7 @@ export function ContinuousOperationRecovery({
     const {modal} = App.useApp();
     const stored = usePendingContinuousOperation();
     const user = useAuthStore((state) => state.currentUser);
-    const token = useAuthStore((state) => state.accessToken);
+    const token = useAuthStore(selectSessionIdentity);
     const pending = stored.kind === 'pending' ? stored.pending : null;
     const allowed = canOperateContinuous();
     const [readSession, setReadSession] = useState({owner: user?.userId, token, revision: 0});

@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.contracts.model.OrderType;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.trading.api.dto.AccountBalanceView;
 import com.guidinglight.nexusquant.trading.api.dto.AccountView;
+import com.guidinglight.nexusquant.trading.api.dto.AccountFactPage;
 import com.guidinglight.nexusquant.trading.api.dto.OperationTriggerResponse;
 import com.guidinglight.nexusquant.trading.api.dto.OrderCancelRequestBody;
 import com.guidinglight.nexusquant.trading.api.dto.OrderListResponse;
@@ -113,6 +114,43 @@ public class TradingVerificationController {
         this.currentUserProfileService =
                 Objects.requireNonNull(
                         currentUserProfileService, "currentUserProfileService must not be null");
+    }
+
+    @GetMapping("/trades")
+    @Operation(summary = "查询已授权账户的本地成交事实")
+    public AccountFactPage<TradeView> listAccountTrades(
+            @RequestParam @Positive Long accountId,
+            @RequestParam(required = false) @Size(max = 64) String symbol,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+        var account = requireExchangeAccount(accountId);
+        Long tradingId = resolveTradingAccountId(account);
+        var items = tradingQueryFacade.listAccountTrades(tradingId, account.exchangeCode(),
+                account.tradeEnv(), blankToNull(symbol), page, size).stream()
+                .map(v -> new TradeView(v.tradeId(), v.orderId(), v.accountId(), v.venue(), v.symbol(),
+                        v.externalOrderId(), v.exchangeTradeId(), v.price(), v.quantity(), v.fee(),
+                        v.feeCurrency(), v.tradeTs(), v.traceId())).toList();
+        return new AccountFactPage<>(accountId, tradingId, account.exchangeCode(), account.tradeEnv(),
+                "LOCAL_CANONICAL_TRADES", items, page, size,
+                tradingQueryFacade.countAccountTrades(tradingId, account.exchangeCode(), account.tradeEnv(), blankToNull(symbol)));
+    }
+
+    @GetMapping("/positions")
+    @Operation(summary = "查询已授权账户的本地持仓投影")
+    public AccountFactPage<PositionView> listAccountPositions(
+            @RequestParam @Positive Long accountId,
+            @RequestParam(required = false) @Size(max = 64) String symbol,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+        var account = requireExchangeAccount(accountId);
+        Long tradingId = resolveTradingAccountId(account);
+        var items = tradingQueryFacade.listAccountPositions(tradingId, account.exchangeCode(),
+                account.tradeEnv(), blankToNull(symbol), page, size).stream()
+                .map(v -> new PositionView(v.accountId(), v.venue(), v.symbol(), v.quantity(),
+                        v.availableQuantity(), v.avgPrice(), v.traceId())).toList();
+        return new AccountFactPage<>(accountId, tradingId, account.exchangeCode(), account.tradeEnv(),
+                "LOCAL_CANONICAL_POSITION_PROJECTION", items, page, size,
+                tradingQueryFacade.countAccountPositions(tradingId, account.exchangeCode(), account.tradeEnv(), blankToNull(symbol)));
     }
 
     @GetMapping("/orders")
