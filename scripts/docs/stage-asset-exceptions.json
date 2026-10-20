@@ -275,7 +275,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/web/StrategyReleaseShadowRunMaterializationSecurityWebMvcTest.java",
-      "sha256": "a054d58797e2891627b730f42849a25e2e1cfd5fbf6657393c957eb326332ccc",
+      "sha256": "52022d823878af069d78350fe02ca5a8fa748a8ca1d8f6e57cedfe437c466443",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",

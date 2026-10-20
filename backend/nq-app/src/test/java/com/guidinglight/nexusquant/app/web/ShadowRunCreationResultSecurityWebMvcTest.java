@@ -16,6 +16,7 @@ import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
+import com.guidinglight.nexusquant.paper.api.web.PaperRunReadAccess;
 import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 import com.guidinglight.nexusquant.strategy.api.web.ShadowRunCreationResultController;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunReleaseBindingMode;
@@ -62,6 +63,7 @@ class ShadowRunCreationResultSecurityWebMvcTest {
             "/api/strategy-releases/" + PUBLISH + "/shadow-run-creation-result";
 
     @Autowired private MockMvc mockMvc;
+    @MockitoBean private PaperRunReadAccess paperRunReadAccess;
     @MockitoBean private GatewayAuthFacade gatewayAuthFacade;
     @MockitoBean private CurrentUserProfileService profileService;
     @MockitoBean private AuthUserRepository authUserRepository;

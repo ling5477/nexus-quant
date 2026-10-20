@@ -7,6 +7,7 @@ import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.observability.config.ObservabilityAutoConfiguration;
+import com.guidinglight.nexusquant.paper.api.web.PaperRunReadAccess;
 import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 import com.guidinglight.nexusquant.strategy.api.web.StrategyReleaseShadowRunMaterializationController;
 import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunIdempotencyConflictException;
@@ -52,6 +53,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @WebMvcTest(controllers = StrategyReleaseShadowRunMaterializationController.class)
 class StrategyReleaseShadowRunMaterializationSecurityWebMvcTest {
+    @MockitoBean private PaperRunReadAccess paperRunReadAccess;
 
     private static final String PUBLISH_ID = "publish-gatex5-001";
     private static final String ROUTE = "/api/strategy-releases/" + PUBLISH_ID + "/shadow-runs";

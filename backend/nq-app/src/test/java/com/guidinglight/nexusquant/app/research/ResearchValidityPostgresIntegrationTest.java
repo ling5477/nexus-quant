@@ -19,11 +19,15 @@ import com.guidinglight.nexusquant.research.infra.backtest.jdbc.*;
 import com.guidinglight.nexusquant.research.infra.eval.jdbc.JdbcBacktestEvaluationReportRepository;
 import com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcAdmissionMutationCoordinator;
 import java.math.BigDecimal;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
 import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.aop.framework.ProxyFactory;
@@ -68,7 +72,29 @@ class ResearchValidityPostgresIntegrationTest {
                     .locations("classpath:db/migration").cleanDisabled(true).load();
             flyway.migrate();
             flyway.validate();
-            assertEquals("1", flyway.info().current().getVersion().getVersion());
+            var manifest = MAPPER.readTree(Path.of("../../release/source-manifest.json").toFile());
+            var expected = new TreeMap<MigrationVersion, String>();
+            var pattern = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
+            for (var group : manifest.path("groups")) {
+                if (!"INCLUDE_RUNTIME".equals(group.path("category").asText())) continue;
+                for (var path : group.path("paths")) {
+                    var match = pattern.matcher(path.asText());
+                    if (match.matches()) assertNull(expected.put(MigrationVersion.fromVersion(match.group(2)), match.group(1)));
+                }
+            }
+            assertFalse(expected.isEmpty());
+            var applied = new TreeMap<MigrationVersion, String>();
+            for (var migration : flyway.info().applied()) {
+                assertEquals("SUCCESS", migration.getState().name());
+                if (migration.getVersion() == null) {
+                    assertEquals("SCHEMA", migration.getType().name());
+                    continue;
+                }
+                assertNull(applied.put(migration.getVersion(), migration.getScript()));
+            }
+            assertEquals(expected, applied);
+            assertEquals(expected.lastKey(), flyway.info().current().getVersion());
+            assertEquals(0, flyway.info().pending().length);
             var ds = new DriverManagerDataSource(url + "?currentSchema=" + schema + ",public", user, password);
             var jdbc = new JdbcTemplate(ds);
             seed(jdbc);
@@ -153,9 +179,19 @@ class ResearchValidityPostgresIntegrationTest {
             assertEquals("INSUFFICIENT_DATA", shortReport.researchValidity().validationStatus());
             assertNull(shortReport.researchValidity().outOfSample());
             assertNull(shortReport.researchValidity().benchmark().benchmarkReturn());
-            reports.upsert(second.withReportJson("{}"));
-            assertEquals("NOT_AVAILABLE", BacktestEvaluationResponse.from(reports.findByBacktestRunId("run-a").orElseThrow()).researchValidity().validationStatus());
-            reports.upsert(second);
+            // 当前报告是追加式冻结事实；旧格式读取用独立夹具证明，不能覆盖已存在报告。
+            assertThrows(org.springframework.dao.DuplicateKeyException.class,
+                    () -> reports.upsert(second.withReportJson("{}")));
+            String legacyRun = "run-legacy-report";
+            runs.insert(run(legacyRun));
+            jdbc.update("""
+                    INSERT INTO backtest_eval_reports
+                    SELECT (jsonb_populate_record(NULL::backtest_eval_reports,
+                        to_jsonb(source) || jsonb_build_object('eval_report_id', ?,
+                            'backtest_run_id', ?, 'report_json', '{}'::jsonb))).*
+                    FROM backtest_eval_reports source WHERE source.eval_report_id=?
+                    """, "legacy-research-report", legacyRun, second.evalReportId());
+            assertEquals("NOT_AVAILABLE", BacktestEvaluationResponse.from(reports.findByBacktestRunId(legacyRun).orElseThrow()).researchValidity().validationStatus());
             assertEquals(second.researchValidity(), reports.findByBacktestRunId("run-a").orElseThrow().researchValidity());
             for (String field : List.of("initialCapital", "feeRate", "slippageBps")) {
                 var highConfig = (ObjectNode) MAPPER.readTree(CONFIG);

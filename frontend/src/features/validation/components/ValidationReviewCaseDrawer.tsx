@@ -146,20 +146,20 @@ export function ValidationReviewCaseDrawer({caseId, onClose}: ValidationReviewCa
                     ) : null}
                     {detailQuery.isLoading ? <Text type="secondary">{t('pages:loadingCaseDetails')}</Text> : null}
                     {details ? (
-                        <Descriptions bordered size="small" column={{xs: 1, sm: 2}}>
-                            <Descriptions.Item label={t('pages:caseId')} span={2}><Text copyable><code style={{whiteSpace: 'normal', overflowWrap: 'anywhere'}}>{details.id}</code></Text></Descriptions.Item>
+                        <Descriptions bordered size="small" column={{xs: 1, sm: 2, md: 2, lg: 2, xl: 2, xxl: 2}}>
+                            <Descriptions.Item label={t('pages:caseId')} span="filled"><Text copyable><code style={{whiteSpace: 'normal', overflowWrap: 'anywhere'}}>{details.id}</code></Text></Descriptions.Item>
                             <Descriptions.Item label={t('pages:state')}><StatusTag status={details.state} title="" variant="pill"/></Descriptions.Item>
                             <Descriptions.Item label={t('pages:severity2')}><StatusTag status={details.severity} title="" variant="pill"/></Descriptions.Item>
                             <Descriptions.Item label={t('pages:owner')}>{details.ownerId}</Descriptions.Item>
                             <Descriptions.Item label={t('pages:version')}>{details.version}</Descriptions.Item>
                             <Descriptions.Item label={t('pages:evidenceType')}>{details.evidenceType}</Descriptions.Item>
                             <Descriptions.Item label={t('pages:evidenceSource')}>{details.evidenceSource}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:title')} span={2}>{details.title}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:summary')} span={2}>{details.summary}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:title')} span="filled">{details.title}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:summary')} span="filled">{details.summary}</Descriptions.Item>
                             <Descriptions.Item label={t('pages:created')}>{formatDateTime(details.createdAt)}</Descriptions.Item>
                             <Descriptions.Item label={t('pages:updated2')}>{formatDateTime(details.updatedAt)}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:retentionUntil')} span={2}>{formatDateTime(details.retentionUntil)}</Descriptions.Item>
-                            <Descriptions.Item label={t('pages:diagnosticMetadata')} span={2}>
+                            <Descriptions.Item label={t('pages:retentionUntil')} span="filled">{formatDateTime(details.retentionUntil)}</Descriptions.Item>
+                            <Descriptions.Item label={t('pages:diagnosticMetadata')} span="filled">
                                 {t('pages:theSafeBackendDtoDoesNotExposeTraceSchemaChecksumOrEvidenceAnchorsTheFrontendDoesNotInferOrFabricate')}</Descriptions.Item>
                         </Descriptions>
                     ) : null}
