@@ -1,0 +1,68 @@
+.runtime-readiness-page,
+.runtime-readiness-page .ant-space-item,
+.runtime-readiness-page .ant-tabs-content-holder,
+.runtime-readiness-page .ant-tabs-tabpane,
+.runtime-readiness-page .ant-card,
+.runtime-readiness-page .ant-card-body,
+.runtime-readiness-page .ant-col {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.runtime-readiness-page .ant-card-head-wrapper {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.runtime-readiness-page .ant-card-head-title,
+.runtime-readiness-page .ant-typography,
+.runtime-readiness-page .ant-tag {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.runtime-readiness-page .ant-table-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.runtime-readiness-page .ant-table-cell {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 575px) {
+    .runtime-readiness-page .ant-card-head {
+        padding-inline: 12px;
+    }
+
+    .runtime-readiness-page .ant-card-body {
+        padding: 12px;
+    }
+
+    .runtime-readiness-page .ant-card-extra {
+        margin-inline-start: 0;
+        max-width: 100%;
+    }
+}
+
+.runtime-readiness-page span[title] {
+    max-width: 100%;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+}
+.nq-resource-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 800px) {
+    .nq-resource-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* 运行边界主区与最近任务事件分栏，窄屏保留完整诊断入口。 */
+.nq-runtime-operations {display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:16px;align-items:start}
+.nq-runtime-boundaries {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.nq-runtime-events {display:grid;gap:16px;min-width:0}
+.nq-runtime-boundaries .ant-card-extra {max-width:70%}
+@media(max-width:1100px){.nq-runtime-operations{grid-template-columns:1fr}.nq-runtime-events{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.nq-runtime-boundaries,.nq-runtime-events{grid-template-columns:1fr}}

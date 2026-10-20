@@ -1,0 +1,106 @@
+.shadow-run-detail-page {
+    width: 100%;
+    min-width: 0;
+}
+
+.shadow-run-detail-page .ant-space-item,
+.shadow-run-detail-page .ant-card,
+.shadow-run-detail-page .ant-tabs-content-holder {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.shadow-run-detail-page .ant-descriptions-item-content,
+.shadow-run-detail-page .ant-typography,
+.shadow-run-detail-page .ant-alert-description,
+.shadow-run-detail-page .ant-table-cell {
+    overflow-wrap: anywhere;
+}
+
+.shadow-detail-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(300px, 1fr);
+    align-items: start;
+    gap: 14px;
+}
+
+.shadow-detail-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 24px;
+    margin: 0;
+}
+
+.shadow-detail-summary dt,
+.shadow-detail-evidence dt {
+    margin-bottom: 6px;
+    color: var(--nq-color-text-secondary);
+    font-size: 12px;
+}
+
+.shadow-detail-summary dd,
+.shadow-detail-evidence dd {
+    margin: 0;
+}
+
+.shadow-detail-window {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--nq-color-border);
+}
+
+.shadow-detail-window time {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.shadow-detail-evidence {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin: 16px 0 0;
+}
+
+.shadow-detail-evidence dd {
+    font-size: 18px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.shadow-detail-overview .ant-alert {
+    margin-bottom: 14px;
+}
+
+.shadow-detail-workspace > .ant-tabs-nav {
+    margin-bottom: 14px;
+}
+
+.shadow-detail-workspace .ant-tabs-tabpane {
+    outline-offset: 4px;
+}
+
+@media (max-width: 900px) {
+    .shadow-detail-overview {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* 窄屏先给诊断结论；当前运行状态始终在页面标题旁，关联编号继续保留在下方。 */
+    .shadow-detail-overview > .ant-card:last-child {
+        grid-row: 1;
+    }
+}
+
+@media (max-width: 575px) {
+    .shadow-detail-summary {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+    }
+
+    .shadow-run-detail-page .ant-descriptions-item-label {
+        max-width: 42vw;
+        overflow-wrap: anywhere;
+    }
+}

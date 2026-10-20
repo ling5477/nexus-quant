@@ -1,0 +1,306 @@
+package com.guidinglight.nexusquant.research.infra.eval.jdbc;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.research.domain.ResearchResultPage;
+import com.guidinglight.nexusquant.research.domain.eval.BacktestEvaluationReport;
+import com.guidinglight.nexusquant.research.domain.eval.EvaluationStatus;
+import com.guidinglight.nexusquant.research.domain.eval.port.BacktestEvaluationListQueryPort;
+import com.guidinglight.nexusquant.research.domain.eval.port.BacktestEvaluationReportRepository;
+import com.guidinglight.nexusquant.research.domain.eval.port.EvaluationListQuery;
+import com.guidinglight.nexusquant.research.domain.port.ResearchFeeSourcePort;
+import com.guidinglight.nexusquant.research.infra.ResearchFeeReadScope;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.port.AdmissionMutationCoordinator;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+
+/** JdbcBacktestEvaluationReportRepository 是 backtest_eval_reports 表的 JDBC 实现。 */
+@Repository
+public class JdbcBacktestEvaluationReportRepository
+    implements BacktestEvaluationReportRepository, BacktestEvaluationListQueryPort {
+
+  private static final RowMapper<BacktestEvaluationReport> ROW_MAPPER =
+      JdbcBacktestEvaluationReportRepository::mapRow;
+
+  private final JdbcTemplate jdbcTemplate;
+  private ResearchFeeReadScope feeScope =
+      new ResearchFeeReadScope(ResearchFeeSourcePort.disabled());
+
+  /** 手工构造默认拒绝私有来源；正式装配在SQL中统一隔离详情及列表。 */
+  @Autowired
+  private void bindFeeReadScope(ResearchFeeReadScope scope) {
+    this.feeScope = scope;
+  }
+
+  private final AdmissionMutationCoordinator admissionMutationCoordinator;
+
+  public JdbcBacktestEvaluationReportRepository(
+      JdbcTemplate jdbcTemplate,
+      ObjectMapper objectMapper,
+      AdmissionMutationCoordinator admissionMutationCoordinator) {
+    this.jdbcTemplate = jdbcTemplate;
+    this.admissionMutationCoordinator = admissionMutationCoordinator;
+  }
+
+  /** 每次明确评估追加独立报告；保留旧方法名供既有调用，禁止按运行覆盖冻结报告身份。 */
+  @Override
+  public void upsert(BacktestEvaluationReport backtestEvaluationReport) {
+    List<String> publishIds =
+        jdbcTemplate.query(
+            "SELECT publish_record_id FROM backtest_publish_records WHERE backtest_run_id = ?",
+            (resultSet, rowNum) -> resultSet.getString("publish_record_id"),
+            backtestEvaluationReport.backtestRunId());
+    admissionMutationCoordinator.withLockedAdmissionStates(
+        publishIds,
+        () ->
+            jdbcTemplate.update(
+                """
+INSERT INTO backtest_eval_reports (
+    eval_report_id, backtest_run_id, evaluation_status, initial_capital, final_cash_balance,
+    final_position_market_value, final_equity, realized_pnl, unrealized_pnl, net_pnl,
+    total_return_rate, total_return, annualized_return, total_fee, total_slippage, order_count, trade_count,
+    winning_trade_count, losing_trade_count, flat_trade_count, win_rate,
+    max_drawdown, max_drawdown_rate, profit_loss_ratio, sharpe_ratio, report_json, metrics_json, failure_code,
+    failure_message, evaluated_at, created_at, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CAST(? AS JSONB), CAST(? AS JSONB), ?, ?, ?, ?, ?)
+""",
+                backtestEvaluationReport.evalReportId(),
+                backtestEvaluationReport.backtestRunId(),
+                backtestEvaluationReport.evaluationStatus().name(),
+                backtestEvaluationReport.initialCapital(),
+                backtestEvaluationReport.finalCashBalance(),
+                backtestEvaluationReport.finalPositionMarketValue(),
+                backtestEvaluationReport.finalEquity(),
+                backtestEvaluationReport.realizedPnl(),
+                backtestEvaluationReport.unrealizedPnl(),
+                backtestEvaluationReport.netPnl(),
+                backtestEvaluationReport.totalReturnRate(),
+                backtestEvaluationReport.totalReturn(),
+                backtestEvaluationReport.annualizedReturn(),
+                backtestEvaluationReport.totalFee(),
+                backtestEvaluationReport.totalSlippage(),
+                backtestEvaluationReport.orderCount(),
+                backtestEvaluationReport.tradeCount(),
+                backtestEvaluationReport.winningTradeCount(),
+                backtestEvaluationReport.losingTradeCount(),
+                backtestEvaluationReport.flatTradeCount(),
+                backtestEvaluationReport.winRate(),
+                backtestEvaluationReport.maxDrawdown(),
+                backtestEvaluationReport.maxDrawdownRate(),
+                backtestEvaluationReport.profitLossRatio(),
+                backtestEvaluationReport.sharpeRatio(),
+                backtestEvaluationReport.reportJson(),
+                backtestEvaluationReport.metricsJson(),
+                backtestEvaluationReport.failureCode(),
+                backtestEvaluationReport.failureMessage(),
+                toTimestamp(backtestEvaluationReport.evaluatedAt()),
+                Timestamp.from(backtestEvaluationReport.createdAt()),
+                Timestamp.from(backtestEvaluationReport.updatedAt())));
+  }
+
+  @Override
+  public Optional<BacktestEvaluationReport> findByBacktestRunId(String backtestRunId) {
+    List<BacktestEvaluationReport> rows =
+        jdbcTemplate.query(
+            """
+SELECT eval_report_id, backtest_run_id, evaluation_status, initial_capital, final_cash_balance,
+       final_position_market_value, final_equity, realized_pnl, unrealized_pnl, net_pnl,
+       total_return_rate, total_return, annualized_return, total_fee, total_slippage, order_count, trade_count,
+       winning_trade_count, losing_trade_count, flat_trade_count, win_rate,
+       max_drawdown, max_drawdown_rate, profit_loss_ratio, sharpe_ratio,
+       report_json::text AS report_json, metrics_json::text AS metrics_json,
+       failure_code, failure_message, evaluated_at, created_at, updated_at
+FROM backtest_eval_reports
+WHERE backtest_run_id = ?
+"""
+                + " AND "
+                + feeScope.backtest("backtest_eval_reports.backtest_run_id")
+                + " ORDER BY evaluated_at DESC NULLS LAST, created_at DESC, eval_report_id DESC"
+                + " LIMIT 1",
+            ROW_MAPPER,
+            backtestRunId);
+    return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
+  }
+
+  @Override
+  public Optional<BacktestEvaluationReport> findByEvalReportId(String evalReportId) {
+    List<BacktestEvaluationReport> rows =
+        jdbcTemplate.query(
+            """
+SELECT eval_report_id, backtest_run_id, evaluation_status, initial_capital, final_cash_balance,
+       final_position_market_value, final_equity, realized_pnl, unrealized_pnl, net_pnl,
+       total_return_rate, total_return, annualized_return, total_fee, total_slippage, order_count, trade_count,
+       winning_trade_count, losing_trade_count, flat_trade_count, win_rate,
+       max_drawdown, max_drawdown_rate, profit_loss_ratio, sharpe_ratio,
+       report_json::text AS report_json, metrics_json::text AS metrics_json,
+       failure_code, failure_message, evaluated_at, created_at, updated_at
+FROM backtest_eval_reports
+WHERE eval_report_id = ?
+"""
+                + " AND "
+                + feeScope.backtest("backtest_eval_reports.backtest_run_id"),
+            ROW_MAPPER,
+            evalReportId);
+    return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
+  }
+
+  @Override
+  public List<BacktestEvaluationReport> listAll() {
+    return jdbcTemplate.query(
+        """
+SELECT eval_report_id, backtest_run_id, evaluation_status, initial_capital, final_cash_balance,
+       final_position_market_value, final_equity, realized_pnl, unrealized_pnl, net_pnl,
+       total_return_rate, total_return, annualized_return, total_fee, total_slippage, order_count, trade_count,
+       winning_trade_count, losing_trade_count, flat_trade_count, win_rate,
+       max_drawdown, max_drawdown_rate, profit_loss_ratio, sharpe_ratio,
+       report_json::text AS report_json, metrics_json::text AS metrics_json,
+       failure_code, failure_message, evaluated_at, created_at, updated_at
+FROM backtest_eval_reports
+"""
+            + " WHERE "
+            + feeScope.backtest("backtest_eval_reports.backtest_run_id")
+            + " ORDER BY evaluated_at DESC NULLS LAST, created_at DESC, eval_report_id DESC",
+        ROW_MAPPER);
+  }
+
+  @Override
+  public List<BacktestEvaluationReport> list(String researchConfigId, String backtestConfigId) {
+    if (researchConfigId == null && backtestConfigId == null) {
+      return listAll();
+    }
+    StringBuilder sql =
+        new StringBuilder(
+            """
+SELECT e.eval_report_id, e.backtest_run_id, e.evaluation_status, e.initial_capital,
+       e.final_cash_balance, e.final_position_market_value, e.final_equity, e.realized_pnl,
+       e.unrealized_pnl, e.net_pnl, e.total_return_rate, e.total_return, e.annualized_return,
+       e.total_fee, e.total_slippage, e.order_count, e.trade_count, e.winning_trade_count,
+       e.losing_trade_count, e.flat_trade_count, e.win_rate, e.max_drawdown,
+       e.max_drawdown_rate, e.profit_loss_ratio, e.sharpe_ratio,
+       e.report_json::text AS report_json, e.metrics_json::text AS metrics_json,
+       e.failure_code, e.failure_message, e.evaluated_at, e.created_at, e.updated_at
+FROM backtest_eval_reports e
+JOIN backtest_runs r ON r.backtest_run_id = e.backtest_run_id
+""");
+    List<Object> args = new ArrayList<>();
+    if (researchConfigId != null) {
+      sql.append(" WHERE r.research_config_id = ?");
+      args.add(researchConfigId);
+    }
+    if (backtestConfigId != null) {
+      sql.append(args.isEmpty() ? " WHERE" : " AND").append(" r.backtest_config_id = ?");
+      args.add(backtestConfigId);
+    }
+    sql.append(args.isEmpty() ? " WHERE " : " AND ")
+        .append(feeScope.configuration("r.config_snapshot_json"));
+    sql.append(
+        " ORDER BY e.evaluated_at DESC NULLS LAST, e.created_at DESC, e.eval_report_id DESC");
+    return jdbcTemplate.query(sql.toString(), ROW_MAPPER, args.toArray());
+  }
+
+  /** 总数和页记录共用原运行费用来源权限，不先加载全量评估再做客户端筛选。 */
+  @Override
+  public ResearchResultPage<BacktestEvaluationReport> readPage(EvaluationListQuery query) {
+    String from =
+        " FROM backtest_eval_reports e JOIN backtest_runs r ON r.backtest_run_id ="
+            + " e.backtest_run_id";
+    StringBuilder where =
+        new StringBuilder(" WHERE ").append(feeScope.configuration("r.config_snapshot_json"));
+    List<Object> args = new ArrayList<>();
+    if (query.researchConfigId() != null) {
+      where.append(" AND r.research_config_id = ?");
+      args.add(query.researchConfigId());
+    }
+    if (query.backtestConfigId() != null) {
+      where.append(" AND r.backtest_config_id = ?");
+      args.add(query.backtestConfigId());
+    }
+    if (query.backtestRunId() != null) {
+      where.append(" AND e.backtest_run_id ILIKE ? ESCAPE '!'");
+      args.add(literalContains(query.backtestRunId()));
+    }
+    if (query.evaluationStatus() != null) {
+      where.append(" AND e.evaluation_status = ?");
+      args.add(query.evaluationStatus());
+    }
+    Long total =
+        jdbcTemplate.queryForObject("SELECT COUNT(*)" + from + where, Long.class, args.toArray());
+    List<Object> pageArgs = new ArrayList<>(args);
+    pageArgs.add(query.limit());
+    pageArgs.add(query.offset());
+    List<BacktestEvaluationReport> items =
+        jdbcTemplate.query(
+            """
+SELECT e.eval_report_id, e.backtest_run_id, e.evaluation_status, e.initial_capital,
+       e.final_cash_balance, e.final_position_market_value, e.final_equity, e.realized_pnl,
+       e.unrealized_pnl, e.net_pnl, e.total_return_rate, e.total_return, e.annualized_return,
+       e.total_fee, e.total_slippage, e.order_count, e.trade_count, e.winning_trade_count,
+       e.losing_trade_count, e.flat_trade_count, e.win_rate, e.max_drawdown,
+       e.max_drawdown_rate, e.profit_loss_ratio, e.sharpe_ratio,
+       e.report_json::text AS report_json, e.metrics_json::text AS metrics_json,
+       e.failure_code, e.failure_message, e.evaluated_at, e.created_at, e.updated_at
+"""
+                + from
+                + where
+                + " ORDER BY e.evaluated_at DESC NULLS LAST, e.created_at DESC, e.eval_report_id"
+                + " DESC LIMIT ? OFFSET ?",
+            ROW_MAPPER,
+            pageArgs.toArray());
+    return new ResearchResultPage<>(
+        items, total == null ? 0 : total, query.limit(), query.offset());
+  }
+
+  private static String literalContains(String value) {
+    return "%" + value.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
+  }
+
+  private static BacktestEvaluationReport mapRow(ResultSet resultSet, int rowNum)
+      throws SQLException {
+    Timestamp evaluatedAt = resultSet.getTimestamp("evaluated_at");
+    return new BacktestEvaluationReport(
+        resultSet.getString("eval_report_id"),
+        resultSet.getString("backtest_run_id"),
+        EvaluationStatus.valueOf(resultSet.getString("evaluation_status")),
+        resultSet.getBigDecimal("initial_capital"),
+        resultSet.getBigDecimal("final_cash_balance"),
+        resultSet.getBigDecimal("final_position_market_value"),
+        resultSet.getBigDecimal("final_equity"),
+        resultSet.getBigDecimal("realized_pnl"),
+        resultSet.getBigDecimal("unrealized_pnl"),
+        resultSet.getBigDecimal("net_pnl"),
+        resultSet.getBigDecimal("total_return_rate"),
+        resultSet.getBigDecimal("total_return"),
+        resultSet.getBigDecimal("annualized_return"),
+        resultSet.getBigDecimal("total_fee"),
+        resultSet.getBigDecimal("total_slippage"),
+        resultSet.getObject("order_count", Integer.class),
+        resultSet.getObject("trade_count", Integer.class),
+        resultSet.getObject("winning_trade_count", Integer.class),
+        resultSet.getObject("losing_trade_count", Integer.class),
+        resultSet.getObject("flat_trade_count", Integer.class),
+        resultSet.getBigDecimal("win_rate"),
+        resultSet.getBigDecimal("max_drawdown"),
+        resultSet.getBigDecimal("max_drawdown_rate"),
+        resultSet.getBigDecimal("profit_loss_ratio"),
+        resultSet.getBigDecimal("sharpe_ratio"),
+        resultSet.getString("report_json"),
+        resultSet.getString("metrics_json"),
+        resultSet.getString("failure_code"),
+        resultSet.getString("failure_message"),
+        evaluatedAt == null ? null : evaluatedAt.toInstant(),
+        resultSet.getTimestamp("created_at").toInstant(),
+        resultSet.getTimestamp("updated_at").toInstant());
+  }
+
+  private static Timestamp toTimestamp(Instant value) {
+    return value == null ? null : Timestamp.from(value);
+  }
+}

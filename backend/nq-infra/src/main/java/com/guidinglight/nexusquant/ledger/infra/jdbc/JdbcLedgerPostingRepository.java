@@ -1,0 +1,272 @@
+package com.guidinglight.nexusquant.ledger.infra.jdbc;
+
+import com.guidinglight.nexusquant.ledger.contracts.model.AccountSnapshotProjection;
+import com.guidinglight.nexusquant.ledger.contracts.model.LedgerPostingEntry;
+import com.guidinglight.nexusquant.ledger.contracts.model.PositionProjection;
+import com.guidinglight.nexusquant.ledger.service.port.LedgerPostingRepository;
+
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+/**
+ * JdbcLedgerPostingRepository 是记账模块的 JDBC 实现。
+ */
+@Repository
+public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
+
+    private static final RowMapper<PositionProjection> POSITION_ROW_MAPPER = JdbcLedgerPostingRepository::mapPosition;
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public JdbcLedgerPostingRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Override
+    public void lockSnapshotCurrencies(Long accountId, List<String> currencies) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()
+                || !"read committed".equals(jdbcTemplate.queryForObject("SHOW transaction_isolation", String.class))) {
+            throw new IllegalStateException("PROJECTION_REQUIRES_READ_COMMITTED_TRANSACTION");
+        }
+        // 账户环境是跨币种不变量；先取账户锁，避免两个环境在不同币种并发首次写入时都通过检查。
+        Long accountKey = jdbcTemplate.queryForObject("SELECT hashtextextended(?, 0)", Long.class,
+                "nq:account-environment:" + accountId);
+        jdbcTemplate.queryForObject("SELECT pg_advisory_xact_lock(?)", Object.class, accountKey);
+        // 币种快照没有常驻 head 行；事务级锁覆盖首条快照，进程死亡自动释放。
+        // 按锁键排序避免多币种死锁；哈希碰撞只会增加等待，不会漏锁。最多 base/quote/fee 三种。
+        if (currencies.isEmpty() || currencies.size() > 3) {
+            throw new IllegalArgumentException("projection currency lock budget exceeded");
+        }
+        List<Long> keys = currencies.stream().distinct().map(currency -> jdbcTemplate.queryForObject(
+                "SELECT hashtextextended(?, 0)", Long.class,
+                "nq:account-snapshot:" + accountId + ":" + currency)).distinct().sorted().toList();
+        for (Long key : keys) {
+            jdbcTemplate.queryForObject("SELECT pg_advisory_xact_lock(?)", Object.class, key);
+        }
+    }
+
+    @Override
+    public void assertAccountEnvironment(Long accountId, String tradeEnv) {
+        if (!"SIM".equals(tradeEnv) && !"LIVE".equals(tradeEnv)) {
+            throw new IllegalArgumentException("trade environment must be explicit");
+        }
+        // 旧快照和不同环境的仓位可能共用同一账户；无法拆分时不得发布伪精确的环境投影。
+        Boolean ambiguous = jdbcTemplate.queryForObject("""
+                SELECT EXISTS (SELECT 1 FROM account_snapshots
+                               WHERE account_id=? AND (trade_env IS NULL OR trade_env<>?))
+                    OR EXISTS (SELECT 1 FROM trades WHERE account_id=? AND trade_env<>?)
+                    OR (?='LIVE' AND EXISTS (SELECT 1 FROM ledger_entries
+                                             WHERE account_id=? AND ref_type LIKE 'SIM_FUNDING_%'))
+                    OR EXISTS (
+                        SELECT 1 FROM positions p
+                        WHERE p.account_id=? AND NOT EXISTS (
+                            SELECT 1 FROM account_snapshots s
+                            WHERE s.account_id=p.account_id AND s.trade_env=?
+                              AND s.balance_basis='POSITION_PROJECTION'
+                              AND s.currency=split_part(replace(p.symbol, '/', '-'), '-', 1)
+                              AND s.snapshot_id=(
+                                  SELECT MAX(latest.snapshot_id) FROM account_snapshots latest
+                                  WHERE latest.account_id=s.account_id AND latest.currency=s.currency)
+                              AND s.balance=(
+                                  SELECT SUM(other.qty) FROM positions other
+                                  WHERE other.account_id=p.account_id
+                                    AND split_part(replace(other.symbol, '/', '-'), '-', 1)=s.currency)
+                        )
+                    )
+                """, Boolean.class, accountId, tradeEnv, accountId, tradeEnv, tradeEnv, accountId,
+                accountId, tradeEnv);
+        if (!Boolean.FALSE.equals(ambiguous)) {
+            throw new IllegalStateException("ACCOUNT_ENVIRONMENT_PROVENANCE_AMBIGUOUS");
+        }
+    }
+
+    @Override
+    public void lockPosition(Long accountId, String symbol, String traceId) {
+        if (!TransactionSynchronizationManager.isActualTransactionActive()) {
+            throw new IllegalStateException("position lock requires a transaction");
+        }
+        jdbcTemplate.update("""
+                INSERT INTO positions(account_id, symbol, trace_id) VALUES (?, ?, ?)
+                ON CONFLICT (account_id, symbol) DO NOTHING
+                """, accountId, symbol, traceId);
+        jdbcTemplate.queryForObject("SELECT id FROM positions WHERE account_id=? AND symbol=? FOR UPDATE",
+                Long.class, accountId, symbol);
+    }
+
+    @Override
+    public Optional<PositionProjection> findAssetPosition(Long accountId, String currency) {
+        List<PositionProjection> rows = jdbcTemplate.query("""
+                SELECT account_id, ? AS symbol, SUM(qty) AS qty, SUM(available_qty) AS available_qty,
+                       0 AS avg_price, '' AS trace_id
+                FROM positions
+                WHERE account_id=? AND split_part(replace(symbol, '/', '-'), '-', 1)=?
+                GROUP BY account_id
+                """, POSITION_ROW_MAPPER, currency, accountId, currency);
+        return rows.stream().findFirst();
+    }
+
+    @Override
+    public boolean existsByIdempotencyKey(String idempotencyKey) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(1) FROM ledger_entries WHERE idempotency_key = ?",
+                Integer.class,
+                idempotencyKey
+        );
+        return count != null && count > 0;
+    }
+
+    @Override
+    public BigDecimal currentBalance(Long accountId, String currency, String tradeEnv) {
+        if (!"SIM".equals(tradeEnv) && !"LIVE".equals(tradeEnv)) {
+            throw new IllegalArgumentException("trade environment must be explicit");
+        }
+        BigDecimal balance = jdbcTemplate.queryForObject(
+                """
+                SELECT COALESCE(SUM(CASE
+                    WHEN e.ref_type='SIM_FUNDING_CASH' AND ?='SIM' THEN e.delta
+                    WHEN e.ref_type='TRADE' AND EXISTS (
+                        SELECT 1 FROM trades t WHERE t.trade_id=e.ref_id AND t.trade_env=?)
+                    THEN CASE WHEN ?='SIM' THEN
+                        CASE WHEN right(e.idempotency_key, 9)=':LEDGER:1'
+                               OR right(e.idempotency_key, 13)=':LEDGER:FEE_1'
+                             THEN e.delta ELSE 0 END
+                        ELSE e.delta END
+                    ELSE 0 END), 0)
+                FROM ledger_entries e WHERE e.account_id = ? AND e.currency = ?
+                """,
+                BigDecimal.class,
+                tradeEnv,
+                tradeEnv,
+                tradeEnv,
+                accountId,
+                currency
+        );
+        if (balance == null) {
+            return BigDecimal.ZERO;
+        }
+        return balance;
+    }
+
+    @Override
+    public void insertEntry(LedgerPostingEntry entry) {
+        jdbcTemplate.update(
+                """
+                        INSERT INTO ledger_entries (
+                            entry_id, account_id, currency, delta, balance_after, direction, ref_type, ref_id,
+                            idempotency_key, trace_id, ts
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                entry.entryId(),
+                entry.accountId(),
+                entry.currency(),
+                entry.delta(),
+                entry.balanceAfter(),
+                entry.direction().name(),
+                entry.refType(),
+                entry.refId(),
+                entry.idempotencyKey(),
+                entry.traceId(),
+                Timestamp.from(entry.ts())
+        );
+    }
+
+    @Override
+    public void insertLedgerEvent(String entryId, String eventType, String payloadJson, String traceId) {
+        jdbcTemplate.update(
+                """
+                        INSERT INTO ledger_events (entry_id, event_type, payload_json, trace_id)
+                        VALUES (?, ?, CAST(? AS jsonb), ?)
+                        """,
+                entryId,
+                eventType,
+                payloadJson,
+                traceId
+        );
+    }
+
+    @Override
+    public void insertAccountSnapshot(AccountSnapshotProjection snapshot) {
+        jdbcTemplate.update(
+                """
+                        INSERT INTO account_snapshots (
+                            account_id, currency, balance, available, frozen, ts, trace_id,
+                            trade_env, balance_basis, balance_scope, recorded_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'NQ_MANAGED_ACCOUNT', clock_timestamp())
+                        """,
+                snapshot.accountId(),
+                snapshot.currency(),
+                snapshot.balance(),
+                snapshot.available(),
+                snapshot.frozen(),
+                Timestamp.from(snapshot.sourceEventAt()),
+                snapshot.traceId(),
+                snapshot.tradeEnv(),
+                snapshot.balanceBasis().name()
+        );
+    }
+
+    @Override
+    public Optional<PositionProjection> findPosition(Long accountId, String symbol) {
+        List<PositionProjection> rows = jdbcTemplate.query(
+                """
+                        SELECT account_id, symbol, qty, available_qty, avg_price, trace_id
+                        FROM positions
+                        WHERE account_id = ? AND symbol = ?
+                        """,
+                POSITION_ROW_MAPPER,
+                accountId,
+                symbol
+        );
+        if (rows.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(rows.getFirst());
+    }
+
+    @Override
+    public void upsertPosition(PositionProjection projection, Instant updatedAt) {
+        jdbcTemplate.update(
+                """
+                        INSERT INTO positions (
+                            account_id, symbol, qty, available_qty, frozen_qty, avg_price, trace_id, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT (account_id, symbol)
+                        DO UPDATE SET
+                            qty = EXCLUDED.qty,
+                            available_qty = EXCLUDED.available_qty,
+                            avg_price = EXCLUDED.avg_price,
+                            trace_id = EXCLUDED.trace_id,
+                            updated_at = EXCLUDED.updated_at
+                        """,
+                projection.accountId(),
+                projection.symbol(),
+                projection.qty(),
+                projection.availableQty(),
+                BigDecimal.ZERO,
+                projection.avgPrice(),
+                projection.traceId(),
+                Timestamp.from(updatedAt)
+        );
+    }
+
+    private static PositionProjection mapPosition(ResultSet resultSet, int rowNum) throws SQLException {
+        return new PositionProjection(
+                resultSet.getLong("account_id"),
+                resultSet.getString("symbol"),
+                resultSet.getBigDecimal("qty"),
+                resultSet.getBigDecimal("available_qty"),
+                resultSet.getBigDecimal("avg_price"),
+                resultSet.getString("trace_id")
+        );
+    }
+}
