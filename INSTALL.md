@@ -2,6 +2,10 @@
 
 版本以包内 VERSION 为准。**V1.0.0 requires a fresh database. Pre-release development databases are not upgrade targets.** 不使用 Flyway repair，不将开发数据库迁移为正式 V1。
 
+## 当前资格范围
+
+本地 Windows 11 amd64、Docker Desktop 已运行的 V1.0.0 候选已通过隔离全新安装、PG16.15/V34、备份恢复及恢复后重启。结论限 `QUALIFIED_LOCAL_SCOPED`，不代表公开发布、完整 C4 接受或升级验证。旧正式包同为1.0.0，不符合更新器严格更高版本条件，保留 `UPGRADE_NOT_VERIFIED`；更新仍使用 Web 请求/回执人工交接。用户已决定 `C4_OWNER_DECISION=ACCEPT_WITH_EVIDENCE_EXCEPTION`、`C4_72H_RERUN=WAIVED`；此决定保留历史UI缺口，原审查不改判；历史UI缺口按 `ADMITTED_WITH_DOCUMENTED_EXCEPTION` 准入，当前运行差异另由定向验证覆盖。该状态不替代准确候选身份的CI及公开发布授权。以下最终运行资格要求继续有效。
+
 ## 系统要求与发行包
 
 V1.0.0 唯一 REQUIRED / CLAIMED host platform 为 **Windows 11 amd64，Docker Desktop 已安装且 daemon 正在运行（Linux containers）**。支持范围现已冻结；预发布资格结论仍须由同一 exact candidate 的真实安装、完整 Continuous 经济链、重启续跑和备份恢复证据验收，不能由本矩阵或镜像构建结果推导 PASS。

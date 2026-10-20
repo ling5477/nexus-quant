@@ -21,11 +21,11 @@ Java/Spring 的正式源码与 Maven 模块进入发布。正式回测注册表�
 
 Python research 没有 Java subprocess、运行部署或安装消费方。Java artifact preview 使用 schema ID 表达离线契约，不读取 Python 源文件。因此 Python 全部排除；Java `nq-research` 等 Maven 模块仍属于正式源码闭包。
 
-`application-ci.yml`、`application-test.yml`、`application-local.yml` 排除。正式运行必须显式选择 `NQ_PROFILE=prod`，该 profile 的数据库和密钥由环境注入并经过既有启动 guard。当前基础配置仍有开发 fallback，这是 B6 安装入口必须收敛的 gap；B5 仅证明源码可构建，不授予默认启动、真实 provider 或部署权限。`paper`、公开行情和受限只读 profile 是明确运行能力，保留源码不代表允许启用它们。
+`application-ci.yml`、`application-test.yml`、`application-local.yml` 排除。正式运行必须显式选择 `NQ_PROFILE=prod`，该 profile 的数据库和密钥由环境注入并经过既有启动 guard。安装器仅使用正式 profile 并显式注入数据库及随机密钥；源码可构建不授予真实 provider 或部署权限。`paper`、公开行情和受限只读 profile 是明确运行能力，保留源码不代表允许启用它们。
 
-现有根 README 引用开发 authority 和历史目录，不能原样发布；前端 source-adjacent 历史 README 同样排除。`README.md`、`INSTALL.md`、`CHANGELOG.md`、`VERSION` 等正式文件待后续完成。当前未选许可证，`LICENSE_REQUIRED_BUT_UNSELECTED` 是最终发布 blocker；本轮不得代选许可证。
+根 README、INSTALL、CHANGELOG、VERSION 与法律文件已逐文件纳入清单；前端 source-adjacent 历史 README 继续排除。许可证已确立为 Apache-2.0，不再存在待选择许可证的阻断。
 
-## 现有部署资产审计
+## 历史部署资产审计（保留当时分类，不是当前交付状态）
 
 本轮不将旧部署控制面原样纳入发布源码，也不提前重写安装器。以下所有资产保留在开发树：
 
@@ -51,9 +51,9 @@ Python research 没有 Java subprocess、运行部署或安装消费方。Java a
 | `scripts/deployment/Test-NqCanonicalReleaseCi.ps1` | DEV/CI_ONLY：开发 CI artifact 验证 |
 | `scripts/deployment/tests/**` | DEV/CI_ONLY：部署测试与并发 worker |
 
-CURRENT_RELEASE_REQUIRED=0，OBSOLETE=0；安装与操作尚未作为 V1 交付，不据此删除既有资产。B6 需要 production Docker/Compose、Windows/macOS/Linux 安装器、start/stop/restart、backup/restore、uninstall，以及 admin bootstrap / forced password change。B6 新文件不会自动导出，必须加入精确清单。正式文档和许可证闭包由 B6/B7 完成。
+原审计时 CURRENT_RELEASE_REQUIRED=0、OBSOLETE=0 仅为历史结果。production Docker/Compose、安装器、运维入口与管理员初始化已实现并显式纳入当前精确清单；不据历史分类删除开发资产，新增文件仍不自动导出。
 
-本轮不创建正式 release 分支或 tag，不部署到任何现有运行环境。
+此前源码整理未创建release分支或tag。当前用户已授权本地release/1.0.0白名单Snapshot；仍不创建tag或部署到现有运行环境。
 
 用户明确授权有界例外：14 个 Java 文件中 15 行历史阶段注释仅移除标签，另授权 Ledger 的一行 RC 历史注释修复；V1 baseline 的两处 SQL COMMENT 文本去除历史/歧义措辞。后者改变 migration blob/checksum，DDL/DML/ACL 不变，结构 schema delta=0、COMMENT delta=2。保留旧 B4 证据，使用新导出在新建隔离 PG16 上重新 migrate/validate，不使用 repair，不访问或改写冻结数据库。CI schema manifest 的两个摘要同步新事实；除还原两个 COMMENT 外，其余 catalog fingerprint 与 B4 完全一致，seed 合同相同。这是直接用户授权的例外，不改变其他已执行/已发布 migration 不可改写规则。
 
@@ -63,4 +63,10 @@ CURRENT_RELEASE_REQUIRED=0，OBSOLETE=0；安装与操作尚未作为 V1 交付�
 
 ## 当前安装源码边界
 
-上述部署审计保留为前次源码导出证据。当前 VERSION、产品文档、production Docker/Compose、三平台安装和运维入口已逐文件纳入 source-manifest.json；既有 canonical 部署脚本仍为开发资产，不进入安装包。正式运行采用 prod 与 public-marketdata-manual 的精确组合，并由安装配置显式提供数据库及随机密钥，允许公开行情，关闭私有诊断和真实交易。跨平台真机验收及最终许可证决定仍待后续完成。
+上述部署审计保留为前次源码导出证据。当前 VERSION、产品文档、production Docker/Compose、三平台安装和运维入口已逐文件纳入 source-manifest.json；既有 canonical 部署脚本仍为开发资产，不进入安装包。正式运行采用 prod 与 public-marketdata-manual 的精确组合，并由安装配置显式提供数据库及随机密钥，允许公开行情，关闭私有诊断和真实交易。Windows 11 amd64 / 已运行 Docker Desktop 的本地全新安装、备份恢复和重启已有隔离资格；其他平台不声明正式支持，升级仍为 UPGRADE_NOT_VERIFIED。Apache-2.0 许可证已确定。C4 旧候选72小时终态为 NOT_ACCEPTED / EVIDENCE_GAPS，原件不改。用户已明确 C4_OWNER_DECISION=ACCEPT_WITH_EVIDENCE_EXCEPTION、C4_72H_RERUN=WAIVED，例外与原审查分层记录。现有合同未禁止保留原审查并单列用户证据例外；本次已授权的Release Admission将历史UI缺口按ADMITTED_WITH_DOCUMENTED_EXCEPTION准入。新增行为另以39项定向PG/HTTP/跨JVM证明及独立候选审查覆盖；不将owner例外扩大为新增代码免验证。本地资格不等于公开发布。
+
+2026-10-20 文档同步涉及清单内文件，本轮已授权本地提交与新包冻结：使用新完整开发Commit中的清单和Git Blob导出，在新目录构建；旧包与旧摘要保持不变。source-policy 本身为开发说明，按原清单排除，docs/current、历史验收与审计不进入发行，不扩大白名单。
+
+## 独立Release Snapshot来源映射
+
+正式包SOURCE_SHA始终绑定原导出器读取policy与业务Git Blob的完整开发提交。release/1.0.0可采用无父独立Snapshot历史，只含原INCLUDE文件与唯一生成的.release-source.json；其commit message记录完整开发SHA、原dev集成基线、清单及release-source摘要。Snapshot是精确投影身份，不冒充开发提交，不改写metadata sourceCommit，不额外塞入开发导出器或source-manifest以扩大白名单。Snapshot不能单独作为policy导出仓库；重建由声明的完整开发提交导出，构建输入全集必须与Snapshot tree逐字节一致。新SHA远端CI与本地验证分别记录。

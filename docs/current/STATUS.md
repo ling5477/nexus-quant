@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-V1-C3-PRODUCT-UX-CLOSURE
+accepted_batch=NQ-V1-DEV-INTEGRATION
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=07958d143bf05d7e37fd9aacf270244bc0ae5451
-accepted_batch_acceptance_head=07958d143bf05d7e37fd9aacf270244bc0ae5451
-accepted_batch_ci_run=37418672434
-work_batch=NQ-V1-C3-PRODUCT-UX-CLOSURE
-work_batch_status=ACCEPTED|CI_GREEN
-work_batch_commit=07958d143bf05d7e37fd9aacf270244bc0ae5451
-work_batch_ci_run=37418672434
-next_action=NQ-V1-C4-SERVER-CONTINUOUS-SIM-RC-IMPLEMENTATION
+accepted_batch_implementation_commit=565764cce5862ecc02ca7d1ce18d56fc382d8841
+accepted_batch_acceptance_head=565764cce5862ecc02ca7d1ce18d56fc382d8841
+accepted_batch_ci_run=39373837941
+work_batch=NQ-V1-RELEASE-PUBLICATION
+work_batch_status=BLOCKED
+work_batch_commit=NONE
+work_batch_ci_run=NOT_RUN
+next_action=NQ-V1-PUBLICATION-UNBLOCK
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,7 +31,32 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
-V1 产品收敛计划见 [NQ_V1_CLOSURE_PLAN.md](NQ_V1_CLOSURE_PLAN.md)。C1 已接受：PR #61、dev `02536d050bdca953ddda54388735744bc15050c7`、exact-head CI `36705151215 / 9 of 9 SUCCESS`。C2 已接受：PR #62、dev `354c03415e2eb1fc40c289361d352301d2b555a5`、exact-head CI `37414767478 / 9 of 9 SUCCESS`。C3 产品 UX 候选已接受：implementation/accepted technical head `07958d143bf05d7e37fd9aacf270244bc0ae5451`、PR CI `37418672434 / 9 of 9 SUCCESS`，跨页面 canonical identity、精度、决策/风控原因、调度与恢复状态通过真实 API/browser 验证，见 [C3 evidence](evidence/NQ_V1_C3_PRODUCT_UX_CLOSURE.md)。本次最小 authority 同步不替换上述技术接受身份；PR 最终 head 与合并后 dev 仍须各自完成 exact-head CI。下一任务为 `NQ-V1-C4-SERVER-CONTINUOUS-SIM-RC`，机器字段附 `IMPLEMENTATION` 以符合现有动作类型合同。C4 尚未开始，不声明 V1 或 release READY。GateZ 冻结身份及生产运行边界不变。
+## 当前 V1 Release 准备
+
+截至 2026-10-20，dev 集成源码为 `565764cce5862ecc02ca7d1ce18d56fc382d8841`，tree=`39d472ade2d678e0e053875fcd425611f991614f`；PR #64 已合并，同一 head 的 CI `39373837941` 为 completed/success、9/9 SUCCESS。该CI只绑定集成基线，新文档与Snapshot提交的远端CI必须单独获得。
+
+C1/C2/C3 已完成；下一阶段是解决 Release 发布门槛，再进入版本迭代。C4 的实际原始终态为 **72小时观察完成 / NOT_ACCEPTED / EVIDENCE_GAPS / SAFE_STOP_CONFIRMED**：候选 `064b6801f08486943c6e4691537de641dcd25c4d`、release=`nq-064b6801f084-04b6ffbe6403e926`，缺 T+12/18/36/60h 定点 UI 证据。当前候选的撮合、记账、调度与 schema 差异已按正式白名单逐项绑定已有集成/CI证据及39项定向PG/HTTP/跨JVM证明；原C4不承担新增代码的正确性证明。旧 V58 不作为新 V34 的运行升级来源，正式安装仍要求空库。用户随后明确决定：`C4_OWNER_DECISION=ACCEPT_WITH_EVIDENCE_EXCEPTION`、`C4_72H_RERUN=WAIVED`，接受历史定点 UI 证据缺口并豁免72小时重跑；原审查仍为 `NOT_ACCEPTED / EVIDENCE_GAPS`，没有后续独立改判报告。这是单独的 owner 决定，不追认缺失证据、不改写历史审查；新增运行路径另由本次定向证据证明。
+
+本次用户已授权Release Admission裁定；现有合同不禁止在保留原审查的前提下单列历史证据例外。历史定点UI缺口按 `ADMITTED_WITH_DOCUMENTED_EXCEPTION` 准入，新增行为由独立定向审查与上述证据覆盖，未降低或修改validator。`C4_REVIEW=NOT_ACCEPTED/EVIDENCE_GAPS`、`C4_72H_RERUN=WAIVED` 均保留。新文档提交及独立Release Snapshot仍须完成其准确SHA的远端CI，不能用565764cc旧CI代替；本地包冻结与公开发布分开记录。
+
+保留技术接受身份：C1=`02536d050bdca953ddda54388735744bc15050c7 / CI 36705151215`（PR #61）；C2=`354c03415e2eb1fc40c289361d352301d2b555a5 / CI 37414767478`（PR #62）；C3=`07958d143bf05d7e37fd9aacf270244bc0ae5451 / CI 37418672434`（[原始证据](evidence/NQ_V1_C3_PRODUCT_UX_CLOSURE.md)）。以上均为各自9/9接受 pair，不由 dev 集成或本轮文档身份替代。
+
+本地包 `C:/nq-v1-final-20261020-565764cc/package-amd64-final` 的 Release ID 为 `53dc4bd18e2797cfb1327a1c04c3ce374d7565d7db7c5b03d90b517b608f1949`，Windows 11 amd64 / 已运行 Docker Desktop 的隔离全新安装、PG16.15/V34、备份恢复和恢复后重启已通过，范围为 `QUALIFIED_LOCAL_SCOPED`，不等于公开发布或 C4 接受。运行入口 http://127.0.0.1:18580；保持 Web 请求/回执人工交接，不授予 Web 宿主执行权限。严格更新版本条件不满足，保留 `UPGRADE_NOT_VERIFIED`。
+
+保留四项外部数据限制：`ACCOUNT-PERFORMANCE` 普通账户缺可信权益来源时不编造收益；`ACCOUNT-FEE-SOURCE` 不编造真实手续费；`PRICE-EVENTS` 不从 OHLC 编造实际发生时点；`LEGACY-VALUATION` 不更改旧 Paper 未知币种权益。`LIVE=DISABLED`、kill=`ENGAGED`，真实 provider/client/交易所写入关闭。
+
+清理结果为 `NQ_V1_LOCAL_CLEANUP_PARTIAL / EXACT_RETAINED_RESOURCES`，不是全部完成。以 `E:/nq-v1-cleanup-20261020-565764cc/NQ_V1_FINAL_CLEANUP_REPORT.md` 为准；18580、18099 Demo、正式包、必要备份、C4与恢复证据保留。本轮未清理资产。
+
+本轮正式清单内产品文档随新的本地开发提交、独立白名单Snapshot和新目录发行包共同冻结；来源及最终摘要见 `C:/nq-v1-freeze-20261020-565764cc/NQ_V1_FINAL_RELEASE_ADMISSION_AND_PACKAGE_FREEZE_REPORT.md`。旧包不修改、不复用旧摘要代表新内容。开发文档不进入Release，精确白名单不扩大。当前机器work batch指向尚未公开发布的新候选；远端exact-head CI未经执行，不声明已通过。
+
+- C4 原始终态：[final-rc-report.md](../../artifacts/runtime/v1-c4-064b6801-20261006/attempt-02/evidence/final-rc-report.md)；JSON、final-evidence-index、controlled-restart 与 final-facts-review-confirmed 在同目录，均为只读历史。
+- 本地发行：`C:/nq-v1-final-20261020-565764cc/NQ_V1_FINAL_LOCAL_RELEASE_REPORT.md`。
+- 清理：`E:/nq-v1-cleanup-20261020-565764cc/NQ_V1_FINAL_CLEANUP_REPORT.md`。
+- 本轮闭包/文档报告：`E:/nq-v1-release-closure-20261020-565764cc/` 下两份 NQ_V1_*_REPORT.md；机器证据在其 evidence 目录，独立 Git-blob 快照为 release-source-565764cc。
+
+## 冻结 Gate 与历史接受索引
+
+下文保留历史身份；其中生产 runtime stopped、旧 schema 和旧 next action 仅属于对应历史时点，不覆盖以上 V1 本地运行事实。`production_soak=COMPLETED` 是原 Gate 机器字段，不等于本次 C4 接受。
 
 ## 1. 当前阶段
 
