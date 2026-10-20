@@ -134,7 +134,7 @@ import java.util.function.Supplier;
             "nq.account.performance.sampling-enabled=false",
             "nq.account.credentials.master-key=signed-fee-synthetic-master-key-123456789",
             "nq.security.issuer=nexus-quant-signed-fee-synthetic",
-            "nq.security.secret=signed-fee-synthetic-secret-123456789"
+            "nq.security.secret=FAKE-PLACEHOLDER-CONTROLLED-JWT-SIGNING-KEY"
         })
 class FrozenAccountFeePostgresIntegrationTest {
     private static ReleaseBaselineTestDatabase database;
@@ -204,9 +204,8 @@ class FrozenAccountFeePostgresIntegrationTest {
         Flyway.configure()
                 .dataSource(database.source())
                 .locations("classpath:db/migration")
-                // 当前研究成交排序与告警回执已依赖后续迁移；测试完整当前合同，不以旧schema挡住权限路径。
+                // 正式登录与会话均使用当前合同；旧schema不能替代当前权限和费用端到端验证。
                 .cleanDisabled(true)
-                .target("22")
                 .load()
                 .migrate();
         registry.add("spring.datasource.url", database::url);

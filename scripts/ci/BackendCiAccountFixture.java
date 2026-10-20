@@ -9,6 +9,11 @@ import java.sql.ResultSet;
 
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationInfo;
+import org.flywaydb.core.api.MigrationVersion;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.file.Path;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 public final class BackendCiAccountFixture {
     private static final String FIXTURE_ACCOUNT_CODE = "ci-backend-test-account";
@@ -44,8 +49,26 @@ public final class BackendCiAccountFixture {
         }
 
         String currentVersion = current.getVersion().getVersion();
-        if (!"1".equals(currentVersion)) {
-            throw new IllegalStateException("Backend CI fixture requires the release V1 baseline");
+        // 与正式来源清单核对全部脚本，避免过期版本常量掩盖遗漏或额外迁移。
+        var expected = new TreeMap<MigrationVersion, String>();
+        var manifest = new ObjectMapper().readTree(Path.of("release/source-manifest.json").toFile());
+        var migration = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
+        for (var group : manifest.path("groups")) {
+            if (!"INCLUDE_RUNTIME".equals(group.path("category").asText())) continue;
+            for (var path : group.path("paths")) {
+                var match = migration.matcher(path.asText());
+                if (match.matches() && expected.put(MigrationVersion.fromVersion(match.group(2)), match.group(1)) != null)
+                    throw new IllegalStateException("Duplicate formal migration version");
+            }
+        }
+        var actual = new TreeMap<MigrationVersion, String>();
+        for (var info : flyway.info().applied()) {
+            if (info.getVersion() == null || !"SUCCESS".equals(info.getState().name())
+                    || actual.put(info.getVersion(), info.getScript()) != null)
+                throw new IllegalStateException("Invalid applied migration history");
+        }
+        if (expected.isEmpty() || !expected.equals(actual) || !expected.lastKey().equals(current.getVersion())) {
+            throw new IllegalStateException("Backend CI fixture differs from formal migration inventory");
         }
 
         try (Connection connection = DriverManager.getConnection(url, user, password)) {

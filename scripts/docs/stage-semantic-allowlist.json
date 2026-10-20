@@ -179,7 +179,7 @@
       "regionIndex": 3,
       "category": "HISTORICAL_REFERENCE",
       "reason": "Accepted API implementation records and candidate notes retain historical identifiers; exact region digest prevents silent new exclusions.",
-      "sha256": "ce5fb76835fd8bdcf01fc347b9d2b353b11e014a3862ccb3006154dfaab66aeb"
+      "sha256": "456f1a33cbdda4a5437db4163fc17452f63f88bf4fd4e30a66be2281745537b0"
     },
     {
       "path": "docs/current/DB_SCHEMA.md",

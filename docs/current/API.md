@@ -828,7 +828,7 @@ run 状态为 `CREATED / DISPATCHING / RUNNING / SUCCEEDED / FAILED`。`SUCCEEDE
 完整快照继续由 `GET /api/strategies/{strategyCode}/versions/{strategyVersionId}` 精确读取。列表分页不改变旧数组端点、版本创建、回测绑定或执行前提；DRAFT/ACTIVE/ARCHIVED 都能按原元数据绑定合同选择，状态不表示策略正在运行，也不授予 LIVE 权限。
 
 
-版本创建、回测配置及版本绑定、账户费用准备与运行冻结、执行事实假设和评估费用校验使用独立精确 JSON 读取器，原生 JSON 小数不先经过 double，字符串与数组类型保持原合同。共享解析器、金额舍入规则、费用来源摘要及研究事实一致性校验不变；原历史快照不回写。本轮已在合成回环费用来源的正、零、负情形验证配置保存、运行冻结、实际执行、Buy & Hold 和评估，不表示真实私有来源或 LIVE 已获授权。
+版本创建、回测配置及版本绑定、账户费用准备与运行冻结、执行事实假设和评估费用校验使用独立精确 JSON 读取器，原生 JSON 小数不先经过 double，字符串与数组类型保持原合同。共享解析器、金额舍入规则、费用来源摘要及研究事实一致性校验不变；原历史快照不回写。该专项已在合成回环费用来源的正、零、负情形验证配置保存、运行冻结、实际执行、Buy & Hold 和评估，不表示真实私有来源或 LIVE 已获授权。
 
 
 # 策略运行历史有界查询
@@ -909,7 +909,7 @@ V24只新增五个有界partial expression indexes；不改事件、订单、成
 
 ### 历史行情采集的稳定编号与原结果恢复
 
-本轮扩展原marketdata模块，继续使用marketdata_ingestion_jobs和marketdata_ingestion_runs正式事实，不新增平行任务表或migration。
+该专项扩展原marketdata模块，继续使用marketdata_ingestion_jobs和marketdata_ingestion_runs正式事实，不新增平行任务表或migration。
 
 | 接口 | 输入与结果 | 权限及范围 |
 | --- | --- | --- |
@@ -970,7 +970,7 @@ V24只新增五个有界partial expression indexes；不改事件、订单、成
 
 V26增加marketdata_dataset_operations原请求回执。先用独立登记事务保存PENDING；正式数据集、原次覆盖、主质量状态和成功回执共用执行事务。未知SQL或并发错误回滚并保持PENDING；确定拒绝仅DATASET_ID_OCCUPIED、DATASET_NOT_FOUND、PUBLIC_CAPTURE_DATASET_IMMUTABLE。终态与原身份不可修改或删除。同JVM最多四执行，执行30秒、登记10秒、读取5秒、操作锁等待3秒。质量写入沿用准入状态锁后数据集行锁的顺序；内部写入器要求原线程、回调有效期和同一DataSource事务资源，不能在同线程REQUIRES_NEW中借用原锁。
 
-已在真实隔离PG验证V25旧数据升级至V26、原子失败、原结果、同号及异号锁并发、state-first锁序和新上下文恢复。独立审查原发现DQ-IR-001已通过事务资源身份修复及真实PG独立补审关闭；原反例保留。正式生产JAR/Servlet/JWT还验证了失败回滚、真实同号锁等待及第一JVM中断后第二JVM同库继续；中文1536、英文390和当前VIEWER生产页面完成有界恢复验证。GUI目录为明确SQL元数据夹具，行情表为空，结果如实为数据不足，不构成真源或质量合格证明。原失败整轮仍保留，仅复用其中已完成的分项，另有成功补验。436前端单测、类型与生产构建通过；本轮局部格式化AST一致，全部开发完成后的全任务格式门槛仍待。未替换18128/R9或18280/V22，未提交或发布。
+已在真实隔离PG验证V25旧数据升级至V26、原子失败、原结果、同号及异号锁并发、state-first锁序和新上下文恢复。独立审查原发现DQ-IR-001已通过事务资源身份修复及真实PG独立补审关闭；原反例保留。正式生产JAR/Servlet/JWT还验证了失败回滚、真实同号锁等待及第一JVM中断后第二JVM同库继续；中文1536、英文390和当前VIEWER生产页面完成有界恢复验证。GUI目录为明确SQL元数据夹具，行情表为空，结果如实为数据不足，不构成真源或质量合格证明。原失败整轮仍保留，仅复用其中已完成的分项，另有成功补验。436前端单测、类型与生产构建通过；该专项局部格式化AST一致，全部开发完成后的全任务格式门槛仍待。未替换18128/R9或18280/V22，未提交或发布。
 
 
 ### 历史Paper规则说明与原始输出呈现
@@ -992,7 +992,7 @@ V26增加marketdata_dataset_operations原请求回执。先用独立登记事务
 
 独立审查实际复现旧Paper仓储的伪造VERIFIED来源及numeric分别舍入破坏分项合计两个反例。由于旧表没有已证实的正式producer，已移除新增的声明式验证/插入能力：该旧insert接口现在一律在SQL/连接前拒绝，机器码LEGACY_PAPER_EQUITY_PRODUCER_UNVERIFIED。旧记录单条/批量读取继续正常；新metadata SQL往返只以明确PARTIAL夹具测试，不能当可信生成链。两个finding经独立定向补审关闭，原反例库保留。旧Paper可信新采样器仍未实现，不能把关闭风险写成该能力完成。
 
-本轮30后端目标测试（含真实隔离PG/完整AppContext/Servlet/JWT）、449前端单测/type/build通过，局部20 Java及12前端文件格式化AST一致且稳定。生产包与正式JAR/Servlet配合随机隔离PG，在中英文各1536/390验证六币能力、键盘展开/关闭、账户明确计价、空金额不作0、旧Paper保护及无横溢出；控制台/pageerror为0。GUI夹具只有历史元数据，经济表全0，不代表交易或新权益生成验收。临时GUI进程停止、成功库删除。18128/R9与18280/V22未替换，Git NONE；最终全任务统一格式化及全站验收仍待。
+该专项30后端目标测试（含真实隔离PG/完整AppContext/Servlet/JWT）、449前端单测/type/build通过，局部20 Java及12前端文件格式化AST一致且稳定。生产包与正式JAR/Servlet配合随机隔离PG，在中英文各1536/390验证六币能力、键盘展开/关闭、账户明确计价、空金额不作0、旧Paper保护及无横溢出；控制台/pageerror为0。GUI夹具只有历史元数据，经济表全0，不代表交易或新权益生成验收。临时GUI进程停止、成功库删除。18128/R9与18280/V22未替换，Git NONE；最终全任务统一格式化及全站验收仍待。
 
 完整mvn -B -ntp test已在预迁移V27的随机owned PG15442库执行，未改测试列表或削弱断言；首次因PaperRunCanonicalProjectionTest未先提供新只读存在性校验所需run夹具而失败，其他后续模块SKIPPED，不报Full Maven通过。该轮960报告测试、13条件跳过、1错误；收集器长路径失败已单独回收报告，原失败与库保留。后续按真实失败修复夹具并重新执行完整命令。
 
@@ -1028,14 +1028,14 @@ V26增加marketdata_dataset_operations原请求回执。先用独立登记事务
 
 R3全量458单测/70文件通过；R4只增加焦点容器，另新跑8个相关目标测试及type/build，原未变测试覆盖复用。10文件及焦点修复1文件局部格式AST等价且稳定。正式JAR/Servlet、随机PG和两实际JVM，25条正式Risk拒绝订单验证第二页及orderId/symbol/status筛选、重置；中英文1536/390四组验证只读检查GET、刷新、明确503响应夹具后正式GET重试、拒绝警示、原回执、精确输入、详情刷新和无横溢出。共29条订单仍为RISK_REJECTED，0成交/账务，默认账户及kill switch未变；不证明成功撮合或其他写动作。503为前端响应夹具，不宣称真实后端故障。先前实际焦点掉到BODY导致Esc失效，已以持久容器只接回丢失焦点；四组失败状态和恢复成功后的Esc均实际通过。原失败及脚本loading点击竞争分别保留。
 
-证据：E:\Project\nq-production-reconstruction-output\ordinary-workbench-5804fa3e230d45e69b8b641cc306c227\resolution.json、ui-r4-candidate.json。原精度/请求映射独立审查按未变范围保留，本轮不冒充全页独立接受。普通委托未知结果恢复、其他交易动作/角色及全站收尾继续；旧Paper来源未知与可信新采样器缺口不变。18128/R9及18280/V22未替换，Git NONE；全任务最终统一格式化、中文注释与显式import/短类型复查仍未关闭。
+证据：E:\Project\nq-production-reconstruction-output\ordinary-workbench-5804fa3e230d45e69b8b641cc306c227\resolution.json、ui-r4-candidate.json。原精度/请求映射独立审查按未变范围保留，该专项不冒充全页独立接受。普通委托未知结果恢复、其他交易动作/角色及全站收尾继续；旧Paper来源未知与可信新采样器缺口不变。18128/R9及18280/V22未替换，Git NONE；全任务最终统一格式化、中文注释与显式import/短类型复查仍未关闭。
 
 
 ### 普通交易归属与原客户端身份查询（2026-10-16）
 
 普通交易列表、详情、成交、账户与持仓读取以及下单/撤单入口，使用正式认证主体和账户owner过滤，订单按真实legacy桥接、交易所与SIM/LIVE范围校验；不存在和无权均404。缺少legacy桥接时拒绝，不把相同数字当作映射。新增只读GET /api/trading/orders/by-client?accountId&clientOrderId：accountId是当前用户规范账户；client身份逐字匹配，不裁剪或改大小写，404不能解释成未执行。
 
-两种撤单locator先解析并共同检查目标归属、LIVE禁写与可选请求账户范围，再将稳定orderId及已验证account/venue/symbol传给原canonical命令，禁止命令按无范围组合键重选目标。全局维护接口、风险执行路径与账务未改。本轮51目标测试通过；正式Servlet/JWT/完整V27隔离PG及双JVM验证跨owner拒绝、VIEWER自有读取/写入403、三个同client不同账户/用户原订单，以及重启后的精确金额和经济指纹。两条明确SQL合成异常LIVE/错venue存量行在两种locator和读取均404；不声称正常API会产生它们。0成交/账务，默认账户和kill switch未变。
+两种撤单locator先解析并共同检查目标归属、LIVE禁写与可选请求账户范围，再将稳定orderId及已验证account/venue/symbol传给原canonical命令，禁止命令按无范围组合键重选目标。全局维护接口、风险执行路径与账务未改。该专项51目标测试通过；正式Servlet/JWT/完整V27隔离PG及双JVM验证跨owner拒绝、VIEWER自有读取/写入403、三个同client不同账户/用户原订单，以及重启后的精确金额和经济指纹。两条明确SQL合成异常LIVE/错venue存量行在两种locator和读取均404；不声称正常API会产生它们。0成交/账务，默认账户和kill switch未变。
 
 独立R1确认OWNERSHIP-001并拒绝，原报告与反例保留；R2仅两文件修复经38独立检查补审通过、0新finding，44项未变原检查按范围复用，未实际执行取消或私有gateway。九文件初始及两文件R2局部格式AST等价稳定。证据：E:\Project\nq-production-reconstruction-output\ordinary-order-recovery-eb2b7967558c4664b07f1f9325dd65f9\ownership-resolution.json。普通前端自动编号/未知结果恢复尚待实现，成功取消、其他动作/角色、全站验收及最终全任务格式化仍待；当前源码全量Maven待重新验证，旧全量通过不覆盖新增权限代码。18128/R9和18280/V22未替换，Git NONE。旧Paper来源未核实、币种UNKNOWN、禁止无依据回填及可信新采样器缺口保持。
 

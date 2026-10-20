@@ -774,7 +774,7 @@ jobs:
 
       - name: Build isolated frontend component test fixtures
         working-directory: frontend
-        run: node ./node_modules/vite/bin/vite.js build --config tests/e2e/fixtures/vite.config.ts
+        run: npm exec --offline -- vite build --config tests/e2e/fixtures/vite.config.ts
 
       - name: Generate normalized frontend CycloneDX SBOM and artifact manifest
         shell: bash

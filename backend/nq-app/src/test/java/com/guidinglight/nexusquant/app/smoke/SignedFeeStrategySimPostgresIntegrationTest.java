@@ -80,7 +80,7 @@ import java.util.UUID;
             "nq.account.performance.sampling-enabled=false",
             "nq.account.credentials.master-key=signed-fee-synthetic-master-key-123456789",
             "nq.security.issuer=nexus-quant-signed-fee-synthetic",
-            "nq.security.secret=signed-fee-synthetic-secret-123456789"
+            "nq.security.secret=FAKE-PLACEHOLDER-CONTROLLED-JWT-SIGNING-KEY"
         })
 class SignedFeeStrategySimPostgresIntegrationTest {
     private static ReleaseBaselineTestDatabase database;

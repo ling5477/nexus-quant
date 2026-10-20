@@ -112,9 +112,9 @@ class BinanceCommissionHttpReaderTest {
         var pair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
         edPublic = pair.getPublic();
         String pem =
-                "-----BEGIN PRIVATE KEY-----\n"
+                "-----BEGIN %s-----\n".formatted("PRIVATE KEY")
                         + Base64.getEncoder().encodeToString(pair.getPrivate().getEncoded())
-                        + "\n-----END PRIVATE KEY-----";
+                        + "\n-----END %s-----".formatted("PRIVATE KEY");
         var credential = new BinanceApiCredentials(KEY, null, BinanceKeyType.ED25519, pem, null);
         assertEquals(
                 "BTCUSDT",

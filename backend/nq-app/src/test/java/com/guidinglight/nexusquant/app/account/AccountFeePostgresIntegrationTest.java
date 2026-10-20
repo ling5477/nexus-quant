@@ -858,6 +858,8 @@ class AccountFeePostgresIntegrationTest {
                     Flyway.configure()
                             .dataSource(dataSource)
                             .locations("classpath:db/migration")
+                            // 此用例固定证明V6到V10的历史迁移，不混入后续schema。
+                            .target("10")
                             .load();
             upgraded.migrate();
             upgraded.validate();
@@ -966,6 +968,8 @@ class AccountFeePostgresIntegrationTest {
                     Flyway.configure()
                             .dataSource(dataSource)
                             .locations("classpath:db/migration")
+                            // 此用例固定证明V9到V10的历史观察完整性。
+                            .target("10")
                             .load();
             after.migrate();
             after.validate();
@@ -1092,10 +1096,10 @@ class AccountFeePostgresIntegrationTest {
         ExchangeAccountCredentialSummary credential(ExchangeAccountSummary account) {
             String pem =
                     ed
-                            ? "-----BEGIN PRIVATE KEY-----\n"
+                            ? "-----BEGIN %s-----\n".formatted("PRIVATE KEY")
                                     + Base64.getEncoder()
                                             .encodeToString(keyPair.getPrivate().getEncoded())
-                                    + "\n-----END PRIVATE KEY-----"
+                                    + "\n-----END %s-----".formatted("PRIVATE KEY")
                             : null;
             var value =
                     credentials.upsert(

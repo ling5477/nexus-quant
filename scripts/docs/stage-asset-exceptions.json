@@ -3,7 +3,7 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "df412016352d4e4e0e268cb7fdd15cc9fdac15a601cbe3580ef287d701bdcbe8",
+      "sha256": "5c143455be82f8481c154a9bed05f44e35bc764167ca03de0cc94c3dbf7176b2",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
@@ -64,6 +64,14 @@
       "reason": "Centralized deny-only retirement guard enumerates keys without values and rejects retired profiles before runtime beans.",
       "owner": "Runtime configuration owner",
       "removalTrigger": "Replace only with equivalent retired-input startup rejection."
+    },
+    {
+      "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/ResearchAccountFeeSource.java",
+      "sha256": "a0128d6ed38448a20d5b470f5d848161a36dd6b3945246f9653f97a74ce70a2f",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
+      "owner": "对应业务模块与CI合同维护者",
+      "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/env/ProductionConfigurationApplicationContextInitializer.java",
@@ -138,6 +146,14 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/account/ResearchAccountFeeSourceSnapshotPrecisionTest.java",
+      "sha256": "faa83e95ef1f137b2b4b0788bea81fed05eb6d8ac6623df8e1bf9aa43e7bed74",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
+      "owner": "对应业务模块与CI合同维护者",
+      "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
+    },
+    {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/env/ProductionSecretProfileRegressionTest.java",
       "sha256": "65d4385f8f09097532a98c6fada0a405b67422fce8a5d28b666176e0c7e9eed8",
       "kind": "NEGATIVE_REGRESSION",
@@ -168,6 +184,14 @@
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/marketdata/MarketdataDatasetOperationPostgresIntegrationTest.java",
+      "sha256": "424414508480b007119543b16af881e04db8d10fc300730bc599078481172b18",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
+      "owner": "对应业务模块与CI合同维护者",
+      "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/marketdata/MarketdataSandboxFixtureSmokeTest.java",
@@ -203,11 +227,27 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/shadowrun/ShadowRunProvenancePostgresIntegrationTest.java",
-      "sha256": "9943ec0ac0484f2e480e31dd1b8c900082255e6ef070f24aa67815524cfe9672",
+      "sha256": "ec7f942562e255ccd7fcbd7ba86c39b4b567b5bb056db7b5a5751d46c58d9acd",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/DiscountAssetPricePostgresIntegrationTest.java",
+      "sha256": "13b2f4cf388df0031d9b42a132aa960a484182935f06c2c16a1e907c75dfc43f",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
+      "owner": "对应业务模块与CI合同维护者",
+      "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/FrozenAccountFeePostgresIntegrationTest.java",
+      "sha256": "0c9f4298169fac54b2560677d25ce41321aeea47c13c05a6edbf2fdfd8fd3a79",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
+      "owner": "对应业务模块与CI合同维护者",
+      "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/L6FormalManifest.java",
@@ -256,6 +296,14 @@
       "reason": "FREEZE_SYMBOL_AND_REVIEW is the typed provider error recommendation for instrument restrictions; FREEZE is a trading safety action, not a development stage.",
       "owner": "Domain owner",
       "removalTrigger": "Only when the financial/safety contract itself is superseded."
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/service/DiscountAssetPriceService.java",
+      "sha256": "e07e2dd8be28a09c1404a213e51f0bb7b16303ba3e67282450c9a66ff48b6310",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
+      "owner": "对应业务模块与CI合同维护者",
+      "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
     },
     {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryService.java",
@@ -322,6 +370,22 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/account/application/service/FrozenDirectionalFeeModelTest.java",
+      "sha256": "ed4a78d264184013ff86f65feefb1eb5ae32451f67047dabb8eb6f615366e890",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
+      "owner": "对应业务模块与CI合同维护者",
+      "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
+    },
+    {
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/marketdata/application/service/DiscountAssetPriceServiceTest.java",
+      "sha256": "9010be1c1281729b9c20303625fd4e366500defd2970f81c92827c706c74ef47",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
+      "owner": "对应业务模块与CI合同维护者",
+      "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
+    },
+    {
       "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactbinding/service/PythonEvaluationArtifactBindingServiceTest.java",
       "sha256": "f83d17d6e00b252ff43852c01e558d2779efad11bb9cff934180504dd1e468e0",
       "kind": "FIXTURE_IDENTITY",
@@ -376,6 +440,14 @@
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
+    },
+    {
+      "path": "backend/nq-eval/src/test/java/com/guidinglight/nexusquant/research/application/eval/BacktestEvaluationServiceTest.java",
+      "sha256": "a5d9a6a5259ccfdcce2e170767746577b243f2bb1380fec22e62184fec738373",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
+      "owner": "对应业务模块与CI合同维护者",
+      "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/livecontrol/execution/infra/MinimalPilotTradingVenueGateway.java",
@@ -456,6 +528,22 @@
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
+    },
+    {
+      "path": "backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/BacktestRunService.java",
+      "sha256": "dd8a04e10ea9892f31c21f192642b272f4430b9547bf8fb34d6292b3697820ef",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
+      "owner": "对应业务模块与CI合同维护者",
+      "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
+    },
+    {
+      "path": "backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/domain/port/ResearchFeeSourcePort.java",
+      "sha256": "5cb622f21075719e038f89c07eb7733f102c2ca28903257e94f9f4a224cd6ca2",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
+      "owner": "对应业务模块与CI合同维护者",
+      "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
     },
     {
       "path": "backend/nq-research/src/test/java/com/guidinglight/nexusquant/research/application/ResearchBacktestServiceTest.java",
@@ -608,6 +696,14 @@
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
       "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
+    },
+    {
+      "path": "scripts/release/tests/test_release_source.py",
+      "sha256": "3d6e046dd08c2df154770544ad5c0434b45740c7f28b27d3ccc701ea2409ada4",
+      "kind": "NEGATIVE_REGRESSION",
+      "reason": "发行导出器的反例夹具包含Phase 99/FREEZE及历史目录；用于证明正式边界拒绝阶段残留，不是运行配置。",
+      "owner": "对应业务模块与CI合同维护者",
+      "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
     }
   ],
   "retiredPaths": [
@@ -1377,6 +1473,16 @@
           "contractMember": "<typed-use>"
         },
         {
+          "path": "backend/nq-adapter-api/src/test/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/SpotOrderBookPolicyTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
+          "path": "backend/nq-adapter-api/src/test/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/SpotOrderBookPolicyTest.java",
+          "callerMember": "SpotOrderBookPolicyTest#defaultRemainsDeniedAndOptInOnlyAllowsTheBoundedSpotResource()",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
           "path": "backend/nq-adapter-api/src/test/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClientTest.java",
           "callerMember": "<unit>#<type>",
           "contractMember": "PublicMarketDataOutboundPolicy"
@@ -1384,6 +1490,36 @@
         {
           "path": "backend/nq-adapter-api/src/test/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClientTest.java",
           "callerMember": "JdkPublicMarketDataOutboundClientTest#client(URI,PublicMarketDataOutboundSettings)",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
+          "path": "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/marketdata/OkxPublicOrderBookAdapter.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/marketdata/OkxPublicOrderBookAdapter.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
+          "path": "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/marketdata/OkxPublicOrderBookAdapter.java",
+          "callerMember": "OkxPublicOrderBookAdapter#<init>(OkxHttpClient,Clock)",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/marketdata/OkxPublicOrderBookAdapter.java",
+          "callerMember": "OkxPublicOrderBookAdapter#<init>(OkxHttpClient,Clock)",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
+          "path": "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/marketdata/OkxPublicOrderBookAdapter.java",
+          "callerMember": "OkxPublicOrderBookAdapter#fetch(String)",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-adapter-okx/src/main/java/com/guidinglight/nexusquant/adapter/okx/marketdata/OkxPublicOrderBookAdapter.java",
+          "callerMember": "OkxPublicOrderBookAdapter#policy",
           "contractMember": "PublicMarketDataOutboundPolicy"
         },
         {
@@ -1539,6 +1675,26 @@
         {
           "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfigurationTest.java",
           "callerMember": "MinimalLivePilotConfigurationTest#operatorPilotPlaceRequestDoesNotForgeStrategyRunIdentity()",
+          "contractMember": "MinimalLivePilotConfiguration"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/MinimalPilotFeeRecoveryPostgresIntegrationTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "MinimalLivePilotConfiguration"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/MinimalPilotFeeRecoveryPostgresIntegrationTest.java",
+          "callerMember": "MinimalPilotFeeRecoveryPostgresIntegrationTest#runner(JdbcTemplate)",
+          "contractMember": "MinimalLivePilotConfiguration"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OkxSignedFeeLedgerPostgresIntegrationTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "MinimalLivePilotConfiguration"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OkxSignedFeeLedgerPostgresIntegrationTest.java",
+          "callerMember": "OkxSignedFeeLedgerPostgresIntegrationTest#apply(SignedFeeLedgerPostgresIntegrationTest.Fixture,OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation)",
           "contractMember": "MinimalLivePilotConfiguration"
         }
       ]
@@ -2919,6 +3075,16 @@
           "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/livecontrol/StoredFactExactPilotBindingAuthorityTest.java",
           "callerMember": "StoredFactExactPilotBindingAuthorityTest#resolvesOperatorPilotBindingWithoutStrategyRiskAndRejectsAuthorityMismatch()",
           "contractMember": "Side"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OkxSignedFeeLedgerPostgresIntegrationTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "ExactPilotBinding"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OkxSignedFeeLedgerPostgresIntegrationTest.java",
+          "callerMember": "OkxSignedFeeLedgerPostgresIntegrationTest#rawProviderFeesCreateSignedTradesAndPairedLedgerThenReplayOriginalIdentity()",
+          "contractMember": "ExactPilotBinding"
         },
         {
           "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/livecontrol/application/command/ExactPilotBindingCommand.java",
@@ -8123,6 +8289,41 @@
         {
           "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/config/livecontrol/MinimalLivePilotConfigurationTest.java",
           "callerMember": "MinimalLivePilotConfigurationTest#existingTradeStillRepairsIdempotentLedgerAfterCrash()",
+          "contractMember": "PilotReconciliation"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OkxSignedFeeLedgerPostgresIntegrationTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "MinimalPilotTradingVenueGateway"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OkxSignedFeeLedgerPostgresIntegrationTest.java",
+          "callerMember": "OkxSignedFeeLedgerPostgresIntegrationTest#apply(SignedFeeLedgerPostgresIntegrationTest.Fixture,OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation)",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OkxSignedFeeLedgerPostgresIntegrationTest.java",
+          "callerMember": "OkxSignedFeeLedgerPostgresIntegrationTest#apply(SignedFeeLedgerPostgresIntegrationTest.Fixture,OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation)",
+          "contractMember": "MinimalPilotTradingVenueGateway"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OkxSignedFeeLedgerPostgresIntegrationTest.java",
+          "callerMember": "OkxSignedFeeLedgerPostgresIntegrationTest#apply(SignedFeeLedgerPostgresIntegrationTest.Fixture,OrderRecord,MinimalPilotTradingVenueGateway.PilotReconciliation)",
+          "contractMember": "PilotReconciliation"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OkxSignedFeeLedgerPostgresIntegrationTest.java",
+          "callerMember": "OkxSignedFeeLedgerPostgresIntegrationTest#rawProviderFeesCreateSignedTradesAndPairedLedgerThenReplayOriginalIdentity()",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OkxSignedFeeLedgerPostgresIntegrationTest.java",
+          "callerMember": "OkxSignedFeeLedgerPostgresIntegrationTest#rawProviderFeesCreateSignedTradesAndPairedLedgerThenReplayOriginalIdentity()",
+          "contractMember": "MinimalPilotTradingVenueGateway"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/OkxSignedFeeLedgerPostgresIntegrationTest.java",
+          "callerMember": "OkxSignedFeeLedgerPostgresIntegrationTest#rawProviderFeesCreateSignedTradesAndPairedLedgerThenReplayOriginalIdentity()",
           "contractMember": "PilotReconciliation"
         },
         {

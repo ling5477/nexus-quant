@@ -22,17 +22,18 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 /** 在一次性 PostgreSQL 上证明业务名称收敛、账户桥接和数据库拒绝边界。 */
 class SchemaSemanticConsolidationPostgresIntegrationTest {
     @Test
-    void materializesFreshSchemaWithoutChangingObjectCountsOrLeavingRetiredNames() {
+    void materializesV1BaselineWithoutChangingObjectCountsOrLeavingRetiredNames() {
         try (Fixture fixture = new Fixture()) {
             assertEquals(1, fixture.before.migrate().migrationsExecuted);
             assertEquals("1", fixture.before.info().current().getVersion().getVersion());
             fixture.assertAuthorityLabelCheck("OPERATOR_CONTROLLED_EXECUTION", "OPERATOR_PILOT");
             List<Integer> beforeCounts = fixture.counts();
-            assertEquals(0, fixture.latest.migrate().migrationsExecuted);
-            fixture.latest.validate();
-            assertEquals("1", fixture.latest.info().current().getVersion().getVersion());
+            // 此处固定证明V1重基线本身的对象合同，后续迁移不能混入同版本幂等性比较。
+            assertEquals(0, fixture.before.migrate().migrationsExecuted);
+            fixture.before.validate();
+            assertEquals("1", fixture.before.info().current().getVersion().getVersion());
             fixture.assertAuthorityLabelCheck("OPERATOR_CONTROLLED_EXECUTION", "OPERATOR_PILOT");
-            assertEquals(0, fixture.latest.info().pending().length);
+            assertEquals(0, fixture.before.info().pending().length);
             assertEquals(beforeCounts, fixture.counts());
             assertEquals(0, fixture.jdbc.queryForObject("""
                     SELECT count(*) FROM (

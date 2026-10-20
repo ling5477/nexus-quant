@@ -4,6 +4,7 @@ backend/**/target/
 # Frontend build outputs
 frontend/node_modules/
 frontend/dist/
+frontend/dist-component-tests/
 frontend/test-results/
 frontend/playwright-report/
 frontend/coverage/

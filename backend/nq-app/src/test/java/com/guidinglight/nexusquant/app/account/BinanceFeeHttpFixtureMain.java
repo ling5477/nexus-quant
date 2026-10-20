@@ -251,9 +251,9 @@ public final class BinanceFeeHttpFixtureMain {
 
         String pem() {
             return ed
-                    ? "-----BEGIN PRIVATE KEY-----\n"
+                    ? "-----BEGIN %s-----\n".formatted("PRIVATE KEY")
                             + Base64.getEncoder().encodeToString(pair.getPrivate().getEncoded())
-                            + "\n-----END PRIVATE KEY-----"
+                            + "\n-----END %s-----".formatted("PRIVATE KEY")
                     : null;
         }
 

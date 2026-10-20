@@ -82,7 +82,7 @@ public final class ContinuousSimOperationHttpFixtureMain {
                                 "--spring.datasource.password="
                                         + System.getenv("TASK_CONTINUOUS_OPERATION_DB_PASSWORD"),
                                 "--nq.account.credentials.master-key=continuous-operation-synthetic-master-key",
-                                "--nq.security.secret=continuous-operation-synthetic-secret-123456789",
+                                "--nq.security.secret=FAKE-PLACEHOLDER-CONTROLLED-JWT-SIGNING-KEY",
                                 "--nq.security.issuer=continuous-operation-synthetic",
                                 "--nq.env-safety.ci=false",
                                 "--nq.env-safety.no-outbound=true",
