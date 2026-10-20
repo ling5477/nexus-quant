@@ -1,4 +1,9 @@
 import {expect, test, type Page} from 'playwright/test';
+import zhPages from '../../src/i18n/locales/zh-CN/pages.json' with {type: 'json'};
+import enPages from '../../src/i18n/locales/en-US/pages.json' with {type: 'json'};
+
+// 真实登录不保留可能携带密码或Bearer请求头的trace。
+test.use({trace: 'off'});
 
 /**
  * GateM-6F Operational Readiness final real-backend smoke.
@@ -24,6 +29,8 @@ interface LoginSession {
     expiresAt: string;
     username: string;
     roles: string[];
+    locale: 'zh-CN' | 'en-US';
+    hideLoginDisclosures: boolean;
 }
 
 interface OperationalStatus {
@@ -123,8 +130,20 @@ async function loginWithoutAccountFixture(page: Page): Promise<LoginSession> {
     expect(session.username, 'final smoke requires username from /api/auth/login').toBeTruthy();
     expect(Array.isArray(session.roles), 'final smoke requires roles from /api/auth/login').toBeTruthy();
 
+    const preferences = await page.request.get('/api/user/preferences', {
+        headers: {Authorization: `${session.tokenType} ${session.accessToken}`},
+        timeout: 30_000,
+    });
+    expect(preferences.status()).toBe(200);
+    const preference = await preferences.json();
+    const locale = preference.locale;
+    expect(['zh-CN', 'en-US']).toContain(locale);
+    expect(typeof preference.hideLoginDisclosures).toBe('boolean');
+    session.locale = locale;
+    session.hideLoginDisclosures = preference.hideLoginDisclosures;
+
     await page.addInitScript((payload: LoginSession) => {
-        window.localStorage.setItem('nq.locale', 'en-US');
+        window.localStorage.setItem('nq.locale', payload.locale);
         window.localStorage.setItem('nexus-quant.console.auth', JSON.stringify(payload));
     }, session);
 
@@ -179,6 +198,7 @@ function expectNoForbiddenRuntimeCalls(requests: RuntimeBoundaryRequests) {
 test.describe('runtime operational readiness final smoke', () => {
     test('keeps the local runbook API and UI path fail-closed', async ({page}) => {
         const session = await loginWithoutAccountFixture(page);
+        const texts = session.locale === 'en-US' ? enPages : zhPages;
         const directPayload = await getOperationalReadiness(page, session);
         const requests = trackRuntimeBoundaryRequests(page);
 
@@ -198,6 +218,11 @@ test.describe('runtime operational readiness final smoke', () => {
 
         await page.goto('/runtime/readiness');
         await expect(page).toHaveURL(/\/runtime\/readiness$/);
+        if (!session.hideLoginDisclosures) {
+            const disclosure = page.getByRole('dialog', {name: /^(使用声明|Disclosures)$/});
+            await disclosure.getByRole('button', {name: /^(确认阅读|Confirm read)$/}).click();
+            await expect(disclosure).not.toBeVisible();
+        }
 
         const operationalResponse = await operationalResponsePromise;
         expect(operationalResponse.status()).toBe(200);
@@ -206,52 +231,53 @@ test.describe('runtime operational readiness final smoke', () => {
 
         const overview = page.getByTestId('operational-readiness-overview');
         await expect(overview).toBeVisible();
-        await expect(overview.getByText('Operational readiness', {exact: true})).toBeVisible();
+        await expect(overview.getByText(texts.operationalReadiness, {exact: true})).toBeVisible();
 
         // 默认摘要使用产品本地化文案；先按业务行验证，避免原始代码在隐藏区域造成空通过。
         for (const [area, status] of [
-            ['LIVE status', 'Disabled'],
-            ['AI status', 'Not started'],
-            ['DH runtime status', 'Not integrated'],
-            ['Real provider status', 'Not implemented'],
-            ['Credential exposure status', 'Sensitive information omitted'],
-            ['Permission probe status', 'Disabled or skipped'],
+            [texts.liveStatus, texts.runtimeStatusDisabled],
+            [texts.aiStatus, texts.runtimeStatusNotStarted],
+            [texts.dhRuntimeStatus, texts.runtimeStatusNotIntegrated],
+            [texts.realProviderStatus, texts.runtimeStatusNotImplemented],
+            [texts.credentialExposureStatus, texts.runtimeStatusNotExposed],
+            [texts.permissionProbeStatus, texts.runtimeProbeSkipped],
         ]) {
-            const row = overview.getByRole('row')
-                .filter({has: page.getByRole('cell', {name: area, exact: true})});
+            const row = overview.locator('.nq-runtime-boundaries .ant-card')
+                .filter({has: page.getByText(area, {exact: true})});
             await expect(row).toHaveCount(1);
-            await expect(row.getByRole('cell', {name: status, exact: true})).toBeVisible();
+            await expect(row.getByText(status, {exact: true})).toBeVisible();
         }
-        await expect(overview).toContainText('Runtime status is diagnostic and does not authorize trading');
-        await expect(overview).toContainText('Process health and real trading authorization are separate. Runtime status does not establish provider, permission or LIVE readiness.');
+        await expect(overview.locator('.nq-runtime-boundaries .ant-card')).toHaveCount(11);
+        await expect(page.getByText(texts.runtimeGuardSummaryPaperOnlyFailClosed, {exact: true})).toBeVisible();
+        await expect(page.getByText(texts.runtimeWorkspaceBoundary, {exact: true})).toBeVisible();
 
         for (const boundary of [
-            'Paper-only boundary, not real authorization',
-            'Skipped / disabled is not a pass state',
-            'No real trading capability',
+            texts.paperOnlyBoundaryNotRealAuthorization,
+            texts.skippedDisabledIsNotAPassState,
+            texts.noLiveUiEntryNoRealTrading,
         ]) {
             await expect(page.getByText(boundary, {exact: true})).toBeVisible();
         }
 
         // 原始状态和安全状态位于懒挂载的技术详情，必须通过可访问入口展开后验证。
-        const technicalDetails = overview.getByRole('button', {name: /Technical details and original reasons/});
+        const technicalDetails = overview.getByRole('button').filter({hasText: texts.runtimeTechnicalDetails});
         await expect(technicalDetails).toHaveCount(1);
         await expect(technicalDetails).toHaveAttribute('aria-expanded', 'false');
         await technicalDetails.click();
         await expect(technicalDetails).toHaveAttribute('aria-expanded', 'true');
 
         const operationalAreas: Record<keyof Omit<OperationalReadinessResponse, 'generatedAt'>, string> = {
-            liveStatus: 'LIVE status',
-            aiStatus: 'AI status',
-            dhRuntimeStatus: 'DH runtime status',
-            realProviderStatus: 'Real provider status',
-            credentialExposureStatus: 'Credential exposure status',
-            externalExchangeCallStatus: 'External exchange call status',
-            permissionProbeStatus: 'Permission probe status',
-            startupBoundaryStatus: 'Startup boundary status',
-            profileBoundaryStatus: 'Profile boundary status',
-            configDiagnosticsStatus: 'Configuration diagnostics status',
-            logDiagnosticsStatus: 'Log diagnostics status',
+            liveStatus: texts.liveStatus,
+            aiStatus: texts.aiStatus,
+            dhRuntimeStatus: texts.dhRuntimeStatus,
+            realProviderStatus: texts.realProviderStatus,
+            credentialExposureStatus: texts.credentialExposureStatus,
+            externalExchangeCallStatus: texts.externalExchangeCallStatus,
+            permissionProbeStatus: texts.permissionProbeStatus,
+            startupBoundaryStatus: texts.startupBoundaryStatus,
+            profileBoundaryStatus: texts.profileBoundaryStatus,
+            configDiagnosticsStatus: texts.configurationDiagnosticsStatus,
+            logDiagnosticsStatus: texts.logDiagnosticsStatus,
         };
         // 同一业务行的原始代码、原因及 BLOCKED 必须对应真实响应，不能由另一行或摘要替代。
         for (const field of OPERATIONAL_FIELDS) {
