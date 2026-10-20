@@ -562,14 +562,6 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
-      "path": "docs/current/ROADMAP.md",
-      "sha256": "169f8b7c6f907d9b67764de22ce56c6244a5b7f491dc9f3d6e12c4822efead5a",
-      "kind": "GOVERNANCE_CONTRACT",
-      "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
-      "owner": "Governance and delivery contract owner",
-      "removalTrigger": "Current authority or versioned proof contract changes; historical evidence must remain readable."
-    },
-    {
       "path": "scripts/ci/Test-CanonicalDeliveryWorkflow.ps1",
       "sha256": "62f0b32cfccb2d4f5fceec2ee89a02f72f8c0f9edb3686ba32e821117fd93216",
       "kind": "GOVERNANCE_CONTRACT",
