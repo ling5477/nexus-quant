@@ -77,8 +77,8 @@ class AccountSnapshotSemanticsPostgresIntegrationTest {
                     .schemas(schema).defaultSchema(schema).createSchemas(true).load();
             latest.migrate();
             latest.validate();
-            // 旧行由V1创建；升级后逐项匹配当前正式迁移，不能继续断言历史版本。
-            var manifest = new ObjectMapper().readTree(Path.of("../../release/source-manifest.json").toFile());
+            // 旧行由V1创建；升级后逐项匹配显式开发清单，不能继续断言历史发行版本。
+            var manifest = new ObjectMapper().readTree(Path.of("../../scripts/ci/development-source-manifest.json").toFile());
             var expected = new TreeMap<MigrationVersion, String>();
             var pattern = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
             for (var group : manifest.path("groups")) {

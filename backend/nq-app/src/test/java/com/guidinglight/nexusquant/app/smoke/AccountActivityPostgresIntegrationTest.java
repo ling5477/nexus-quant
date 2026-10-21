@@ -15,7 +15,7 @@ class AccountActivityPostgresIntegrationTest {
             var flyway = Flyway.configure().dataSource(db.source()).locations("classpath:db/migration").cleanDisabled(true).load();
             var expected = TradingRestartRecoveryPostgresIntegrationTest.releaseMigrationScripts(
                     new com.fasterxml.jackson.databind.ObjectMapper().readTree(
-                            B0Processes.root().resolve("release/source-manifest.json").toFile()));
+                            B0Processes.root().resolve("scripts/ci/development-source-manifest.json").toFile()));
             flyway.migrate();
             flyway.validate();
             var jdbc = new JdbcTemplate(db.source());

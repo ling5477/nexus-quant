@@ -72,7 +72,7 @@ class ResearchValidityPostgresIntegrationTest {
                     .locations("classpath:db/migration").cleanDisabled(true).load();
             flyway.migrate();
             flyway.validate();
-            var manifest = MAPPER.readTree(Path.of("../../release/source-manifest.json").toFile());
+            var manifest = MAPPER.readTree(Path.of("../../scripts/ci/development-source-manifest.json").toFile());
             var expected = new TreeMap<MigrationVersion, String>();
             var pattern = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
             for (var group : manifest.path("groups")) {

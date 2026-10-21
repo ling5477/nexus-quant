@@ -433,7 +433,7 @@ class TradingRestartRecoveryPostgresIntegrationTest {
                                 .load();
                 var expected = releaseMigrationScripts(
                         new ObjectMapper().readTree(
-                                B0Processes.root().resolve("release/source-manifest.json").toFile()));
+                                B0Processes.root().resolve("scripts/ci/development-source-manifest.json").toFile()));
                 // 当前schema合同在迁移前核对解析集合；历史固定target夹具不使用此预期。
                 assertReleaseMigrationScripts(expected, flyway.info().all());
                 flyway.migrate();
