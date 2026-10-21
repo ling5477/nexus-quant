@@ -49,9 +49,11 @@ public final class BackendCiAccountFixture {
         }
 
         String currentVersion = current.getVersion().getVersion();
-        // 与正式来源清单核对全部脚本，避免过期版本常量掩盖遗漏或额外迁移。
+        // CI 可显式选择开发来源清单；缺省仍核对原正式清单，禁止自动发现并接受新增迁移。
         var expected = new TreeMap<MigrationVersion, String>();
-        var manifest = new ObjectMapper().readTree(Path.of("release/source-manifest.json").toFile());
+        if (args.length > 1) throw new IllegalArgumentException("Expected at most one source manifest path");
+        var sourceManifest = args.length == 1 ? args[0] : "release/source-manifest.json";
+        var manifest = new ObjectMapper().readTree(Path.of(sourceManifest).toFile());
         var migration = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
         for (var group : manifest.path("groups")) {
             if (!"INCLUDE_RUNTIME".equals(group.path("category").asText())) continue;

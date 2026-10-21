@@ -112,14 +112,14 @@ SEED_TABLES = ('roles', 'kill_switch_states', 'kill_switch_events',
                'scheduled_job_controls', 'strategy_run_recovery_scan_cursor')
 INSTALL_TIMESTAMPS = ('created_at', 'updated_at', 'occurred_at')
 
-def seeds(execute, model):
+def seeds(execute, model, seed_tables=SEED_TABLES):
     rows = {}
     tables = sorted(r['relname'] for r in model['relations'] if r['relkind'] in ('r', 'p'))
     counts = execute(' UNION ALL '.join(
         'SELECT ' + "'" + table + "'" + ' AS name, count(*) AS count FROM "' + table + '"'
         for table in tables))
     excluded = "ARRAY['created_at','updated_at','occurred_at']"
-    for table in SEED_TABLES:
+    for table in seed_tables:
         data = execute('SELECT to_jsonb(t) - ' + excluded + ' AS fact FROM "' + table + '" t')
         rows[table] = sorted((r['fact'] for r in data), key=lambda r: json.dumps(r, sort_keys=True))
     return {'rowCounts': {r['name']: r['count'] for r in counts}, 'facts': rows,
@@ -134,7 +134,9 @@ def verify_source(root, manifest):
     expected = [row['script'] for row in migrations]
     if sorted(p.name for p in directory.iterdir() if p.is_file()) != sorted(expected):
         raise ValueError('Active migrations must exactly match the reviewed inventory')
-    release = json.loads((root / 'release/source-manifest.json').read_bytes())
+    # 开发候选显式绑定独立清单；未指定时仍执行原正式发行合同，不自动吸收新文件。
+    source_manifest = manifest.get('sourceManifest', 'release/source-manifest.json')
+    release = json.loads((root / source_manifest).read_bytes())
     prefix = 'backend/nq-infra/src/main/resources/db/migration/'
     formal = [p[len(prefix):] for group in release['groups']
               if group['category'] == 'INCLUDE_RUNTIME' for p in group['paths']
@@ -168,7 +170,7 @@ def verify_database(execute, manifest):
     normalized = normalize(model)
     if model['counts'] != manifest['schemaCounts'] or sha(normalized) != manifest['normalizedSchemaSha256']:
         raise ValueError('Release schema fingerprint mismatch')
-    seed = seeds(execute, model)
+    seed = seeds(execute, model, manifest.get('seedTables', SEED_TABLES))
     if seed != manifest['freshInstallFacts']:
         raise ValueError('Release fresh-install seed/control contract mismatch')
     return {'schemaSha256': sha(normalized), 'schemaCounts': model['counts'],

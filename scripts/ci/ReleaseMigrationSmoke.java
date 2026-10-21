@@ -5,12 +5,14 @@ import java.util.regex.Pattern;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 
-/** 从正式发行来源清单推导当前版本；不允许旧数量假设、遗漏或重名。 */
+/** 从显式来源清单推导当前版本；缺省保留正式发行清单，不允许遗漏或重名。 */
 public final class ReleaseMigrationSmoke {
     private ReleaseMigrationSmoke() {}
 
     public static void main(String[] args) throws Exception {
-        var manifest = new ObjectMapper().readTree(Path.of("release/source-manifest.json").toFile());
+        if (args.length > 1) throw new IllegalArgumentException("Expected at most one source manifest path");
+        var sourceManifest = args.length == 1 ? args[0] : "release/source-manifest.json";
+        var manifest = new ObjectMapper().readTree(Path.of(sourceManifest).toFile());
         var expected = new TreeMap<MigrationVersion, String>();
         var pattern = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
         for (var group : manifest.path("groups")) {
