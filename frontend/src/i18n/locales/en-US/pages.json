@@ -325,6 +325,12 @@
   "viewRuntimeReadiness": "View runtime readiness",
   "viewMarketDataReadiness": "View market data readiness",
   "focusedPaperRunPerformance": "Focused paper run performance",
+  "dashboardReporting": {
+    "canonical": "This run uses Canonical SIM accounting.",
+    "canonicalDescription": "Legacy Paper daily reports do not apply to this run. Open simulation analysis to view actual equity, positions, trades, and ledger entries.",
+    "viewSimAnalysis": "View simulation analysis",
+    "unknownIdentity": "The current run identity is not confirmed. Legacy Paper daily reports will not be queried."
+  },
   "createAndStartAPaperRunToSeeItsLatestDailyMetricsHere": "Create and start a paper run to see its latest daily metrics here.",
   "noDailyReportForTheFocusedRunGenerateOneFromPaperTradingDetails": "No daily report for the focused run. Generate one from paper trading details.",
   "totalEquity": "Total equity",
