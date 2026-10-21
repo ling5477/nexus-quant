@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
+import com.guidinglight.nexusquant.auth.domain.tenant.TenantMembership;
 import com.guidinglight.nexusquant.auth.application.command.SeedUserCommand;
 
 import java.util.List;
@@ -32,6 +33,9 @@ class CurrentUserProfileServiceTest {
     }
 
     private record StubAuthUserRepository(Optional<AuthUserProfile> userProfile) implements AuthUserRepository {
+
+        @Override
+        public List<TenantMembership> findTenantMemberships(long userId) { return List.of(); }
 
         @Override
         public Optional<AuthUserProfile> findByUsername(String username) {

@@ -67,7 +67,7 @@ class AuthSessionPostgresIntegrationTest {
             seed(new JdbcAuthUserRepository(jdbc));
             var beforeUser = jdbc.queryForMap("SELECT id,password_hash,auth_version FROM users WHERE username='session-admin'");
             var upgrade = Flyway.configure().dataSource(db.source()).locations("classpath:db/migration").load();
-            assertEquals(1, upgrade.migrate().migrationsExecuted); upgrade.validate();
+            assertEquals(2, upgrade.migrate().migrationsExecuted); upgrade.validate();
             assertEquals(beforeUser, jdbc.queryForMap("SELECT id,password_hash,auth_version FROM users WHERE username='session-admin'"));
             try (var context = context(db.source())) {
                 var auth = context.getBean(AuthService.class); var clock = context.getBean(MutableClock.class);

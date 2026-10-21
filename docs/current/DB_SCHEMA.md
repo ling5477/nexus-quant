@@ -2,6 +2,20 @@
 
 数据库结构以 Flyway migrations 为准。本文只记录当前数据库事实入口，不复制完整 DDL。
 
+## Tenant 基础开发 Schema
+
+[V35](../../backend/nq-infra/src/main/resources/db/migration/V35__tenant_identity_and_membership.sql) 在现有 V1–V34 之后正向增加 `tenants`、`tenant_memberships` 与 DEMO_USER/PLATFORM_ADMIN 角色定义。以下正式安装历史说明与既有 V1.0.0 发行 manifest 不由本次基础功能改写，不代表开发 classpath 仍仅有 V1。
+
+Tenant 使用独立 UUID；固定本地 NQ_LOCAL 对应 `00000000-0000-4000-8000-000000000001`。现有用户按有界主键批次建立 LOCAL_MEMBER，用户、密码、auth_version、原角色、会话和交易经济行保持不变；后续原本地角色授予通过数据库触发器补充缺失本地成员，不为 Demo/Platform 身份自动建成员。LOCAL_MEMBER 只表达归属，原角色仍由 user_roles 授权。
+
+成员以 `(tenant_id,user_id)` 为主键、user_id 唯一；Tenant kind 与 Membership kind 由复合 FK 保证一致。仅 Demo Tenant 有单成员部分唯一索引，本地允许多用户。平台角色不能写入 membership_role；Tenant 和成员身份不能重新绑定，状态仅限 ACTIVE/DISABLED。没有客户端管理/修改关系的 API。
+
+八张业务根表尚未增加 tenant_id，下游事实和 RLS 尚未实施。没有注册用户、账户或模拟注资迁移。运行请求必须重新验证有效成员及 Tenant 后才能建立 TenantContext；异步合同要求从持久化业务身份重新验证后显式打开/关闭作用域，不继承 HTTP 线程身份或连接，现有 Scheduler 保持原行为。
+
+开发 CI 显式使用[开发源码清单](../../scripts/ci/development-source-manifest.json)与[开发 Schema 清单](../../scripts/ci/development-schema-manifest.json)，验证完整 V1–V35 迁移、catalog 指纹及空库初始事实；它们不授予发行资格，原 V1.0.0 发行清单保持不变。
+
+V35 的故障恢复使用 PostgreSQL 事务回滚后重试，不执行 repair/down migration；不得通过删除用户或经济事实回退。开发代码回退需保留追加 Schema，已有 Demo 身份不能交给缺少拒绝边界的旧代码运行。实际生产升级/备份恢复和正式发行不属于基础功能验收。
+
 ## 正式安装合同
 
 V1.0.0 要求全新 PostgreSQL 16。正式 active Flyway 仅包含

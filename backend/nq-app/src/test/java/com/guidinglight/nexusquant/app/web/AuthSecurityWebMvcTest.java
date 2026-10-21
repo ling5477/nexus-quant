@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -25,6 +26,10 @@ import com.guidinglight.nexusquant.app.config.auth.SecurityConfiguration;
 import com.guidinglight.nexusquant.auth.api.web.AuthController;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
+import com.guidinglight.nexusquant.auth.domain.tenant.Tenant;
+import com.guidinglight.nexusquant.auth.domain.tenant.TenantMembership;
+import com.guidinglight.nexusquant.common.tenant.TenantId;
+import com.guidinglight.nexusquant.common.tenant.TenantKind;
 import com.guidinglight.nexusquant.common.trace.TraceIdContext;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.gateway.infra.security.SecurityContextGatewayAuthFacade;
@@ -140,6 +145,12 @@ class AuthSecurityWebMvcTest {
 
     @BeforeEach
     void setUpAuthRepository() {
+        when(authUserRepository.findTenantMemberships(anyLong())).thenAnswer(call -> {
+            var now = Instant.parse("2026-10-21T00:00:00Z");
+            var tenant = new Tenant(TenantId.LOCAL, "NQ_LOCAL", "本地租户", TenantKind.LOCAL, Tenant.Status.ACTIVE, now, now);
+            return List.of(new TenantMembership(tenant, call.getArgument(0, Long.class),
+                    TenantMembership.Role.LOCAL_MEMBER, TenantMembership.Status.ACTIVE, now, now));
+        });
         when(authUserRepository.findByUsernameForUpdate(org.mockito.ArgumentMatchers.anyString()))
                 .thenAnswer(call -> authUserRepository.findByUsername(call.getArgument(0)));
         var sessions = new java.util.HashMap<String, com.guidinglight.nexusquant.auth.domain.AuthSession>();

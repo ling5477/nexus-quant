@@ -5,6 +5,9 @@ import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.auth.api.dto.AuthLoginRequestBody;
 import com.guidinglight.nexusquant.auth.api.dto.PasswordChangeRequest;
 import com.guidinglight.nexusquant.auth.application.service.PasswordChangeService;
+import com.guidinglight.nexusquant.auth.application.service.TenantIdentityResolver;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
+import com.guidinglight.nexusquant.common.tenant.TenantKind;
 import org.springframework.http.HttpStatus;
 import com.guidinglight.nexusquant.auth.api.dto.AuthLoginResponse;
 import com.guidinglight.nexusquant.auth.api.dto.CurrentUserResponse;
@@ -25,6 +28,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Objects;
+import java.util.List;
 
 /**
  * AuthController 提供正式登录与当前用户查询接口。
@@ -124,11 +128,17 @@ public class AuthController {
                 .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("authentication required"));
         var userProfile = currentUserProfileService.findByUsername(currentUser.username())
                 .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("authentication required"));
-        var defaultAccount = exchangeAccountQueryService.findDefaultByOwnerUserId(userProfile.userId()).orElse(null);
+        var tenant = TenantContext.current().orElse(null);
+        boolean demo = tenant != null && tenant.kind() == TenantKind.DEMO;
+        boolean restricted = demo || userProfile.roles().contains(TenantIdentityResolver.DEMO_USER)
+                || userProfile.roles().contains(TenantIdentityResolver.PLATFORM_ADMIN);
+        // 未完成业务隔离前，新身份的基础资料不触达账户读侧。
+        var defaultAccount = restricted ? null
+                : exchangeAccountQueryService.findDefaultByOwnerUserId(userProfile.userId()).orElse(null);
         return new CurrentUserResponse(
                 userProfile.userId(),
                 userProfile.username(),
-                userProfile.roles(),
+                demo ? List.of(TenantIdentityResolver.DEMO_USER) : userProfile.roles(),
                 true,
                 defaultAccount == null ? null : defaultAccount.exchangeAccountId(),
                 defaultAccount == null ? null : defaultAccount.exchangeCode(),

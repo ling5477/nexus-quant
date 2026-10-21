@@ -19,6 +19,7 @@ import com.guidinglight.nexusquant.auth.domain.AuthSession;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.List;
 
 /**
  * DbAuthService 使用 DB-backed users/roles 完成正式认证。
@@ -34,6 +35,7 @@ public class DbAuthService implements AuthService {
     private final long idleTimeoutSeconds;
     private final long sessionMaxSeconds;
     private final Clock clock;
+    private final TenantIdentityResolver tenantIdentities;
 
     public DbAuthService(
             TokenService tokenService,
@@ -56,6 +58,7 @@ public class DbAuthService implements AuthService {
         this.idleTimeoutSeconds = idleTimeoutSeconds;
         this.sessionMaxSeconds = sessionMaxSeconds;
         this.clock = Objects.requireNonNull(clock, "clock");
+        this.tenantIdentities = new TenantIdentityResolver(authUserRepository);
     }
 
     @Override
@@ -75,11 +78,12 @@ public class DbAuthService implements AuthService {
         if (!userProfile.enabled()) {
             throw new DisabledException("account is disabled");
         }
+        var identity = tenantIdentities.resolve(userProfile);
         Instant now = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
         var session = new AuthSession(UUID.randomUUID().toString(), userProfile.userId(), userProfile.authVersion(),
                 now, now, now.plusSeconds(sessionMaxSeconds));
         authUserRepository.createSession(session, now.minusSeconds(idleTimeoutSeconds));
-        return response(userProfile, session, now);
+        return response(userProfile, session, now, identity.roles());
     }
 
     @Override
@@ -95,10 +99,11 @@ public class DbAuthService implements AuthService {
                 .orElseThrow(() -> new BadCredentialsException("authentication required"));
         Instant now = clock.instant().truncatedTo(java.time.temporal.ChronoUnit.SECONDS);
         if (!claims.expiresAt().isAfter(now)) throw new BadCredentialsException("access token expired");
+        var identity = tenantIdentities.resolve(user);
         var session = authUserRepository.renewSession(claims.sessionId(), user.userId(), user.authVersion(),
                         now, now.minusSeconds(idleTimeoutSeconds))
                 .orElseThrow(() -> new BadCredentialsException("session expired or revoked"));
-        return response(user, session, now);
+        return response(user, session, now, identity.roles());
     }
 
     @Override
@@ -115,15 +120,15 @@ public class DbAuthService implements AuthService {
         }
     }
 
-    private LoginResponse response(AuthUserProfile user, AuthSession session, Instant now) {
+    private LoginResponse response(AuthUserProfile user, AuthSession session, Instant now, List<String> effectiveRoles) {
         Instant expiresAt = now.plusSeconds(accessTokenTtlSeconds);
         if (expiresAt.isAfter(session.expiresAt())) expiresAt = session.expiresAt();
         Instant idleExpiresAt = session.lastActiveAt().plusSeconds(idleTimeoutSeconds);
         if (idleExpiresAt.isAfter(session.expiresAt())) idleExpiresAt = session.expiresAt();
-        TokenClaims claims = new TokenClaims(user.username(), user.username(), user.roles(), now, expiresAt,
+        TokenClaims claims = new TokenClaims(user.username(), user.username(), effectiveRoles, now, expiresAt,
                 issuer, "jti-" + UUID.randomUUID(), user.authVersion(), session.sessionId());
         return new LoginResponse(tokenService.issue(claims), "Bearer", expiresAt.getEpochSecond() - now.getEpochSecond(),
-                expiresAt, user.username(), user.roles(), user.mustChangePassword(), session.sessionId(),
+                expiresAt, user.username(), effectiveRoles, user.mustChangePassword(), session.sessionId(),
                 idleExpiresAt, session.expiresAt(), now);
     }
 }

@@ -3,12 +3,15 @@ package com.guidinglight.nexusquant.security.web;
 import com.guidinglight.nexusquant.security.token.model.TokenClaims;
 import com.guidinglight.nexusquant.security.token.port.TokenService;
 import com.guidinglight.nexusquant.security.token.port.TokenUserValidator;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
+import java.util.Optional;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -43,6 +46,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
+        // 容器线程复用和异常路径均不能留下上一请求的租户。
+        TenantContext.clear();
+        try {
+            authenticateAndFilter(request, response, filterChain);
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    private void authenticateAndFilter(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (authorization == null || !authorization.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -59,7 +73,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         TokenClaims claims = parsedClaims.get();
-        var userState = userValidator.validate(claims);
+        Optional<TokenUserValidator.UserState> userState;
+        try {
+            userState = userValidator.validate(claims);
+        } catch (AuthenticationException invalid) {
+            authenticationEntryPoint.commence(request, response, invalid);
+            return;
+        }
         if (userState.isEmpty()) {
             authenticationEntryPoint.commence(request, response, new BadCredentialsException("user or token generation invalid"));
             return;
@@ -72,6 +92,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         authentication.setDetails(userState.get());
         SecurityContextHolder.getContext().setAuthentication(authentication);
         try {
+            if (userState.get().tenantIdentity() != null) {
+                try (var scope = TenantContext.open(userState.get().tenantIdentity())) {
+                    filterChain.doFilter(request, response);
+                }
+                return;
+            }
             filterChain.doFilter(request, response);
         } finally {
             SecurityContextHolder.clearContext();

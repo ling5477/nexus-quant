@@ -3,6 +3,8 @@ package com.guidinglight.nexusquant.app.config.auth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.app.security.web.ApiSecurityErrorWriter;
 import com.guidinglight.nexusquant.app.security.web.PasswordChangeRequiredFilter;
+import com.guidinglight.nexusquant.app.security.web.TenantFoundationAccessFilter;
+import com.guidinglight.nexusquant.auth.application.service.TenantIdentityResolver;
 import com.guidinglight.nexusquant.auth.application.port.AuthService;
 import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
 import com.guidinglight.nexusquant.auth.application.service.DbAuthService;
@@ -15,6 +17,9 @@ import com.guidinglight.nexusquant.security.token.port.TokenService;
 import com.guidinglight.nexusquant.security.token.port.TokenUserValidator;
 import com.guidinglight.nexusquant.security.token.service.JwtTokenService;
 import com.guidinglight.nexusquant.security.web.JwtAuthenticationFilter;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Optional;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -67,7 +72,12 @@ public class SecurityConfiguration {
                 properties.getAccessTokenTtl().toSeconds(),
                 properties.getSessionIdleTimeout().toSeconds(),
                 properties.getSessionMaxLifetime().toSeconds(),
-                java.time.Clock.systemUTC());
+                Clock.systemUTC());
+    }
+
+    @Bean
+    public TenantIdentityResolver tenantIdentityResolver(AuthUserRepository users) {
+        return new TenantIdentityResolver(users);
     }
 
     @Bean
@@ -115,6 +125,7 @@ public class SecurityConfiguration {
             TokenService tokenService,
             AuthenticationEntryPoint entryPoint,
             AuthUserRepository repository,
+            TenantIdentityResolver tenantIdentities,
             SecurityRuntimeProperties properties) {
         return new JwtAuthenticationFilter(
                 tokenService,
@@ -131,11 +142,15 @@ public class SecurityConfiguration {
                                                                 .equals(claims.username())
                                                         && (claims.sessionId() == null || repository.isSessionActive(
                                                                 claims.sessionId(), claims.username(), claims.authVersion(),
-                                                                java.time.Instant.now(), java.time.Instant.now().minus(properties.getSessionIdleTimeout()))))
-                                .map(
-                                        user ->
-                                                new TokenUserValidator.UserState(
-                                                        user.roles(), user.mustChangePassword())));
+                                                                Instant.now(), Instant.now().minus(properties.getSessionIdleTimeout()))))
+                                .flatMap(user -> {
+                                    var identity = tenantIdentities.resolve(user);
+                                    // 旧本地令牌仍按原合同有效；新角色必须使用可撤销的数据库会话。
+                                    if (claims.sessionId() == null && (identity.roles().contains(TenantIdentityResolver.DEMO_USER)
+                                            || identity.roles().contains(TenantIdentityResolver.PLATFORM_ADMIN))) return Optional.empty();
+                                    return Optional.of(new TokenUserValidator.UserState(
+                                            identity.roles(), user.mustChangePassword(), identity.tenant()));
+                                }));
     }
 
     @Bean
@@ -202,7 +217,8 @@ public class SecurityConfiguration {
                         jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(
                         new PasswordChangeRequiredFilter(errorWriter),
-                        JwtAuthenticationFilter.class);
+                        JwtAuthenticationFilter.class)
+                .addFilterAfter(new TenantFoundationAccessFilter(errorWriter), PasswordChangeRequiredFilter.class);
         return http.build();
     }
 }
