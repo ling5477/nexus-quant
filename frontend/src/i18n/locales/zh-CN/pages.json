@@ -325,6 +325,12 @@
   "viewRuntimeReadiness": "查看运行就绪状态",
   "viewMarketDataReadiness": "查看行情就绪状态",
   "focusedPaperRunPerformance": "焦点 Paper Run 绩效",
+  "dashboardReporting": {
+    "canonical": "当前运行使用 Canonical SIM 账务体系。",
+    "canonicalDescription": "旧版 Paper 日报不适用于此运行。请进入模拟交易分析查看实际权益、持仓、成交和账务记录。",
+    "viewSimAnalysis": "查看模拟交易分析",
+    "unknownIdentity": "当前运行身份尚未确认，暂不查询旧版 Paper 日报。"
+  },
   "createAndStartAPaperRunToSeeItsLatestDailyMetricsHere": "暂无 Paper Run，创建并启动后这里展示最新日报指标。",
   "noDailyReportForTheFocusedRunGenerateOneFromPaperTradingDetails": "焦点 run 暂无日报数据，可在模拟交易详情页生成日报。",
   "totalEquity": "总权益",

@@ -60,7 +60,10 @@ export function DashboardPage() {
     }, [runs]);
 
     const focusRunId = focusRun?.paperRunId ?? null;
-    const dailyReportsQuery = usePaperDailyReportsQuery(focusRunId);
+    const isCanonicalRun = focusRun?.canonicalAccountId != null;
+    // 只有显式 null 才能确认旧版身份；字段缺失时禁止默认查询旧日报。
+    const isLegacyRun = focusRun?.canonicalAccountId === null;
+    const dailyReportsQuery = usePaperDailyReportsQuery(focusRunId, isLegacyRun);
     const alertsQuery = usePaperAlertsQuery(focusRunId);
     const heartbeatsQuery = usePaperHeartbeatsQuery(focusRunId);
     const riskResultsQuery = usePaperTradingRiskResultsQuery(focusRunId);
@@ -96,6 +99,8 @@ export function DashboardPage() {
     );
     const latestDailyReport = useMemo(
         () => {
+            // 禁用查询仍可能读到同 key 的缓存；展示也必须服从当前运行身份。
+            if (!isLegacyRun) return null;
             const report = [...(dailyReportsQuery.data ?? [])].sort((left, right) =>
                 right.reportDate.localeCompare(left.reportDate),
             )[0];
@@ -110,7 +115,7 @@ export function DashboardPage() {
                   }
                 : null;
         },
-        [dailyReportsQuery.data],
+        [dailyReportsQuery.data, isLegacyRun],
     );
 
     const recentEvents = useMemo(() => {
@@ -220,7 +225,7 @@ export function DashboardPage() {
         pageI18n.resolvedLanguage,
     ]);
 
-    const focusLoading = Boolean(focusRunId) && dailyReportsQuery.isPending;
+    const focusLoading = isLegacyRun && Boolean(focusRunId) && dailyReportsQuery.isPending;
 
     return (
         <div className="nq-dashboard">
@@ -400,6 +405,7 @@ export function DashboardPage() {
                         className="page-section"
                         bordered={false}
                         title={t('pages:focusedPaperRunPerformance')}
+                        data-testid="dashboard-focus-performance"
                         extra={
                             focusRun ? (
                                 <Typography.Text type="secondary" className="nq-mono">
@@ -413,7 +419,25 @@ export function DashboardPage() {
                                 {t('pages:legacyMonitor.daily')}
                             </Typography.Paragraph>
                         )}
-                        {dailyReportsQuery.error ? (
+                        {isCanonicalRun ? (
+                            <Space direction="vertical" size={12}>
+                                <Typography.Paragraph style={{margin: 0}}>
+                                    {t('pages:dashboardReporting.canonical')}
+                                </Typography.Paragraph>
+                                <Typography.Text type="secondary">
+                                    {t('pages:dashboardReporting.canonicalDescription')}
+                                </Typography.Text>
+                                <Link to={{
+                                    pathname: '/paper-trading/portfolio',
+                                    search: new URLSearchParams({
+                                        analysisSource: 'sim',
+                                        paperRunId: focusRunId!,
+                                    }).toString(),
+                                }}>
+                                    {t('pages:dashboardReporting.viewSimAnalysis')}
+                                </Link>
+                            </Space>
+                        ) : isLegacyRun && dailyReportsQuery.error ? (
                             <NqErrorState
                                 title={t('queryFailed')}
                                 error={dailyReportsQuery.error as AppApiError}
@@ -424,6 +448,8 @@ export function DashboardPage() {
                                     'pages:createAndStartAPaperRunToSeeItsLatestDailyMetricsHere',
                                 )}
                             />
+                        ) : !isLegacyRun ? (
+                            <NqEmptyState description={t('pages:dashboardReporting.unknownIdentity')} />
                         ) : !latestDailyReport && !focusLoading ? (
                             <NqEmptyState
                                 description={t(

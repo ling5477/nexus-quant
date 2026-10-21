@@ -277,11 +277,11 @@ export function useRunHeartbeatOnceMutation() {
     });
 }
 
-export function usePaperDailyReportsQuery(paperRunId: string | null) {
+export function usePaperDailyReportsQuery(paperRunId: string | null, enabled = true) {
     return useQuery({
         queryKey: paperTradingQueryKeys.dailyReports(paperRunId ?? ''),
         queryFn: () => paperTradingApi.listDailyReports(paperRunId ?? ''),
-        enabled: Boolean(paperRunId),
+        enabled: Boolean(paperRunId) && enabled,
     });
 }
 
