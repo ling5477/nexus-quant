@@ -81,7 +81,7 @@ public class PaperRunMonitorService {
     }
 
     public PaperRunDailyReport generateDailyReport(PaperRunDailyReportGenerateCommand command) {
-        runService.getById(command.paperRunId());
+        requireLegacyDailyReportRun(command.paperRunId());
         LocalDate reportDate =
                 command.reportDate() != null ? command.reportDate() : LocalDate.now(clock);
         Instant now = clock.instant();
@@ -128,12 +128,22 @@ public class PaperRunMonitorService {
                                         new IllegalArgumentException(
                                                 "daily report not found: " + reportId));
         requireRun(paperRunId, report.paperRunId());
+        requireLegacyDailyReportRun(report.paperRunId());
         return report;
     }
 
     public List<PaperRunDailyReport> listDailyReports(String paperRunId) {
-        runService.getById(paperRunId);
+        requireLegacyDailyReportRun(paperRunId);
         return dailyReportRepository.listByRunId(paperRunId);
+    }
+
+    private void requireLegacyDailyReportRun(String paperRunId) {
+        var run = runService.getById(paperRunId);
+        // 旧日报没有 canonical 日结估值口径；不能把未读取的订单、成交和权益持久化或展示为零。
+        if (run.canonicalAccountId() != null) {
+            throw new IllegalStateException(
+                    "STRATEGY_SIM_DAILY_REPORT_UNAVAILABLE_USE_CANONICAL_ANALYSIS");
+        }
     }
 
     @Transactional(timeout = 15)

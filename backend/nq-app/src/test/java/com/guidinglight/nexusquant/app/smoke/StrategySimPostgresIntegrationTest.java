@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
+import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
 import com.guidinglight.nexusquant.app.marketdata.PublicMarketReplayCaptureService;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
@@ -987,7 +989,22 @@ class StrategySimPostgresIntegrationTest {
         assertEquals(1, projectedSummary.counts().fillCount());
         assertEquals(1, projectedSummary.counts().positionCount());
         assertEquals(0, facts.pnl().compareTo(projectedSummary.resultReview().netPnl()));
-        var http = MockMvcBuilders.standaloneSetup(paperApi).build();
+        var http = MockMvcBuilders.standaloneSetup(paperApi)
+                .setControllerAdvice(applicationContext.getBean(ApiExceptionHandler.class)).build();
+        // canonical 成交不能被旧日报的固定零值覆盖；HTTP 拒绝后持久化事实保持原样。
+        int reportsBefore = jdbc.queryForObject(
+                "SELECT count(*) FROM paper_run_daily_reports", Integer.class);
+        http.perform(post(
+                        "/api/paper-trading/runs/{id}/daily-reports/generate", created.paperRunId())
+                .contentType("application/json").content("{\"reportDate\":\"2026-10-21\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value(
+                        "STRATEGY_SIM_DAILY_REPORT_UNAVAILABLE_USE_CANONICAL_ANALYSIS"));
+        http.perform(get("/api/paper-trading/runs/{id}/daily-reports", created.paperRunId()))
+                .andExpect(status().isConflict());
+        assertEquals(reportsBefore, jdbc.queryForObject(
+                "SELECT count(*) FROM paper_run_daily_reports", Integer.class));
+        assertEquals(facts, sim.facts(created.paperRunId()));
         http.perform(get("/api/paper-trading/runs/{id}/orders", created.paperRunId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].paperOrderId").value(accepted.orderId()));

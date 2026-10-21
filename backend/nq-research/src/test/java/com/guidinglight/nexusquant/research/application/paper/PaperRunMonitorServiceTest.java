@@ -9,6 +9,8 @@ import com.guidinglight.nexusquant.research.application.paper.service.PaperTradi
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.guidinglight.nexusquant.research.domain.BacktestPublishRecord;
 import com.guidinglight.nexusquant.research.domain.BacktestRun;
@@ -97,6 +99,30 @@ class PaperRunMonitorServiceTest {
         assertThrows(IllegalArgumentException.class, () ->
                 monitorService.generateDailyReport(new PaperRunDailyReportGenerateCommand("missing", null))
         );
+    }
+
+    @Test
+    void canonicalRunMustNotGenerateOrExposeLegacyZeroDailyReports() {
+        var legacy = createRun();
+        var existing = monitorService.generateDailyReport(
+                new PaperRunDailyReportGenerateCommand(legacy.paperRunId(), null));
+        var canonical = mock(PaperTradingRun.class);
+        when(canonical.canonicalAccountId()).thenReturn(42L);
+        var canonicalRuns = mock(PaperTradingRunService.class);
+        when(canonicalRuns.getById(legacy.paperRunId())).thenReturn(canonical);
+        var service = new PaperRunMonitorService(canonicalRuns, dailyReportRepo, alertRepo, fixedClock);
+
+        String reason = "STRATEGY_SIM_DAILY_REPORT_UNAVAILABLE_USE_CANONICAL_ANALYSIS";
+        assertEquals(reason, assertThrows(IllegalStateException.class, () -> service.generateDailyReport(
+                new PaperRunDailyReportGenerateCommand(legacy.paperRunId(), null))).getMessage());
+        assertEquals(reason, assertThrows(IllegalStateException.class,
+                () -> service.listDailyReports(legacy.paperRunId())).getMessage());
+        assertEquals(reason, assertThrows(IllegalStateException.class,
+                () -> service.getDailyReportById(legacy.paperRunId(), existing.reportId())).getMessage());
+        assertEquals(reason, assertThrows(IllegalStateException.class,
+                () -> service.getDailyReportById(existing.reportId())).getMessage());
+        // 已存历史报告不改写；拒绝发生在任何 upsert 之前。
+        assertEquals(List.of(existing), dailyReportRepo.records);
     }
 
     @Test
