@@ -1,5 +1,13 @@
 # Current API
 
+## Tenant 基础身份
+
+`GET /api/auth/tenant` 只返回当前认证用户经数据库验证的 `tenantId`、`tenantCode`、`tenantKind` 和 `userId`；不接收租户选择。无认证返回 401，失效/缺失/歧义的成员关系不能建立认证身份；传入 `X-Tenant-ID` 或 tenantId/tenant_id 查询参数返回 403。PLATFORM_ADMIN 无业务 Tenant，此接口返回 403。
+
+Tenant Foundation 期间，DEMO_USER 与 PLATFORM_ADMIN 仅允许 `GET /api/auth/me`、`GET /api/auth/tenant`（有 Tenant 时），以及本人 POST renew/logout/change-password。所有其他业务和管理路径默认拒绝，包含此前 authenticated GET、HEAD、混合本地角色和未迁移别名；新角色必须使用数据库会话，不能使用旧无 sid 兼容令牌。`/api/auth/me` 对新身份不读取默认账户。
+
+Self-Hosted 的 ADMIN/OPERATOR/VIEWER 仍由原 user_roles 授权，认证上下文来自 NQ_LOCAL Membership，旧本地 JWT/Session/续期/注销合同保留。没有注册、邮箱验证、租户切换、成员管理或公共平台管理 API。Tenant Foundation 不表示业务 Tenant 隔离完成，Public Demo 仍为 NOT_READY，LIVE 边界不变。
+
 ## 评估与发布结果服务端分页
 
 `GET /api/evaluations/page` 与 `GET /api/publishes/page` 返回 `{items,total,limit,offset}`。`limit` 默认20、范围1—100，`offset` 默认0、非负int；ID过滤最长128，状态最长32，原始控制字符拒绝。状态只接受真实 `SUCCEEDED/FAILED`（可忽略大小写），未知状态返回既有400错误DTO。

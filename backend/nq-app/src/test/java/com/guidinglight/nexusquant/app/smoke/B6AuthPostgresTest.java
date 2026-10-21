@@ -44,7 +44,7 @@ class B6AuthPostgresTest {
         try {
             var scoped = new DriverManagerDataSource(url.substring(0, url.lastIndexOf('/') + 1) + database, source.getUsername(), source.getPassword());
             var flyway = Flyway.configure().dataSource(scoped).locations("classpath:db/migration").load();
-            assertEquals(1, flyway.migrate().migrationsExecuted);
+            assertEquals(35, flyway.migrate().migrationsExecuted);
             flyway.validate();
             assertEquals(0, flyway.migrate().migrationsExecuted);
             try (var context = new AnnotationConfigApplicationContext()) {

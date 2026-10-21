@@ -6,6 +6,8 @@ import com.guidinglight.nexusquant.auth.application.command.SeedUserCommand;
 import java.util.Optional;
 import java.time.Instant;
 import com.guidinglight.nexusquant.auth.domain.AuthSession;
+import com.guidinglight.nexusquant.auth.domain.tenant.TenantMembership;
+import java.util.List;
 
 /**
  * AuthUserRepository 定义认证用户读写端口。
@@ -13,6 +15,9 @@ import com.guidinglight.nexusquant.auth.domain.AuthSession;
 public interface AuthUserRepository {
 
     Optional<AuthUserProfile> findByUsername(String username);
+
+    /** 按服务器用户编号查询至多两条归属，保留拒绝歧义的扩展合同。 */
+    List<TenantMembership> findTenantMemberships(long userId);
 
     boolean hasAdminUser();
 

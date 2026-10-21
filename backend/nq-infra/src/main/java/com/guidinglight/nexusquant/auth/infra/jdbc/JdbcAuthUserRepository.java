@@ -4,6 +4,10 @@ import com.guidinglight.nexusquant.auth.application.command.SeedUserCommand;
 import com.guidinglight.nexusquant.auth.domain.port.AuthUserRepository;
 import com.guidinglight.nexusquant.auth.domain.AuthUserProfile;
 import com.guidinglight.nexusquant.auth.domain.AuthSession;
+import com.guidinglight.nexusquant.auth.domain.tenant.Tenant;
+import com.guidinglight.nexusquant.auth.domain.tenant.TenantMembership;
+import com.guidinglight.nexusquant.common.tenant.TenantId;
+import com.guidinglight.nexusquant.common.tenant.TenantKind;
 
 import java.sql.Array;
 import java.sql.SQLException;
@@ -12,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,6 +68,26 @@ public class JdbcAuthUserRepository implements AuthUserRepository {
     }
 
     @Override
+    public List<TenantMembership> findTenantMemberships(long userId) {
+        if (userId <= 0) return List.of();
+        return jdbcTemplate.query("""
+                SELECT t.tenant_id,t.tenant_code,t.tenant_name,t.tenant_kind,t.status AS tenant_status,
+                       t.created_at AS tenant_created,t.updated_at AS tenant_updated,
+                       m.user_id,m.membership_role,m.status,m.created_at,m.updated_at
+                FROM tenant_memberships m JOIN tenants t ON t.tenant_id=m.tenant_id
+                WHERE m.user_id=? ORDER BY t.tenant_id LIMIT 2
+                """, (rs, row) -> new TenantMembership(
+                        new Tenant(new TenantId(rs.getObject("tenant_id", UUID.class)),
+                                rs.getString("tenant_code"), rs.getString("tenant_name"),
+                                TenantKind.valueOf(rs.getString("tenant_kind")),
+                                Tenant.Status.valueOf(rs.getString("tenant_status")),
+                                rs.getTimestamp("tenant_created").toInstant(), rs.getTimestamp("tenant_updated").toInstant()),
+                        rs.getLong("user_id"), TenantMembership.Role.valueOf(rs.getString("membership_role")),
+                        TenantMembership.Status.valueOf(rs.getString("status")),
+                        rs.getTimestamp("created_at").toInstant(), rs.getTimestamp("updated_at").toInstant()), userId);
+    }
+
+    @Override
     public boolean hasAdminUser() {
         Integer count = jdbcTemplate.queryForObject(
                 """
@@ -70,7 +95,7 @@ public class JdbcAuthUserRepository implements AuthUserRepository {
                         FROM users u
                         JOIN user_roles ur ON ur.user_id = u.id
                         JOIN roles r ON r.id = ur.role_id
-                        WHERE u.enabled = TRUE AND r.role_code = 'ADMIN'
+                        WHERE u.enabled = TRUE AND r.role_code IN ('ADMIN','PLATFORM_ADMIN')
                         """,
                 Integer.class
         );
