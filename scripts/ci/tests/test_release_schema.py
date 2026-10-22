@@ -13,12 +13,16 @@ ROOT = Path(__file__).resolve().parents[3]
 SPEC = importlib.util.spec_from_file_location("release_schema", ROOT / "scripts/ci/verify-release-schema.py")
 CONTRACT = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(CONTRACT)
+DYNAMIC_SPEC = importlib.util.spec_from_file_location("development_schema", ROOT / "scripts/ci/development_schema.py")
+DYNAMIC = importlib.util.module_from_spec(DYNAMIC_SPEC)
+DYNAMIC_SPEC.loader.exec_module(DYNAMIC)
 MANIFEST = json.loads((ROOT / "scripts/ci/development-schema-manifest.json").read_text(encoding="utf8"))
 
 
 class ReleaseSchemaContractTests(unittest.TestCase):
     def test_current_source_identity(self):
-        CONTRACT.verify_source(ROOT, MANIFEST)
+        rows = DYNAMIC.inventory(ROOT)
+        self.assertEqual(list(range(1, len(rows) + 1)), [int(row['version']) for row in rows])
 
     def copy_source(self, root, crlf=False):
         directory = root / 'backend/nq-infra/src/main/resources/db/migration'
@@ -94,19 +98,16 @@ class ReleaseSchemaContractTests(unittest.TestCase):
             (root / 'release/source-manifest.json').write_bytes((ROOT / 'release/source-manifest.json').read_bytes())
             CONTRACT.verify_source(root, formal)
 
-    def test_development_inventory_is_complete_without_duplicate_runtime_paths(self):
-        source = json.loads((ROOT / MANIFEST['sourceManifest']).read_bytes())
-        paths = [p for g in source['groups'] for p in g['paths']]
-        self.assertEqual(len(paths), len(set(paths)))
-        tracked = subprocess.check_output(['git', '-C', str(ROOT), 'ls-files'], text=True, timeout=10).splitlines()
-        excluded = {
-            'backend/nq-app/src/main/resources/application-ci.yml',
-            'backend/nq-app/src/main/resources/application-local.yml',
-            'backend/nq-app/src/main/resources/application-test.yml',
-        }
-        required = {p for p in tracked if re.match(r'^backend/[^/]+/src/main/(java|resources)/', p)} - excluded
-        self.assertEqual(set(), required - set(paths))
-        self.assertTrue(all((ROOT / p).is_file() for p in paths))
+    def test_development_migration_inventory_is_complete_without_manual_paths(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / 'source.json'
+            rows = DYNAMIC.write_source(ROOT, output, 'HEAD^1')
+            source = json.loads(output.read_bytes())
+            paths = [p for group in source['groups'] for p in group['paths']]
+            self.assertEqual(len(paths), len(set(paths)))
+            self.assertEqual({p.name for p in (ROOT / DYNAMIC.DIRECTORY).iterdir()},
+                             {row['script'] for row in rows})
+            self.assertTrue(all((ROOT / p).is_file() for p in paths))
 
     def test_missing_development_inventory_never_falls_back_to_formal(self):
         with tempfile.TemporaryDirectory() as temporary:

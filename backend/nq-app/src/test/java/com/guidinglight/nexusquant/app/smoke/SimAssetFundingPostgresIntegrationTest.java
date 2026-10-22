@@ -394,7 +394,9 @@ class SimAssetFundingPostgresIntegrationTest {
             // 历史迁移验收已在 V14 完成；现代端口只在继续正向迁移后的受限租户环境运行。
             f.database.migrate(null);
             f.openModernRuntime();
-            assertEquals("45", f.flyway(null).info().current().getVersion().toString());
+            assertEquals(0, f.flyway(null).info().pending().length);
+            assertTrue(f.flyway(null).info().current().getVersion().compareTo(
+                    org.flywaydb.core.api.MigrationVersion.fromVersion("14")) > 0);
             assertEquals(before, f.snapshotWithoutReceipt(run.account()));
             equal("100", f.app.getBean(SimCashFundingPort.class).cashBalance(run.account()));
             equal("100", f.app.getBean(SimCashFundingPort.class)

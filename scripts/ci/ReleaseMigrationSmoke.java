@@ -1,7 +1,4 @@
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.nio.file.Path;
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 
@@ -12,18 +9,8 @@ public final class ReleaseMigrationSmoke {
     public static void main(String[] args) throws Exception {
         if (args.length > 1) throw new IllegalArgumentException("Expected at most one source manifest path");
         var sourceManifest = args.length == 1 ? args[0] : "release/source-manifest.json";
-        var manifest = new ObjectMapper().readTree(Path.of(sourceManifest).toFile());
-        var expected = new TreeMap<MigrationVersion, String>();
-        var pattern = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
-        for (var group : manifest.path("groups")) {
-            if (!"INCLUDE_RUNTIME".equals(group.path("category").asText())) continue;
-            for (var path : group.path("paths")) {
-                var match = pattern.matcher(path.asText());
-                if (match.matches() && expected.put(MigrationVersion.fromVersion(match.group(2)), match.group(1)) != null)
-                    throw new IllegalStateException("Duplicate formal migration version");
-            }
-        }
-        if (expected.isEmpty()) throw new IllegalStateException("Empty formal migration inventory");
+        // 开发 CI 消费本次生成的身份；未传参时保留正式发行清单。
+        var expected = MigrationInventory.load(sourceManifest);
         var flyway = Flyway.configure()
                 .dataSource(requireEnv("NQ_FLYWAY_DB_URL"), requireEnv("NQ_FLYWAY_DB_USER"),
                         requireEnv("NQ_FLYWAY_DB_PASSWORD"))

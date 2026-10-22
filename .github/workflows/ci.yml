@@ -12,6 +12,9 @@ on:
 permissions:
   contents: read
 
+env:
+  NQ_MIGRATION_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before || 'HEAD^1' }}
+
 jobs:
   diff-check:
     name: Repository hygiene and governance
@@ -286,6 +289,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
 
       - name: Set up Java
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
@@ -314,8 +319,9 @@ jobs:
           app_cp="$(cat backend/nq-app/target/backend-ci-fixture-classpath.txt)"
           classpath="backend/nq-app/target/classes:backend/nq-infra/target/classes:${app_cp}"
 
-          javac -cp "${classpath}" -d "${fixture_dir}" scripts/ci/BackendCiAccountFixture.java
-          java -cp "${fixture_dir}:${classpath}" BackendCiAccountFixture scripts/ci/development-source-manifest.json
+          javac -cp "${classpath}" -d "${fixture_dir}" scripts/ci/BackendCiAccountFixture.java scripts/ci/MigrationInventory.java
+          python3 scripts/ci/development_schema.py --source-output "${fixture_dir}/current-migrations.json"
+          java -cp "${fixture_dir}:${classpath}" BackendCiAccountFixture "${fixture_dir}/current-migrations.json"
 
       - name: Run backend tests
         shell: bash
@@ -369,6 +375,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
 
       - name: Set up Java
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
@@ -403,24 +411,27 @@ jobs:
           smoke_dir="${RUNNER_TEMP}/nq-flyway-smoke"
           mkdir -p "${smoke_dir}"
 
-          python3 scripts/ci/verify-release-schema.py --manifest scripts/ci/development-schema-manifest.json
+          python3 scripts/ci/development_schema.py --source-output "${smoke_dir}/current-migrations.json"
 
           app_cp="$(cat backend/nq-app/target/flyway-classpath.txt)"
           classpath="backend/nq-app/target/classes:backend/nq-infra/target/classes:${app_cp}"
 
-          javac -cp "${classpath}" -d "${smoke_dir}" scripts/ci/ReleaseMigrationSmoke.java
-          java -cp "${smoke_dir}:${classpath}" ReleaseMigrationSmoke scripts/ci/development-source-manifest.json
+          javac -cp "${classpath}" -d "${smoke_dir}" scripts/ci/ReleaseMigrationSmoke.java scripts/ci/MigrationInventory.java
+          java -cp "${smoke_dir}:${classpath}" ReleaseMigrationSmoke "${smoke_dir}/current-migrations.json"
 
-      - name: Verify reviewed release schema and static facts
+      - name: Verify current development schema and static facts
         shell: bash
         run: |
           set -euo pipefail
           export PGPASSWORD="${NQ_FLYWAY_DB_PASSWORD}"
-          python3 ./scripts/ci/verify-release-schema.py \
-            --manifest scripts/ci/development-schema-manifest.json \
+          app_cp="$(cat backend/nq-app/target/flyway-classpath.txt)"
+          classpath="${RUNNER_TEMP}/nq-flyway-smoke:backend/nq-app/target/classes:backend/nq-infra/target/classes:${app_cp}"
+          python3 ./scripts/ci/development_schema.py \
+            --source-output "${RUNNER_TEMP}/nq-flyway-smoke/current-migrations.json" \
+            --reference-classpath "${classpath}" \
             --psql-url "host=127.0.0.1 port=5432 dbname=nq_ci user=${NQ_FLYWAY_DB_USER} sslmode=disable" \
             --output artifacts/postgres-flyway/release-schema-contract.json
-          python3 -m unittest discover -s scripts/ci/tests -p test_release_schema.py
+          python3 -m unittest discover -s scripts/ci/tests -p 'test_*schema.py'
 
       - name: Prove continuous SIM on isolated PostgreSQL schemas
         shell: bash
