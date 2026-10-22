@@ -928,12 +928,16 @@ class StrategySimPostgresIntegrationTest {
         try {
             for(int i=0;i<8;i++) {int n=i;ids.add(tenantDatabase.as(tenants.get(n),()->driver.start(fixtures.get(n).publishId(),new BigDecimal("10000")).paperRunId()));}
             int before=tenantDatabase.admin.queryForObject("SELECT count(*) FROM accounts WHERE venue='PAPER'",Integer.class);
-            int fundingBefore=tenantDatabase.admin.queryForObject("SELECT count(*) FROM ledger_entries WHERE ref_type LIKE 'SIM_FUNDING_%'",Integer.class);
+            Object[] tenantIds=tenants.stream().map(tenant->tenant.tenantId().value()).toArray();
+            String fundingSql="SELECT count(*) FROM ledger_entries e JOIN accounts a USING(account_id) "
+                    +"WHERE ref_type LIKE 'SIM_FUNDING_%' AND a.tenant_id IN ("
+                    +String.join(",",java.util.Collections.nCopies(tenants.size(),"?"))+")";
+            int fundingBefore=tenantDatabase.admin.queryForObject(fundingSql,Integer.class,tenantIds);
             assertEquals(18,fundingBefore);
             var rejected=assertThrows(org.springframework.dao.DataAccessException.class,()->tenantDatabase.as(tenants.get(8),()->driver.start(fixtures.get(8).publishId(),new BigDecimal("10000"))));
             assertTrue(rejected.getMostSpecificCause().getMessage().contains("CAPACITY_LIMIT"));
             assertEquals(before,tenantDatabase.admin.queryForObject("SELECT count(*) FROM accounts WHERE venue='PAPER'",Integer.class));
-            assertEquals(fundingBefore,tenantDatabase.admin.queryForObject("SELECT count(*) FROM ledger_entries WHERE ref_type LIKE 'SIM_FUNDING_%'",Integer.class));
+            assertEquals(fundingBefore,tenantDatabase.admin.queryForObject(fundingSql,Integer.class,tenantIds));
             assertEquals(8,tenantDatabase.admin.queryForObject("SELECT count(*) FROM tenant_continuous_slots WHERE active",Integer.class));
             String stopped=ids.getFirst();tenantDatabase.as(tenants.getFirst(),()->driver.stop(stopped));
             // Demo 首次绑定不可重建；释放容量后由仍未绑定的第九个租户占用，再验证旧运行不能超容量恢复。
