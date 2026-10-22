@@ -34,7 +34,7 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
                    param_snapshot_json::text AS param_snapshot_json,
                    config_snapshot_json::text AS config_snapshot_json,
                    created_by, created_at, updated_at, canonical_account_id
-            FROM paper_trading_runs
+            FROM (SELECT * FROM paper_trading_runs WHERE tenant_id=nq_current_tenant_id()) paper_trading_runs
             """;
 
     private static final RowMapper<PaperTradingRun> ROW_MAPPER =
@@ -101,7 +101,7 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
     public Optional<PaperTradingRun> findById(String paperRunId) {
         List<PaperTradingRun> rows =
                 jdbcTemplate.query(
-                        BASE_SELECT + " WHERE paper_run_id = ? AND " + feeScope.paper(),
+                        BASE_SELECT + " WHERE tenant_id=nq_current_tenant_id() AND paper_run_id = ? AND " + feeScope.paper(),
                         ROW_MAPPER,
                         paperRunId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
@@ -157,7 +157,7 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
             Instant updatedAt) {
         List<String> publishIds =
                 jdbcTemplate.query(
-                        "SELECT publish_id FROM paper_trading_runs WHERE paper_run_id = ?",
+                        "SELECT publish_id FROM (SELECT * FROM paper_trading_runs WHERE tenant_id=nq_current_tenant_id()) paper_trading_runs WHERE tenant_id=nq_current_tenant_id() AND paper_run_id = ?",
                         (resultSet, rowNum) -> resultSet.getString("publish_id"),
                         paperRunId);
         int updated =
@@ -171,7 +171,7 @@ public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository 
                             started_at = COALESCE(?, started_at),
                             stopped_at = COALESCE(?, stopped_at),
                             updated_at = ?
-                        WHERE paper_run_id = ?
+                        WHERE tenant_id=nq_current_tenant_id() AND paper_run_id = ?
                         """,
                                         status.name(),
                                         toTimestamp(startedAt),

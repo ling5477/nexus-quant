@@ -133,7 +133,8 @@ class ReadOnlyProviderObservationProductionContextTest {
     private ApplicationContext context;
 
     @Autowired
-    private CountingDataSource dataSource;
+    @org.springframework.beans.factory.annotation.Qualifier("qualificationConnectionAttempts")
+    private AtomicInteger databaseConnectionAttempts;
 
     @Autowired
     private MockMvc mockMvc;
@@ -173,7 +174,7 @@ class ReadOnlyProviderObservationProductionContextTest {
         assertEquals(0, context.getBeansOfType(OkxWsClient.class).size());
         assertEquals(0, context.getBeansOfType(BinanceWsClient.class).size());
 
-        assertEquals(0, dataSource.connectionAttempts.get());
+        assertEquals(0, databaseConnectionAttempts.get());
         assertEquals(0, NoOkxOutboundProxySelector.selections.get());
     }
 
@@ -212,7 +213,7 @@ class ReadOnlyProviderObservationProductionContextTest {
         mockMvc.perform(get("/actuator/readonlyproviderobservation"))
                 .andExpect(status().isOk());
         assertEquals(2, Probes.killReads.get());
-        assertEquals(0, dataSource.connectionAttempts.get());
+        assertEquals(0, databaseConnectionAttempts.get());
         assertEquals(0, NoOkxOutboundProxySelector.selections.get());
     }
 
@@ -223,9 +224,11 @@ class ReadOnlyProviderObservationProductionContextTest {
 
         @Bean
         @Primary
-        CountingDataSource qualificationCountingDataSource() {
-            return new CountingDataSource();
+        CountingDataSource qualificationCountingDataSource(@org.springframework.beans.factory.annotation.Qualifier("qualificationConnectionAttempts") AtomicInteger attempts) {
+            return new CountingDataSource(attempts);
         }
+
+        @Bean AtomicInteger qualificationConnectionAttempts(){return new AtomicInteger();}
 
         @Bean
         @Primary
@@ -312,7 +315,8 @@ class ReadOnlyProviderObservationProductionContextTest {
     }
 
     static final class CountingDataSource implements DataSource {
-        private final AtomicInteger connectionAttempts = new AtomicInteger();
+        private final AtomicInteger connectionAttempts;
+        CountingDataSource(AtomicInteger attempts){this.connectionAttempts=attempts;}
 
         @Override
         public Connection getConnection() throws SQLException {

@@ -122,7 +122,10 @@ import org.springframework.test.context.transaction.TestTransaction;
         "nq.env-safety.real-exchange-enabled=false",
         "nq.env-safety.no-outbound=true"
 })
+@org.springframework.test.context.TestExecutionListeners(listeners=RestrictedPostgresTestInitializer.LocalScope.class,
+        mergeMode=org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 class TradingChainPostgresIntegrationTest {
+    @Autowired private org.springframework.context.ApplicationContext applicationContext;
 
     /**
      * 对账预留需要已提交 fixture；每个测试 context 使用独立数据库，替代原外层回滚的隔离。
@@ -132,24 +135,9 @@ class TradingChainPostgresIntegrationTest {
             ApplicationContextInitializer<ConfigurableApplicationContext> {
         @Override
         public void initialize(ConfigurableApplicationContext context) {
-            String url = context.getEnvironment().getRequiredProperty("spring.datasource.url");
-            assertFalse(url.contains("currentSchema="));
-            final ReleaseBaselineTestDatabase database;
-            try {
-                database = ReleaseBaselineTestDatabase.create(url,
-                        context.getEnvironment().getRequiredProperty("spring.datasource.username"),
-                        context.getEnvironment().getRequiredProperty("spring.datasource.password"));
-            } catch (Exception error) {
-                throw new IllegalStateException("Isolated canonical database creation failed", error);
-            }
-            TestPropertyValues.of("spring.datasource.url=" + database.url(),
-                    "spring.flyway.schemas=public", "spring.flyway.default-schema=public").applyTo(context);
-            context.addApplicationListener((ApplicationListener<ContextClosedEvent>) event -> {
-                if (event.getApplicationContext() == context) {
-                    try { database.close(); }
-                    catch (Exception error) { throw new IllegalStateException("Owned database cleanup failed", error); }
-                }
-            });
+            new RestrictedPostgresTestInitializer().initialize(context);
+            context.getBeanFactory().getBean(RestrictedPostgresTestInitializer.FIXTURE,TenantIsolationTestDatabase.class)
+                    .user("chain-synthetic-owner","VIEWER");
         }
     }
 
@@ -666,32 +654,40 @@ class TradingChainPostgresIntegrationTest {
                 scenario.traceId(),
                 fill.tradeTs()
         );
-        tradeRepository.insert(mismatchedTrade);
-        fakeVenue.reportFills(scenario.order().externalOrderId(), List.of());
-
-        commitReconciliationFixture();
-        assertThrows(IllegalStateException.class, () -> okxRestReconcileService.reconcileOnce(100));
-
-        assertEquals(0L, ledgerEntryCount(mismatchedTrade));
-        assertEquals(0L, count("SELECT COUNT(*) FROM positions WHERE account_id IN (?, ?)", scenario.accountId(), otherAccountId));
-        assertEquals(0L, count(
-                "SELECT COUNT(*) FROM account_snapshots WHERE account_id IN (?, ?)",
-                scenario.accountId(),
-                otherAccountId
-        ));
-        assertEquals(1L, count(
-                "SELECT COUNT(*) FROM audit_logs WHERE trace_id=? "
-                        + "AND action='OKX_LEDGER_RECOVERY_IDENTITY_MISMATCH'",
-                scenario.traceId()
-        ));
-
-        assertThrows(IllegalStateException.class, () -> okxRestReconcileService.reconcileOnce(100));
-        assertEquals(0L, ledgerEntryCount(mismatchedTrade));
-        assertEquals(2L, count(
-                "SELECT COUNT(*) FROM audit_logs WHERE trace_id=? "
-                        + "AND action='OKX_LEDGER_RECOVERY_IDENTITY_MISMATCH'",
-                scenario.traceId()
-        ));
+        var rejected=assertThrows(org.springframework.dao.DataIntegrityViolationException.class,()->tradeRepository.insert(mismatchedTrade));
+        assertEquals("23514",((java.sql.SQLException)rejected.getMostSpecificCause()).getSQLState());
+        assertEquals(0L,count("SELECT count(*) FROM trades WHERE trade_id=?",mismatchedTrade.tradeId()));
+        // 当前约束已拒绝新错配；原恢复拒绝证明改用 V35 可持久化的历史反例，升级后不重写该事实。
+        var fixture=applicationContext.getBean(RestrictedPostgresTestInitializer.FIXTURE,TenantIsolationTestDatabase.class);
+        try(var legacy=fixture.historical("35")) {
+            var identity=legacy.local("legacy-recovery-local");
+            legacy.admin.update("INSERT INTO accounts(account_id,account_code,venue) VALUES(?,'legacy-own','OKX'),(?,'legacy-other','OKX')",scenario.accountId(),otherAccountId);
+            String orderJson=jdbc.queryForObject("SELECT to_jsonb(o)::text FROM orders o WHERE order_id=?",String.class,scenario.order().orderId());
+            legacy.admin.update("INSERT INTO orders SELECT * FROM jsonb_populate_record(NULL::orders,?::jsonb)",orderJson);
+            new com.guidinglight.nexusquant.scheduler.infra.jdbc.JdbcTradeRepository(legacy.admin).insert(mismatchedTrade);
+            var before=legacy.admin.queryForList("SELECT to_jsonb(t)::text AS fact FROM trades t");
+            assertThrows(org.flywaydb.core.api.FlywayException.class,()->legacy.migrate(null));
+            assertEquals("36",legacy.migration("36").info().current().getVersion().getVersion());
+            assertEquals(before,legacy.admin.queryForList("SELECT to_jsonb(t)::text AS fact FROM trades t"));
+            // 旧库仅提供不可变反例的只读端口；当前应用始终连接最新 schema，原恢复防线仍独立检查输入。
+            legacy.admin.execute("GRANT USAGE ON SCHEMA public TO "+legacy.runtime);
+            legacy.admin.execute("GRANT SELECT ON trades,orders TO "+legacy.runtime);
+            var historicalRead=new JdbcTemplate(new org.springframework.jdbc.datasource.DriverManagerDataSource(legacy.url(),legacy.runtime,legacy.runtimePassword));
+            var recovery=new OkxRestReconcileService(orderCommandService,
+                    applicationContext.getBean(com.guidinglight.nexusquant.trading.application.service.OrderLifecycleService.class),
+                    okxExchangeAdapter,new com.guidinglight.nexusquant.scheduler.infra.jdbc.JdbcTradeRepository(historicalRead),
+                    failOnceTradeLedgerGateway,applicationContext.getBean(com.guidinglight.nexusquant.contracts.event.port.EventPublisherPort.class),
+                    applicationContext.getBean(com.guidinglight.nexusquant.audit.domain.port.AuditLogRepository.class));
+            fakeVenue.reportFills(scenario.order().externalOrderId(),List.of());
+            for(int attempt=1;attempt<=2;attempt++) {
+                assertThrows(IllegalStateException.class,()->recovery.reconcileOnce(100));
+                assertEquals(0L,ledgerEntryCount(mismatchedTrade));
+                assertEquals(0L,count("SELECT count(*) FROM positions WHERE account_id IN (?,?)",scenario.accountId(),otherAccountId));
+                assertEquals(0L,count("SELECT count(*) FROM account_snapshots WHERE account_id IN (?,?)",scenario.accountId(),otherAccountId));
+                assertEquals((long)attempt,count("SELECT count(*) FROM audit_logs WHERE trace_id=? AND action='OKX_LEDGER_RECOVERY_IDENTITY_MISMATCH'",scenario.traceId()));
+                assertEquals(before,legacy.admin.queryForList("SELECT to_jsonb(t)::text AS fact FROM trades t"));
+            }
+        } catch(Exception failure) {throw new IllegalStateException("historical recovery fixture failed",failure);}
     }
 
     private VenueFill venueFill(

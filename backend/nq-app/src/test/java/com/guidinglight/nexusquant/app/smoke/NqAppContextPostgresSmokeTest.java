@@ -94,7 +94,12 @@ import java.util.Arrays;
         "nq.security.secret=ci-app-smoke-change-me-change-me-123456",
         "nq.security.access-token-ttl=PT30M"
 })
+@org.springframework.test.annotation.DirtiesContext(classMode = org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS)
+@org.springframework.test.context.TestExecutionListeners(
+        listeners = NqAppContextPostgresSmokeTest.Cleanup.class,
+        mergeMode = org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 class NqAppContextPostgresSmokeTest {
+    private static TenantIsolationTestDatabase tenantDatabase;
 
     private static final String URL_PROPERTY = "nq.app.context.smoke.url";
     private static final String USER_PROPERTY = "nq.app.context.smoke.user";
@@ -116,13 +121,16 @@ class NqAppContextPostgresSmokeTest {
     @MockitoBean
     private BinanceWsClient binanceWsClient;
 
-    @AfterAll
-    static void restoreNoOutboundGuard() {
-        ExchangeNoOutboundGuard.restoreDefault();
+    public static final class Cleanup extends org.springframework.test.context.support.AbstractTestExecutionListener {
+        @Override public int getOrder() { return 999; }
+        @Override public void afterTestClass(org.springframework.test.context.TestContext context) throws Exception {
+            if(tenantDatabase!=null)tenantDatabase.close();
+            ExchangeNoOutboundGuard.restoreDefault();
+        }
     }
 
     @DynamicPropertySource
-    static void registerCiDatasource(DynamicPropertyRegistry registry) {
+    static void registerCiDatasource(DynamicPropertyRegistry registry) throws Exception {
         SmokeConfig config = SmokeConfig.fromSystemProperties();
         if (!config.configured()) {
             throw new IllegalStateException(
@@ -130,9 +138,10 @@ class NqAppContextPostgresSmokeTest {
                             + URL_PROPERTY + ", " + USER_PROPERTY + ", " + PASSWORD_PROPERTY
             );
         }
-        registry.add("spring.datasource.url", config::url);
-        registry.add("spring.datasource.username", config::user);
-        registry.add("spring.datasource.password", config::password);
+        tenantDatabase=TenantIsolationTestDatabase.create(null,config.url(),config.user(),config.password());
+        registry.add("spring.datasource.url", tenantDatabase::url);
+        registry.add("spring.datasource.username", ()->tenantDatabase.runtime);
+        registry.add("spring.datasource.password", ()->tenantDatabase.runtimePassword);
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
     }
 

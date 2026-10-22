@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.app.security.web.ApiSecurityErrorWriter;
 import com.guidinglight.nexusquant.app.security.web.PasswordChangeRequiredFilter;
 import com.guidinglight.nexusquant.app.security.web.TenantFoundationAccessFilter;
+import com.guidinglight.nexusquant.app.security.web.DemoTenantApiPolicy;
 import com.guidinglight.nexusquant.auth.application.service.TenantIdentityResolver;
 import com.guidinglight.nexusquant.auth.application.port.AuthService;
 import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
@@ -160,7 +161,8 @@ public class SecurityConfiguration {
             JwtAuthenticationFilter jwtAuthenticationFilter,
             AuthenticationEntryPoint authenticationEntryPoint,
             AccessDeniedHandler accessDeniedHandler,
-            ApiSecurityErrorWriter errorWriter)
+            ApiSecurityErrorWriter errorWriter,
+            @org.springframework.beans.factory.annotation.Value("${nq.demo.tenant-business-enabled:false}") boolean demoBusinessEnabled)
             throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
@@ -202,6 +204,10 @@ public class SecurityConfiguration {
                                         // 维护回执与原写入保持同一角色边界，接口再按提交人过滤。
                                         .requestMatchers("/api/trading/maintenance/operations/**")
                                         .hasAnyRole("ADMIN", "OPERATOR")
+                                        .requestMatchers(request -> "GET".equals(request.getMethod()) && DemoTenantApiPolicy.allows(request))
+                                        .authenticated()
+                                        .requestMatchers(DemoTenantApiPolicy::allows)
+                                        .hasAnyRole("ADMIN", "OPERATOR", "DEMO_USER")
                                         .requestMatchers(HttpMethod.GET, "/api/**")
                                         .authenticated()
                                         .requestMatchers(HttpMethod.PATCH, "/api/scheduler/jobs/*")
@@ -218,7 +224,7 @@ public class SecurityConfiguration {
                 .addFilterAfter(
                         new PasswordChangeRequiredFilter(errorWriter),
                         JwtAuthenticationFilter.class)
-                .addFilterAfter(new TenantFoundationAccessFilter(errorWriter), PasswordChangeRequiredFilter.class);
+                .addFilterAfter(new TenantFoundationAccessFilter(errorWriter, demoBusinessEnabled), PasswordChangeRequiredFilter.class);
         return http.build();
     }
 }

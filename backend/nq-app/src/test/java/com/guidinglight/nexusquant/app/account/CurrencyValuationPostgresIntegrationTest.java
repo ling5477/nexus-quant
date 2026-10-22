@@ -13,6 +13,8 @@ import com.guidinglight.nexusquant.account.application.command.ExchangeAccountCr
 import com.guidinglight.nexusquant.account.application.service.AccountPerformanceService;
 import com.guidinglight.nexusquant.account.application.service.ExchangeAccountCommandService;
 import com.guidinglight.nexusquant.app.NexusQuantApplication;
+import com.guidinglight.nexusquant.app.smoke.TenantIsolationTestDatabase;
+import com.guidinglight.nexusquant.common.tenant.*;
 import com.guidinglight.nexusquant.auth.application.command.SeedUserCommand;
 import com.guidinglight.nexusquant.auth.application.service.AuthSeedService;
 import com.guidinglight.nexusquant.common.currency.ValuationMetadata;
@@ -22,6 +24,8 @@ import com.guidinglight.nexusquant.research.infra.paper.jdbc.JdbcEquityCurveSnap
 
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -58,11 +62,17 @@ import java.util.UUID;
 
 /** 真实隔离PG升级与正式Servlet/JWT证明；资产及行情SQL夹具只证明估值，不冒充成交生产链。 */
 @EnabledIfSystemProperty(named = "nq.currency.pg.required", matches = "true")
-@ActiveProfiles("local")
+@ActiveProfiles("ci-app-smoke")
 @SpringBootTest(
         classes = NexusQuantApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
+            "spring.flyway.enabled=false", "spring.sql.init.mode=never",
+            "nq.auth.bootstrap-admin.enabled=false", "nq.runtime.trading-components.enabled=true",
+            "nq.account.credentials.verification-mode=STRUCTURAL",
+            "nq.account.credentials.master-key=currency-synthetic-master-key-123456789",
+            "nq.security.issuer=nexus-quant-currency-synthetic",
+            "nq.security.secret=currency-synthetic-secret-123456789",
             "nq.instrument.catalog-sync.enabled=false",
             "nq.okx.recovery.enabled=false",
             "nq.okx.ws.enabled=false",
@@ -81,6 +91,9 @@ class CurrencyValuationPostgresIntegrationTest {
     private static String legacyFingerprint;
     private static Path evidence;
     private static boolean successful;
+    private static TenantIsolationTestDatabase tenantDatabase;
+    private static TenantIdentity localIdentity;
+    private TenantContext.Scope localScope;
     private static final String PASSWORD = "synthetic-currency-fixture-password";
     private static final String ORIGINAL =
             """
@@ -109,7 +122,7 @@ FROM equity_curve_snapshots WHERE equity_snapshot_id='currency-legacy') s
         URI uri = URI.create(url.substring("jdbc:".length()));
         assertTrue(
                 Set.of("127.0.0.1", "localhost").contains(uri.getHost())
-                        && uri.getPort() == 15442
+                        && uri.getPort() > 0
                         && "/postgres".equals(uri.getPath())
                         && uri.getQuery() == null
                         && uri.getFragment() == null);
@@ -122,20 +135,14 @@ FROM equity_curve_snapshots WHERE equity_snapshot_id='currency-legacy') s
                 new JdbcTemplate(
                         new DriverManagerDataSource(
                                 url + "?connectTimeout=5&socketTimeout=30", user, password));
-        database = "currency_valuation_" + UUID.randomUUID().toString().replace("-", "");
-        control.execute("CREATE DATABASE " + database);
-        String owned = "jdbc:postgresql://127.0.0.1:15442/" + database;
+        tenantDatabase=TenantIsolationTestDatabase.create("26",url,user,password);
+        String owned=tenantDatabase.url();
+        database=URI.create(owned.substring("jdbc:".length())).getPath().substring(1);
         Files.writeString(
                 evidence.resolve("owned-database.json"),
                 "{\"database\":\"" + database + "\",\"scope\":\"DISPOSABLE_LOCAL_ONLY\"}");
         var flyway26 =
-                Flyway.configure()
-                        .dataSource(owned, user, password)
-                        .locations("classpath:db/migration")
-                        .target("26")
-                        .cleanDisabled(true)
-                        .load();
-        flyway26.migrate();
+                tenantDatabase.migration("26");
         flyway26.validate();
         var fixture = new JdbcTemplate(new DriverManagerDataSource(owned, user, password));
         // 历史元数据链仅为满足正式外键，不通过disable trigger或第二账本伪造生产成功。
@@ -158,12 +165,7 @@ INSERT INTO equity_curve_snapshots VALUES('currency-legacy','currency-legacy-run
 """);
         legacyFingerprint = fixture.queryForObject(ORIGINAL, String.class);
         var flyway27 =
-                Flyway.configure()
-                        .dataSource(owned, user, password)
-                        .locations("classpath:db/migration")
-                        .target("27")
-                        .cleanDisabled(true)
-                        .load();
+                tenantDatabase.migration("27");
         flyway27.migrate();
         flyway27.validate();
         try (var stream =
@@ -177,10 +179,28 @@ INSERT INTO equity_curve_snapshots VALUES('currency-legacy','currency-legacy-run
                                             .digest(stream.readAllBytes())));
         }
         assertEquals(legacyFingerprint, fixture.queryForObject(ORIGINAL, String.class));
+        assertEquals("27",flyway27.info().current().getVersion().getVersion());
+        assertEquals("UNKNOWN",fixture.queryForObject("SELECT valuation_status FROM equity_curve_snapshots WHERE equity_snapshot_id='currency-legacy'",String.class));
+        var rejected=assertThrows(org.springframework.dao.DataIntegrityViolationException.class,()->
+                fixture.update("UPDATE equity_curve_snapshots SET valuation_currency='USDT' WHERE equity_snapshot_id='currency-legacy'"));
+        assertEquals("23514",((java.sql.SQLException)rejected.getMostSpecificCause()).getSQLState());
+        Files.writeString(evidence.resolve("historical-upgrade.json"),"{\"from\":26,\"to\":27,\"historyPreserved\":true,\"invalidWriteSqlstate\":\"23514\"}");
+        // 历史升级断言先在 V27 完成；当前应用只接管继续正向升级后的独立运行库。
+        tenantDatabase.migrate(null);tenantDatabase.runtime();
+        tenantDatabase.user("currency-bootstrap-admin","ADMIN");
+        var seedRepository=new com.guidinglight.nexusquant.auth.infra.jdbc.JdbcAuthUserRepository(tenantDatabase.admin);
+        var encoder=new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+        for(String name:List.of("currency-owner","currency-other"))
+            seedRepository.upsertSeedUser(new SeedUserCommand(name,encoder.encode(PASSWORD),List.of("VIEWER"),true));
+        long localUser=tenantDatabase.admin.queryForObject("SELECT id FROM users WHERE username='currency-owner'",Long.class);
+        localIdentity=new TenantIdentity(TenantId.LOCAL,"NQ_LOCAL",TenantKind.LOCAL,localUser);
         registry.add("spring.datasource.url", () -> owned + "?connectTimeout=5&socketTimeout=30");
-        registry.add("spring.datasource.username", () -> user);
-        registry.add("spring.datasource.password", () -> password);
+        registry.add("spring.datasource.username", () -> tenantDatabase.runtime);
+        registry.add("spring.datasource.password", () -> tenantDatabase.runtimePassword);
     }
+
+    @BeforeEach void openLocalIdentity() { localScope=TenantContext.open(localIdentity); }
+    @AfterEach void closeLocalIdentity() { if(localScope!=null)localScope.close(); }
 
     @Test
     void upgradeUnknownHistoryStrictNewWritesAndOwnedFormalValuation() throws Exception {
@@ -308,18 +328,6 @@ FROM equity_curve_snapshots WHERE equity_snapshot_id='currency-legacy'
                                         "VERIFIED",
                                         details)));
 
-        seeds.seedUsers(
-                List.of(
-                        new SeedUserCommand(
-                                "currency-owner",
-                                passwords.encode(PASSWORD),
-                                List.of("VIEWER"),
-                                true),
-                        new SeedUserCommand(
-                                "currency-other",
-                                passwords.encode(PASSWORD),
-                                List.of("VIEWER"),
-                                true)));
         long owner =
                 jdbc.queryForObject(
                         "SELECT id FROM users WHERE username='currency-owner'", Long.class);
@@ -327,6 +335,14 @@ FROM equity_curve_snapshots WHERE equity_snapshot_id='currency-legacy'
                 accounts.create(
                         owner,
                         new ExchangeAccountCreateCommand("OKX", "SIM", "currency-estimate", null));
+        // 估值夹具通过原注资服务入账，也必须提供真实同账户的运行父对象。
+        jdbc.update("""
+                INSERT INTO paper_trading_runs(paper_run_id,publish_id,status,trade_env,exchange_code,
+                    market_type,symbol,interval_code,created_by,created_at,updated_at,canonical_account_id)
+                SELECT 'currency-funding',publish_id,'STOPPED','SIM',exchange_code,market_type,symbol,
+                    interval_code,'currency-owner',now(),now(),? FROM paper_trading_runs
+                WHERE paper_run_id='currency-legacy-run'
+                """,account.legacyAccountId());
         funding.fundOnce(
                 account.legacyAccountId(),
                 "currency-funding",
@@ -484,7 +500,7 @@ VALUES('OKX','SPOT',?,'1m',?,?,?,?,?,?,1,'EXPLICIT_CURRENCY_FIXTURE','OK',?)
                         .build();
         try (var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build()) {
             var response = client.send(req, HttpResponse.BodyHandlers.ofString());
-            assertEquals(200, response.statusCode());
+            assertEquals(200, response.statusCode(),()->response.statusCode()==200?"":response.body());
             return mapper.readTree(response.body()).path("accessToken").asText();
         }
     }
@@ -508,8 +524,7 @@ VALUES('OKX','SPOT',?,'1m',?,?,?,?,?,?,1,'EXPLICIT_CURRENCY_FIXTURE','OK',?)
         @Override
         public void afterTestClass(TestContext context) throws Exception {
             if (control != null && database != null && successful) {
-                assertTrue(database.matches("currency_valuation_[0-9a-f]{32}"));
-                control.execute("DROP DATABASE " + database + " WITH (FORCE)");
+                tenantDatabase.close();
                 Files.writeString(
                         evidence.resolve("cleanup.json"),
                         "{\"ownedDatabase\":\"REMOVED_AFTER_SUCCESS\"}");

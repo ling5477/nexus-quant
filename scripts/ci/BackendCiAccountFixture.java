@@ -109,8 +109,8 @@ public final class BackendCiAccountFixture {
     private static void insertLegacyAccount(Connection connection) throws Exception {
         try (PreparedStatement statement = connection.prepareStatement(
                 """
-                        INSERT INTO accounts (account_code, venue, status)
-                        VALUES (?, 'PAPER', 'ACTIVE')
+                        INSERT INTO accounts (account_code, venue, status, tenant_id)
+                        VALUES (?, 'PAPER', 'ACTIVE', '00000000-0000-4000-8000-000000000001'::uuid)
                         ON CONFLICT (account_code) DO NOTHING
                         """)) {
             statement.setString(1, FIXTURE_ACCOUNT_CODE);

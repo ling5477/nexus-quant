@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.scheduler.paper;
 
+import com.guidinglight.nexusquant.common.tenant.TenantWorkAccess;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,6 +60,7 @@ import java.util.UUID;
         havingValue = "true",
         matchIfMissing = false)
 public class PaperMatchingService {
+    @Autowired private TenantWorkAccess tenantWork;
     // 冻结费用JSON只含十进制文本与来源字段，不依赖可变时间序列化设置，也不访问外部来源。
     private final ObjectMapper feeMapper = new ObjectMapper();
     private DiscountAssetPriceService discountPrices;
@@ -146,7 +149,24 @@ public class PaperMatchingService {
      * @return 本次新生成的 trade 数量
      */
     public int matchOnce(int limit) {
+        if (limit < 1) throw new IllegalArgumentException("matching limit must be positive");
+        if (tenantWork != null && TenantContext.currentTenantId().isEmpty()) {
+            int count = 0;
+            RuntimeException firstFailure = null;
+            for (String id : tenantWork.next(TenantWorkAccess.Kind.ORDER, Math.min(limit,64))) {
+                try {
+                    count += tenantWork.execute(TenantWorkAccess.Kind.ORDER, id,
+                            () -> matchOrders(orderExecutionGateway.findMatchableOrder(id).stream().toList()));
+                } catch (RuntimeException failure) { if (firstFailure == null) firstFailure = failure; }
+            }
+            if (firstFailure != null) throw firstFailure;
+            return count;
+        }
         List<OrderRecord> orders = orderExecutionGateway.findMatchableOrders(limit);
+        return matchOrders(orders);
+    }
+
+    private int matchOrders(List<OrderRecord> orders) {
         int newTradeCount = 0;
         for (OrderRecord order : orders) {
             if (order.canonicalVenue() != TradingVenue.PAPER) {

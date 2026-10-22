@@ -75,7 +75,7 @@ public final class TradingRestartRecoveryProcessMain {
                 NexusQuantApplication.class,
                 RestartTestConfiguration.class
         )
-                .profiles("local")
+                .profiles("ci-app-smoke")
                 .web(WebApplicationType.NONE)
                 .properties(Map.ofEntries(
                         Map.entry("spring.datasource.url", dbUrl),
@@ -97,7 +97,14 @@ public final class TradingRestartRecoveryProcessMain {
                         Map.entry("nq.env-safety.real-exchange-enabled", "false"),
                         Map.entry("nq.env-safety.no-outbound", "true")
                 ))
-                .run()) {
+                .run("--spring.profiles.active=ci-app-smoke","--spring.flyway.enabled=false",
+                        "--spring.main.allow-bean-definition-overriding=true","--nq.runtime.trading-components.enabled=true",
+                        "--nq.auth.bootstrap-admin.enabled=false","--nq.account.credentials.verification-mode=STRUCTURAL",
+                        "--nq.account.credentials.master-key=restart-synthetic-master-key-123456789",
+                        "--nq.security.issuer=restart-synthetic","--nq.security.secret=restart-synthetic-signing-secret-123456789")) {
+            var identity=context.getBean(com.guidinglight.nexusquant.auth.application.service.TenantIdentityResolver.class)
+                    .resolve("restart-synthetic-owner").tenant();
+            try(var ignored=com.guidinglight.nexusquant.common.tenant.TenantContext.open(identity)) {
             RestartProcessResult result = switch (phase) {
                 case R1_A -> runR1ProcessA(context, caseId);
                 case R1_B -> runR1ProcessB(context, caseId);
@@ -113,6 +120,7 @@ public final class TradingRestartRecoveryProcessMain {
                     processExit,
                     result.toMarker()
             );
+            }
         } finally {
             ExchangeNoOutboundGuard.restoreDefault();
         }

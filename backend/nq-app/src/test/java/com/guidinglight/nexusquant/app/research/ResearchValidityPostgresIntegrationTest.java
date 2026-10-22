@@ -23,16 +23,13 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
-import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
 import org.springframework.transaction.interceptor.TransactionInterceptor;
@@ -65,12 +62,14 @@ class ResearchValidityPostgresIntegrationTest {
         String user = System.getProperty("nq.research-validity.pg.user", System.getenv().getOrDefault("NQ_DB_USER", "postgres"));
         String password = System.getProperty("nq.research-validity.pg.password", System.getenv().getOrDefault("NQ_DB_PASSWORD", ""));
         var admin = new JdbcTemplate(new DriverManagerDataSource(url, user, password));
-        String schema = "research_validity_" + UUID.randomUUID().toString().replace("-", "");
         assertEquals(16, admin.queryForObject("SELECT current_setting('server_version_num')::int / 10000", Integer.class));
-        try {
-            var flyway = Flyway.configure().dataSource(url, user, password).schemas(schema).defaultSchema(schema)
-                    .locations("classpath:db/migration").cleanDisabled(true).load();
-            flyway.migrate();
+        try (var database = com.guidinglight.nexusquant.app.smoke.TenantIsolationTestDatabase.create(null, url, user, password);
+                var scope = com.guidinglight.nexusquant.common.tenant.TenantContext.open(
+                        new com.guidinglight.nexusquant.common.tenant.TenantIdentity(
+                                com.guidinglight.nexusquant.common.tenant.TenantId.LOCAL, "NQ_LOCAL",
+                                com.guidinglight.nexusquant.common.tenant.TenantKind.LOCAL,
+                                database.user("research-validity-fixture", "ADMIN", "OPERATOR", "VIEWER")))) {
+            var flyway = database.migration(null);
             flyway.validate();
             var manifest = MAPPER.readTree(Path.of("../../scripts/ci/development-source-manifest.json").toFile());
             var expected = new TreeMap<MigrationVersion, String>();
@@ -95,10 +94,11 @@ class ResearchValidityPostgresIntegrationTest {
             assertEquals(expected, applied);
             assertEquals(expected.lastKey(), flyway.info().current().getVersion());
             assertEquals(0, flyway.info().pending().length);
-            var ds = new DriverManagerDataSource(url + "?currentSchema=" + schema + ",public", user, password);
-            var jdbc = new JdbcTemplate(ds);
+            var ds = database.runtimeDataSource();
+            var manager = new com.guidinglight.nexusquant.tenant.infra.jdbc.TenantTransactionManager(ds);
+            var jdbc = com.guidinglight.nexusquant.tenant.infra.jdbc.TenantJdbcTemplateFactory.create(ds, manager);
             seed(jdbc);
-            var coordinator = new JdbcAdmissionMutationCoordinator(jdbc, new DataSourceTransactionManager(ds), 256);
+            var coordinator = new JdbcAdmissionMutationCoordinator(jdbc, manager, 256);
             var runs = new JdbcBacktestRunRepository(jdbc, coordinator);
             var orders = new JdbcSimOrderRepository(jdbc);
             var trades = new JdbcSimTradeRepository(jdbc);
@@ -114,7 +114,7 @@ class ResearchValidityPostgresIntegrationTest {
             var persistence = new BacktestExecutionPersistenceService(runs, orders, trades, positions, snapshots);
             var proxy = new ProxyFactory(persistence);
             proxy.setProxyTargetClass(true);
-            proxy.addAdvice(new TransactionInterceptor(new DataSourceTransactionManager(ds), new AnnotationTransactionAttributeSource()));
+            proxy.addAdvice(new TransactionInterceptor(manager, new AnnotationTransactionAttributeSource()));
             var transactionalPersistence = (BacktestExecutionPersistenceService) proxy.getProxy();
             var calculator = new EvaluationMetricCalculator(new DrawdownCalculator(), new SharpeCalculator(), new TradeOutcomeCalculator());
             var evaluations = new BacktestEvaluationService(runService, configs, orders, trades, positions, snapshots, calculator, reports);
@@ -226,9 +226,6 @@ class ResearchValidityPostgresIntegrationTest {
                 assertEquals(assumptions.initialCapital(), high.researchValidity().full().startingEquity());
             }
             System.out.println("RESEARCH_VALIDITY_PG16_PROVEN " + MAPPER.writeValueAsString(response.researchValidity()));
-        } finally {
-            // 仅删除本测试创建的随机 schema，保留其他运行和数据库。
-            admin.execute("DROP SCHEMA IF EXISTS " + schema + " CASCADE");
         }
     }
 

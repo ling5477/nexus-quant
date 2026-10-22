@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.strategy.application;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import com.guidinglight.nexusquant.common.tenant.TenantWorkAccess;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.guidinglight.nexusquant.strategy.application.result.StrategyScheduleScanResult;
 
 import com.guidinglight.nexusquant.strategy.application.result.StrategyScheduleScanOutcome;
@@ -49,6 +52,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class StrategyScheduleScanService {
+    @Autowired
+    private TenantWorkAccess tenantWork;
 
     private final StrategyScheduleService strategyScheduleService;
     private final StrategyDefinitionRepository strategyDefinitionRepository;
@@ -93,6 +98,17 @@ public class StrategyScheduleScanService {
         strategyRunRecoveryService.recoverAll();
         Instant now = Instant.now(clock);
         List<StrategyScheduleScanResult> results = new ArrayList<>();
+        if (tenantWork != null && TenantContext.currentTenantId().isEmpty()) {
+            RuntimeException firstFailure=null;
+            for (String id : tenantWork.next(TenantWorkAccess.Kind.STRATEGY_SCHEDULE,64)) {
+                try {
+                results.add(tenantWork.execute(TenantWorkAccess.Kind.STRATEGY_SCHEDULE,id,
+                        () -> scanSingleSchedule(strategyScheduleService.getByScheduleJobId(id),traceId,now)));
+                } catch(RuntimeException failure) {if(firstFailure==null)firstFailure=failure;}
+            }
+            if(firstFailure!=null)throw firstFailure;
+            return StrategyScheduleScanBatchResult.from(results);
+        }
         for (StrategySchedule schedule : strategyScheduleService.listAllSchedules()) {
             results.add(scanSingleSchedule(schedule, traceId, now));
         }

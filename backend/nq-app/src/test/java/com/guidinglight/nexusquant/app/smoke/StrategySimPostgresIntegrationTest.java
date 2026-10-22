@@ -137,7 +137,15 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
         "nq.security.secret=strategy-sim-synthetic-secret-123456789",
         "nq.security.access-token-ttl=PT30M"
 })
+@org.springframework.test.annotation.DirtiesContext(classMode = org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS)
+@org.springframework.test.context.TestExecutionListeners(
+        listeners = StrategySimPostgresIntegrationTest.Cleanup.class,
+        mergeMode = org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 class StrategySimPostgresIntegrationTest {
+    private static TenantIsolationTestDatabase tenantDatabase;
+    private static com.guidinglight.nexusquant.common.tenant.TenantIdentity localIdentity;
+    private static final java.util.Map<String,TenantIsolationTestDatabase> replayDatabases=new java.util.HashMap<>();
+    private com.guidinglight.nexusquant.common.tenant.TenantContext.Scope localScope;
     private static final AtomicReference<ClosedBarMarketFeed.Observation> schedulerObservation = new AtomicReference<>();
     private static String schema;
     private static String independentDatabaseUrl;
@@ -157,26 +165,42 @@ class StrategySimPostgresIntegrationTest {
         databasePassword = System.getProperty("nq.strategy-sim.pg.password", "disposable");
         if (databaseUser.isBlank() || databasePassword.isBlank())
             throw new IllegalArgumentException("disposable PostgreSQL credentials required");
-        var database = ReleaseBaselineTestDatabase.create("nq.strategy-sim.pg");
-        ownedDatabases.add(database);
-        baseUrl = database.url();
+        tenantDatabase=TenantIsolationTestDatabase.create(null,baseUrl,databaseUser,databasePassword);
+        tenantDatabase.pool.setMaximumPoolSize(16);
+        localIdentity=tenantDatabase.local("strategy-sim-fixture-local");
+        baseUrl = tenantDatabase.url();
         schema = "public";
-        admin = database.source();
-        // 当前实现消费新增费用与决策字段；仅初始化本夹具的独立库，不修改历史迁移。
-        var currentSchema = Flyway.configure().dataSource(database.source())
-                .locations("classpath:db/migration").cleanDisabled(true).target("27").load();
-        currentSchema.migrate();
-        currentSchema.validate();
+        admin = tenantDatabase.database.source();
+        databaseUser=tenantDatabase.runtime;databasePassword=tenantDatabase.runtimePassword;
         registry.add("spring.datasource.url", () -> baseUrl);
         registry.add("spring.datasource.username", () -> databaseUser);
         registry.add("spring.datasource.password", () -> databasePassword);
         registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
     }
 
-    @AfterAll
-    static void cleanup() throws Exception {
-        for (var database : ownedDatabases) database.close();
-        ExchangeNoOutboundGuard.restoreDefault();
+    public static final class Cleanup extends org.springframework.test.context.support.AbstractTestExecutionListener {
+        @Override public int getOrder() { return 999; }
+        @Override public void afterTestClass(org.springframework.test.context.TestContext context) throws Exception {
+            // AFTER_CLASS 先停止应用后台任务，再销毁其数据库和角色。
+            for (var database : ownedDatabases) database.close();
+            for(var database:replayDatabases.values())database.close();
+            if(tenantDatabase!=null)tenantDatabase.close();
+            ExchangeNoOutboundGuard.restoreDefault();
+        }
+    }
+
+    @org.junit.jupiter.api.BeforeEach void openLocalScope() {
+        localScope=com.guidinglight.nexusquant.common.tenant.TenantContext.open(localIdentity);
+    }
+    @org.junit.jupiter.api.AfterEach void closeLocalScope() {
+        try { for(String id:continuousProgress.activeIds()) scheduledContinuous.stop(id); }
+        finally {if(localScope!=null)localScope.close();}
+    }
+
+    private ContinuousSimRunService tenantAware(ContinuousSimRunService driver) {
+        org.springframework.test.util.ReflectionTestUtils.setField(driver,"tenantWork",
+                applicationContext.getBean(com.guidinglight.nexusquant.common.tenant.TenantWorkAccess.class));
+        return driver;
     }
 
     @Autowired private JdbcTemplate jdbc;
@@ -227,18 +251,18 @@ class StrategySimPostgresIntegrationTest {
                     observed.bars().stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList(),
                     observed.rule(), observed.quote());
         };
-        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        ContinuousSimRunService driver = tenantAware(new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC)));
         try {
             var created = driver.start(fixture.publishId(), new BigDecimal("100"));
             String runId = created.paperRunId();
             assertEquals("CONTINUOUS_SIM_MANUAL_ADVANCE_REJECTED",
                     assertThrows(IllegalStateException.class, () -> sim.advance(runId)).getMessage());
-            jdbc.execute("""
+            tenantDatabase.admin.execute("""
                     CREATE FUNCTION continuous_sim_test_fail() RETURNS trigger LANGUAGE plpgsql AS $$
                     BEGIN RAISE EXCEPTION 'synthetic decision insert failure'; END; $$
                     """);
-            jdbc.execute("""
+            tenantDatabase.admin.execute("""
                     CREATE TRIGGER continuous_sim_test_fail_before_insert
                     BEFORE INSERT ON strategy_sim_decisions FOR EACH ROW
                     EXECUTE FUNCTION continuous_sim_test_fail()
@@ -249,8 +273,8 @@ class StrategySimPostgresIntegrationTest {
                 assertEquals(0, sim.decisions(runId).size());
                 assertEquals(0, sim.facts(runId).orders().size());
             } finally {
-                jdbc.execute("DROP TRIGGER continuous_sim_test_fail_before_insert ON strategy_sim_decisions");
-                jdbc.execute("DROP FUNCTION continuous_sim_test_fail()");
+                tenantDatabase.admin.execute("DROP TRIGGER continuous_sim_test_fail_before_insert ON strategy_sim_decisions");
+                tenantDatabase.admin.execute("DROP FUNCTION continuous_sim_test_fail()");
             }
             CountDownLatch release = new CountDownLatch(1);
             try (var workers = Executors.newFixedThreadPool(2)) {
@@ -282,8 +306,8 @@ class StrategySimPostgresIntegrationTest {
             int ledgerBefore = sim.facts(runId).ledgerEntries().size();
             String priorStrategyRun = sim.decisions(runId).getFirst().strategyRunId();
             assertEquals("RUNNING", strategyRunStatus(priorStrategyRun));
-            ContinuousSimRunService sameWindowRestarted = new ContinuousSimRunService(continuousProgress,
-                    sim, runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(3), java.time.ZoneOffset.UTC));
+            ContinuousSimRunService sameWindowRestarted = tenantAware(new ContinuousSimRunService(continuousProgress,
+                    sim, runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(3), java.time.ZoneOffset.UTC)));
             assertEquals("RUNNING", sameWindowRestarted.pollOnce(runId).status());
             assertEquals(firstNew.openTime(), sameWindowRestarted.status(runId).lastProcessedBar());
             assertEquals("SUCCEEDED", strategyRunStatus(priorStrategyRun));
@@ -296,8 +320,8 @@ class StrategySimPostgresIntegrationTest {
                     Timestamp.from(hourBar(4, "104").openTime()),
                     Timestamp.from(hourBar(4, "104").closeTime()),
                     ContinuousSimRepository.contentSha(hourBar(4, "104")), runId);
-            ContinuousSimRunService restarted = new ContinuousSimRunService(continuousProgress, sim,
-                    runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(3), java.time.ZoneOffset.UTC));
+            ContinuousSimRunService restarted = tenantAware(new ContinuousSimRunService(continuousProgress, sim,
+                    runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(3), java.time.ZoneOffset.UTC)));
             restarted.pollOnce(runId);
             assertEquals(firstNew.openTime(), restarted.status(runId).lastProcessedBar(),
                     restarted.status(runId).toString());
@@ -324,25 +348,27 @@ class StrategySimPostgresIntegrationTest {
         ClosedBarMarketFeed feed = (firstOpen, maximumBars) -> observation(firstTime,
                 firstTime.plusSeconds(1), List.of(hourBar(3, "103"), hourBar(4, "104"), firstNew)
                 .stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList());
-        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        ContinuousSimRunService driver = tenantAware(new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC)));
         String runA = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
-        String runB = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
+        var tenantB=tenantDatabase.demo("RESTART_B_"+UUID.randomUUID().toString().substring(0,8).toUpperCase(),"restart-b-"+UUID.randomUUID());
+        String runB=tenantDatabase.as(tenantB,()->driver.start(seedPublicHourly().publishId(),new BigDecimal("100")).paperRunId());
         var firstA = driver.pollOnce(runA);
-        var firstB = driver.pollOnce(runB);
+        var firstB = tenantDatabase.as(tenantB,()->driver.pollOnce(runB));
         assertEquals("RUNNING", firstA.status());
         assertEquals("RUNNING", firstB.status());
         assertEquals(firstNew.openTime(), firstA.lastProcessedBar());
         assertEquals(firstNew.openTime(), firstB.lastProcessedBar());
         matching.matchOnce(100);
+        tenantDatabase.as(tenantB,()->matching.matchOnce(100));
         var oldA = sim.decisions(runA).getFirst();
-        var oldB = sim.decisions(runB).getFirst();
+        var oldB = tenantDatabase.as(tenantB,()->sim.decisions(runB).getFirst());
         assertEquals("FILLED", jdbc.queryForObject("SELECT status FROM orders WHERE order_id=?",
                 String.class, oldA.orderId()));
-        assertEquals("FILLED", jdbc.queryForObject("SELECT status FROM orders WHERE order_id=?",
-                String.class, oldB.orderId()));
+        assertEquals("FILLED", tenantDatabase.as(tenantB,()->jdbc.queryForObject("SELECT status FROM orders WHERE order_id=?",
+                String.class, oldB.orderId())));
         assertEquals("RUNNING", strategyRunStatus(oldA.strategyRunId()));
-        assertEquals("RUNNING", strategyRunStatus(oldB.strategyRunId()));
+        assertEquals("RUNNING", tenantDatabase.as(tenantB,()->strategyRunStatus(oldB.strategyRunId())));
         assertEquals(1, sim.facts(runA).orders().size());
         assertEquals(1, sim.facts(runA).trades().size());
         assertTradeAccounting(runA, 1, sim.facts(runA).ledgerEntries().size());
@@ -350,7 +376,7 @@ class StrategySimPostgresIntegrationTest {
 
         assertEquals(hourBar(6, "90").openTime().toString(), restartProcess("C", runA));
         assertEquals("SUCCEEDED", strategyRunStatus(oldA.strategyRunId()));
-        assertEquals("RUNNING", strategyRunStatus(oldB.strategyRunId()));
+        assertEquals("RUNNING", tenantDatabase.as(tenantB,()->strategyRunStatus(oldB.strategyRunId())));
         assertEquals(1L, orderCount(oldA.orderId()));
         assertEquals(1L, tradeCount(oldA.orderId()));
         assertEquals(4L, tradeLedgerCount(oldA.orderId()));
@@ -358,7 +384,7 @@ class StrategySimPostgresIntegrationTest {
         assertEquals(2, sim.facts(runA).orders().size());
         assertEquals(1, sim.facts(runA).trades().size());
         assertEquals(hourBar(6, "90").openTime(), continuousProgress.get(runA).lastProcessedOpenTime());
-        assertEquals(firstNew.openTime(), continuousProgress.get(runB).lastProcessedOpenTime());
+        assertEquals(firstNew.openTime(), tenantDatabase.as(tenantB,()->continuousProgress.get(runB).lastProcessedOpenTime()));
         var nextA = sim.decisions(runA).getFirst();
         assertEquals("ACCEPTED", nextA.status());
         assertEquals("SELL", nextA.side());
@@ -369,28 +395,29 @@ class StrategySimPostgresIntegrationTest {
         ClosedBarMarketFeed repeatedFeed = (firstOpen, maximumBars) -> observation(secondTime,
                 secondTime.plusSeconds(1), List.of(firstNew, secondNew).stream()
                         .filter(bar -> !bar.openTime().isBefore(firstOpen)).toList());
-        ContinuousSimRunService repeated = new ContinuousSimRunService(continuousProgress, sim,
-                runs, repeatedFeed, jdbc, Clock.fixed(secondTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        ContinuousSimRunService repeated = tenantAware(new ContinuousSimRunService(continuousProgress, sim,
+                runs, repeatedFeed, jdbc, Clock.fixed(secondTime.plusSeconds(2), java.time.ZoneOffset.UTC)));
         assertEquals(hourBar(6, "90").openTime(), repeated.pollOnce(runA).lastProcessedBar());
         assertEquals(2, sim.facts(runA).orders().size());
         assertEquals(1, sim.facts(runA).trades().size());
         assertEquals(4L, tradeLedgerCount(oldA.orderId()));
 
         assertEquals(hourBar(6, "90").openTime().toString(), restartProcess("C", runB));
-        assertEquals("SUCCEEDED", strategyRunStatus(oldB.strategyRunId()));
-        assertEquals(1L, orderCount(oldB.orderId()));
-        assertEquals(1L, tradeCount(oldB.orderId()));
-        assertEquals(4L, tradeLedgerCount(oldB.orderId()));
-        var nextB = sim.decisions(runB).getFirst();
+        assertEquals("SUCCEEDED", tenantDatabase.as(tenantB,()->strategyRunStatus(oldB.strategyRunId())));
+        assertEquals(1L, tenantDatabase.as(tenantB,()->orderCount(oldB.orderId())));
+        assertEquals(1L, tenantDatabase.as(tenantB,()->tradeCount(oldB.orderId())));
+        assertEquals(4L, tenantDatabase.as(tenantB,()->tradeLedgerCount(oldB.orderId())));
+        var nextB = tenantDatabase.as(tenantB,()->sim.decisions(runB).getFirst());
         assertEquals("ACCEPTED", nextB.status());
         assertEquals("SELL", nextB.side());
         matching.matchOnce(100);
+        tenantDatabase.as(tenantB,()->matching.matchOnce(100));
         assertEquals(1L, tradeCount(nextA.orderId()));
-        assertEquals(1L, tradeCount(nextB.orderId()));
+        assertEquals(1L, tenantDatabase.as(tenantB,()->tradeCount(nextB.orderId())));
         assertEquals(4L, tradeLedgerCount(nextA.orderId()));
-        assertEquals(4L, tradeLedgerCount(nextB.orderId()));
+        assertEquals(4L, tenantDatabase.as(tenantB,()->tradeLedgerCount(nextB.orderId())));
         repeated.stop(runA);
-        repeated.stop(runB);
+        tenantDatabase.as(tenantB,()->repeated.stop(runB));
     }
 
     @Test
@@ -407,8 +434,8 @@ class StrategySimPostgresIntegrationTest {
                     observed.bars().stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList(),
                     observed.rule(), observed.quote());
         };
-        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        ContinuousSimRunService driver = tenantAware(new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC)));
         String runId = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
         assertEquals("RUNNING", driver.pollOnce(runId).status());
         var decision = sim.decisions(runId).getFirst();
@@ -425,21 +452,21 @@ class StrategySimPostgresIntegrationTest {
                 String.class, originalOrder));
 
         // 仅在随机测试 schema 中模拟订单已提交而 Decision 关联尚未提交的退出点。
-        jdbc.execute("ALTER TABLE strategy_sim_decisions DISABLE TRIGGER trg_strategy_sim_preserve_decision");
+        tenantDatabase.admin.execute("ALTER TABLE strategy_sim_decisions DISABLE TRIGGER trg_strategy_sim_preserve_decision");
         try {
             jdbc.update("""
                     UPDATE strategy_sim_decisions SET status='NOT_TRADABLE',reason='DECIDING',
                         strategy_run_id=NULL,order_id=NULL WHERE decision_id=?
                     """, decision.decisionId());
         } finally {
-            jdbc.execute("ALTER TABLE strategy_sim_decisions ENABLE TRIGGER trg_strategy_sim_preserve_decision");
+            tenantDatabase.admin.execute("ALTER TABLE strategy_sim_decisions ENABLE TRIGGER trg_strategy_sim_preserve_decision");
         }
         Instant secondTime = Instant.parse("2026-09-25T07:01:00Z");
         HistoricalBar secondNew = availableAt(hourBar(6, "90"), secondTime.toString());
         current.set(observation(secondTime, secondTime.plusSeconds(1),
                 List.of(hourBar(4, "104"), firstNew, secondNew)));
-        ContinuousSimRunService restarted = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(secondTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        ContinuousSimRunService restarted = tenantAware(new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(secondTime.plusSeconds(2), java.time.ZoneOffset.UTC)));
         var pending = restarted.pollOnce(runId);
         assertEquals("STALLED", pending.status());
         assertEquals("SIM_EXECUTION_BLOCKED", pending.blockReason());
@@ -486,8 +513,8 @@ class StrategySimPostgresIntegrationTest {
                     observed.bars().stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList(),
                     observed.rule(), observed.quote());
         };
-        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        ContinuousSimRunService driver = tenantAware(new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC)));
         String runId = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
         assertEquals("RUNNING", driver.pollOnce(runId).status());
         var decision = sim.decisions(runId).getFirst();
@@ -504,8 +531,8 @@ class StrategySimPostgresIntegrationTest {
         HistoricalBar secondNew = availableAt(hourBar(6, "106"), secondTime.toString());
         current.set(observation(secondTime, secondTime.plusSeconds(1),
                 List.of(hourBar(4, "104"), firstNew, secondNew)));
-        ContinuousSimRunService restarted = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(secondTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+        ContinuousSimRunService restarted = tenantAware(new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(secondTime.plusSeconds(2), java.time.ZoneOffset.UTC)));
         var progressed = restarted.pollOnce(runId);
         assertEquals("RUNNING", progressed.status());
         assertEquals(secondNew.openTime(), progressed.lastProcessedBar());
@@ -600,6 +627,7 @@ class StrategySimPostgresIntegrationTest {
             var beforeDisable = scheduledJobs.detail("PAPER_MATCHING");
             scheduledJobs.patch("PAPER_MATCHING", false, null, beforeDisable.version(),
                     "scheduler-test", "scheduler-test");
+            scheduledContinuous.stop(runId);
             String secondRunId = scheduledContinuous.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
             try {
                 var nextPoll = scheduledJobs.detail("CONTINUOUS_SIM_POLL");
@@ -624,7 +652,7 @@ class StrategySimPostgresIntegrationTest {
             scheduledJobs.patch("CONTINUOUS_SIM_POLL", false, 300_000L, poll.version(), "scheduler-test", "scheduler-test");
             var match = scheduledJobs.detail("PAPER_MATCHING");
             scheduledJobs.patch("PAPER_MATCHING", false, null, match.version(), "scheduler-test", "scheduler-test");
-            scheduledContinuous.stop(runId);
+            if(!"STOPPED".equals(scheduledContinuous.status(runId).status()))scheduledContinuous.stop(runId);
             schedulerObservation.set(null);
         }
     }
@@ -689,7 +717,7 @@ class StrategySimPostgresIntegrationTest {
                             Map.entry("nq.security.issuer", "nexus-quant-strategy-sim-synthetic"),
                             Map.entry("nq.security.secret", "strategy-sim-synthetic-secret-123456789"),
                             Map.entry("nq.security.access-token-ttl", "PT30M")))
-                    .run("--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema + ",public",
+                    .run("--spring.profiles.active=ci-app-smoke","--nq.runtime.trading-components.enabled=true","--nq.strategy-sim.enabled=true","--spring.flyway.enabled=false","--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema + ",public",
                             "--spring.datasource.username=" + databaseUser,
                             "--spring.datasource.password=" + databasePassword,
                             "--spring.flyway.enabled=false")) {
@@ -810,8 +838,8 @@ class StrategySimPostgresIntegrationTest {
                     observed.bars().stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList(),
                     observed.rule(), observed.quote());
         };
-        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(firstTime, java.time.ZoneOffset.UTC));
+        ContinuousSimRunService driver = tenantAware(new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(firstTime, java.time.ZoneOffset.UTC)));
         try {
             String runId = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
             driver.pollOnce(runId);
@@ -867,8 +895,8 @@ class StrategySimPostgresIntegrationTest {
                     observed.bars().stream().filter(bar -> !bar.openTime().isBefore(firstOpen)).toList(),
                     observed.rule(), observed.quote());
         };
-        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(observedAt, java.time.ZoneOffset.UTC));
+        ContinuousSimRunService driver = tenantAware(new ContinuousSimRunService(continuousProgress, sim,
+                runs, feed, jdbc, Clock.fixed(observedAt, java.time.ZoneOffset.UTC)));
         try {
             String runId = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
             driver.pollOnce(runId);
@@ -888,33 +916,29 @@ class StrategySimPostgresIntegrationTest {
 
     @Test
     void continuousAdmissionRejectsNinthActiveRunBeforeFunding() {
-        Fixture fixture = seedPublicHourly();
-        Instant now = Instant.parse("2026-09-25T06:01:00Z");
-        ClosedBarMarketFeed feed = (firstOpen, maximumBars) -> observation(now, now.plusSeconds(1),
-                List.of(hourBar(3, "103"), hourBar(4, "104")));
-        ContinuousSimRunService driver = new ContinuousSimRunService(continuousProgress, sim,
-                runs, feed, jdbc, Clock.fixed(now, java.time.ZoneOffset.UTC));
-        List<String> ids = new ArrayList<>();
+        Instant now=Instant.parse("2026-09-25T06:01:00Z");
+        ClosedBarMarketFeed feed=(firstOpen,maximumBars)->observation(now,now.plusSeconds(1),List.of(hourBar(3,"103"),hourBar(4,"104")));
+        var driver=tenantAware(new ContinuousSimRunService(continuousProgress,sim,runs,feed,jdbc,Clock.fixed(now,java.time.ZoneOffset.UTC)));
+        var tenants=new ArrayList<com.guidinglight.nexusquant.common.tenant.TenantIdentity>();
+        var fixtures=new ArrayList<Fixture>();var ids=new ArrayList<String>();
+        for(int i=0;i<9;i++) {
+            var tenant=tenantDatabase.demo("CAP_"+UUID.randomUUID().toString().substring(0,8).toUpperCase(),"cap-"+UUID.randomUUID());
+            tenants.add(tenant);fixtures.add(tenantDatabase.as(tenant,this::seedPublicHourly));
+        }
         try {
-            for (int i = 0; i < 8; i++) {
-                ids.add(driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId());
-            }
-            int accountsBefore = jdbc.queryForObject("SELECT count(*) FROM accounts WHERE venue='PAPER'",
-                    Integer.class);
-            assertEquals("CONTINUOUS_SIM_CAPACITY_EXCEEDED", assertThrows(IllegalStateException.class,
-                    () -> driver.start(fixture.publishId(), new BigDecimal("100"))).getMessage());
-            assertEquals(accountsBefore, jdbc.queryForObject(
-                    "SELECT count(*) FROM accounts WHERE venue='PAPER'", Integer.class));
-            assertEquals(8, continuousProgress.activeIds().size());
-            driver.stop(ids.getFirst());
-            ids.add(driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId());
-            assertEquals("CONTINUOUS_SIM_CAPACITY_EXCEEDED", assertThrows(IllegalStateException.class,
-                    () -> driver.resume(ids.getFirst())).getMessage());
-            assertEquals(8, continuousProgress.activeIds().size());
+            for(int i=0;i<8;i++) {int n=i;ids.add(tenantDatabase.as(tenants.get(n),()->driver.start(fixtures.get(n).publishId(),new BigDecimal("100")).paperRunId()));}
+            int before=tenantDatabase.admin.queryForObject("SELECT count(*) FROM accounts WHERE venue='PAPER'",Integer.class);
+            var rejected=assertThrows(org.springframework.dao.DataAccessException.class,()->tenantDatabase.as(tenants.get(8),()->driver.start(fixtures.get(8).publishId(),new BigDecimal("100"))));
+            assertTrue(rejected.getMostSpecificCause().getMessage().contains("CAPACITY_LIMIT"));
+            assertEquals(before,tenantDatabase.admin.queryForObject("SELECT count(*) FROM accounts WHERE venue='PAPER'",Integer.class));
+            assertEquals(8,tenantDatabase.admin.queryForObject("SELECT count(*) FROM tenant_continuous_slots WHERE active",Integer.class));
+            String stopped=ids.getFirst();tenantDatabase.as(tenants.getFirst(),()->driver.stop(stopped));
+            String replacement=tenantDatabase.as(tenants.getFirst(),()->driver.start(fixtures.getFirst().publishId(),new BigDecimal("100")).paperRunId());
+            ids.add(replacement);
+            assertThrows(org.springframework.dao.DataAccessException.class,()->tenantDatabase.as(tenants.getFirst(),()->driver.resume(stopped)));
+            assertEquals(8,tenantDatabase.admin.queryForObject("SELECT count(*) FROM tenant_continuous_slots WHERE active",Integer.class));
         } finally {
-            for (String id : ids) {
-                if (!"STOPPED".equals(driver.status(id).status())) driver.stop(id);
-            }
+            for(int i=0;i<ids.size();i++) {int n=i==8?0:i;String id=ids.get(i);tenantDatabase.as(tenants.get(n),()->{if(!"STOPPED".equals(driver.status(id).status()))driver.stop(id);return null;});}
         }
     }
 
@@ -1176,14 +1200,14 @@ class StrategySimPostgresIntegrationTest {
         assertEquals("ACCEPTED", accepted.status());
         String originalOrderId = accepted.orderId();
         // 仅在随机测试 schema 内模拟 canonical 订单提交后、决策关联前的进程中断。
-        jdbc.execute("ALTER TABLE strategy_sim_decisions DISABLE TRIGGER trg_strategy_sim_preserve_decision");
+        tenantDatabase.admin.execute("ALTER TABLE strategy_sim_decisions DISABLE TRIGGER trg_strategy_sim_preserve_decision");
         try {
             jdbc.update("""
                     UPDATE strategy_sim_decisions SET status='NOT_TRADABLE',reason='DECIDING',
                         strategy_run_id=NULL,order_id=NULL WHERE decision_id=?
                     """, accepted.decisionId());
         } finally {
-            jdbc.execute("ALTER TABLE strategy_sim_decisions ENABLE TRIGGER trg_strategy_sim_preserve_decision");
+            tenantDatabase.admin.execute("ALTER TABLE strategy_sim_decisions ENABLE TRIGGER trg_strategy_sim_preserve_decision");
         }
         var recovered = sim.advance(created.paperRunId());
         assertEquals("ACCEPTED", recovered.status());
@@ -1210,11 +1234,11 @@ class StrategySimPostgresIntegrationTest {
         try (var workers = Executors.newFixedThreadPool(2)) {
             var first = workers.submit(() -> {
                 release.await();
-                return sim.advance(created.paperRunId());
+                return tenantDatabase.as(localIdentity,()->sim.advance(created.paperRunId()));
             });
             var second = workers.submit(() -> {
                 release.await();
-                return sim.advance(created.paperRunId());
+                return tenantDatabase.as(localIdentity,()->sim.advance(created.paperRunId()));
             });
             release.countDown();
             var results = List.of(first.get(20, TimeUnit.SECONDS), second.get(20, TimeUnit.SECONDS));
@@ -1306,6 +1330,8 @@ class StrategySimPostgresIntegrationTest {
             builder.environment().put("SPRING_DATASOURCE_URL", baseUrl + "?currentSchema=" + schema + ",public");
             builder.environment().put("SPRING_DATASOURCE_USERNAME", databaseUser);
             builder.environment().put("SPRING_DATASOURCE_PASSWORD", databasePassword);
+            builder.environment().put("TASK_SIM_FIXTURE_INSTALLER_USER",System.getProperty("nq.strategy-sim.pg.user"));
+            builder.environment().put("TASK_SIM_FIXTURE_INSTALLER_PASSWORD",System.getProperty("nq.strategy-sim.pg.password"));
             builder.redirectErrorStream(true).redirectOutput(log.toFile());
             Process process = builder.start();
             try {
@@ -1353,7 +1379,7 @@ class StrategySimPostgresIntegrationTest {
         try {
             var service = new PublicMarketReplayCaptureService(HttpClient.newHttpClient(),
                     URI.create("http://127.0.0.1:" + server.getAddress().getPort()), mapper, jdbc,
-                    new TransactionTemplate(new DataSourceTransactionManager(jdbc.getDataSource())),
+                    new TransactionTemplate(applicationContext.getBean(org.springframework.transaction.PlatformTransactionManager.class)),
                     Clock.systemUTC());
             capture = service.capture(Instant.parse("2026-09-20T00:00:00Z"),
                     Instant.parse("2026-09-23T00:00:00Z"), "captured-public-replay-test");
@@ -1646,8 +1672,9 @@ class StrategySimPostgresIntegrationTest {
 
     private ReplayResult runCounterfactualReplay(String publishId, String originalSummary,
             List<HistoricalBar> changedBars, int barCount) {
-        JdbcTemplate isolated = new JdbcTemplate(new DriverManagerDataSource(
-                counterfactualDatabaseUrl, databaseUser, databasePassword));
+        var replaySource=new DriverManagerDataSource(counterfactualDatabaseUrl,databaseUser,databasePassword);
+        JdbcTemplate isolated=com.guidinglight.nexusquant.tenant.infra.jdbc.TenantJdbcTemplateFactory.create(
+                replaySource,new com.guidinglight.nexusquant.tenant.infra.jdbc.TenantTransactionManager(replaySource));
         String backtestId = isolated.queryForObject(
                 "SELECT backtest_run_id FROM backtest_publish_records WHERE publish_record_id=?",
                 String.class, publishId);
@@ -1836,14 +1863,19 @@ class StrategySimPostgresIntegrationTest {
     }
 
     private String cloneFrozenPublicReplayInput(String publishId) throws Exception {
-        var database = ReleaseBaselineTestDatabase.create("nq.strategy-sim.pg");
-        ownedDatabases.add(database);
-        // 当前实现消费新增费用与决策字段；仅初始化本夹具的独立库，不修改历史迁移。
-        var currentSchema = Flyway.configure().dataSource(database.source())
-                .locations("classpath:db/migration").cleanDisabled(true).target("27").load();
-        currentSchema.migrate();
-        currentSchema.validate();
-        JdbcTemplate isolation = new JdbcTemplate(database.source());
+        var database=TenantIsolationTestDatabase.create(null,System.getProperty("nq.strategy-sim.pg.url"),
+                System.getProperty("nq.strategy-sim.pg.user"),System.getProperty("nq.strategy-sim.pg.password"));
+        replayDatabases.put(database.url(),database);
+        database.grantRuntimePrivileges(databaseUser);
+        database.admin.update("INSERT INTO users(id,username,password_hash,enabled) VALUES(?,?,?,true)",
+                localIdentity.userId(),"replay-fixture-local","synthetic-no-login");
+        database.admin.update("INSERT INTO tenant_memberships(tenant_id,user_id,membership_kind,membership_role) VALUES(?,?,'LOCAL','LOCAL_MEMBER')",
+                localIdentity.tenantId().value(),localIdentity.userId());
+        JdbcTemplate isolation=database.admin;
+        var transaction=new org.springframework.transaction.support.TransactionTemplate(
+                new DataSourceTransactionManager(isolation.getDataSource()));
+        transaction.executeWithoutResult(status->{
+            isolation.queryForObject("SELECT set_config('nq.tenant_id',?,true)",String.class,localIdentity.tenantId().value().toString());
         // B 只取得冻结研究输入；两个 public schema 属于不同数据库，不能共享 canonical 写入。
         for (String table : List.of("accounts", "marketdata_datasets", "marketdata_bars",
                 "marketdata_dataset_coverage", "public_market_captures", "strategy_definitions",
@@ -1860,11 +1892,14 @@ class StrategySimPostgresIntegrationTest {
         for (String table : List.of("strategy_sim_decisions", "orders", "trades", "ledger_entries")) {
             assertEquals(0, isolation.queryForObject("SELECT count(*) FROM " + table, Integer.class));
         }
+        });
         return database.url();
     }
 
     private ReplayResult runIndependentReplay(String publishId, int barCount, String targetDatabaseUrl) {
-        try (ConfigurableApplicationContext context = new SpringApplicationBuilder(NexusQuantApplication.class)
+        try (var replayScope=com.guidinglight.nexusquant.common.tenant.TenantContext.openExecution(
+                new com.guidinglight.nexusquant.common.tenant.TenantExecutionIdentity(localIdentity.tenantId(),1));
+                ConfigurableApplicationContext context = new SpringApplicationBuilder(NexusQuantApplication.class)
                 .profiles("ci-app-smoke").web(WebApplicationType.NONE)
                 .initializers(new NqAppContextPostgresSmokeTest.NoOutboundInitializer())
                 .properties(Map.ofEntries(
@@ -1886,7 +1921,7 @@ class StrategySimPostgresIntegrationTest {
                         Map.entry("nq.security.issuer", "nexus-quant-strategy-sim-synthetic"),
                         Map.entry("nq.security.secret", "strategy-sim-synthetic-secret-123456789"),
                         Map.entry("nq.security.access-token-ttl", "PT30M")))
-                .run("--spring.datasource.url=" + targetDatabaseUrl,
+                .run("--spring.profiles.active=ci-app-smoke","--nq.runtime.trading-components.enabled=true","--nq.strategy-sim.enabled=true","--spring.flyway.enabled=false","--spring.datasource.url=" + targetDatabaseUrl,
                         "--spring.datasource.username=" + databaseUser,
                         "--spring.datasource.password=" + databasePassword)) {
             JdbcTemplate isolated = context.getBean(JdbcTemplate.class);
@@ -2171,7 +2206,7 @@ class StrategySimPostgresIntegrationTest {
         try (ConfigurableApplicationContext web = new SpringApplicationBuilder(NexusQuantApplication.class, SchedulerFeedConfiguration.class, ProductUxRiskConfiguration.class)
                 .profiles("ci-app-smoke", "public-marketdata-manual").web(WebApplicationType.SERVLET)
                 .initializers(new NqAppContextPostgresSmokeTest.NoOutboundInitializer())
-                .run("--server.port=18889", "--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema + ",public",
+                .run("--spring.profiles.active=ci-app-smoke","--nq.runtime.trading-components.enabled=true","--nq.strategy-sim.enabled=true","--spring.flyway.enabled=false","--server.port=18889", "--spring.datasource.url=" + baseUrl + "?currentSchema=" + schema + ",public",
                         "--spring.datasource.username=" + databaseUser, "--spring.datasource.password=" + databasePassword,
                         "--spring.flyway.enabled=false", "--spring.sql.init.mode=never",
                         "--nq.runtime.trading-components.enabled=true", "--nq.strategy-sim.enabled=true",
@@ -2299,8 +2334,9 @@ class StrategySimPostgresIntegrationTest {
                 + "\",\"checksum\":\"" + checksum + "\",\"paramSnapshot\":"
                 + params + ",\"sourceSnapshot\":" + source + "}";
         Long account = jdbc.queryForObject("""
-                INSERT INTO accounts(account_code,venue,status) VALUES (?,'OKX','ACTIVE') RETURNING account_id
-                """, Long.class, "STRATEGY-SIM-TEST-SOURCE-" + id);
+                INSERT INTO accounts(account_code,venue,status) VALUES (?,?,'ACTIVE') RETURNING account_id
+                """, Long.class, "STRATEGY-SIM-TEST-SOURCE-" + id,
+                com.guidinglight.nexusquant.common.tenant.TenantContext.requireCurrent().kind()==com.guidinglight.nexusquant.common.tenant.TenantKind.DEMO?"PAPER":"OKX");
         jdbc.update("""
                 INSERT INTO strategy_definitions(strategy_id,strategy_code,strategy_name,strategy_type,
                     exchange_code,account_id,trade_env,enabled,config_snapshot)

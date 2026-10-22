@@ -53,7 +53,7 @@ class JdbcRepositoryPostgresSmokeTest {
     private static final String PASSWORD_PROPERTY = "nq.postgres.smoke.password";
 
     @Test
-    void shouldInsertAndReadSelectedRepositoriesAgainstMigratedPostgresSchema() {
+    void shouldInsertAndReadSelectedRepositoriesAgainstMigratedPostgresSchema() throws Exception {
         SmokeConfig config = SmokeConfig.fromSystemProperties();
         if (!config.required()) {
             assumeTrue(config.configured(),
@@ -61,15 +61,10 @@ class JdbcRepositoryPostgresSmokeTest {
         }
         assertTrue(config.configured(), "Missing required nq.postgres.smoke.* properties");
 
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setDriverClassName("org.postgresql.Driver");
-        dataSource.setUrl(config.url());
-        dataSource.setUsername(config.user());
-        dataSource.setPassword(config.password());
-
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
-        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        try(var database=new TenantRepositoryTestDatabase(config.url(),config.user(),config.password())) {
+        JdbcTemplate jdbcTemplate=database.jdbc;
+        DataSourceTransactionManager transactionManager=database.manager;
+        TransactionTemplate transactionTemplate=new TransactionTemplate(transactionManager);
         String smokeRunId = "ci-repo-smoke-" + UUID.randomUUID();
 
         transactionTemplate.executeWithoutResult(status -> {
@@ -87,6 +82,7 @@ class JdbcRepositoryPostgresSmokeTest {
                 transactionManager,
                 smokeRunId
         );
+        }
     }
 
     private static void assertShadowRunSchema(JdbcTemplate jdbcTemplate) {
@@ -196,7 +192,7 @@ class JdbcRepositoryPostgresSmokeTest {
         Instant startTime = Instant.parse("2026-07-06T00:00:00Z");
         Instant endTime = startTime.plusSeconds(60);
 
-        try {
+        {
             accountId = jdbcTemplate.queryForObject(
                     """
                             INSERT INTO accounts (account_code, venue, status)
@@ -326,16 +322,8 @@ class JdbcRepositoryPostgresSmokeTest {
             assertEquals("req-shadow-audit-smoke", eventRow.get("request_id"));
             assertEquals(smokeRunId, eventRow.get("trace_id"));
             assertTrue(String.valueOf(eventRow.get("metadata")).contains("rejectedTransition"));
-        } finally {
-            jdbcTemplate.update("DELETE FROM shadow_run_events WHERE shadow_run_id = ?", shadowRunId);
-            jdbcTemplate.update("DELETE FROM shadow_runs WHERE id = ?", shadowRunId);
-            jdbcTemplate.update("DELETE FROM strategy_versions WHERE strategy_version_id = ?", strategyVersionId);
-            jdbcTemplate.update("DELETE FROM marketdata_datasets WHERE dataset_id = ?", datasetId);
-            jdbcTemplate.update("DELETE FROM strategy_definitions WHERE strategy_id = ?", strategyId);
-            if (accountId != null) {
-                jdbcTemplate.update("DELETE FROM accounts WHERE account_id = ?", accountId);
-            }
         }
+        // 由独立数据库整体清理，保留不可变事件与后台身份，不删除业务根对象来做测试收尾。
     }
 
     private static void assertAuditLogRepository(JdbcTemplate jdbcTemplate, String smokeRunId) {

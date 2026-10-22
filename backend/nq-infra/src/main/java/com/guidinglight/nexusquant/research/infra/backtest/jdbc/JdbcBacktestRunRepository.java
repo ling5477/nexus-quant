@@ -38,7 +38,7 @@ public class JdbcBacktestRunRepository implements BacktestRunRepository {
                    dataset_snapshot_json::text AS dataset_snapshot_json,
                    summary_json::text AS summary_json, requested_at, started_at, finished_at,
                    failure_code, failure_message, created_at, updated_at
-            FROM backtest_runs
+            FROM (SELECT tr.* FROM backtest_runs tr WHERE EXISTS(SELECT 1 FROM backtest_configs tc WHERE tc.backtest_config_id=tr.backtest_config_id AND tc.tenant_id=nq_current_tenant_id())) backtest_runs
             """;
 
     private static final RowMapper<BacktestRun> ROW_MAPPER = JdbcBacktestRunRepository::mapRow;

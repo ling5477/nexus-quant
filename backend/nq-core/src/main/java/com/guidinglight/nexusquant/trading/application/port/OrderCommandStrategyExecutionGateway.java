@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.trading.application.port;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import com.guidinglight.nexusquant.common.tenant.TenantWorkAccess;
 import com.guidinglight.nexusquant.risk.application.port.RiskGate;
 import com.guidinglight.nexusquant.account.domain.port.AccountTradeEnvironmentAuthority;
 
@@ -24,6 +26,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class OrderCommandStrategyExecutionGateway implements StrategyExecutionGateway {
+    @Autowired
+    private TenantWorkAccess tenantWork;
 
     private final StrategyOrderExecutionService executionService;
     private final StrategyRunExecutionRepository executions;
@@ -43,6 +47,12 @@ public class OrderCommandStrategyExecutionGateway implements StrategyExecutionGa
 
     @Override
     public StrategyExecutionResult execute(StrategyExecutionIntent intent) {
+        if (tenantWork != null) return tenantWork.execute(
+                TenantWorkAccess.Kind.STRATEGY, intent.strategyRunId(), () -> executeScoped(intent));
+        return executeScoped(intent);
+    }
+
+    private StrategyExecutionResult executeScoped(StrategyExecutionIntent intent) {
         var run = runs.findByStrategyRunId(intent.strategyRunId()).orElseThrow();
         var work = executions.findWork(run.strategyRunId()).orElseThrow();
         if (!work.intent(run).equals(intent)) throw new IllegalArgumentException("STRATEGY_IMMUTABLE_WORK_OVERRIDE");
@@ -51,6 +61,8 @@ public class OrderCommandStrategyExecutionGateway implements StrategyExecutionGa
 
     @Override
     public StrategyExecutionResult resume(String runId) {
+        if (tenantWork != null) return tenantWork.execute(
+                TenantWorkAccess.Kind.STRATEGY, runId, () -> executeAndProject(runId,true));
         return executeAndProject(runId, true);
     }
 

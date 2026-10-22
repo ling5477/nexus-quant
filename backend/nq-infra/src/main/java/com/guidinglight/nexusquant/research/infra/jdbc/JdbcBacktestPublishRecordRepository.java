@@ -58,7 +58,7 @@ public class JdbcBacktestPublishRecordRepository
     public void upsert(BacktestPublishRecord record) {
         List<String> existingPublishIds =
                 jdbcTemplate.query(
-                        "SELECT publish_record_id FROM backtest_publish_records WHERE backtest_run_id = ?",
+                        "SELECT publish_record_id FROM (SELECT tr.* FROM backtest_publish_records tr WHERE nq_entity_tenant('backtest',tr.backtest_run_id)=nq_current_tenant_id()) backtest_publish_records WHERE backtest_run_id = ?",
                         (resultSet, rowNum) -> resultSet.getString("publish_record_id"),
                         record.backtestRunId());
         int updated =
@@ -144,7 +144,7 @@ public class JdbcBacktestPublishRecordRepository
         var reader = new JdbcTemplate(jdbcTemplate.getDataSource());
         reader.setQueryTimeout(5);
         return reader.query(
-                "SELECT * FROM backtest_publish_records WHERE publish_record_id IN ("
+                "SELECT * FROM (SELECT tr.* FROM backtest_publish_records tr WHERE nq_entity_tenant('backtest',tr.backtest_run_id)=nq_current_tenant_id()) backtest_publish_records WHERE publish_record_id IN ("
                         + String.join(",", Collections.nCopies(ids.size(), "?"))
                         + ") AND "
                         + feeScope.backtest("backtest_publish_records.backtest_run_id", owner)
@@ -165,7 +165,7 @@ public class JdbcBacktestPublishRecordRepository
                                evaluation_summary_json::text AS evaluation_summary_json,
                                failure_code, failure_message, published_at, created_at, updated_at,
                                artifact_storage_key, manifest_storage_key
-                        FROM backtest_publish_records
+                        FROM (SELECT tr.* FROM backtest_publish_records tr WHERE nq_entity_tenant('backtest',tr.backtest_run_id)=nq_current_tenant_id()) backtest_publish_records
                         WHERE backtest_run_id = ?
                         """
                                 + " AND "
@@ -186,7 +186,7 @@ public class JdbcBacktestPublishRecordRepository
                                evaluation_summary_json::text AS evaluation_summary_json,
                                failure_code, failure_message, published_at, created_at, updated_at,
                                artifact_storage_key, manifest_storage_key
-                        FROM backtest_publish_records
+                        FROM (SELECT tr.* FROM backtest_publish_records tr WHERE nq_entity_tenant('backtest',tr.backtest_run_id)=nq_current_tenant_id()) backtest_publish_records
                         """
                         + " WHERE "
                         + feeScope.backtest("backtest_publish_records.backtest_run_id")
@@ -206,7 +206,7 @@ public class JdbcBacktestPublishRecordRepository
                                evaluation_summary_json::text AS evaluation_summary_json,
                                failure_code, failure_message, published_at, created_at, updated_at,
                                artifact_storage_key, manifest_storage_key
-                        FROM backtest_publish_records
+                        FROM (SELECT tr.* FROM backtest_publish_records tr WHERE nq_entity_tenant('backtest',tr.backtest_run_id)=nq_current_tenant_id()) backtest_publish_records
                         WHERE publish_record_id = ?
                         """
                                 + " AND "
@@ -219,7 +219,7 @@ public class JdbcBacktestPublishRecordRepository
     /** 通过正式来源运行限制COUNT和页记录，已冻结发布快照不会因分页重新生成。 */
     @Override
     public ResearchResultPage<BacktestPublishRecord> readPage(PublishListQuery query) {
-        String from = " FROM backtest_publish_records p";
+        String from = " FROM (SELECT tr.* FROM backtest_publish_records tr WHERE nq_entity_tenant('backtest',tr.backtest_run_id)=nq_current_tenant_id()) p";
         StringBuilder where =
                 new StringBuilder(" WHERE ").append(feeScope.backtest("p.backtest_run_id"));
         List<Object> args = new ArrayList<>();

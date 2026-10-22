@@ -40,7 +40,19 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 @ActiveProfiles("local")
 @WithMockUser(username = "local-operator", roles = {"OPERATOR", "VIEWER"})
+@org.springframework.test.context.TestExecutionListeners(listeners=com.guidinglight.nexusquant.app.smoke.RestrictedPostgresTestInitializer.LocalScope.class,
+        mergeMode=org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
+@org.springframework.test.context.ContextConfiguration(initializers=com.guidinglight.nexusquant.app.smoke.RestrictedPostgresTestInitializer.class)
+@org.springframework.context.annotation.Import(com.guidinglight.nexusquant.app.smoke.LocalTenantMockMvcFixture.class)
+@org.springframework.test.annotation.DirtiesContext(classMode=org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS)
 class ResearchBacktestHappyPathLocalTest {
+    @Autowired org.springframework.context.ApplicationContext fixtureContext;
+    @org.junit.jupiter.api.BeforeEach void scopedFixtureQueries() {
+        jdbcTemplate=com.guidinglight.nexusquant.app.smoke.LocalTenantMockMvcFixture.fixtureQueries(jdbcTemplate,
+                fixtureContext.getBean(com.guidinglight.nexusquant.app.smoke.RestrictedPostgresTestInitializer.IDENTITY,
+                        com.guidinglight.nexusquant.common.tenant.TenantIdentity.class));
+    }
+
 
     @Autowired
     private MockMvc mockMvc;
@@ -64,7 +76,7 @@ class ResearchBacktestHappyPathLocalTest {
         String backtestRunId = null;
         Long exchangeAccountId = null;
         Long accountId = null;
-        try {
+        {
             Long ownerUserId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE username='admin'", Long.class);
             // 每次经正式账户创建链取得兼容身份，避免依赖本地库遗留的 accounts fixture。
             var exchangeAccount = exchangeAccountCommandService.create(ownerUserId,
@@ -221,28 +233,7 @@ class ResearchBacktestHappyPathLocalTest {
                     backtestRunId
             );
             assertEquals(1, reportCount);
-        } finally {
-            if (backtestRunId != null) {
-                jdbcTemplate.update("DELETE FROM backtest_eval_reports WHERE backtest_run_id = ?", backtestRunId);
-                jdbcTemplate.update("DELETE FROM sim_pnl_snapshots WHERE backtest_run_id = ?", backtestRunId);
-                jdbcTemplate.update("DELETE FROM sim_positions WHERE backtest_run_id = ?", backtestRunId);
-                jdbcTemplate.update("DELETE FROM sim_trades WHERE backtest_run_id = ?", backtestRunId);
-                jdbcTemplate.update("DELETE FROM sim_orders WHERE backtest_run_id = ?", backtestRunId);
-                jdbcTemplate.update("DELETE FROM backtest_runs WHERE backtest_run_id = ?", backtestRunId);
-            }
-            if (backtestConfigId != null) {
-                jdbcTemplate.update("DELETE FROM backtest_configs WHERE backtest_config_id = ?", backtestConfigId);
-            }
-            if (researchConfigId != null) {
-                jdbcTemplate.update("DELETE FROM research_configs WHERE research_config_id = ?", researchConfigId);
-            }
-            jdbcTemplate.update("DELETE FROM strategy_definitions WHERE strategy_id = ?", sourceStrategyId);
-            if (exchangeAccountId != null) {
-                jdbcTemplate.update("DELETE FROM exchange_accounts WHERE exchange_account_id = ?", exchangeAccountId);
-            }
-            if (accountId != null) {
-                jdbcTemplate.update("DELETE FROM accounts WHERE account_id = ?", accountId);
-            }
         }
+        // 独立数据库由 ContextClosed 清理，保留所有不可变关联和工作身份，不逐行删除业务图。
     }
 }

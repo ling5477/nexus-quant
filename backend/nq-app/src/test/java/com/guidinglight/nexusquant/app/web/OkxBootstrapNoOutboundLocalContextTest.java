@@ -40,9 +40,11 @@ import org.springframework.test.context.ContextConfiguration;
  */
 @SpringBootTest(classes = NexusQuantApplication.class)
 @ActiveProfiles("local")
-@ContextConfiguration(initializers = OkxBootstrapNoOutboundLocalContextTest.NoOkxOutboundInitializer.class)
+@ContextConfiguration(initializers = {OkxBootstrapNoOutboundLocalContextTest.NoOkxOutboundInitializer.class,com.guidinglight.nexusquant.app.smoke.RestrictedPostgresTestInitializer.class})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ExtendWith(OutputCaptureExtension.class)
+@org.springframework.test.context.TestExecutionListeners(listeners=com.guidinglight.nexusquant.app.smoke.RestrictedPostgresTestInitializer.LocalScope.class,
+        mergeMode=org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 class OkxBootstrapNoOutboundLocalContextTest {
 
     @Autowired

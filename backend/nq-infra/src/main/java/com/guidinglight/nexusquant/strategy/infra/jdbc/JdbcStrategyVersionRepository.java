@@ -33,7 +33,7 @@ public class JdbcStrategyVersionRepository
                    config_snapshot_json::text AS config_snapshot_json,
                    source_snapshot_json::text AS source_snapshot_json,
                    checksum, created_by, created_at, updated_at
-            FROM strategy_versions
+            FROM (SELECT * FROM strategy_versions WHERE tenant_id=nq_current_tenant_id()) strategy_versions
             """;
 
     private static final RowMapper<StrategyVersion> ROW_MAPPER =
@@ -98,7 +98,7 @@ public class JdbcStrategyVersionRepository
     public Optional<StrategyVersion> findById(String strategyVersionId) {
         List<StrategyVersion> rows =
                 jdbcTemplate.query(
-                        BASE_SELECT + " WHERE strategy_version_id = ?",
+                        BASE_SELECT + " WHERE tenant_id=nq_current_tenant_id() AND strategy_version_id = ?",
                         ROW_MAPPER,
                         strategyVersionId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
@@ -114,7 +114,7 @@ public class JdbcStrategyVersionRepository
     public int maxVersion(String strategyCode) {
         Integer value =
                 jdbcTemplate.queryForObject(
-                        "SELECT COALESCE(MAX(version), 0) FROM strategy_versions WHERE strategy_code = ?",
+                        "SELECT COALESCE(MAX(version), 0) FROM (SELECT * FROM strategy_versions WHERE tenant_id=nq_current_tenant_id()) strategy_versions WHERE strategy_code = ?",
                         Integer.class,
                         strategyCode);
         return value == null ? 0 : value;
@@ -150,7 +150,7 @@ public class JdbcStrategyVersionRepository
         }
         long total =
                 jdbcTemplate.queryForObject(
-                        "SELECT COUNT(*) FROM strategy_versions" + where,
+                        "SELECT COUNT(*) FROM (SELECT * FROM strategy_versions WHERE tenant_id=nq_current_tenant_id()) strategy_versions" + where,
                         Long.class,
                         values.toArray());
         values.add(query.limit());
@@ -158,7 +158,7 @@ public class JdbcStrategyVersionRepository
         // 元信息窗口不投影三份JSON；完整快照只走既有按ID读取，不增加N+1。
         var items =
                 jdbcTemplate.query(
-                        "SELECT strategy_version_id,strategy_code,version,version_name,status,checksum,created_by,created_at,updated_at FROM strategy_versions"
+                        "SELECT strategy_version_id,strategy_code,version,version_name,status,checksum,created_by,created_at,updated_at FROM (SELECT * FROM strategy_versions WHERE tenant_id=nq_current_tenant_id()) strategy_versions"
                                 + where
                                 + " ORDER BY version DESC, created_at DESC, strategy_version_id DESC LIMIT ? OFFSET ?",
                         (rs, row) ->

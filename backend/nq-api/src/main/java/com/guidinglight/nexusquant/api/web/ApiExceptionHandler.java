@@ -66,6 +66,21 @@ public class ApiExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
+    /** 数据库只给出稳定拒绝类别；不把 SQL、约束名或其他租户的对象细节返回客户端。 */
+    @ExceptionHandler(org.springframework.dao.DataAccessException.class)
+    public ResponseEntity<ApiErrorResponse> handleDatabaseBoundary(
+            org.springframework.dao.DataAccessException failure, HttpServletRequest request) {
+        String detail=String.valueOf(failure.getMostSpecificCause().getMessage());
+        String code=null;
+        for (String candidate : List.of("CAPACITY_LIMIT","TENANT_SUSPENDED","TENANT_EXECUTION_EPOCH_STALE","TENANT_ACCESS_DENIED","RUN_NOT_FOUND")) {
+            if(detail.contains(candidate)) {code=candidate;break;}
+        }
+        if(code==null) return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(handleException(failure,request));
+        HttpStatus status=code.equals("RUN_NOT_FOUND")?HttpStatus.NOT_FOUND:
+                code.equals("TENANT_ACCESS_DENIED")?HttpStatus.FORBIDDEN:HttpStatus.CONFLICT;
+        return ResponseEntity.status(status).body(build(status,code,code,request,List.of()));
+    }
+
     /** 必填操作编号缺失属于请求错误；不能误报500并诱导客户端按未知结果重复创建。 */
     @ExceptionHandler(MissingRequestHeaderException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

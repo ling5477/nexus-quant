@@ -61,18 +61,15 @@ class SchemaSemanticConsolidationPostgresIntegrationTest {
 
     @Test
     void preservesSimAndLiveBridgeIdentityAndRejectsInvalidOrMutableBindings() {
-        try (Fixture fixture = new Fixture()) {
+        try (Fixture fixture = new Fixture(true)) {
             fixture.latest.migrate();
             fixture.latest.validate();
             JdbcTemplate jdbc = fixture.jdbc;
-            long owner = jdbc.queryForObject("""
-                    INSERT INTO users(username,password_hash) VALUES (?, 'isolated-schema-fixture')
-                    RETURNING id
-                    """, Long.class, "schema-owner-" + UUID.randomUUID());
+            long owner=fixture.current.user("schema-owner-"+UUID.randomUUID(),"VIEWER");
             JdbcExchangeAccountRepository accounts = new JdbcExchangeAccountRepository(jdbc);
             CanonicalLegacyAccountBridgeService bridge = new CanonicalLegacyAccountBridgeService(jdbc);
             TransactionTemplate transactions = new TransactionTemplate(
-                    new DataSourceTransactionManager(jdbc.getDataSource()));
+                    new com.guidinglight.nexusquant.tenant.infra.jdbc.TenantTransactionManager(jdbc.getDataSource()));
             for (String environment : List.of("SIM", "LIVE")) {
                 var account = accounts.create(owner, "OKX", environment, "schema-" + environment, null, Instant.now());
                 long identity = transactions.execute(status -> "SIM".equals(environment)
@@ -103,18 +100,29 @@ class SchemaSemanticConsolidationPostgresIntegrationTest {
     }
 
     private static final class Fixture implements AutoCloseable {
-        final String schema = "schema_semantics_" + UUID.randomUUID().toString().replace("-", "");
+        final String schema;
+        final com.guidinglight.nexusquant.app.smoke.TenantIsolationTestDatabase current;
+        final com.guidinglight.nexusquant.common.tenant.TenantContext.ExecutionScope scope;
         final JdbcTemplate jdbc;
         final Flyway before;
         final Flyway latest;
 
-        Fixture() {
+        Fixture() {this(false);}
+        Fixture(boolean currentRuntime) {
             String url = System.getProperty("nq.postgres.smoke.url", "");
             String user = System.getProperty("nq.postgres.smoke.user", "");
             String password = System.getProperty("nq.postgres.smoke.password", "");
             boolean required = Boolean.parseBoolean(System.getProperty("nq.postgres.smoke.required", "false"));
             if (!required) assumeTrue(!url.isBlank() && !user.isBlank() && !password.isBlank());
             assertTrue(url.startsWith("jdbc:postgresql://127.0.0.1:"), "必须使用隔离的 loopback PostgreSQL");
+            if(currentRuntime) {
+                try {current=com.guidinglight.nexusquant.app.smoke.TenantIsolationTestDatabase.create(null,url,user,password);}
+                catch(Exception failure){throw new IllegalStateException("current runtime fixture preparation failed",failure);}
+                schema="public";jdbc=current.jdbc();before=current.migration("1");latest=current.migration(null);
+                scope=com.guidinglight.nexusquant.common.tenant.TenantContext.openExecution(new com.guidinglight.nexusquant.common.tenant.TenantExecutionIdentity(com.guidinglight.nexusquant.common.tenant.TenantId.LOCAL,1));
+                return;
+            }
+            current=null;scope=null;schema="schema_semantics_"+UUID.randomUUID().toString().replace("-", "");
             String schemaUrl = url + (url.contains("?") ? "&" : "?") + "currentSchema=" + schema + ",public";
             var dataSource = new DriverManagerDataSource(schemaUrl, user, password);
             jdbc = new JdbcTemplate(dataSource);
@@ -163,7 +171,8 @@ class SchemaSemanticConsolidationPostgresIntegrationTest {
 
         @Override
         public void close() {
-            latest.clean();
+            if(current==null)latest.clean();
+            else {scope.close();try {current.close();}catch(Exception failure){throw new IllegalStateException("owned fixture cleanup failed",failure);}}
         }
     }
 }

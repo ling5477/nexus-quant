@@ -859,6 +859,17 @@ jobs:
             validation-review-workbench-smoke.spec.ts \
             --project=chromium
 
+      - name: Prepare restricted local backend database
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -f backend/nq-app/pom.xml \
+            org.apache.maven.plugins:maven-dependency-plugin:3.8.1:build-classpath \
+            -DincludeScope=test -Dmdep.outputFile=target/local-runtime-classpath.txt
+          app_cp="$(cat backend/nq-app/target/local-runtime-classpath.txt)"
+          java -cp "backend/nq-app/target/test-classes:backend/nq-app/target/classes:${app_cp}" \
+            com.guidinglight.nexusquant.app.smoke.LocalTenantRuntimeFixture
+
       - name: Start nq-app local backend
         shell: bash
         run: |

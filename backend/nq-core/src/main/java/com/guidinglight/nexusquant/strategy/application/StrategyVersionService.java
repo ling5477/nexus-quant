@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.strategy.application;
 
+import com.guidinglight.nexusquant.strategy.domain.SpotSmaTargetStrategy;
+import com.guidinglight.nexusquant.common.tenant.TenantKind;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
@@ -99,6 +102,14 @@ public class StrategyVersionService {
                         ? normalizeJson(strategyDefinition.configSnapshot())
                         : normalizeJson(request.configSnapshotJson());
         String sourceSnapshot = normalizeJson(request.sourceSnapshotJson());
+        if (TenantContext.current().filter(identity ->
+                identity.kind() == TenantKind.DEMO).isPresent()) {
+            try {
+                com.fasterxml.jackson.databind.JsonNode source = snapshotReader.readTree(sourceSnapshot);
+                if (!SpotSmaTargetStrategy.EXECUTABLE.equals(source.path("executable").asText()))
+                    throw new IllegalArgumentException("TENANT_ACCESS_DENIED");
+            } catch (java.io.IOException failure) { throw new IllegalArgumentException("TENANT_ACCESS_DENIED",failure); }
+        }
         StrategyVersion version =
                 new StrategyVersion(
                         "sv-" + UUID.randomUUID(),

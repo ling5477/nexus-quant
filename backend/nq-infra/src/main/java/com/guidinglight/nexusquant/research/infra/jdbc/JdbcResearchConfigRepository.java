@@ -38,7 +38,7 @@ public class JdbcResearchConfigRepository
             SELECT research_config_id, source_strategy_id, name, description,
                    strategy_snapshot::text AS strategy_snapshot, config_json::text AS config_json,
                    created_at, updated_at, status, archived_at, archived_by, archive_reason
-            FROM research_configs
+            FROM (SELECT * FROM research_configs WHERE tenant_id=nq_current_tenant_id()) research_configs
             """;
 
     private final JdbcTemplate jdbcTemplate;
@@ -72,7 +72,7 @@ public class JdbcResearchConfigRepository
     public Optional<ResearchConfig> findByResearchConfigId(String researchConfigId) {
         List<ResearchConfig> rows =
                 jdbcTemplate.query(
-                        BASE_SELECT + " WHERE research_config_id = ?",
+                        BASE_SELECT + " WHERE tenant_id=nq_current_tenant_id() AND research_config_id = ?",
                         rowMapper(),
                         researchConfigId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
@@ -89,7 +89,7 @@ public class JdbcResearchConfigRepository
                             archived_by = ?,
                             archive_reason = ?,
                             updated_at = ?
-                        WHERE research_config_id = ?
+                        WHERE tenant_id=nq_current_tenant_id() AND research_config_id = ?
                           AND status <> 'ARCHIVED'
                         """,
                         Timestamp.from(archivedAt),
@@ -148,7 +148,7 @@ public class JdbcResearchConfigRepository
         }
         Long count =
                 jdbcTemplate.queryForObject(
-                        "SELECT COUNT(*) FROM research_configs" + where,
+                        "SELECT COUNT(*) FROM (SELECT * FROM research_configs WHERE tenant_id=nq_current_tenant_id()) research_configs" + where,
                         Long.class,
                         args.toArray());
         List<Object> pageArgs = new ArrayList<>(args);

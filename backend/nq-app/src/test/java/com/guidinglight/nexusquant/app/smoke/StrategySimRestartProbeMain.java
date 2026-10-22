@@ -52,23 +52,28 @@ public final class StrategySimRestartProbeMain {
                         Map.entry("nq.security.issuer", "nexus-quant-strategy-sim-synthetic"),
                         Map.entry("nq.security.secret", "strategy-sim-synthetic-secret-123456789"),
                         Map.entry("nq.security.access-token-ttl", "PT30M")))
-                .run()) {
+                .run("--spring.profiles.active=ci-app-smoke","--nq.runtime.trading-components.enabled=true","--nq.strategy-sim.enabled=true","--spring.flyway.enabled=false","--spring.sql.init.mode=never")) {
             StrategySimRunService sim = context.getBean(StrategySimRunService.class);
             JdbcTemplate jdbc = context.getBean(JdbcTemplate.class);
+            var tenantWork=context.getBean(com.guidinglight.nexusquant.common.tenant.TenantWorkAccess.class);
+            var restored=tenantWork.restore(com.guidinglight.nexusquant.common.tenant.TenantWorkAccess.Kind.PAPER,paperRunId);
+            try(var ignored=com.guidinglight.nexusquant.common.tenant.TenantContext.openExecution(restored)) {
             if ("A".equals(mode)) {
                 var accepted = sim.advance(paperRunId);
                 if (!"ACCEPTED".equals(accepted.status()) || accepted.orderId() == null) {
                     throw new AssertionError("first process did not commit canonical order");
                 }
                 // 模拟订单已提交、决策关联尚未提交时的退出；只修改一次性测试 schema。
-                jdbc.execute("ALTER TABLE strategy_sim_decisions DISABLE TRIGGER trg_strategy_sim_preserve_decision");
+                var fixtureJdbc=new JdbcTemplate(new org.springframework.jdbc.datasource.DriverManagerDataSource(url,
+                        System.getenv("TASK_SIM_FIXTURE_INSTALLER_USER"),System.getenv("TASK_SIM_FIXTURE_INSTALLER_PASSWORD")));
+                fixtureJdbc.execute("ALTER TABLE strategy_sim_decisions DISABLE TRIGGER trg_strategy_sim_preserve_decision");
                 try {
                     jdbc.update("""
                             UPDATE strategy_sim_decisions SET status='NOT_TRADABLE',reason='DECIDING',
                                 strategy_run_id=NULL,order_id=NULL WHERE decision_id=?
                             """, accepted.decisionId());
                 } finally {
-                    jdbc.execute("ALTER TABLE strategy_sim_decisions ENABLE TRIGGER trg_strategy_sim_preserve_decision");
+                    fixtureJdbc.execute("ALTER TABLE strategy_sim_decisions ENABLE TRIGGER trg_strategy_sim_preserve_decision");
                 }
                 System.out.println("STRATEGY_SIM_RESTART_A " + accepted.orderId());
             } else if ("B".equals(mode)) {
@@ -105,6 +110,7 @@ public final class StrategySimRestartProbeMain {
                 ContinuousSimRunService driver = new ContinuousSimRunService(progress, sim,
                         context.getBean(PaperTradingRunService.class), feed, jdbc,
                         Clock.fixed(serverTime.plusSeconds(2), java.time.ZoneOffset.UTC));
+                org.springframework.test.util.ReflectionTestUtils.setField(driver,"tenantWork",tenantWork);
                 var status = driver.pollOnce(paperRunId);
                 if (!nextOpen.equals(status.lastProcessedBar()) || !"RUNNING".equals(status.status())) {
                     throw new AssertionError("continuous restart failed: " + status);
@@ -112,6 +118,7 @@ public final class StrategySimRestartProbeMain {
                 System.out.println("STRATEGY_SIM_RESTART_C " + nextOpen);
             } else {
                 throw new IllegalArgumentException("unknown restart mode");
+            }
             }
         }
     }

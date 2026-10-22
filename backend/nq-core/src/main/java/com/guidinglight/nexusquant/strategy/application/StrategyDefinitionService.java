@@ -1,5 +1,10 @@
 package com.guidinglight.nexusquant.strategy.application;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import com.guidinglight.nexusquant.strategy.domain.SpotSmaTargetStrategy;
+import com.guidinglight.nexusquant.account.domain.port.TenantResearchAccountAccess;
+import com.guidinglight.nexusquant.common.tenant.TenantKind;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.guidinglight.nexusquant.strategy.application.command.StrategyDefinitionCreateRequest;
 
 import com.guidinglight.nexusquant.strategy.domain.StrategyDefinition;
@@ -20,6 +25,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class StrategyDefinitionService {
+    @Autowired
+    private TenantResearchAccountAccess researchAccounts;
 
     private final StrategyDefinitionRepository strategyDefinitionRepository;
     private final Clock clock;
@@ -37,7 +44,19 @@ public class StrategyDefinitionService {
 
     public StrategyDefinition create(StrategyDefinitionCreateRequest request) {
         validateCreateRequest(request);
-        String canonicalTradeEnv = accountEnvironment.requireMatching(request.accountId(),
+        if (TenantContext.current().filter(identity ->
+                identity.kind() == TenantKind.DEMO).isPresent()
+                && (!"SIM".equals(request.tradeEnv()) || !"PAPER".equals(request.exchangeCode())
+                    || !SpotSmaTargetStrategy.EXECUTABLE.equals(request.strategyType()))) {
+            throw new IllegalArgumentException("TENANT_ACCESS_DENIED");
+        }
+        boolean demo=TenantContext.current().filter(identity ->
+                identity.kind()==TenantKind.DEMO).isPresent();
+        String canonicalTradeEnv;
+        if (demo) {
+            researchAccounts.requirePaperResearchAccount(request.accountId());
+            canonicalTradeEnv="SIM";
+        } else canonicalTradeEnv = accountEnvironment.requireMatching(request.accountId(),
                 request.exchangeCode().trim().toUpperCase(), request.tradeEnv());
         Instant now = Instant.now(clock);
         StrategyDefinition definition = new StrategyDefinition(

@@ -62,7 +62,7 @@ public class StrategySimDecisionRepository {
                        input_sha256,execution_bar_sha256,
                        signal_open_time,signal_available_at,execution_open_time,status,reason,
                        side,quantity,execution_price,fee_rate,slippage_bps,strategy_run_id,order_id,fee_model_json::text,fee_charge_json::text
-                FROM strategy_sim_decisions WHERE paper_run_id=? AND signal_open_time=?
+                FROM (SELECT tr.* FROM strategy_sim_decisions tr WHERE nq_entity_tenant('paper',tr.paper_run_id)=nq_current_tenant_id()) strategy_sim_decisions WHERE paper_run_id=? AND signal_open_time=?
                 """,
                         (rs, n) -> map(rs),
                         paperRunId,
@@ -78,7 +78,7 @@ public class StrategySimDecisionRepository {
                        input_sha256,execution_bar_sha256,
                        signal_open_time,signal_available_at,execution_open_time,status,reason,
                        side,quantity,execution_price,fee_rate,slippage_bps,strategy_run_id,order_id,fee_model_json::text,fee_charge_json::text
-                FROM strategy_sim_decisions WHERE order_id=?
+                FROM (SELECT tr.* FROM strategy_sim_decisions tr WHERE nq_entity_tenant('paper',tr.paper_run_id)=nq_current_tenant_id()) strategy_sim_decisions WHERE order_id=?
                 """,
                         (rs, n) -> map(rs),
                         orderId);
@@ -92,7 +92,7 @@ public class StrategySimDecisionRepository {
                        input_sha256,execution_bar_sha256,
                        signal_open_time,signal_available_at,execution_open_time,status,reason,
                        side,quantity,execution_price,fee_rate,slippage_bps,strategy_run_id,order_id,fee_model_json::text,fee_charge_json::text
-                FROM strategy_sim_decisions WHERE paper_run_id=? ORDER BY signal_open_time DESC LIMIT 500
+                FROM (SELECT tr.* FROM strategy_sim_decisions tr WHERE nq_entity_tenant('paper',tr.paper_run_id)=nq_current_tenant_id()) strategy_sim_decisions WHERE paper_run_id=? ORDER BY signal_open_time DESC LIMIT 500
                 """,
                 (rs, n) -> map(rs),
                 paperRunId);

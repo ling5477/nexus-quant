@@ -25,6 +25,7 @@ class ContinuousSimRunServiceContextTest {
             context.getBeanFactory().registerSingleton("paperRuns", mock(PaperTradingRunService.class));
             context.getBeanFactory().registerSingleton("feed", mock(ClosedBarMarketFeed.class));
             context.getBeanFactory().registerSingleton("jdbc", mock(JdbcTemplate.class));
+            context.getBeanFactory().registerSingleton("tenantWork",mock(com.guidinglight.nexusquant.common.tenant.TenantWorkAccess.class));
             context.register(ContinuousSimRunService.class);
             context.refresh();
             assertNotNull(context.getBean(ContinuousSimRunService.class));

@@ -118,7 +118,7 @@ SELECT eval_report_id, backtest_run_id, evaluation_status, initial_capital, fina
        max_drawdown, max_drawdown_rate, profit_loss_ratio, sharpe_ratio,
        report_json::text AS report_json, metrics_json::text AS metrics_json,
        failure_code, failure_message, evaluated_at, created_at, updated_at
-FROM backtest_eval_reports
+FROM (SELECT tr.* FROM backtest_eval_reports tr WHERE nq_entity_tenant('backtest',tr.backtest_run_id)=nq_current_tenant_id()) backtest_eval_reports
 WHERE backtest_run_id = ?
 """
                 + " AND "
@@ -142,7 +142,7 @@ SELECT eval_report_id, backtest_run_id, evaluation_status, initial_capital, fina
        max_drawdown, max_drawdown_rate, profit_loss_ratio, sharpe_ratio,
        report_json::text AS report_json, metrics_json::text AS metrics_json,
        failure_code, failure_message, evaluated_at, created_at, updated_at
-FROM backtest_eval_reports
+FROM (SELECT tr.* FROM backtest_eval_reports tr WHERE nq_entity_tenant('backtest',tr.backtest_run_id)=nq_current_tenant_id()) backtest_eval_reports
 WHERE eval_report_id = ?
 """
                 + " AND "
@@ -163,7 +163,7 @@ SELECT eval_report_id, backtest_run_id, evaluation_status, initial_capital, fina
        max_drawdown, max_drawdown_rate, profit_loss_ratio, sharpe_ratio,
        report_json::text AS report_json, metrics_json::text AS metrics_json,
        failure_code, failure_message, evaluated_at, created_at, updated_at
-FROM backtest_eval_reports
+FROM (SELECT tr.* FROM backtest_eval_reports tr WHERE nq_entity_tenant('backtest',tr.backtest_run_id)=nq_current_tenant_id()) backtest_eval_reports
 """
             + " WHERE "
             + feeScope.backtest("backtest_eval_reports.backtest_run_id")
@@ -187,7 +187,7 @@ SELECT e.eval_report_id, e.backtest_run_id, e.evaluation_status, e.initial_capit
        e.max_drawdown_rate, e.profit_loss_ratio, e.sharpe_ratio,
        e.report_json::text AS report_json, e.metrics_json::text AS metrics_json,
        e.failure_code, e.failure_message, e.evaluated_at, e.created_at, e.updated_at
-FROM backtest_eval_reports e
+FROM (SELECT tr.* FROM backtest_eval_reports tr WHERE nq_entity_tenant('backtest',tr.backtest_run_id)=nq_current_tenant_id()) e
 JOIN backtest_runs r ON r.backtest_run_id = e.backtest_run_id
 """);
     List<Object> args = new ArrayList<>();
@@ -210,7 +210,7 @@ JOIN backtest_runs r ON r.backtest_run_id = e.backtest_run_id
   @Override
   public ResearchResultPage<BacktestEvaluationReport> readPage(EvaluationListQuery query) {
     String from =
-        " FROM backtest_eval_reports e JOIN backtest_runs r ON r.backtest_run_id ="
+        " FROM (SELECT tr.* FROM backtest_eval_reports tr WHERE nq_entity_tenant('backtest',tr.backtest_run_id)=nq_current_tenant_id()) e JOIN backtest_runs r ON r.backtest_run_id ="
             + " e.backtest_run_id";
     StringBuilder where =
         new StringBuilder(" WHERE ").append(feeScope.configuration("r.config_snapshot_json"));
