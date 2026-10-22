@@ -36,7 +36,19 @@ import java.time.Instant;
 @AutoConfigureMockMvc
 @ActiveProfiles("local")
 @WithMockUser(username = "local-operator", roles = {"OPERATOR", "VIEWER"})
+@org.springframework.test.context.TestExecutionListeners(listeners=com.guidinglight.nexusquant.app.smoke.RestrictedPostgresTestInitializer.LocalScope.class,
+        mergeMode=org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
+@org.springframework.test.context.ContextConfiguration(initializers=com.guidinglight.nexusquant.app.smoke.RestrictedPostgresTestInitializer.class)
+@org.springframework.context.annotation.Import(com.guidinglight.nexusquant.app.smoke.LocalTenantMockMvcFixture.class)
+@org.springframework.test.annotation.DirtiesContext(classMode=org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS)
 class MarketdataControllerLocalIntegrationTest {
+    @Autowired org.springframework.context.ApplicationContext fixtureContext;
+    @org.junit.jupiter.api.BeforeEach void scopedFixtureQueries() {
+        jdbcTemplate=com.guidinglight.nexusquant.app.smoke.LocalTenantMockMvcFixture.fixtureQueries(jdbcTemplate,
+                fixtureContext.getBean(com.guidinglight.nexusquant.app.smoke.RestrictedPostgresTestInitializer.IDENTITY,
+                        com.guidinglight.nexusquant.common.tenant.TenantIdentity.class));
+    }
+
 
     @Autowired
     private MockMvc mockMvc;

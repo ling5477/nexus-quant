@@ -380,6 +380,7 @@ class TradingRestartRecoveryPostgresIntegrationTest {
         private final String user;
         private final String password;
         private final String databaseName;
+        private final TenantIsolationTestDatabase tenantDatabase;
 
         private RestartDatabase(
                 String caseId,
@@ -387,13 +388,14 @@ class TradingRestartRecoveryPostgresIntegrationTest {
                 String databaseUrl,
                 String user,
                 String password,
-                String databaseName) {
+                String databaseName,TenantIsolationTestDatabase tenantDatabase) {
             this.caseId = caseId;
             this.maintenanceUrl = maintenanceUrl;
             this.databaseUrl = databaseUrl;
             this.user = user;
             this.password = password;
             this.databaseName = databaseName;
+            this.tenantDatabase=tenantDatabase;
         }
 
         static RestartDatabase create(String scenario) throws Exception {
@@ -413,45 +415,25 @@ class TradingRestartRecoveryPostgresIntegrationTest {
         static RestartDatabase create(String scenario, String baseUrl, String user, String password)
                 throws Exception {
             String caseId = scenario + "_" + UUID.randomUUID().toString().replace("-", "");
-            String databaseName = "nq_f002_" + caseId;
-            String maintenanceUrl = replaceDatabase(baseUrl, "postgres");
-            String databaseUrl = replaceDatabase(baseUrl, databaseName);
-            boolean created = false;
+            String maintenanceUrl=replaceDatabase(baseUrl,"postgres");
+            TenantIsolationTestDatabase tenant=null;
             try {
-                try (Connection connection =
-                                DriverManager.getConnection(maintenanceUrl, user, password);
-                        Statement statement = connection.createStatement()) {
-                    statement.execute("CREATE DATABASE " + databaseName);
-                    created = true;
-                }
-                Flyway flyway =
-                        Flyway.configure()
-                                .dataSource(databaseUrl, user, password)
-                                .locations("classpath:db/migration")
-                                .baselineOnMigrate(false)
-                                .cleanDisabled(true)
-                                .load();
-                var expected = releaseMigrationScripts(
-                        new ObjectMapper().readTree(
-                                B0Processes.root().resolve("scripts/ci/development-source-manifest.json").toFile()));
-                // 当前schema合同在迁移前核对解析集合；历史固定target夹具不使用此预期。
-                assertReleaseMigrationScripts(expected, flyway.info().all());
-                flyway.migrate();
-                flyway.validate();
-                assertEquals(expected.lastKey(), flyway.info().current().getVersion());
-                assertReleaseMigrationScripts(expected, flyway.info().applied());
-                assertEquals(0, flyway.info().pending().length);
-                return new RestartDatabase(
-                        caseId, maintenanceUrl, databaseUrl, user, password, databaseName);
-            } catch (Exception | AssertionError ex) {
-                if (created) {
-                    try {
-                        dropDatabase(maintenanceUrl, user, password, databaseName);
-                    } catch (Exception cleanupFailure) {
-                        ex.addSuppressed(cleanupFailure);
-                    }
-                }
-                throw ex;
+                tenant=TenantIsolationTestDatabase.create("1",baseUrl,user,password);
+                Flyway flyway=tenant.migration(null);
+                var expected=releaseMigrationScripts(new ObjectMapper().readTree(
+                        B0Processes.root().resolve("scripts/ci/development-source-manifest.json").toFile()));
+                assertReleaseMigrationScripts(expected,flyway.info().all());
+                flyway.migrate();flyway.validate();
+                assertEquals(expected.lastKey(),flyway.info().current().getVersion());
+                assertReleaseMigrationScripts(expected,flyway.info().applied());
+                assertEquals(0,flyway.info().pending().length);
+                tenant.runtime();tenant.user("restart-synthetic-owner","VIEWER");
+                String databaseUrl=tenant.url();
+                String databaseName=databaseUrl.substring(databaseUrl.lastIndexOf('/')+1);
+                return new RestartDatabase(caseId,maintenanceUrl,databaseUrl,user,password,databaseName,tenant);
+            } catch(Exception | AssertionError failure) {
+                if(tenant!=null)try {tenant.close();}catch(Exception cleanup){failure.addSuppressed(cleanup);}
+                throw failure;
             }
         }
 
@@ -556,11 +538,11 @@ class TradingRestartRecoveryPostgresIntegrationTest {
         }
 
         String user() {
-            return user;
+            return tenantDatabase.runtime;
         }
 
         String password() {
-            return password;
+            return tenantDatabase.runtimePassword;
         }
 
         private static OrderIdentity orderIdentity(Connection connection, String orderId)
@@ -626,7 +608,7 @@ class TradingRestartRecoveryPostgresIntegrationTest {
 
         @Override
         public void close() throws Exception {
-            dropDatabase(maintenanceUrl, user, password, databaseName);
+            tenantDatabase.close();
             deleteOutputDirectory();
         }
 

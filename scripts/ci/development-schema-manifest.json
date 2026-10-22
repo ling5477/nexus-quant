@@ -1,20 +1,20 @@
 {
   "manifestVersion": 2,
   "schemaVersion": "1.0",
-  "flywayVersion": "35",
+  "flywayVersion": "44",
   "postgresqlMajor": 16,
   "baselineFile": "V1__nexus_quant_v1_baseline.sql",
   "baselineSqlSha256": "65a9090d5e422e00655d01d11f266602681b3be41f0a34ee1d27e51cfc7f2cb9",
-  "normalizedSchemaSha256": "142b7623db438b7b8bb9d45e4c99c699c4a48ef2171a693f3d48a16580e90a4f",
+  "normalizedSchemaSha256": "79860c6ceb3b6a205d5c09cae8a6eb6b5529490466af9caa5f9162ddf7532f15",
   "schemaCounts": {
-    "tables": 106,
-    "columns": 1407,
-    "constraints": 757,
-    "indexes": 363,
-    "functions": 139,
-    "triggers": 94,
+    "tables": 114,
+    "columns": 1454,
+    "constraints": 842,
+    "indexes": 392,
+    "functions": 171,
+    "triggers": 153,
     "sequences": 12,
-    "comments": 1467,
+    "comments": 1485,
     "views": 0,
     "enums": 0
   },
@@ -298,6 +298,78 @@
       "script": "V35__tenant_identity_and_membership.sql",
       "checksum": 1904221315,
       "success": true
+    },
+    {
+      "version": "36",
+      "description": "business tenant ownership",
+      "type": "SQL",
+      "script": "V36__business_tenant_ownership.sql",
+      "checksum": -1764065869,
+      "success": true
+    },
+    {
+      "version": "37",
+      "description": "tenant relationship and event scopes",
+      "type": "SQL",
+      "script": "V37__tenant_relationship_and_event_scopes.sql",
+      "checksum": -397708750,
+      "success": true
+    },
+    {
+      "version": "38",
+      "description": "tenant execution controls",
+      "type": "SQL",
+      "script": "V38__tenant_execution_controls.sql",
+      "checksum": 1731795834,
+      "success": true
+    },
+    {
+      "version": "39",
+      "description": "tenant row level security",
+      "type": "SQL",
+      "script": "V39__tenant_row_level_security.sql",
+      "checksum": 1426157589,
+      "success": true
+    },
+    {
+      "version": "40",
+      "description": "tenant background work admission",
+      "type": "SQL",
+      "script": "V40__tenant_background_work_admission.sql",
+      "checksum": -1882343726,
+      "success": true
+    },
+    {
+      "version": "41",
+      "description": "tenant consistency guards",
+      "type": "SQL",
+      "script": "V41__tenant_consistency_guards.sql",
+      "checksum": -1202635678,
+      "success": true
+    },
+    {
+      "version": "42",
+      "description": "tenant internal publication scope",
+      "type": "SQL",
+      "script": "V42__tenant_internal_publication_scope.sql",
+      "checksum": -1757543801,
+      "success": true
+    },
+    {
+      "version": "43",
+      "description": "tenant reconciliation work scope",
+      "type": "SQL",
+      "script": "V43__tenant_reconciliation_work_scope.sql",
+      "checksum": 770962206,
+      "success": true
+    },
+    {
+      "version": "44",
+      "description": "tenant reconciliation and function resolution",
+      "type": "SQL",
+      "script": "V44__tenant_reconciliation_and_function_resolution.sql",
+      "checksum": 1287938109,
+      "success": true
     }
   ],
   "freshInstallFacts": {
@@ -307,6 +379,7 @@
       "account_fee_observations": 0,
       "account_snapshots": 0,
       "accounts": 0,
+      "audit_log_tenant_scopes": 0,
       "audit_logs": 0,
       "auth_sessions": 0,
       "backtest_configs": 0,
@@ -327,6 +400,7 @@
       "emergency_stop_events": 0,
       "equity_curve_snapshots": 0,
       "event_store": 0,
+      "event_tenant_scopes": 0,
       "exchange_account_credentials": 0,
       "exchange_accounts": 0,
       "execution_instrument_observation_items": 0,
@@ -346,6 +420,7 @@
       "marketdata_bars": 0,
       "marketdata_dataset_coverage": 0,
       "marketdata_dataset_operations": 0,
+      "marketdata_dataset_publications": 0,
       "marketdata_datasets": 0,
       "marketdata_ingestion_jobs": 0,
       "marketdata_ingestion_runs": 0,
@@ -375,6 +450,7 @@
       "reconciliation_scan_cursors": 0,
       "research_configs": 0,
       "research_creation_operations": 0,
+      "risk_event_tenant_scopes": 0,
       "risk_events": 0,
       "risk_limit_sets": 0,
       "roles": 5,
@@ -398,7 +474,11 @@
       "strategy_schedules": 0,
       "strategy_sim_decisions": 0,
       "strategy_versions": 0,
+      "tenant_background_work": 0,
+      "tenant_continuous_slots": 0,
+      "tenant_execution_controls": 1,
       "tenant_memberships": 0,
+      "tenant_work_scan_cursors": 6,
       "tenants": 1,
       "trade_replay_records": 0,
       "trades": 0,
@@ -591,7 +671,41 @@
           "tenant_name": "本地租户"
         }
       ],
-      "tenant_memberships": []
+      "tenant_memberships": [],
+      "tenant_execution_controls": [
+        {
+          "suspended": false,
+          "tenant_id": "00000000-0000-4000-8000-000000000001",
+          "execution_epoch": 1,
+          "requires_manual_resume": false
+        }
+      ],
+      "tenant_work_scan_cursors": [
+        {
+          "work_kind": "ACCOUNT",
+          "last_work_id": ""
+        },
+        {
+          "work_kind": "ORDER",
+          "last_work_id": ""
+        },
+        {
+          "work_kind": "PAPER",
+          "last_work_id": ""
+        },
+        {
+          "work_kind": "PAPER_SCHEDULE",
+          "last_work_id": ""
+        },
+        {
+          "work_kind": "STRATEGY",
+          "last_work_id": ""
+        },
+        {
+          "work_kind": "STRATEGY_SCHEDULE",
+          "last_work_id": ""
+        }
+      ]
     },
     "roleSequence": [
       {
@@ -789,6 +903,51 @@
       "version": "35",
       "script": "V35__tenant_identity_and_membership.sql",
       "sha256": "b1699768dfecb442ffc8fc704857b4d8ed7932e02bd29b1e8d866f365bbf52a6"
+    },
+    {
+      "version": "36",
+      "script": "V36__business_tenant_ownership.sql",
+      "sha256": "225e817468632948e77c8c9ad853fd1ed7c4aae5a465d50cdbf62b2acaf11b9f"
+    },
+    {
+      "version": "37",
+      "script": "V37__tenant_relationship_and_event_scopes.sql",
+      "sha256": "5d55bddffc85480f5efff19a29c4c3b27639b895490c6dbc32036fcd025c497f"
+    },
+    {
+      "version": "38",
+      "script": "V38__tenant_execution_controls.sql",
+      "sha256": "031d923149b46ea6b70904e569de46520afa7be40157ec7c4c1dfad655b44909"
+    },
+    {
+      "version": "39",
+      "script": "V39__tenant_row_level_security.sql",
+      "sha256": "5b3ee108fb75dc60c343a2edfd866c02dfde3553488dacadac7f99b8ccdcbf68"
+    },
+    {
+      "version": "40",
+      "script": "V40__tenant_background_work_admission.sql",
+      "sha256": "0c2d952a767039c8d1bf8e7ea8ed3bbac8f624279153c657bd9ea39453d68f17"
+    },
+    {
+      "version": "41",
+      "script": "V41__tenant_consistency_guards.sql",
+      "sha256": "80e5a6ad9b976d475c907b1f490419af52eac35be00cb2682be7c4e7e4afccb6"
+    },
+    {
+      "version": "42",
+      "script": "V42__tenant_internal_publication_scope.sql",
+      "sha256": "970c7efa66e895bdbc9aa748b2ad568ebe32bb45793ad3feba83ceb3f6f1b219"
+    },
+    {
+      "version": "43",
+      "script": "V43__tenant_reconciliation_work_scope.sql",
+      "sha256": "3624d6b03c76f6779c82b651aba06575d71d631bdc1da090417e6630f10331e0"
+    },
+    {
+      "version": "44",
+      "script": "V44__tenant_reconciliation_and_function_resolution.sql",
+      "sha256": "236527bde3fbd4f0115b5539ed9a0ee44374c2a28ebc5f73e52db1e609444d46"
     }
   ],
   "contractKind": "DEVELOPMENT_ONLY",
@@ -800,6 +959,8 @@
     "scheduled_job_controls",
     "strategy_run_recovery_scan_cursor",
     "tenants",
-    "tenant_memberships"
+    "tenant_memberships",
+    "tenant_execution_controls",
+    "tenant_work_scan_cursors"
   ]
 }

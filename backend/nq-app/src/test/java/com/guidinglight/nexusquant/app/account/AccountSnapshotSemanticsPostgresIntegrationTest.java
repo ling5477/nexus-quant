@@ -51,32 +51,18 @@ class AccountSnapshotSemanticsPostgresIntegrationTest {
         URI uri = URI.create(url.substring("jdbc:".length()));
         assertTrue(url.startsWith("jdbc:postgresql://") && Set.of("127.0.0.1", "localhost").contains(uri.getHost())
                 && uri.getRawQuery() == null && uri.getFragment() == null, "loopback database required");
-        String schema = "snapshot_semantics_" + UUID.randomUUID().toString().replace("-", "");
-        DriverManagerDataSource dataSource = new DriverManagerDataSource(
-                url + "?connectTimeout=5&socketTimeout=30&currentSchema=" + schema, user, password);
-        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
-        DriverManagerDataSource adminSource = new DriverManagerDataSource(
-                url + "?connectTimeout=5&socketTimeout=30", user, password);
-        JdbcTemplate admin = new JdbcTemplate(adminSource);
-        try {
-            Flyway old = Flyway.configure().dataSource(adminSource).locations("classpath:db/migration")
-                    .schemas(schema).defaultSchema(schema).createSchemas(true).target("1").load();
-            old.migrate();
-            old.validate();
-            assertEquals("1", old.info().current().getVersion().getVersion());
-            long accountId = jdbc.queryForObject("""
-                    INSERT INTO accounts(account_code,venue,status) VALUES (?, 'OKX', 'ACTIVE') RETURNING account_id
-                    """, Long.class, "synthetic-" + UUID.randomUUID());
-            jdbc.update("""
-                    INSERT INTO account_snapshots(account_id,currency,balance,available,frozen,ts,trace_id,recorded_at)
-                    VALUES (?,'BTC',1,1,0,?,'legacy',NULL)
-                    """, accountId, Timestamp.from(Instant.parse("2026-08-26T00:00:00Z")));
-            long legacyId = jdbc.queryForObject("SELECT max(snapshot_id) FROM account_snapshots", Long.class);
-
-            Flyway latest = Flyway.configure().dataSource(adminSource).locations("classpath:db/migration")
-                    .schemas(schema).defaultSchema(schema).createSchemas(true).load();
-            latest.migrate();
-            latest.validate();
+        try(var database=com.guidinglight.nexusquant.app.smoke.TenantIsolationTestDatabase.create("1",url,user,password);
+                var scope=com.guidinglight.nexusquant.common.tenant.TenantContext.openExecution(new com.guidinglight.nexusquant.common.tenant.TenantExecutionIdentity(com.guidinglight.nexusquant.common.tenant.TenantId.LOCAL,1))) {
+            var old=database.migration("1");old.validate();
+            assertEquals("1",old.info().current().getVersion().getVersion());
+            long accountId=database.admin.queryForObject("INSERT INTO accounts(account_code,venue,status) VALUES(?,'OKX','ACTIVE') RETURNING account_id",Long.class,"synthetic-"+UUID.randomUUID());
+            database.admin.update("INSERT INTO account_snapshots(account_id,currency,balance,available,frozen,ts,trace_id,recorded_at) VALUES(?,'BTC',1,1,0,?,'legacy',NULL)",accountId,Timestamp.from(Instant.parse("2026-08-26T00:00:00Z")));
+            long legacyId=database.admin.queryForObject("SELECT max(snapshot_id) FROM account_snapshots",Long.class);
+            database.migrate(null);database.runtime();
+            JdbcTemplate jdbc=database.jdbc();
+            var dataSource=database.runtimeDataSource();
+            ((com.zaxxer.hikari.HikariDataSource)dataSource).setMaximumPoolSize(2);
+            var latest=database.migration(null);
             // 旧行由V1创建；升级后逐项匹配显式开发清单，不能继续断言历史发行版本。
             var manifest = new ObjectMapper().readTree(Path.of("../../scripts/ci/development-source-manifest.json").toFile());
             var expected = new TreeMap<MigrationVersion, String>();
@@ -154,11 +140,12 @@ class AccountSnapshotSemanticsPostgresIntegrationTest {
                     VALUES (?, 'BTC-USDT', 0.5, 0.5, 0, 10, 'legacy-unknown')
                     """, orphanAccount);
             assertThrows(IllegalStateException.class, () -> writer.assertAccountEnvironment(orphanAccount, "LIVE"));
-            TransactionTemplate transaction = new TransactionTemplate(new DataSourceTransactionManager(dataSource));
+            TransactionTemplate transaction = new TransactionTemplate(new com.guidinglight.nexusquant.tenant.infra.jdbc.TenantTransactionManager(dataSource));
             transaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
             long fundingAccount = jdbc.queryForObject("""
                     INSERT INTO accounts(account_code,venue,status) VALUES (?, 'OKX', 'ACTIVE') RETURNING account_id
                     """, Long.class, "synthetic-" + UUID.randomUUID());
+            com.guidinglight.nexusquant.app.smoke.TenantIsolationTestDatabase.attachFundingRun(jdbc,fundingAccount,"synthetic-run");
             transaction.execute(status -> new SimCashFundingService(writer).fundOnce(
                     fundingAccount, "synthetic-run", new BigDecimal("100"), "synthetic"));
             JdbcLedgerReconcileRepository reconcile = new JdbcLedgerReconcileRepository(jdbc);
@@ -190,7 +177,7 @@ class AccountSnapshotSemanticsPostgresIntegrationTest {
             CountDownLatch secondStarted = new CountDownLatch(1);
             CountDownLatch secondAcquired = new CountDownLatch(1);
             try (var pool = Executors.newFixedThreadPool(2)) {
-                var first = pool.submit(() -> transaction.execute(status -> {
+                var first = pool.submit(() -> localTransaction(transaction,status -> {
                     writer.lockSnapshotCurrencies(freshAccount, List.of("BTC"));
                     writer.assertAccountEnvironment(freshAccount, "LIVE");
                     writer.insertAccountSnapshot(snapshot(freshAccount, "BTC", "LIVE", olderSource, "1"));
@@ -204,7 +191,7 @@ class AccountSnapshotSemanticsPostgresIntegrationTest {
                     return true;
                 }));
                 assertTrue(firstLocked.await(5, TimeUnit.SECONDS));
-                var second = pool.submit(() -> transaction.execute(status -> {
+                var second = pool.submit(() -> localTransaction(transaction,status -> {
                     secondStarted.countDown();
                     writer.lockSnapshotCurrencies(freshAccount, List.of("USDT"));
                     secondAcquired.countDown();
@@ -226,9 +213,12 @@ class AccountSnapshotSemanticsPostgresIntegrationTest {
                         SELECT count(*) FROM account_snapshots WHERE account_id=? AND trade_env='SIM'
                         """, Integer.class, freshAccount));
             }
-        } finally {
-            assertTrue(schema.matches("snapshot_semantics_[0-9a-f]{32}"));
-            admin.execute("DROP SCHEMA IF EXISTS \"" + schema + "\" CASCADE");
+        }
+    }
+
+    private static <T> T localTransaction(TransactionTemplate transaction,org.springframework.transaction.support.TransactionCallback<T> action) {
+        try(var ignored=com.guidinglight.nexusquant.common.tenant.TenantContext.openExecution(new com.guidinglight.nexusquant.common.tenant.TenantExecutionIdentity(com.guidinglight.nexusquant.common.tenant.TenantId.LOCAL,1))) {
+            return transaction.execute(action);
         }
     }
 

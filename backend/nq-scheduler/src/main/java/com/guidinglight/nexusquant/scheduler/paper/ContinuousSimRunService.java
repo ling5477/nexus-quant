@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.scheduler.paper;
 
+import com.guidinglight.nexusquant.common.tenant.TenantWorkAccess;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
 import com.guidinglight.nexusquant.research.application.paper.service.PaperTradingRunService;
@@ -31,6 +33,7 @@ import java.util.function.Supplier;
 @Profile("public-marketdata-manual")
 @ConditionalOnProperty(prefix = "nq.continuous-sim", name = "enabled", havingValue = "true")
 public class ContinuousSimRunService {
+    @Autowired private TenantWorkAccess tenantWork;
     private static final Duration HOUR = Duration.ofHours(1);
     private final ContinuousSimRepository progress;
     private final StrategySimRunService sim;
@@ -108,14 +111,19 @@ public class ContinuousSimRunService {
                 () -> {
                     ContinuousSimRepository.Cursor cursor = progress.get(runId);
                     checkBinding(cursor);
-                    if (!"STOPPED".equals(cursor.status())) {
+                    boolean manualResume = Boolean.TRUE.equals(jdbc.queryForObject(
+                            "SELECT requires_manual_resume FROM tenant_execution_controls WHERE tenant_id=nq_current_tenant_id()", Boolean.class));
+                    if (!"STOPPED".equals(cursor.status()) && !manualResume) {
                         throw new IllegalStateException("CONTINUOUS_SIM_NOT_STOPPED");
                     }
                     if ("DATA_REVISION_DETECTED".equals(cursor.blockReason())) {
                         throw new IllegalStateException("DATA_REVISION_DETECTED");
                     }
-                    progress.requireAdmissionCapacity();
-                    progress.resume(runId, clock.instant());
+                    jdbc.queryForObject("SELECT nq_resume_tenant_execution(?)", Object.class, runId);
+                    if ("STOPPED".equals(cursor.status())) {
+                        progress.requireAdmissionCapacity();
+                        progress.resume(runId, clock.instant());
+                    }
                     return status(runId);
                 });
     }
@@ -155,6 +163,12 @@ public class ContinuousSimRunService {
 
     /** 单次定向推进也供隔离测试调用；调度器不在未启用配置下创建。 */
     public Status pollOnce(String runId) {
+        if (tenantWork != null) return tenantWork.execute(
+                TenantWorkAccess.Kind.PAPER, runId, () -> pollScoped(runId));
+        return pollScoped(runId);
+    }
+
+    private Status pollScoped(String runId) {
         paperRuns.getById(runId);
         return withRunLock(runId, true, () -> pollLocked(runId));
     }
@@ -318,7 +332,9 @@ public class ContinuousSimRunService {
     /** Dispatcher 每轮最多处理仓储返回的八条活跃 run；单条失败不阻断其余 run。 */
     public void pollActiveOnce() {
         RuntimeException firstFailure = null;
-        for (String runId : progress.activeIds()) {
+        var candidates = tenantWork != null && TenantContext.currentTenantId().isEmpty()
+                ? tenantWork.next(TenantWorkAccess.Kind.PAPER, 8) : progress.activeIds();
+        for (String runId : candidates) {
             try {
                 pollOnce(runId);
             } catch (RuntimeException failure) {

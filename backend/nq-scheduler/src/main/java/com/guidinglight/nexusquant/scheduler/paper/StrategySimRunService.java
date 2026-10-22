@@ -287,7 +287,7 @@ public class StrategySimRunService {
                 jdbc.query(
                         """
                 SELECT status,trade_env,exchange_code,market_type,symbol,canonical_account_id
-                FROM paper_trading_runs WHERE paper_run_id=?
+                FROM (SELECT tr.* FROM paper_trading_runs tr WHERE tr.tenant_id=nq_current_tenant_id()) paper_trading_runs WHERE paper_run_id=?
                 """,
                         (rs, row) ->
                                 new RunLock(
@@ -326,7 +326,7 @@ public class StrategySimRunService {
                 jdbc.query(
                         """
                 SELECT status,trade_env,exchange_code,market_type,symbol,canonical_account_id
-                FROM paper_trading_runs WHERE paper_run_id=?
+                FROM (SELECT tr.* FROM paper_trading_runs tr WHERE tr.tenant_id=nq_current_tenant_id()) paper_trading_runs WHERE paper_run_id=?
                 """,
                         (rs, row) ->
                                 new RunLock(
@@ -941,7 +941,7 @@ public class StrategySimRunService {
         Long accountId =
                 jdbc.queryForObject(
                         """
-                SELECT canonical_account_id FROM paper_trading_runs WHERE paper_run_id=?
+                SELECT canonical_account_id FROM (SELECT tr.* FROM paper_trading_runs tr WHERE tr.tenant_id=nq_current_tenant_id()) paper_trading_runs WHERE paper_run_id=?
                 """,
                         Long.class,
                         paperRunId);

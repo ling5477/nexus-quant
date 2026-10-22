@@ -33,7 +33,7 @@ public class ContinuousSimRepository {
 
     public boolean exists(String runId) {
         return Boolean.TRUE.equals(jdbc.queryForObject(
-                "SELECT EXISTS(SELECT 1 FROM continuous_sim_runs WHERE paper_run_id=?)",
+                "SELECT EXISTS(SELECT 1 FROM (SELECT tr.* FROM continuous_sim_runs tr WHERE nq_entity_tenant('paper',tr.paper_run_id)=nq_current_tenant_id()) continuous_sim_runs WHERE paper_run_id=?)",
                 Boolean.class, runId));
     }
 
@@ -58,7 +58,7 @@ public class ContinuousSimRepository {
                        seed_last_open_time,last_processed_open_time,last_processed_close_time,
                        last_processed_sha256,last_observed_open_time,gap_start_open_time,started_at,last_poll_at,
                        last_successful_poll_at,updated_at,block_reason,consecutive_poll_failures
-                FROM continuous_sim_runs WHERE paper_run_id=?
+                FROM (SELECT tr.* FROM continuous_sim_runs tr WHERE nq_entity_tenant('paper',tr.paper_run_id)=nq_current_tenant_id()) continuous_sim_runs WHERE paper_run_id=?
                 """, (rs, row) -> new Cursor(rs.getString("paper_run_id"), rs.getString("status"),
                 rs.getString("strategy_version_id"), rs.getString("strategy_checksum"),
                 rs.getString("cost_sha256"), instant(rs, "seed_last_open_time"),
@@ -73,20 +73,14 @@ public class ContinuousSimRepository {
 
     public List<String> activeIds() {
         return jdbc.queryForList("""
-                SELECT paper_run_id FROM continuous_sim_runs WHERE status <> 'STOPPED'
+                SELECT paper_run_id FROM (SELECT tr.* FROM continuous_sim_runs tr WHERE nq_entity_tenant('paper',tr.paper_run_id)=nq_current_tenant_id()) continuous_sim_runs WHERE status <> 'STOPPED'
                 ORDER BY started_at LIMIT 8
                 """, String.class);
     }
 
     public void requireAdmissionCapacity() {
         // start 外层事务持有同一把 PG 事务锁直到 run 创建完成，避免跨实例并发超过轮询上限。
-        jdbc.execute("SELECT pg_advisory_xact_lock(hashtextextended('continuous-sim-admission',9253))");
-        Integer active = jdbc.queryForObject("""
-                SELECT count(*) FROM continuous_sim_runs WHERE status <> 'STOPPED'
-                """, Integer.class);
-        if (active == null || active >= 8) {
-            throw new IllegalStateException("CONTINUOUS_SIM_CAPACITY_EXCEEDED");
-        }
+        jdbc.queryForObject("SELECT nq_require_continuous_capacity()", Object.class);
     }
 
     public void stop(String runId, Instant now) {

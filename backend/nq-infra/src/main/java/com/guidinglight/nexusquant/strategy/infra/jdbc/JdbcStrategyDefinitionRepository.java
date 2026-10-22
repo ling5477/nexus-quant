@@ -29,7 +29,7 @@ public class JdbcStrategyDefinitionRepository
             """
             SELECT strategy_id, strategy_code, strategy_name, strategy_type, exchange_code, account_id, trade_env,
                    enabled, config_snapshot::text AS config_snapshot, version, created_at, updated_at
-            FROM strategy_definitions
+            FROM (SELECT * FROM strategy_definitions WHERE tenant_id=nq_current_tenant_id()) strategy_definitions
             """;
 
     private static final RowMapper<StrategyDefinition> ROW_MAPPER =
@@ -67,7 +67,7 @@ public class JdbcStrategyDefinitionRepository
     @Override
     public Optional<StrategyDefinition> findByStrategyId(String strategyId) {
         List<StrategyDefinition> rows =
-                jdbcTemplate.query(BASE_SELECT + " WHERE strategy_id = ?", ROW_MAPPER, strategyId);
+                jdbcTemplate.query(BASE_SELECT + " WHERE tenant_id=nq_current_tenant_id() AND strategy_id = ?", ROW_MAPPER, strategyId);
         return rows.isEmpty() ? Optional.empty() : Optional.of(rows.getFirst());
     }
 
@@ -88,7 +88,7 @@ public class JdbcStrategyDefinitionRepository
     @Override
     public boolean updateEnabled(String strategyId, boolean enabled, Instant updatedAt) {
         return jdbcTemplate.update(
-                        "UPDATE strategy_definitions SET enabled = ?, updated_at = ? WHERE strategy_id = ?",
+                        "UPDATE strategy_definitions SET enabled = ?, updated_at = ? WHERE tenant_id=nq_current_tenant_id() AND strategy_id = ?",
                         enabled,
                         Timestamp.from(updatedAt),
                         strategyId)
@@ -115,7 +115,7 @@ public class JdbcStrategyDefinitionRepository
         // 旧接口的定义可见性保持不变，COUNT和记录使用完全相同的谓词。
         long total =
                 jdbcTemplate.queryForObject(
-                        "SELECT COUNT(*) FROM strategy_definitions" + where,
+                        "SELECT COUNT(*) FROM (SELECT * FROM strategy_definitions WHERE tenant_id=nq_current_tenant_id()) strategy_definitions" + where,
                         Long.class,
                         values.toArray());
         values.add(query.limit());

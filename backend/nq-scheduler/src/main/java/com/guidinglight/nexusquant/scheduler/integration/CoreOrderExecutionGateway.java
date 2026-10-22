@@ -46,5 +46,10 @@ public class CoreOrderExecutionGateway implements OrderExecutionGateway {
     public OrderRecord markFilled(String orderId, String reason, String traceId) {
         return orderLifecycleService.markFilled(orderId, reason, traceId);
     }
+
+    @Override
+    public java.util.Optional<OrderRecord> findMatchableOrder(String orderId) {
+        return orderCommandService.findByOrderId(orderId).filter(order -> order.status() == OrderStatus.ACCEPTED);
+    }
 }
 

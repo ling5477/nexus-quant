@@ -24,7 +24,7 @@ public class StrategySimAnalysisQuery {
 FROM paper_trading_runs p
 LEFT JOIN backtest_publish_records published ON published.publish_record_id=p.publish_id
 LEFT JOIN strategy_versions frozen ON frozen.strategy_version_id=coalesce(p.strategy_version_id,published.strategy_version_id)
-WHERE p.canonical_account_id IS NOT NULL AND p.trade_env='SIM'
+WHERE p.tenant_id=nq_current_tenant_id() AND p.canonical_account_id IS NOT NULL AND p.trade_env='SIM'
     AND ((p.created_by<>'system' AND p.created_by=(SELECT username FROM users WHERE id=?)) OR EXISTS(
         SELECT 1 FROM strategy_definitions source JOIN exchange_accounts a
             ON a.legacy_account_id=source.account_id AND a.trade_env=source.trade_env AND a.exchange_code=source.exchange_code

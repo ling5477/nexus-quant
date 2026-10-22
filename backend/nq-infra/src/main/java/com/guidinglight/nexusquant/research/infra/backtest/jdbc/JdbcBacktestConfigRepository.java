@@ -46,7 +46,7 @@ public class JdbcBacktestConfigRepository
                    config_snapshot_json::text AS config_snapshot_json,
                    dataset_id::text AS dataset_id, dataset_snapshot_json::text AS dataset_snapshot_json,
                    created_at, updated_at, status, archived_at, archived_by, archive_reason
-            FROM backtest_configs
+            FROM (SELECT * FROM backtest_configs WHERE tenant_id=nq_current_tenant_id()) backtest_configs
             """;
 
     private final JdbcTemplate jdbcTemplate;
@@ -92,7 +92,7 @@ public class JdbcBacktestConfigRepository
         List<BacktestConfig> rows =
                 jdbcTemplate.query(
                         BASE_SELECT
-                                + " WHERE backtest_config_id = ? AND "
+                                + " WHERE tenant_id=nq_current_tenant_id() AND backtest_config_id = ? AND "
                                 + feeScope.configuration("config_json"),
                         rowMapper(),
                         backtestConfigId);
@@ -110,7 +110,7 @@ public class JdbcBacktestConfigRepository
                             archived_by = ?,
                             archive_reason = ?,
                             updated_at = ?
-                        WHERE backtest_config_id = ?
+                        WHERE tenant_id=nq_current_tenant_id() AND backtest_config_id = ?
                           AND status <> 'ARCHIVED'
                         """,
                         Timestamp.from(archivedAt),
@@ -176,7 +176,7 @@ public class JdbcBacktestConfigRepository
                         SET dataset_id = CAST(? AS UUID),
                             dataset_snapshot_json = CAST(? AS JSONB),
                             updated_at = ?
-                        WHERE backtest_config_id = ?
+                        WHERE tenant_id=nq_current_tenant_id() AND backtest_config_id = ?
                         """,
                         datasetId,
                         datasetSnapshotJson,
@@ -199,7 +199,7 @@ public class JdbcBacktestConfigRepository
                             strategy_version_snapshot_json = CAST(? AS JSONB),
                             param_snapshot_json = CAST(? AS JSONB),
                             updated_at = ?
-                        WHERE backtest_config_id = ?
+                        WHERE tenant_id=nq_current_tenant_id() AND backtest_config_id = ?
                         """,
                         strategyVersionId,
                         strategyVersionSnapshotJson,
@@ -230,7 +230,7 @@ public class JdbcBacktestConfigRepository
         }
         Long total =
                 jdbcTemplate.queryForObject(
-                        "SELECT COUNT(*) FROM backtest_configs" + where,
+                        "SELECT COUNT(*) FROM (SELECT * FROM backtest_configs WHERE tenant_id=nq_current_tenant_id()) backtest_configs" + where,
                         Long.class,
                         args.toArray());
         List<Object> pageArgs = new ArrayList<>(args);

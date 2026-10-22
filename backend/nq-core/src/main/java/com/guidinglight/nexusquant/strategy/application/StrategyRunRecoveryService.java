@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.strategy.application;
 
+import com.guidinglight.nexusquant.common.tenant.TenantWorkAccess;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunRecoveryRepository;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunExecutionRepository;
 import com.guidinglight.nexusquant.strategy.domain.port.StrategyRunRepository;
@@ -15,6 +17,7 @@ import java.util.List;
 /** 扫描前有界恢复；是否仍需阻塞由独立的 active-run 查询决定。 */
 @Service
 public class StrategyRunRecoveryService {
+    @Autowired private TenantWorkAccess tenantWork;
     private static final Logger log = LoggerFactory.getLogger(StrategyRunRecoveryService.class);
     private final StrategyRunRecoveryRepository repository;
     private final StrategyRunExecutionRepository executions;
@@ -44,6 +47,18 @@ public class StrategyRunRecoveryService {
 
     public int recoverAll() {
         if (executions == null) return 0;
+        if (tenantWork != null && TenantContext.currentTenantId().isEmpty()) {
+            int changed = 0;
+            RuntimeException firstFailure = null;
+            for (String id : tenantWork.next(TenantWorkAccess.Kind.STRATEGY,50)) {
+                try {
+                    changed += tenantWork.execute(TenantWorkAccess.Kind.STRATEGY,id,
+                            () -> recoverCandidates(List.of(id)));
+                } catch (RuntimeException failure) { if (firstFailure == null) firstFailure = failure; }
+            }
+            if (firstFailure != null) throw firstFailure;
+            return changed;
+        }
         return recoverCandidates(executions.reserveCandidates(50));
     }
 

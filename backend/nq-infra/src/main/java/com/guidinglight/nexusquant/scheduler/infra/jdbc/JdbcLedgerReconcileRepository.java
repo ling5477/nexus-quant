@@ -27,13 +27,21 @@ public class JdbcLedgerReconcileRepository implements LedgerReconcileRepository 
 
     @Override
     public List<LedgerReconcileDiff> findDiffs() {
+        return query(null);
+    }
+
+    @Override public List<LedgerReconcileDiff> findDiffs(long accountId) { return query(accountId); }
+
+    private List<LedgerReconcileDiff> query(Long accountId) {
         return jdbcTemplate.query(
                 """
-                        WITH latest_typed AS (
+                        WITH scoped_accounts AS (
+                            SELECT account_id FROM accounts WHERE tenant_id=nq_current_tenant_id() AND (CAST(? AS bigint) IS NULL OR account_id=?)
+                        ), latest_typed AS (
                             SELECT DISTINCT ON (account_id, currency, trade_env)
                                    account_id, currency, trade_env, balance_basis, balance
                             FROM account_snapshots
-                            WHERE trade_env IS NOT NULL
+                            WHERE trade_env IS NOT NULL AND account_id IN (SELECT account_id FROM scoped_accounts)
                             ORDER BY account_id, currency, trade_env, snapshot_id DESC
                         ), checked AS (
                             SELECT s.account_id, s.currency, s.trade_env, s.balance_basis,
@@ -67,7 +75,7 @@ public class JdbcLedgerReconcileRepository implements LedgerReconcileRepository 
                         SELECT s.account_id, s.currency, NULL::numeric, NULL::numeric, NULL::numeric,
                                'SNAPSHOT_PROVENANCE_UNKNOWN' AS reason
                         FROM account_snapshots s
-                        WHERE s.trade_env IS NULL
+                        WHERE s.trade_env IS NULL AND s.account_id IN (SELECT account_id FROM scoped_accounts)
                           AND s.snapshot_id=(SELECT MAX(x.snapshot_id) FROM account_snapshots x
                                              WHERE x.account_id=s.account_id AND x.currency=s.currency
                                                AND x.trade_env IS NULL)
@@ -75,12 +83,12 @@ public class JdbcLedgerReconcileRepository implements LedgerReconcileRepository 
                         SELECT le.account_id, le.currency, SUM(le.delta), 0::numeric, SUM(le.delta),
                                'SNAPSHOT_MISSING' AS reason
                         FROM ledger_entries le
-                        WHERE NOT EXISTS (SELECT 1 FROM account_snapshots s
+                        WHERE le.account_id IN (SELECT account_id FROM scoped_accounts) AND NOT EXISTS (SELECT 1 FROM account_snapshots s
                                           WHERE s.account_id=le.account_id AND s.currency=le.currency)
                         GROUP BY le.account_id, le.currency
                         ORDER BY account_id, currency
                         """,
-                DIFF_ROW_MAPPER
+                DIFF_ROW_MAPPER, accountId, accountId
         );
     }
 

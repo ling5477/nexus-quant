@@ -65,10 +65,10 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
                 SELECT EXISTS (SELECT 1 FROM account_snapshots
                                WHERE account_id=? AND (trade_env IS NULL OR trade_env<>?))
                     OR EXISTS (SELECT 1 FROM trades WHERE account_id=? AND trade_env<>?)
-                    OR (?='LIVE' AND EXISTS (SELECT 1 FROM ledger_entries
+                    OR (?='LIVE' AND EXISTS (SELECT 1 FROM (SELECT tr.* FROM ledger_entries tr WHERE EXISTS(SELECT 1 FROM accounts ta WHERE ta.account_id=tr.account_id AND ta.tenant_id=nq_current_tenant_id())) ledger_entries
                                              WHERE account_id=? AND ref_type LIKE 'SIM_FUNDING_%'))
                     OR EXISTS (
-                        SELECT 1 FROM positions p
+                        SELECT 1 FROM (SELECT tr.* FROM positions tr WHERE EXISTS(SELECT 1 FROM accounts ta WHERE ta.account_id=tr.account_id AND ta.tenant_id=nq_current_tenant_id())) p
                         WHERE p.account_id=? AND NOT EXISTS (
                             SELECT 1 FROM account_snapshots s
                             WHERE s.account_id=p.account_id AND s.trade_env=?
@@ -78,7 +78,7 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
                                   SELECT MAX(latest.snapshot_id) FROM account_snapshots latest
                                   WHERE latest.account_id=s.account_id AND latest.currency=s.currency)
                               AND s.balance=(
-                                  SELECT SUM(other.qty) FROM positions other
+                                  SELECT SUM(other.qty) FROM (SELECT tr.* FROM positions tr WHERE EXISTS(SELECT 1 FROM accounts ta WHERE ta.account_id=tr.account_id AND ta.tenant_id=nq_current_tenant_id())) other
                                   WHERE other.account_id=p.account_id
                                     AND split_part(replace(other.symbol, '/', '-'), '-', 1)=s.currency)
                         )
@@ -99,7 +99,7 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
                 INSERT INTO positions(account_id, symbol, trace_id) VALUES (?, ?, ?)
                 ON CONFLICT (account_id, symbol) DO NOTHING
                 """, accountId, symbol, traceId);
-        jdbcTemplate.queryForObject("SELECT id FROM positions WHERE account_id=? AND symbol=? FOR UPDATE",
+        jdbcTemplate.queryForObject("SELECT id FROM (SELECT tr.* FROM positions tr WHERE EXISTS(SELECT 1 FROM accounts ta WHERE ta.account_id=tr.account_id AND ta.tenant_id=nq_current_tenant_id())) positions WHERE account_id=? AND symbol=? FOR UPDATE",
                 Long.class, accountId, symbol);
     }
 
@@ -108,7 +108,7 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
         List<PositionProjection> rows = jdbcTemplate.query("""
                 SELECT account_id, ? AS symbol, SUM(qty) AS qty, SUM(available_qty) AS available_qty,
                        0 AS avg_price, '' AS trace_id
-                FROM positions
+                FROM (SELECT tr.* FROM positions tr WHERE EXISTS(SELECT 1 FROM accounts ta WHERE ta.account_id=tr.account_id AND ta.tenant_id=nq_current_tenant_id())) positions
                 WHERE account_id=? AND split_part(replace(symbol, '/', '-'), '-', 1)=?
                 GROUP BY account_id
                 """, POSITION_ROW_MAPPER, currency, accountId, currency);
@@ -118,7 +118,7 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
     @Override
     public boolean existsByIdempotencyKey(String idempotencyKey) {
         Integer count = jdbcTemplate.queryForObject(
-                "SELECT COUNT(1) FROM ledger_entries WHERE idempotency_key = ?",
+                "SELECT COUNT(1) FROM (SELECT tr.* FROM ledger_entries tr WHERE EXISTS(SELECT 1 FROM accounts ta WHERE ta.account_id=tr.account_id AND ta.tenant_id=nq_current_tenant_id())) ledger_entries WHERE idempotency_key = ?",
                 Integer.class,
                 idempotencyKey
         );
@@ -142,7 +142,7 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
                              THEN e.delta ELSE 0 END
                         ELSE e.delta END
                     ELSE 0 END), 0)
-                FROM ledger_entries e WHERE e.account_id = ? AND e.currency = ?
+                FROM (SELECT tr.* FROM ledger_entries tr WHERE EXISTS(SELECT 1 FROM accounts ta WHERE ta.account_id=tr.account_id AND ta.tenant_id=nq_current_tenant_id())) e WHERE e.account_id = ? AND e.currency = ?
                 """,
                 BigDecimal.class,
                 tradeEnv,
@@ -220,7 +220,7 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
         List<PositionProjection> rows = jdbcTemplate.query(
                 """
                         SELECT account_id, symbol, qty, available_qty, avg_price, trace_id
-                        FROM positions
+                        FROM (SELECT tr.* FROM positions tr WHERE EXISTS(SELECT 1 FROM accounts ta WHERE ta.account_id=tr.account_id AND ta.tenant_id=nq_current_tenant_id())) positions
                         WHERE account_id = ? AND symbol = ?
                         """,
                 POSITION_ROW_MAPPER,

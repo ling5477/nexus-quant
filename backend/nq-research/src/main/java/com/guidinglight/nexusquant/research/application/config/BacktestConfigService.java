@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.research.application.config;
 
+import com.guidinglight.nexusquant.research.domain.port.TenantResearchDatasetAccess;
+import com.guidinglight.nexusquant.common.tenant.TenantKind;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +42,7 @@ import java.util.UUID;
  */
 @Service
 public class BacktestConfigService {
+    @Autowired private TenantResearchDatasetAccess tenantDatasets;
 
     private final BacktestConfigRepository backtestConfigRepository;
     private final StrategyVersionSnapshotQueryPort strategyVersionSnapshotQueryPort;
@@ -236,6 +240,14 @@ public class BacktestConfigService {
      */
     public BacktestConfig bindDataset(
             String backtestConfigId, String datasetId, String datasetSnapshotJson) {
+        if(TenantContext.current().filter(identity ->
+                identity.kind()==TenantKind.DEMO).isPresent()) {
+            datasetSnapshotJson=tenantDatasets.canonicalSnapshot(datasetSnapshotJson);
+            try {
+                if(!objectMapper.readTree(datasetSnapshotJson).path("datasetId").asText().equals(datasetId))
+                    throw new IllegalArgumentException("TENANT_ACCESS_DENIED");
+            } catch(java.io.IOException failure) {throw new IllegalArgumentException("TENANT_ACCESS_DENIED",failure);}
+        }
         String normalizedConfigId = requireText(backtestConfigId, "backtestConfigId");
         getByBacktestConfigId(normalizedConfigId);
         String normalizedDatasetId = requireText(datasetId, "datasetId");

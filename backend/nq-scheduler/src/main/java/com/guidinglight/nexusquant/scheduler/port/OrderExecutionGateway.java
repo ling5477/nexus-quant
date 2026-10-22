@@ -20,6 +20,11 @@ public interface OrderExecutionGateway {
      */
     List<OrderRecord> findMatchableOrders(int limit);
 
+    /** 按已恢复租户的持久订单身份重读，不能用全局列表替代。 */
+    default java.util.Optional<OrderRecord> findMatchableOrder(String orderId) {
+        throw new UnsupportedOperationException("scoped order lookup required");
+    }
+
     /**
      * 将订单推进到 FILLED 终态。
      *

@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.research.application;
 
+import com.guidinglight.nexusquant.research.domain.port.TenantResearchDatasetAccess;
+import com.guidinglight.nexusquant.common.tenant.TenantKind;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.research.domain.ResearchConfig;
@@ -27,6 +30,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class ResearchConfigService {
+    @Autowired private TenantResearchDatasetAccess tenantDatasets;
 
     private final ResearchConfigRepository researchConfigRepository;
     private final SourceStrategySnapshotRepository sourceStrategySnapshotRepository;
@@ -67,6 +71,11 @@ public class ResearchConfigService {
      */
     public ResearchConfig create(ResearchConfigCreateRequest request) {
         validateCreateRequest(request);
+        String dataset=request.datasetSpec();
+        if(TenantContext.current().filter(identity ->
+                identity.kind()==TenantKind.DEMO).isPresent()) {
+            dataset=tenantDatasets.canonicalSnapshot(dataset);
+        }
         SourceStrategySnapshot sourceStrategy = sourceStrategySnapshotRepository.findByStrategyId(
                         requireText(request.sourceStrategyId(), "sourceStrategyId")
                 )
@@ -82,7 +91,7 @@ public class ResearchConfigService {
                 normalizeNullableText(request.description()),
                 normalizeJson(request.parameterSchema()),
                 normalizeJson(request.parameterDefaults()),
-                normalizeJson(request.datasetSpec()),
+                normalizeJson(dataset),
                 now,
                 now
         );

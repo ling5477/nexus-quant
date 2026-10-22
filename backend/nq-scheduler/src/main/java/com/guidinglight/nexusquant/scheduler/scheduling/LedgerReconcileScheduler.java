@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.scheduler.scheduling;
 
+import com.guidinglight.nexusquant.common.tenant.TenantWorkAccess;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.guidinglight.nexusquant.observability.operational.OperationalObservation;
 import com.guidinglight.nexusquant.observability.operational.SafeOperationalObservation;
 import static com.guidinglight.nexusquant.observability.operational.OperationalObservation.Operation.*;
@@ -37,6 +39,7 @@ import org.springframework.stereotype.Component;
         matchIfMissing = false
 )
 public class LedgerReconcileScheduler {
+    @Autowired private TenantWorkAccess tenantWork;
 
     private static final Logger log = LoggerFactory.getLogger(LedgerReconcileScheduler.class);
 
@@ -86,7 +89,16 @@ public class LedgerReconcileScheduler {
     public int reconcileOnce() {
         observation.record(LEDGER_RECONCILE, ATTEMPT, 1);
         try {
-            int count = reconcileObservedFacts();
+            int count;
+            if(tenantWork!=null && TenantContext.currentTenantId().isEmpty()) {
+                count=0;RuntimeException firstFailure=null;
+                for(String id:tenantWork.next(TenantWorkAccess.Kind.ACCOUNT,64)) {
+                    try {count+=tenantWork.execute(TenantWorkAccess.Kind.ACCOUNT,id,
+                            ()->reconcileObservedFacts(Long.parseLong(id)));}
+                    catch(RuntimeException failure) {if(firstFailure==null)firstFailure=failure;}
+                }
+                if(firstFailure!=null)throw firstFailure;
+            } else count = reconcileObservedFacts(null);
             observation.record(LEDGER_RECONCILE, UNRESOLVED_SNAPSHOT, count);
             observation.record(LEDGER_RECONCILE, count == 0 ? SUCCESS : DEGRADED, 1);
             return count;
@@ -96,8 +108,8 @@ public class LedgerReconcileScheduler {
         }
     }
 
-    private int reconcileObservedFacts() {
-        List<LedgerReconcileDiff> diffs = ledgerReconcileRepository.findDiffs();
+    private int reconcileObservedFacts(Long accountId) {
+        List<LedgerReconcileDiff> diffs = accountId==null ? ledgerReconcileRepository.findDiffs() : ledgerReconcileRepository.findDiffs(accountId);
         if (diffs.isEmpty()) {
             auditLogRepository.append(
                     "LEDGER_RECONCILE",
