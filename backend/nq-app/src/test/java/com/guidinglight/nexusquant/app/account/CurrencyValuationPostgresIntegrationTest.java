@@ -72,7 +72,6 @@ import java.util.UUID;
             "nq.account.credentials.verification-mode=STRUCTURAL",
             "nq.account.credentials.master-key=currency-synthetic-master-key-123456789",
             "nq.security.issuer=nexus-quant-currency-synthetic",
-            "nq.security.secret=currency-synthetic-secret-123456789",
             "nq.instrument.catalog-sync.enabled=false",
             "nq.okx.recovery.enabled=false",
             "nq.okx.ws.enabled=false",
@@ -95,6 +94,7 @@ class CurrencyValuationPostgresIntegrationTest {
     private static TenantIdentity localIdentity;
     private TenantContext.Scope localScope;
     private static final String PASSWORD = "synthetic-currency-fixture-password";
+    private static final String TOKEN_SIGNING_SECRET = UUID.randomUUID().toString();
     private static final String ORIGINAL =
             """
 SELECT md5(row_to_json(s)::text) FROM (SELECT equity_snapshot_id,paper_run_id,snapshot_time,
@@ -113,6 +113,7 @@ FROM equity_curve_snapshots WHERE equity_snapshot_id='currency-legacy') s
 
     @DynamicPropertySource
     static void database(DynamicPropertyRegistry registry) throws Exception {
+        registry.add("nq.security.secret", () -> TOKEN_SIGNING_SECRET);
         String url = System.getenv("TASK_CURRENCY_MAINTENANCE_URL");
         String user = System.getenv("TASK_CURRENCY_DB_USER");
         String password = System.getenv("TASK_CURRENCY_DB_PASSWORD");

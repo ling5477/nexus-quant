@@ -17,7 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 /** 每例独立数据库、NOLOGIN owner 与无角色继承的运行账号；不接触用户数据库。 */
 public final class TenantIsolationTestDatabase implements AutoCloseable {
-    static final String PASSWORD = "SyntheticTenantIsolation123";
+    static final String PASSWORD = "test-password";
     private static final String HASH = new BCryptPasswordEncoder().encode(PASSWORD);
     final ReleaseBaselineTestDatabase database;
     public final JdbcTemplate admin;
