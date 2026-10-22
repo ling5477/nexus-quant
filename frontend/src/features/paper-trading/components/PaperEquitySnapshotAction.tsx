@@ -4,6 +4,7 @@ import {useTranslation} from 'react-i18next';
 import {apiClient} from '@/api/client';
 import {parseExactJson} from '@/api/exact-json';
 import {useAuthStore} from '@/store/auth-store';
+import {canWriteResearch} from '@/utils/distribution';
 import type {EquityCurveSnapshotItem} from '../types/paper-trading';
 import type {SimPerformance} from '../api/analysis';
 
@@ -53,7 +54,7 @@ export function PaperEquitySnapshotAction({
     const [busy, setBusy] = useState(false);
     const [problem, setProblem] = useState<string | null>(null);
     const [result, setResult] = useState<EquityCurveSnapshotItem | null>(null);
-    const writable = Boolean(user?.roles.some((r) => ['ADMIN', 'OPERATOR'].includes(r)));
+    const writable = canWriteResearch(user?.roles);
     const submit = async () => {
         if (busy || !user || stored.broken || (!sample && !pending) || !writable) return;
         const owner = user.userId;

@@ -95,6 +95,9 @@ test('真实注册邮件验证登录与账户投影、策略创建及 canonical 
     await expect(page).toHaveURL(new RegExp(`/paper-trading/portfolio\\?paperRunId=${fixture.boundRunId}`));
     await expect.poll(() => analysisReads.has(`/api/paper-trading/strategy-sim/analysis/runs/${fixture.boundRunId}`)).toBe(true);
     await expect(page.getByTestId('sim-analysis-portfolio')).toBeVisible();
+    // 通过租户正式入口冻结现有 canonical 估值，平台读取不能依赖测试进程直接调用服务。
+    await page.getByRole('button', {name: 'Save verified equity snapshot', exact: true}).click();
+    await expect(page.getByText('Verified equity snapshot saved. Original accounting and history are unchanged.')).toBeVisible();
     await page.screenshot({path: test.info().outputPath('demo-real-canonical-analysis.png'), fullPage: true});
     expect(failures).toEqual([]);
 });

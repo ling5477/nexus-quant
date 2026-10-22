@@ -116,15 +116,27 @@ class PlatformReadPostgresIntegrationTest {
                 var performance=db.as(user.identity(),()->app.getBean(StrategySimAnalysisQuery.class)
                         .readPerformance(user.identity().userId(),run,null,null).orElseThrow());
                 var mark=performance.samples().getLast();
-                var frozen=db.as(user.identity(),()->app.getBean(PaperEquitySnapshotService.class)
-                        .generate(user.identity().userId(),run,mark.decisionId(),mark.eventAt()));
-                assertEquals("VERIFIED",frozen.status());
                 var before=TenantIsolationHttpIntegrationTest.economicSnapshot(db);
+                String snapshotEndpoint="/api/paper-trading/runs/"+run+"/equity-snapshots";
+                var snapshotRequest=Map.of("decisionId",mark.decisionId(),"snapshotTime",mark.eventAt().toString());
+                // 必须经过正式 Servlet 授权，避免直接服务调用掩盖 Demo 路由不可达。
+                var frozen=http.ok("POST",snapshotEndpoint,user.token(),snapshotRequest);
+                assertEquals("VERIFIED",frozen.path("status").asText());
+                assertEquals(frozen,http.ok("POST",snapshotEndpoint,user.token(),snapshotRequest));
+                assertEquals(before,TenantIsolationHttpIntegrationTest.economicSnapshot(db));
+                String snapshotId=frozen.path("snapshot").path("equitySnapshotId").asText();
+                assertFalse(snapshotId.isBlank());
+                assertEquals(200,http.send("GET",snapshotEndpoint+"/"+snapshotId,user.token(),null).statusCode());
+                assertEquals(404,http.send("POST",snapshotEndpoint,other.token(),snapshotRequest).statusCode());
+                assertEquals(404,http.send("GET",snapshotEndpoint+"/"+snapshotId,other.token(),null).statusCode());
+                assertEquals(403,http.send("POST",snapshotEndpoint,platform,snapshotRequest).statusCode());
+                assertEquals(403,http.send("GET",snapshotEndpoint+"/"+snapshotId,platform,null).statusCode());
                 var result=http.ok("GET",endpoint,platform,null);
                 assertEquals("AVAILABLE",result.path("status").asText());
-                assertEquals(0,frozen.snapshot().totalEquity().compareTo(new BigDecimal(result.path("equity").asText())));
+                BigDecimal frozenEquity=frozen.path("snapshot").path("totalEquity").decimalValue();
+                assertEquals(0,frozenEquity.compareTo(new BigDecimal(result.path("equity").asText())));
                 BigDecimal pnl=new BigDecimal(result.path("netPnl").asText());
-                assertEquals(0,frozen.snapshot().totalEquity().subtract(new BigDecimal("10000")).compareTo(pnl));
+                assertEquals(0,frozenEquity.subtract(new BigDecimal("10000")).compareTo(pnl));
                 assertTrue(pnl.abs().compareTo(new BigDecimal("1000"))<0);
                 assertEquals("UNAVAILABLE",http.ok("GET","/api/platform/tenants/"+other.identity().tenantId().value()
                         +"/sim-performance",platform,null).path("status").asText());
