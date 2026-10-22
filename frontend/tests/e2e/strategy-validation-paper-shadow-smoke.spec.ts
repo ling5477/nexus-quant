@@ -1283,6 +1283,11 @@ async function seedAuthAndGateQStubs(
         route.fulfill({status: 200, json: []}),
     );
 
+    // 发行身份属于入口前置合同，通用空数组不能替代 Self-Hosted 配对结果。
+    await page.route('**/api/distribution', (route) =>
+        route.fulfill({json: {distribution: 'NQ_SELF_HOSTED'}}),
+    );
+
     // 新全站页头按正式分页对象读取通知；空数组不是该接口的成功合同，不能污染目标页面的渲染验收。
     await page.route('**/api/user/notifications?*', (route) =>
         route.fulfill({
