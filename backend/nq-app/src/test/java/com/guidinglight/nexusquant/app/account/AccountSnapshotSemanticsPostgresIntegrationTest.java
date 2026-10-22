@@ -63,17 +63,8 @@ class AccountSnapshotSemanticsPostgresIntegrationTest {
             var dataSource=database.runtimeDataSource();
             ((com.zaxxer.hikari.HikariDataSource)dataSource).setMaximumPoolSize(2);
             var latest=database.migration(null);
-            // 旧行由V1创建；升级后逐项匹配显式开发清单，不能继续断言历史发行版本。
-            var manifest = new ObjectMapper().readTree(Path.of("../../scripts/ci/development-source-manifest.json").toFile());
-            var expected = new TreeMap<MigrationVersion, String>();
-            var pattern = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
-            for (var group : manifest.path("groups")) {
-                if (!"INCLUDE_RUNTIME".equals(group.path("category").asText())) continue;
-                for (var path : group.path("paths")) {
-                    var match = pattern.matcher(path.asText());
-                    if (match.matches()) assertNull(expected.put(MigrationVersion.fromVersion(match.group(2)), match.group(1)));
-                }
-            }
+            // 旧行由V1创建；升级后逐项匹配当前源码，历史阶段仍固定验证 V1。
+            var expected = com.guidinglight.nexusquant.app.smoke.CurrentMigrationTestInventory.scripts();
             assertFalse(expected.isEmpty());
             var applied = new TreeMap<MigrationVersion, String>();
             for (var migration : latest.info().applied()) {

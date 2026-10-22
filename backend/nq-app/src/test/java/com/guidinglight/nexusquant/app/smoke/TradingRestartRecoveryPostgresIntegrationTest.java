@@ -420,8 +420,7 @@ class TradingRestartRecoveryPostgresIntegrationTest {
             try {
                 tenant=TenantIsolationTestDatabase.create("1",baseUrl,user,password);
                 Flyway flyway=tenant.migration(null);
-                var expected=releaseMigrationScripts(new ObjectMapper().readTree(
-                        B0Processes.root().resolve("scripts/ci/development-source-manifest.json").toFile()));
+                var expected=CurrentMigrationTestInventory.scripts();
                 assertReleaseMigrationScripts(expected,flyway.info().all());
                 flyway.migrate();flyway.validate();
                 assertEquals(expected.lastKey(),flyway.info().current().getVersion());

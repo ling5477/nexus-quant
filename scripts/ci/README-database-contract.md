@@ -2,7 +2,7 @@
 
 开发 CI 自动从 `backend/nq-infra/src/main/resources/db/migration` 发现当前迁移，生成本次运行专用的身份文件。新增连续版本 SQL 后，无需修改版本号、迁移条数、表数量或 Schema fingerprint。
 
-入口是 `development_schema.py`。Backend CI 和 PostgreSQL CI 消费同一个生成规则；`MigrationInventory.java` 还会把生成清单中的 SHA256 与实际 classpath SQL 比较，避免旧构建资源或遗漏资源通过校验。
+入口是 `development_schema.py`。Maven 集成测试通过 `CurrentMigrationTestInventory` 从同一 SQL 源码目录获得预期，研究、账户快照、活动查询和跨 JVM 恢复测试不再读取旧开发路径快照。Backend CI 和 PostgreSQL CI 消费同一个生成规则；`MigrationInventory.java` 还会把生成清单中的 SHA256 与实际 classpath SQL 比较，避免旧构建资源或遗漏资源通过校验。
 
 ## 保留的检查
 
