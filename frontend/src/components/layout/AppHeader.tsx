@@ -21,6 +21,7 @@ import {ExchangeIcon} from '@/nq-design-system/brand/ExchangeBadge';
 import {resolveDefaultAccount} from '@/features/accounts/default-account';
 import {ObjectSearch} from './ObjectSearch';
 import {NotificationCenter} from '@/features/notifications/NotificationCenter';
+import {isPublicDemo} from '@/utils/distribution';
 
 interface AppHeaderProps {
     collapsed: boolean;
@@ -47,7 +48,9 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
 
     const accountsQuery = useQuery({
         queryKey: accountQueryKeys.list(accessToken),
-        queryFn: accountsApi.list,
+        queryFn: import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO'
+            ? async () => (await import('@/features/public-demo/api')).demoRegistrationApi.simAccount()
+            : accountsApi.list,
         enabled: Boolean(accessToken),
     });
 
@@ -124,10 +127,10 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                     onClick={onToggleCollapsed}
                     aria-label={collapsed ? t('shell.expand') : t('shell.collapse')}
                 />
-                <ObjectSearch />
+                {!isPublicDemo && <ObjectSearch />}
             </div>
             <div className="app-shell__header-right">
-                <NotificationCenter />
+                {!isPublicDemo && <NotificationCenter />}
                 <span className="app-shell__timezone" title={t('workspace.timezoneAutomatic')}>
                     {Intl.DateTimeFormat().resolvedOptions().timeZone} · {t('workspace.automatic')}
                 </span>
@@ -173,7 +176,7 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                         <DownOutlined />
                     </Button>
                 </Dropdown>
-                <Button onClick={() => navigate('/accounts')}>{t('shell.accounts')}</Button>
+                <Button onClick={() => navigate(isPublicDemo ? '/demo' : '/accounts')}>{t('shell.accounts')}</Button>
                 <Space className="app-shell__roles" size={8} wrap>
                     {currentUser?.roles.map((role) => (
                         <Tag key={role}>{role}</Tag>

@@ -1,3 +1,4 @@
+import {canWriteResearch} from '@/utils/distribution';
 import {businessColumns} from '@/components/layout/business-columns';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
@@ -102,9 +103,7 @@ export function PublishesPage() {
     const pendingPublication = usePendingResultAction('PUBLISH');
     const currentUser = useAuthStore((state) => state.currentUser);
     const roles = currentUser?.roles ?? [];
-    const canWrite = roles.some((role) =>
-        ['ADMIN', 'OPERATOR', 'ROLE_ADMIN', 'ROLE_OPERATOR'].includes(role),
-    );
+    const canWrite = canWriteResearch(roles);
     const hasSearched = searchVersion > 0;
 
     const visibleItems = publishesQuery.data?.items ?? [];

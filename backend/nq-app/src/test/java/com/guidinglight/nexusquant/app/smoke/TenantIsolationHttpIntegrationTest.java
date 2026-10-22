@@ -88,13 +88,19 @@ class TenantIsolationHttpIntegrationTest {
                 assertEquals(0,db.jdbc.queryForObject("SELECT count(*) FROM marketdata_bars",Integer.class));
                 assertEquals(0,db.as(a,()->db.jdbc.update("UPDATE marketdata_bars SET close_price=close_price+1")));
                 for(String path:List.of("/api/accounts","/api/scheduler/jobs","/api/trading/orders","/api/paper-trading/runs",
-                        "/api/marketdata/datasets","/api/strategy-releases/x/admission-preview","/api/research-creation-operations/"+UUID.randomUUID()))
+                        "/api/strategy-releases/x/admission-preview"))
                     assertEquals(403,http.send("GET",path,ta,null).statusCode(),path);
+                var visibleDatasets=http.ok("GET","/api/marketdata/datasets",ta,null);
+                assertEquals(1,visibleDatasets.size());
+                assertEquals(dataset.toString(),visibleDatasets.get(0).path("datasetId").asText());
+                assertFalse(visibleDatasets.toString().contains(privateDataset.toString()));
+                assertRejected(http.send("GET","/api/marketdata/datasets/"+privateDataset,ta,null));
+                assertEquals(404,http.send("GET","/api/research-creation-operations/"+UUID.randomUUID(),ta,null).statusCode());
                 assertEquals(403,http.send("POST","/api/paper-trading/strategy-sim/runs",ta,Map.of("publishId",ca.publish(),"budget","100")).statusCode());
                 var sim=app.getBean(StrategySimRunService.class);
                 var paper=app.getBean(PaperTradingRunService.class);
-                var sa=db.as(a,()->sim.create(ca.publish(),new BigDecimal("100"),"http-a"));
-                var sb=db.as(b,()->sim.create(cb.publish(),new BigDecimal("200"),"http-b"));
+                var sa=db.as(a,()->sim.create(ca.publish(),new BigDecimal("10000"),"http-a"));
+                var sb=db.as(b,()->sim.create(cb.publish(),new BigDecimal("10000"),"http-b"));
                 runA=sa.paperRunId();runB=sb.paperRunId();
                 assertNotEquals(sa.canonicalAccountId(),sb.canonicalAccountId());
                 db.as(a,()->{paper.start(sa.paperRunId());sim.advance(sa.paperRunId());sim.advance(sa.paperRunId());
@@ -138,6 +144,7 @@ class TenantIsolationHttpIntegrationTest {
                 db.jdbc.update("UPDATE accounts SET account_code=?,venue='OKX' WHERE account_id=?","nq-okx-sim-"+exchange,account);
                 db.jdbc.update("UPDATE exchange_accounts SET legacy_account_id=? WHERE exchange_account_id=?",account,exchange);
             }
+            if(identity.kind()==TenantKind.DEMO) PublicDemoAccountTestFixture.initialize(db,identity,account);
             return account;
         });
     }
@@ -245,6 +252,7 @@ class TenantIsolationHttpIntegrationTest {
     }
 
     static ServletWebServerApplicationContext start(String url,String username,String password) {
+        PublicDemoTestHttp.isolatedProcessConfiguration();
         var application=new SpringApplication(NexusQuantApplication.class); application.setRegisterShutdownHook(false);
         return (ServletWebServerApplicationContext)application.run("--server.address=127.0.0.1","--server.port=0",
                 "--spring.profiles.active=ci","--spring.main.banner-mode=off","--logging.level.root=WARN",

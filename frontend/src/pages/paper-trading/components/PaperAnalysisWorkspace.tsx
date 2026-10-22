@@ -4,13 +4,14 @@ import {useSearchParams} from 'react-router-dom';
 import {SimAnalysisWorkspace} from './SimAnalysisWorkspace';
 import {LegacyPaperAnalysisWorkspace} from './LegacyPaperAnalysisWorkspace';
 import {updateLegacyParams} from '@/features/paper-trading/legacy-analysis';
+import {isPublicDemo} from '@/utils/distribution';
 
 /** 来源显式决定业务对象和统计口径；无效来源必须解释，不静默切成另一组资产或运行。 */
 export function PaperAnalysisWorkspace({kind}: {kind: 'diagnostics' | 'reviews' | 'portfolio'}) {
     const {t} = useTranslation('pages');
     const [params, setParams] = useSearchParams();
     const source = params.get('analysisSource') ?? 'sim';
-    const valid = source === 'sim' || source === 'legacy';
+    const valid = source === 'sim' || (!isPublicDemo && source === 'legacy');
     return (
         <Space direction="vertical" size={12} style={{width: '100%', minWidth: 0}}>
             <Card className="page-section" variant="borderless">
@@ -30,7 +31,7 @@ export function PaperAnalysisWorkspace({kind}: {kind: 'diagnostics' | 'reviews' 
                         }
                         options={[
                             {value: 'sim', label: t('pages:legacyAnalysis.sim')},
-                            {value: 'legacy', label: t('pages:legacyAnalysis.legacy')},
+                            ...(!isPublicDemo ? [{value: 'legacy', label: t('pages:legacyAnalysis.legacy')}] : []),
                         ]}
                     />
                     <Popover

@@ -143,6 +143,10 @@ function createHandle(menuKey: string): RouteHandle {
 }
 
 export const appRouter = createBrowserRouter([
+    ...(import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? [
+        {path: '/register', lazy: () => import('@/features/public-demo/RegisterPage')},
+        {path: '/verify-email', lazy: () => import('@/features/public-demo/VerifyEmailPage')},
+    ] : []),
     {
         path: '/login',
         element: <LoginPage />,
@@ -164,9 +168,12 @@ export const appRouter = createBrowserRouter([
                 element: <ConsoleLayout />,
                 errorElement: <SystemErrorPage />,
                 children: [
+                    ...(import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? [
+                        {path: 'demo', lazy: () => import('@/features/public-demo/DemoAccountPage')},
+                    ] : []),
                     {
                         index: true,
-                        element: <Navigate to="/dashboard" replace />,
+                        element: <Navigate to={import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? '/demo' : '/dashboard'} replace />,
                     },
                     {
                         path: 'dashboard',
@@ -285,7 +292,9 @@ export const appRouter = createBrowserRouter([
                             },
                             {
                                 path: 'runs',
-                                element: <PaperTradingRunsPage />,
+                                ...(import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO'
+                                    ? {lazy: () => import('@/features/public-demo/DemoSimSetupPage')}
+                                    : {element: <PaperTradingRunsPage />}),
                                 handle: createHandle('paper-trading'),
                             },
                             {

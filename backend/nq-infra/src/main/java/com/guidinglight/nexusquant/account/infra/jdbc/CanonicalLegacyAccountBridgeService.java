@@ -2,6 +2,8 @@ package com.guidinglight.nexusquant.account.infra.jdbc;
 
 import com.guidinglight.nexusquant.account.domain.ExchangeAccountSummary;
 import com.guidinglight.nexusquant.account.domain.port.SimAccountIdentityBridge;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
+import com.guidinglight.nexusquant.common.tenant.TenantKind;
 import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
 
 import java.sql.Timestamp;
@@ -36,8 +38,24 @@ public class CanonicalLegacyAccountBridgeService implements SimAccountIdentityBr
         return resolveOrCreate(supplied, traceId, occurredAt, "SIM");
     }
 
+    @Override
+    @Transactional
+    public long resolveOrCreateDemoSim(ExchangeAccountSummary supplied, String traceId, Instant occurredAt) {
+        var identity = TenantContext.requireCurrent();
+        if (identity.kind() != TenantKind.DEMO || supplied == null
+                || identity.userId() != supplied.ownerUserId()) {
+            throw rejected("DEMO_SIM_ACCOUNT_BRIDGE_SCOPE_MISMATCH");
+        }
+        return resolveOrCreate(supplied, traceId, occurredAt, "SIM", true);
+    }
+
     private long resolveOrCreate(ExchangeAccountSummary supplied, String traceId,
             Instant occurredAt, String expectedEnvironment) {
+        return resolveOrCreate(supplied, traceId, occurredAt, expectedEnvironment, false);
+    }
+
+    private long resolveOrCreate(ExchangeAccountSummary supplied, String traceId,
+            Instant occurredAt, String expectedEnvironment, boolean demoPaper) {
         if (supplied == null || traceId == null || traceId.isBlank() || occurredAt == null) {
             throw new IllegalArgumentException("canonical legacy bridge input is required");
         }
@@ -58,10 +76,23 @@ public class CanonicalLegacyAccountBridgeService implements SimAccountIdentityBr
         if (!account.ownerUserId().equals(supplied.ownerUserId())
                 || !account.exchangeAccountId().equals(supplied.exchangeAccountId())
                 || !expectedEnvironment.equals(account.tradeEnv())
-                || !("LIVE".equals(expectedEnvironment) ? "OKX".equals(account.exchangeCode())
+                || !(demoPaper ? "PAPER".equals(account.exchangeCode())
+                        : "LIVE".equals(expectedEnvironment) ? "OKX".equals(account.exchangeCode())
                         : SIM_VENUES.contains(account.exchangeCode()))
                 || !"ACTIVE".equals(account.status())) {
             throw rejected("CANONICAL_LEGACY_ACCOUNT_BRIDGE_SCOPE_MISMATCH");
+        }
+        if (demoPaper && !Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS(SELECT 1 FROM exchange_accounts e
+                    JOIN tenant_memberships m ON m.tenant_id=e.tenant_id AND m.user_id=e.owner_user_id
+                    JOIN tenants t ON t.tenant_id=e.tenant_id
+                    WHERE e.exchange_account_id=? AND e.tenant_id=nq_current_tenant_id()
+                        AND m.membership_kind='DEMO' AND m.membership_role='DEMO_USER'
+                        AND m.status='ACTIVE' AND t.tenant_kind='DEMO' AND t.status='ACTIVE'
+                        AND NOT EXISTS(SELECT 1 FROM exchange_account_credentials c
+                            WHERE c.exchange_account_id=e.exchange_account_id))
+                """, Boolean.class, account.exchangeAccountId()))) {
+            throw rejected("DEMO_SIM_ACCOUNT_BRIDGE_SCOPE_MISMATCH");
         }
         String accountCode = "nq-" + account.exchangeCode().toLowerCase(Locale.ROOT)
                 + "-" + expectedEnvironment.toLowerCase(Locale.ROOT) + "-" + account.exchangeAccountId();

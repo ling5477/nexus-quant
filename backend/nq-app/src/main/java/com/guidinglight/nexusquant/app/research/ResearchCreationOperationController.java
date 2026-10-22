@@ -104,8 +104,14 @@ public class ResearchCreationOperationController {
     @PostMapping("/{operationId}")
     public Receipt create(@PathVariable UUID operationId, @Valid @RequestBody Request request) {
         AuthUserProfile actor = profile();
-        if (!actor.roles().contains("ADMIN") && !actor.roles().contains("OPERATOR"))
+        boolean demo = actor.roles().contains("DEMO_USER")
+                && com.guidinglight.nexusquant.common.tenant.TenantContext.requireCurrent().kind()
+                    == com.guidinglight.nexusquant.common.tenant.TenantKind.DEMO;
+        if (!actor.roles().contains("ADMIN") && !actor.roles().contains("OPERATOR") && !demo)
             throw new AccessDeniedException("operator role required");
+        // 旧模拟入口不具有首次绑定的运行合同；Demo 只能经 canonical SIM 和稳定操作回执创建。
+        if (demo && (request.kind() == Kind.PAPER_RUN || request.kind() == Kind.SIM_RUN))
+            throw new AccessDeniedException("legacy paper creation is unavailable for Demo");
         String parent = request.parentKey() == null ? "" : request.parentKey();
         if ((request.kind() == Kind.VERSION && parent.isBlank())
                 || (request.kind() != Kind.VERSION && !parent.isEmpty()))

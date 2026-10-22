@@ -24,12 +24,26 @@ public final class JdbcAccountTradeEnvironmentAuthority implements AccountTradeE
                 JOIN accounts a ON a.account_id=e.legacy_account_id
                 WHERE e.legacy_account_id=? AND e.exchange_code=?
                   AND e.status='ACTIVE' AND a.status='ACTIVE' AND a.venue=e.exchange_code
+                  AND e.exchange_code<>'PAPER'
                 UNION ALL
                 SELECT p.trade_env FROM paper_trading_runs p
                 JOIN accounts a ON a.account_id=p.canonical_account_id
                 WHERE p.canonical_account_id=? AND ?='PAPER'
                   AND p.status='RUNNING' AND p.trade_env='SIM'
                   AND a.status='ACTIVE' AND a.venue='PAPER'
+                  AND (NOT EXISTS(SELECT 1 FROM exchange_accounts e WHERE e.legacy_account_id=a.account_id)
+                    OR EXISTS(SELECT 1 FROM tenant_sim_accounts s
+                        JOIN exchange_accounts e ON e.exchange_account_id=s.exchange_account_id
+                            AND e.legacy_account_id=s.account_id AND e.tenant_id=s.tenant_id
+                        JOIN tenants t ON t.tenant_id=s.tenant_id
+                        JOIN tenant_memberships m ON m.tenant_id=s.tenant_id AND m.user_id=e.owner_user_id
+                        WHERE s.account_id=a.account_id AND s.tenant_id=p.tenant_id
+                            AND s.bound_paper_run_id=p.paper_run_id AND s.reserved_paper_run_id=p.paper_run_id
+                            AND t.tenant_kind='DEMO' AND t.status='ACTIVE'
+                            AND m.membership_kind='DEMO' AND m.status='ACTIVE'
+                            AND e.status='ACTIVE' AND e.trade_env='SIM' AND e.exchange_code='PAPER'
+                            AND NOT EXISTS(SELECT 1 FROM exchange_account_credentials c
+                                WHERE c.exchange_account_id=e.exchange_account_id)))
                 """, (row, ignored) -> row.getString(1), tradingAccountId, venue, tradingAccountId, venue);
         if (environments.size() != 1 || !List.of("SIM", "LIVE").contains(environments.getFirst())) {
             throw new AccountTradeEnvironmentException("ACCOUNT_TRADE_ENVIRONMENT_UNAVAILABLE");

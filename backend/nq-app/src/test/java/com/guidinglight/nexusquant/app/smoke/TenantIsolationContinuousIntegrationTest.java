@@ -25,12 +25,13 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnabledIfSystemProperty(named="nq.tenant.pg.required",matches="true")
 class TenantIsolationContinuousIntegrationTest {
     private JdbcTemplate jdbc;
+    private TenantIsolationTestDatabase testDatabase;
     private final ObjectMapper mapper=new ObjectMapper();
     private static final Instant START=Instant.parse("2026-09-25T00:00:00Z");
 
     @Test void networkReadCannotCarryOldExecutionEligibilityAcrossPauseAndExplicitResume() throws Exception {
         try(var db=TenantIsolationTestDatabase.create(null)) {
-            jdbc=db.jdbc;var a=db.demo("POLL_A","poll-a");
+            jdbc=db.jdbc;testDatabase=db;var a=db.demo("POLL_A","poll-a");
             db.local("poll-local");
             db.demo("POLL_B","poll-b");
             Fixture fixture=db.as(a,()->seed(hours(),true));
@@ -48,7 +49,7 @@ class TenantIsolationContinuousIntegrationTest {
                 var driver=driver(app,feed);
                 app.getBeanFactory().registerSingleton("tenantFixtureContinuousDriver",driver);
                 var tx=new TransactionTemplate(app.getBean(PlatformTransactionManager.class));
-                String run=db.as(a,()->tx.execute(status->driver.start(fixture.publishId(),new BigDecimal("100"),"poll-a"))).paperRunId();
+                String run=db.as(a,()->tx.execute(status->driver.start(fixture.publishId(),new BigDecimal("10000"),"poll-a"))).paperRunId();
                 var before=TenantIsolationHttpIntegrationTest.economicSnapshot(db);
                 try(var worker=Executors.newSingleThreadExecutor()) {
                     var poll=worker.submit(()->driver.pollOnce(run));
@@ -88,7 +89,7 @@ class TenantIsolationContinuousIntegrationTest {
 
     @Test void concurrentTenantsCannotExceedGlobalEightOrOneActiveRunPerTenant() throws Exception {
         try(var db=TenantIsolationTestDatabase.create(null)) {
-            jdbc=db.jdbc;var tenants=new ArrayList<TenantIdentity>();var fixtures=new ArrayList<Fixture>();
+            jdbc=db.jdbc;testDatabase=db;var tenants=new ArrayList<TenantIdentity>();var fixtures=new ArrayList<Fixture>();
             for(int i=0;i<9;i++) {var t=db.demo("CAPACITY_"+i,"capacity-"+i);tenants.add(t);fixtures.add(db.as(t,()->seed(hours(),true)));}
             try(var app=TenantIsolationHttpIntegrationTest.start(db);var workers=Executors.newFixedThreadPool(9)) {
                 var driver=driver(app,(first,max)->observation(first));var ready=new CountDownLatch(1);
@@ -96,7 +97,7 @@ class TenantIsolationContinuousIntegrationTest {
                 var tasks=new ArrayList<Future<Boolean>>();
                 for(int i=0;i<9;i++) {int index=i;tasks.add(workers.submit(()->{
                     ready.await();
-                    try {db.as(tenants.get(index),()->tx.execute(status->driver.start(fixtures.get(index).publishId(),new BigDecimal("100"),"capacity-"+index)));return true;}
+                    try {db.as(tenants.get(index),()->tx.execute(status->driver.start(fixtures.get(index).publishId(),new BigDecimal("10000"),"capacity-"+index)));return true;}
                     catch(org.springframework.dao.DataAccessException failure) {
                         if(!failure.getMostSpecificCause().getMessage().contains("CAPACITY_LIMIT"))throw failure;return false;
                     }
@@ -106,7 +107,8 @@ class TenantIsolationContinuousIntegrationTest {
                 assertEquals(8,accepted);
                 assertEquals(8,db.admin.queryForObject("SELECT count(*) FROM tenant_continuous_slots WHERE active",Integer.class));
                 assertEquals(8,db.admin.queryForObject("SELECT count(DISTINCT tenant_id) FROM tenant_continuous_slots WHERE active",Integer.class));
-                assertEquals(16,db.admin.queryForObject("SELECT count(*) FROM ledger_entries WHERE ref_type LIKE 'SIM_FUNDING_%'",Integer.class));
+                // 容量限制只约束运行；九个已初始化租户各保留一组注册资金。
+                assertEquals(18,db.admin.queryForObject("SELECT count(*) FROM ledger_entries WHERE ref_type LIKE 'SIM_FUNDING_%'",Integer.class));
                 int index=0;while(!tasks.get(index).get())index++;
                 int other=index+1;while(other<9 && !tasks.get(other).get())other++;
                 if(other==9) {other=0;while(other==index || !tasks.get(other).get())other++;}
@@ -115,7 +117,7 @@ class TenantIsolationContinuousIntegrationTest {
                 db.as(stoppedTenant,()->tx.execute(status->driver.stop(stoppedRun)));
                 assertEquals(7,db.admin.queryForObject("SELECT count(*) FROM tenant_continuous_slots WHERE active",Integer.class));
                 var tenant=tenants.get(index);var fixture=fixtures.get(index);var before=TenantIsolationHttpIntegrationTest.economicSnapshot(db);
-                assertThrows(org.springframework.dao.DataAccessException.class,()->db.as(tenant,()->tx.execute(status->driver.start(fixture.publishId(),new BigDecimal("100"),"capacity"))));
+                assertThrows(org.springframework.dao.DataAccessException.class,()->db.as(tenant,()->tx.execute(status->driver.start(fixture.publishId(),new BigDecimal("10000"),"capacity"))));
                 assertEquals(before,TenantIsolationHttpIntegrationTest.economicSnapshot(db));
             }
         }
@@ -161,6 +163,7 @@ class TenantIsolationContinuousIntegrationTest {
         Long account = jdbc.queryForObject("""
                 INSERT INTO accounts(account_code,venue,status) VALUES (?,'PAPER','ACTIVE') RETURNING account_id
                 """, Long.class, "STRATEGY-SIM-TEST-SOURCE-" + id);
+        PublicDemoAccountTestFixture.initialize(testDatabase,TenantContext.requireCurrent(),account);
         jdbc.update("""
                 INSERT INTO strategy_definitions(strategy_id,strategy_code,strategy_name,strategy_type,
                     exchange_code,account_id,trade_env,enabled,config_snapshot)
@@ -195,11 +198,21 @@ class TenantIsolationContinuousIntegrationTest {
                 """);
         String dataset;
         if (publicCapture) {
+            UUID approvedDataset=UUID.randomUUID();
+            testDatabase.admin.update("""
+                    INSERT INTO marketdata_datasets(dataset_id,dataset_name,exchange_code,market_type,symbol,"interval",start_time,end_time,
+                        status,quality_status,bar_count,source,created_by,tenant_id,visibility)
+                    VALUES(?,?,'OKX','SPOT','BTC-USDT','1h',?,?,'READY','OK',?,'marketdata_bars','synthetic',NULL,'SHARED_READONLY')
+                    """,approvedDataset,"Synthetic licensed continuous bars "+approvedDataset,java.sql.Timestamp.from(bars.getFirst().openTime()),java.sql.Timestamp.from(bars.getLast().closeTime()),bars.size());
+            testDatabase.admin.update("""
+                    INSERT INTO marketdata_dataset_publications(dataset_id,source_reference,license_reference,permitted_from,permitted_until,expires_at,status)
+                    VALUES(?,'GENERATED_TEST_ONLY','SYNTHETIC_TEST_PERMISSION',?,?,now()+interval '1 hour','APPROVED')
+                    """,approvedDataset,java.sql.Timestamp.from(bars.getFirst().openTime()),java.sql.Timestamp.from(bars.getLast().closeTime()));
             assumptions.put("ruleSha256", "b".repeat(64));
             assumptions.put("rulePolicy", "CURRENTLY_OBSERVED_PUBLIC_RULES");
             summary.put("datasetProvider", "public-capture");
             summary.put("costAndRuleSha256", PublicReplayAssumptionIdentity.sha256(assumptions));
-            dataset = "{\"provider\":\"public-capture\",\"source\":\"OKX_PUBLIC_CAPTURE\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\","
+            dataset = "{\"datasetId\":\""+approvedDataset+"\",\"provider\":\"public-capture\",\"source\":\"OKX_PUBLIC_CAPTURE\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\","
                     + "\"interval\":\"1h\",\"barCount\":" + bars.size() + ",\"capture\":{"
                     + "\"consumedSha256\":\"" + identity.sha256() + "\","
                     + "\"replayVisibilityVersion\":\"CLOSED_HOURLY_BOUNDARY_V1\","

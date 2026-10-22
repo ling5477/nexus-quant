@@ -10,6 +10,19 @@ public final class DemoTenantApiPolicy {
     private record Route(String method, Pattern path) {}
     private static Route route(String method, String path) { return new Route(method, Pattern.compile(path)); }
     private static final List<Route> ROUTES = List.of(
+            route("GET", "/api/demo/registration-result"),
+            route("GET", "/api/demo/sim-account"),
+            route("GET", "/api/marketdata/datasets(?:/[^/]+)?"),
+            route("GET", "/api/paper-trading/strategy-sim/runs/continuous-capabilities"),
+            route("GET", "/api/backtest-evaluation-requests/[0-9a-fA-F-]{36}"),
+            route("POST", "/api/backtest-evaluation-requests/[0-9a-fA-F-]{36}"),
+            route("POST", "/api/publishes"),
+            route("GET", "/api/publishes/[^/]+/sim-runs/page"),
+            route("GET", "/api/research-creation-operations/[0-9a-fA-F-]{36}"),
+            route("POST", "/api/research-creation-operations/[0-9a-fA-F-]{36}"),
+            route("GET", "/api/paper-trading/strategy-sim/continuous-operations/[0-9a-fA-F-]{36}"),
+            route("POST", "/api/paper-trading/strategy-sim/continuous-operations"),
+            route("POST", "/api/paper-trading/strategy-sim/runs/continuous"),
             route("GET", "/api/strategies(?:/[^/]+(?:/versions(?:/[^/]+)?)?)?"),
             route("POST", "/api/strategies(?:/[^/]+/versions)?"),
             route("GET", "/api/research-configs(?:/[^/]+)?"),

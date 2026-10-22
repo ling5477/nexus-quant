@@ -3,6 +3,7 @@ import {preferencesApi, type UserPreferences} from '@/features/preferences/api/p
 import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
 import {CanceledError} from 'axios';
+import {isPublicDemo} from '@/utils/distribution';
 
 export function useUserPreferences() {
     const userId = useAuthStore((state) => state.currentUser?.userId ?? 0);
@@ -18,7 +19,7 @@ export function useUserPreferences() {
                 throw new CanceledError('Session changed before reading preferences.');
             return preferencesApi.read(current.accessToken, signal);
         },
-        enabled: Boolean(token && userId > 0 && !mustChangePassword),
+        enabled: !isPublicDemo && Boolean(token && userId > 0 && !mustChangePassword),
     });
     const save = useMutation<
         UserPreferences,

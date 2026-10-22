@@ -5,6 +5,7 @@ import {useUserPreferences} from '@/features/preferences/hooks/useUserPreference
 import {LegalDocuments} from './LegalDocuments';
 import {useAuthStore} from '@/store/auth-store';
 import {formatApiError} from '@/api/errors';
+import {isPublicDemo} from '@/utils/distribution';
 
 /** 只记录本次登录是否已处理自动提示，不把本地标记当作声明接受事实。 */
 function readHandled(key: string): boolean {
@@ -39,7 +40,7 @@ export function LoginDisclosures() {
         setHandled(true);
     }, [key, query.isSuccess, query.data?.hideLoginDisclosures]);
     const open =
-        ((query.isSuccess && !query.data.hideLoginDisclosures) || query.isError) && !handled;
+        (isPublicDemo || (query.isSuccess && !query.data.hideLoginDisclosures) || query.isError) && !handled;
     function finish() {
         try {
             sessionStorage.setItem(key, 'read');
@@ -60,13 +61,13 @@ export function LoginDisclosures() {
             keyboard={false}
             footer={
                 <Space wrap>
-                    <Checkbox
+                    {!isPublicDemo && <Checkbox
                         checked={suppress}
                         disabled={!query.data}
                         onChange={(event) => setSuppress(event.target.checked)}
                     >
                         {t('preferences.hideNextLogin')}
-                    </Checkbox>
+                    </Checkbox>}
                     <Button
                         type="primary"
                         loading={save.isPending}

@@ -4,13 +4,14 @@ import {setLocale, type AppLocale} from '@/i18n';
 import {useUserPreferences} from '@/features/preferences/hooks/useUserPreferences';
 import {useAuthStore} from '@/store/auth-store';
 import {showApiError} from '@/api/errors';
+import {isPublicDemo} from '@/utils/distribution';
 
 export function LanguageSelect() {
     const {t, i18n} = useTranslation();
     const {message} = App.useApp();
     const {query, save} = useUserPreferences();
     const user = useAuthStore((state) => state.currentUser);
-    const persist = Boolean(user?.userId && !user.mustChangePassword);
+    const persist = !isPublicDemo && Boolean(user?.userId && !user.mustChangePassword);
     return (
         <Select
             aria-label={t('language')}

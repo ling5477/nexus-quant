@@ -11,6 +11,10 @@ import {defineConfig, loadEnv} from 'vite';
 export default defineConfig(({mode}) => {
     const env = loadEnv(mode, process.cwd(), '');
     const proxyTarget = env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:18888';
+    const distribution = env.VITE_DISTRIBUTION ?? 'SELF_HOSTED';
+    if (!['SELF_HOSTED', 'PUBLIC_DEMO'].includes(distribution)) {
+        throw new Error('VITE_DISTRIBUTION 必须为 SELF_HOSTED 或 PUBLIC_DEMO');
+    }
     // 生产包默认保留已有 SIM 入口；是否可执行仍由服务端能力、角色和风控决定。
     // 显式关闭用于受限部署，开发模式仍需开启；非法值直接终止构建，避免静默丢失功能。
     const simulationEntryFlags = Object.fromEntries(
@@ -25,7 +29,7 @@ export default defineConfig(({mode}) => {
 
     return {
         plugins: [react()],
-        define: simulationEntryFlags,
+        define: {...simulationEntryFlags, 'import.meta.env.VITE_DISTRIBUTION': JSON.stringify(distribution)},
         resolve: {
             alias: {
                 '@': path.resolve(__dirname, './src'),

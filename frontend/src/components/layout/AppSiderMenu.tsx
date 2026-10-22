@@ -10,6 +10,7 @@ import {useLocation, useNavigate} from 'react-router-dom';
 
 import {appNavItems, resolveMenuKey} from '@/router/navigation';
 import {useTranslation} from 'react-i18next';
+import {isPublicDemo} from '@/utils/distribution';
 
 interface AppSiderMenuProps {
     collapsed: boolean;
@@ -73,10 +74,12 @@ export function AppSiderMenu({collapsed, onNavigate}: AppSiderMenuProps) {
         if (activeGroup) setOpenKeys([activeGroup]);
     }, [activeGroup]);
     const leaf = (key: string) => {
+        if (isPublicDemo && !['demo', 'strategies', 'research', 'backtests', 'evaluations', 'publishes', 'paper-trading', 'paper-portfolio', 'paper-diagnostics', 'paper-reviews'].includes(key)) return null;
         const item = appNavItems.find((entry) => entry.key === key);
         return item ? {key: item.key, icon: item.icon, label: item.label} : null;
     };
     const items = [
+        leaf('demo'),
         leaf('dashboard'),
         leaf('accounts'),
         ...groups.map((group) => ({
@@ -84,7 +87,7 @@ export function AppSiderMenu({collapsed, onNavigate}: AppSiderMenuProps) {
             icon: group.icon,
             label: group.label,
             children: group.keys.map(leaf).filter((item) => item !== null),
-        })),
+        })).filter((group) => group.children.length > 0),
         leaf('settings'),
     ].filter((item) => item !== null);
 

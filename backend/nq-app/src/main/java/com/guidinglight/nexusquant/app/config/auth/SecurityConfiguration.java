@@ -64,7 +64,8 @@ public class SecurityConfiguration {
             TokenService tokenService,
             PasswordEncoder passwordEncoder,
             AuthUserRepository authUserRepository,
-            SecurityRuntimeProperties properties) {
+            SecurityRuntimeProperties properties,
+            org.springframework.beans.factory.ObjectProvider<com.guidinglight.nexusquant.auth.domain.port.PublicDemoDistribution> demoDistribution) {
         return new DbAuthService(
                 tokenService,
                 passwordEncoder,
@@ -73,7 +74,7 @@ public class SecurityConfiguration {
                 properties.getAccessTokenTtl().toSeconds(),
                 properties.getSessionIdleTimeout().toSeconds(),
                 properties.getSessionMaxLifetime().toSeconds(),
-                Clock.systemUTC());
+                Clock.systemUTC(),demoDistribution.getIfAvailable());
     }
 
     @Bean
@@ -127,6 +128,7 @@ public class SecurityConfiguration {
             AuthenticationEntryPoint entryPoint,
             AuthUserRepository repository,
             TenantIdentityResolver tenantIdentities,
+            org.springframework.beans.factory.ObjectProvider<com.guidinglight.nexusquant.auth.domain.port.PublicDemoDistribution> demoDistribution,
             SecurityRuntimeProperties properties) {
         return new JwtAuthenticationFilter(
                 tokenService,
@@ -146,6 +148,11 @@ public class SecurityConfiguration {
                                                                 Instant.now(), Instant.now().minus(properties.getSessionIdleTimeout()))))
                                 .flatMap(user -> {
                                     var identity = tenantIdentities.resolve(user);
+                                    if (demoDistribution.getIfAvailable()!=null && !demoDistribution.getObject().permitsUser(user.userId()))
+                                        return Optional.empty();
+                                    if (demoDistribution.getIfAvailable()!=null && identity.tenant()!=null
+                                            && identity.tenant().kind()!=com.guidinglight.nexusquant.common.tenant.TenantKind.DEMO)
+                                        return Optional.empty();
                                     // 旧本地令牌仍按原合同有效；新角色必须使用可撤销的数据库会话。
                                     if (claims.sessionId() == null && (identity.roles().contains(TenantIdentityResolver.DEMO_USER)
                                             || identity.roles().contains(TenantIdentityResolver.PLATFORM_ADMIN))) return Optional.empty();
@@ -162,6 +169,7 @@ public class SecurityConfiguration {
             AuthenticationEntryPoint authenticationEntryPoint,
             AccessDeniedHandler accessDeniedHandler,
             ApiSecurityErrorWriter errorWriter,
+            org.springframework.beans.factory.ObjectProvider<com.guidinglight.nexusquant.auth.domain.port.PublicDemoDistribution> demoDistribution,
             @org.springframework.beans.factory.annotation.Value("${nq.demo.tenant-business-enabled:false}") boolean demoBusinessEnabled)
             throws Exception {
         http.csrf(csrf -> csrf.disable())
@@ -175,7 +183,12 @@ public class SecurityConfiguration {
                                         .accessDeniedHandler(accessDeniedHandler))
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers(HttpMethod.POST, "/api/auth/login")
+                                auth.requestMatchers(request -> demoDistribution.getIfAvailable()!=null
+                                                && "POST".equals(request.getMethod())
+                                                && java.util.Set.of("/api/auth/register","/api/auth/verify-email","/api/auth/resend-verification")
+                                                    .contains(request.getRequestURI().substring(request.getContextPath().length())))
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.POST, "/api/auth/login")
                                         .permitAll()
                                         .requestMatchers(
                                                 HttpMethod.POST,

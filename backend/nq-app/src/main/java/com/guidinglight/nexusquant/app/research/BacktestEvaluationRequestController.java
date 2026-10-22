@@ -35,7 +35,10 @@ public final class BacktestEvaluationRequestController {
   @PostMapping("/{requestId}")
   public Receipt submit(@PathVariable UUID requestId, @RequestParam String target) {
     AuthUserProfile actor = profile();
-    if (!actor.roles().contains("ADMIN") && !actor.roles().contains("OPERATOR"))
+    boolean demo = actor.roles().contains("DEMO_USER")
+        && com.guidinglight.nexusquant.common.tenant.TenantContext.requireCurrent().kind()
+            == com.guidinglight.nexusquant.common.tenant.TenantKind.DEMO;
+    if (!actor.roles().contains("ADMIN") && !actor.roles().contains("OPERATOR") && !demo)
       throw new AccessDeniedException("operator role required");
     return requests.submit(requestId, target, actor.userId());
   }

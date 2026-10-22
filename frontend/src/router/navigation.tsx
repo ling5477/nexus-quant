@@ -16,6 +16,13 @@ import {
 import type {AppNavItem} from '@/types/navigation';
 
 export const appNavItems: AppNavItem[] = [
+    ...(import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? [{
+        key: 'demo', path: '/demo', icon: <ExperimentOutlined />,
+        get label() { return t('auth.demoAccount'); },
+        get title() { return t('auth.demoAccount'); },
+        get description() { return t('auth.demoAccount'); },
+        get section() { return t('navigation.dashboard.section'); },
+    }] : []),
     {
         key: 'dashboard',
         path: '/dashboard',

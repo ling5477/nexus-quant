@@ -72,7 +72,7 @@ public class ApiExceptionHandler {
             org.springframework.dao.DataAccessException failure, HttpServletRequest request) {
         String detail=String.valueOf(failure.getMostSpecificCause().getMessage());
         String code=null;
-        for (String candidate : List.of("CAPACITY_LIMIT","TENANT_SUSPENDED","TENANT_EXECUTION_EPOCH_STALE","TENANT_ACCESS_DENIED","RUN_NOT_FOUND")) {
+        for (String candidate : List.of("REGISTRATION_ID_CONFLICT","CAPACITY_LIMIT","TENANT_SUSPENDED","TENANT_EXECUTION_EPOCH_STALE","TENANT_ACCESS_DENIED","RUN_NOT_FOUND")) {
             if(detail.contains(candidate)) {code=candidate;break;}
         }
         if(code==null) return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(handleException(failure,request));

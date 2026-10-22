@@ -133,7 +133,7 @@ public class AuthController {
         boolean restricted = demo || userProfile.roles().contains(TenantIdentityResolver.DEMO_USER)
                 || userProfile.roles().contains(TenantIdentityResolver.PLATFORM_ADMIN);
         // 未完成业务隔离前，新身份的基础资料不触达账户读侧。
-        var defaultAccount = restricted ? null
+        var defaultAccount = restricted && !demo ? null
                 : exchangeAccountQueryService.findDefaultByOwnerUserId(userProfile.userId()).orElse(null);
         return new CurrentUserResponse(
                 userProfile.userId(),

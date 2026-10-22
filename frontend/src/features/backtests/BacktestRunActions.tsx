@@ -1,3 +1,4 @@
+import {canWriteResearch} from '@/utils/distribution';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {Alert, App, Button, Card, Space, Typography} from 'antd';
 import {useRef, useState} from 'react';
@@ -52,7 +53,7 @@ export function BacktestRunActions({
     const pendingEvaluation = usePendingResultAction('EVALUATE');
     const canWrite = useAuthStore(
         (state) =>
-            state.currentUser?.roles.some((role) => ['ADMIN', 'OPERATOR'].includes(role)) ?? false,
+            canWriteResearch(state.currentUser?.roles),
     );
     const owner = useAuthStore((state) => state.currentUser?.userId ?? null);
     const scope = `${owner ?? ''}/${run.backtestConfigId}/${run.backtestRunId}`;

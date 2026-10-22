@@ -16,6 +16,7 @@ import {
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
 import {useTranslation} from 'react-i18next';
+import {isPublicDemo} from '@/utils/distribution';
 import {Link, useSearchParams} from 'react-router-dom';
 import {paperTradingQueryKeys} from '@/api/query-keys';
 import {formatApiError} from '@/api/errors';
@@ -126,7 +127,7 @@ export function SimAnalysisWorkspace({kind}: {kind: 'portfolio' | 'reviews' | 'd
                     </Space>
                 </div>
                 <Typography.Paragraph type="secondary" style={{margin: '10px 0 0'}}>
-                    {t(`pages:simAnalysis.scope_${kind}`)}
+                    {t(isPublicDemo && kind === 'portfolio' ? 'pages:simAnalysis.demoScopePortfolio' : `pages:simAnalysis.scope_${kind}`)}
                 </Typography.Paragraph>
                 {catalog.isError && (
                     <Alert
@@ -176,7 +177,7 @@ export function SimAnalysisWorkspace({kind}: {kind: 'portfolio' | 'reviews' | 'd
                         }
                         extra={
                             <Link
-                                to={`/paper-trading/runs?paperRunId=${encodeURIComponent(analysis.run.paperRunId)}`}
+                                to={isPublicDemo ? '/demo' : `/paper-trading/runs?paperRunId=${encodeURIComponent(analysis.run.paperRunId)}`}
                             >
                                 {t('pages:simAnalysis.manageRun')}
                             </Link>
@@ -454,7 +455,7 @@ function AssetSummary({analysis}: {analysis: SimAnalysis}) {
                 ))}
             </div>
             <Typography.Paragraph type="secondary" style={{marginTop: 12}}>
-                {t('pages:simBudgetMeaning')}
+                {t(isPublicDemo ? 'pages:demoSimBudgetMeaning' : 'pages:simBudgetMeaning')}
             </Typography.Paragraph>
             <Descriptions size="small" column={{xs: 1, md: 3}}>
                 <Descriptions.Item label={t('pages:simMarkAsOf')}>

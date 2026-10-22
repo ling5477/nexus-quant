@@ -45,6 +45,13 @@
         <module>nq-api</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>public-demo</id>
+            <modules><module>nq-public-demo</module></modules>
+        </profile>
+    </profiles>
+
     <dependencyManagement>
         <dependencies>
             <dependency>

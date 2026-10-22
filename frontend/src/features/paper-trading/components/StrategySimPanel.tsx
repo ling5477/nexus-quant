@@ -19,6 +19,7 @@ import {
     type ConfirmedContinuousOperation,
 } from '../continuous-operations';
 import {useAuthStore} from '@/store/auth-store';
+import {isPublicDemo} from '@/utils/distribution';
 
 import {useTranslation} from 'react-i18next';
 
@@ -34,7 +35,7 @@ interface Props {
     onCreated: (paperRunId: string) => void;
 }
 
-/** 预算与 publish 是唯一可输入的经济前提；方向和数量始终来自冻结策略与服务端 sizing。 */
+/** Demo 预算由服务端固定；方向和数量始终来自冻结策略与服务端 sizing。 */
 export function StrategySimPanel({selectedRun, onCreated}: Props) {
     const {t} = useTranslation('pages');
     const {message, modal} = App.useApp();
@@ -115,7 +116,7 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
                 const result = await continuousOperations.submit({
                     type: 'CREATE',
                     publishId: values.publishId.trim(),
-                    budget: values.budget.trim(),
+                    budget: isPublicDemo ? '10000.00000000' : values.budget.trim(),
                 });
                 await confirmOperation(result);
                 if (
@@ -127,7 +128,7 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
             }
             const created = await paperTradingApi.createStrategySim(
                 values.publishId.trim(),
-                values.budget.trim(),
+                isPublicDemo ? '10000.00000000' : values.budget.trim(),
             );
             message.success(t('pages:strategySimCreated'));
             onCreated(created.paperRunId);
@@ -185,7 +186,7 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
     return (
         <Card className="page-section" variant="borderless" title={t('pages:strategySimTitle')}>
             <Space direction="vertical" size={12} style={{display: 'flex'}}>
-                <CreationRecoveryPanel kinds={['SIM_RUN']} />
+                {!isPublicDemo && <CreationRecoveryPanel kinds={['SIM_RUN']} />}
                 <ContinuousOperationRecovery
                     canSubmit={
                         capabilities.isError || !capabilities.data
@@ -255,20 +256,21 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
                                 children: (
                                     <>
                                         <Typography.Paragraph type="secondary">
-                                            {t('pages:strategySimDescription')}
+                                            {t(isPublicDemo ? 'pages:demoSimDescription' : 'pages:strategySimDescription')}
                                         </Typography.Paragraph>
-                                        <Typography.Paragraph type="secondary">
+                                        {!isPublicDemo && <Typography.Paragraph type="secondary">
                                             {t('pages:discountFee.simInheritance')}
-                                        </Typography.Paragraph>
+                                        </Typography.Paragraph>}
                                         <Form
                                             name="strategy-sim-create"
                                             form={form}
                                             layout="vertical"
                                             initialValues={{
                                                 publishId: params.get('publishId') ?? '',
+                                                ...(isPublicDemo ? {budget: '10000.00000000'} : {}),
                                             }}
                                             onFinish={(values) => {
-                                                void create(values);
+                                                void create(values, isPublicDemo);
                                             }}
                                         >
                                             <Form.Item
@@ -306,20 +308,22 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
                                                 ]}
                                             >
                                                 <Input
+                                                    readOnly={isPublicDemo}
                                                     inputMode="decimal"
                                                     placeholder="10 / 100 / 1000"
                                                     style={{width: 160}}
                                                 />
                                             </Form.Item>
-                                            <Button
+                                            {!isPublicDemo && <Button
                                                 type="primary"
                                                 htmlType="submit"
                                                 loading={busy}
                                                 disabled={commandBlocked || !canOperate}
                                             >
                                                 {t('pages:strategySimCreate')}
-                                            </Button>
+                                            </Button>}
                                             <Button
+                                                type={isPublicDemo ? 'primary' : 'default'}
                                                 disabled={
                                                     busy ||
                                                     commandBlocked ||
