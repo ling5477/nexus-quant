@@ -37,11 +37,31 @@ export default defineConfig(function (_a) {
         return ["import.meta.env.".concat(key), JSON.stringify(value)];
     }));
     return {
-        plugins: [react()],
+        plugins: [react(), {
+                name: 'distribution-identity',
+                generateBundle: function (_options, bundle) {
+                    if (distribution === 'SELF_HOSTED') {
+                        for (var _i = 0, _a = Object.values(bundle); _i < _a.length; _i++) {
+                            var output = _a[_i];
+                            if (output.type !== 'chunk')
+                                continue;
+                            for (var _b = 0, _c = Object.keys(output.modules); _b < _c.length; _b++) {
+                                var moduleId = _c[_b];
+                                if (/\/src\/features\/(public-demo|platform)\//.test(moduleId.replace(/\\/g, '/')))
+                                    this.error('SELF_HOSTED_CONTAINS_DEMO_MODULE: ' + moduleId);
+                            }
+                        }
+                    }
+                    this.emitFile({ type: 'asset', fileName: 'distribution.json',
+                        source: JSON.stringify({ distribution: "NQ_".concat(distribution) }) });
+                },
+            }],
         define: __assign(__assign({}, simulationEntryFlags), { 'import.meta.env.VITE_DISTRIBUTION': JSON.stringify(distribution) }),
         resolve: {
             alias: {
                 '@': path.resolve(__dirname, './src'),
+                '@distribution-entry': path.resolve(__dirname, "./src/distributions/".concat(distribution === 'PUBLIC_DEMO' ? 'public-demo' : 'self-hosted', ".tsx")),
+                '@distribution-features': path.resolve(__dirname, "./src/distributions/".concat(distribution === 'PUBLIC_DEMO' ? 'public-demo' : 'self-hosted', "-features.tsx")),
             },
         },
         server: proxyTarget

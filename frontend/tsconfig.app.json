@@ -6,7 +6,9 @@
     "module": "ESNext",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@distribution-features": ["src/distributions/self-hosted-features.tsx"],
+      "@distribution-entry": ["src/distributions/self-hosted.tsx"]
     },
     "skipLibCheck": true,
     "moduleResolution": "Bundler",

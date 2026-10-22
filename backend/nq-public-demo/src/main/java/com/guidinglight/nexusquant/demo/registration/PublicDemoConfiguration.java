@@ -21,12 +21,18 @@ public class PublicDemoConfiguration {
     @Bean public PublicDemoDistribution publicDemoDistribution(javax.sql.DataSource source){
         var jdbc=new org.springframework.jdbc.core.JdbcTemplate(source);
         return userId -> Boolean.TRUE.equals(jdbc.queryForObject("""
-            SELECT EXISTS(SELECT 1 FROM demo_registrations r JOIN users u ON u.id=r.user_id
+            SELECT EXISTS(SELECT 1 FROM users p WHERE p.id=? AND p.enabled
+                AND EXISTS(SELECT 1 FROM user_roles ur JOIN roles role ON role.id=ur.role_id
+                    WHERE ur.user_id=p.id AND role.role_code='PLATFORM_ADMIN')
+                AND NOT EXISTS(SELECT 1 FROM user_roles ur JOIN roles role ON role.id=ur.role_id
+                    WHERE ur.user_id=p.id AND role.role_code<>'PLATFORM_ADMIN')
+                AND NOT EXISTS(SELECT 1 FROM tenant_memberships WHERE user_id=p.id))
+            OR EXISTS(SELECT 1 FROM demo_registrations r JOIN users u ON u.id=r.user_id
                 JOIN tenant_memberships m ON m.user_id=u.id AND m.tenant_id=r.tenant_id
                 JOIN tenants t ON t.tenant_id=m.tenant_id
                 WHERE u.id=? AND u.enabled AND u.email_verified_at IS NOT NULL AND r.status='READY'
                     AND m.membership_kind='DEMO' AND m.status='ACTIVE' AND t.tenant_kind='DEMO' AND t.status='ACTIVE')
-            """,Boolean.class,userId));
+            """,Boolean.class,userId,userId));
     }
 
     @Bean
@@ -40,6 +46,11 @@ public class PublicDemoConfiguration {
             // 适配器读取 .env/进程配置，不能让 Spring profile 的 false 掩盖实际 REAL 配置。
             if(real(process.get("NQ_OKX_ENV")) || real(process.get("NQ_BINANCE_ENV")))
                 throw new IllegalStateException("PUBLIC_DEMO_REAL_EXCHANGE_FORBIDDEN");
+            for(String key:Set.of("NQ_OKX_API_KEY","NQ_OKX_API_SECRET","NQ_OKX_API_PASSPHRASE",
+                    "NQ_BINANCE_API_KEY","NQ_BINANCE_API_SECRET")) {
+                if(!normalize(process.get(key)).isBlank())
+                    throw new IllegalStateException("PUBLIC_DEMO_CREDENTIALS_FORBIDDEN");
+            }
             for(String key:Set.of("NQ_LIVE_ENABLED","NQ_REAL_PROVIDER_ENABLED","NQ_REAL_CLIENT_ENABLED",
                     "NQ_REAL_EXCHANGE_ENABLED","NQ_OKX_WS_ENABLED","NQ_BINANCE_WS_ENABLED","NQ_OKX_RECOVERY_ENABLED")) {
                 if(Boolean.parseBoolean(normalize(process.get(key)))) throw new IllegalStateException("PUBLIC_DEMO_UNSAFE_PROCESS_CONFIGURATION: "+key);
@@ -55,6 +66,7 @@ public class PublicDemoConfiguration {
                     "nq.runtime.minimal-live-pilot.order-submission-enabled","nq.runtime.minimal-live-pilot.cancel-enabled",
                     "nq.runtime.minimal-live-pilot.transfer-enabled","nq.runtime.minimal-live-pilot.withdraw-enabled",
                     "nq.live-control.exact-pilot-binding.enabled","nq.runtime.provider-observation.enabled",
+                    "nq.okx.private-readonly-diagnostics.enabled",
                     "nq.dh.integration1.runtime.enabled","nq.dh.integration1.runtime.client.enabled",
                     "nq.dh.integration1.runtime.production-enabled")) {
                 if(environment.getProperty(key,Boolean.class,false)) throw new IllegalStateException("PUBLIC_DEMO_UNSAFE_CONFIGURATION: "+key);

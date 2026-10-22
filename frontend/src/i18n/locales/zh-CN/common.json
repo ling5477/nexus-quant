@@ -43,7 +43,9 @@
     "appTitle": "NexusQuant 控制台"
   },
   "auth": {
-    "registerDemo": "注册模拟账户", "verifyEmail": "验证邮箱", "demoAccount": "独立模拟账户",
+    "registerDemo": "注册模拟账户",
+    "verifyEmail": "验证邮箱",
+    "demoAccount": "独立模拟账户",
     "demoBoundary": "仅限隔离模拟账户；LIVE、真实交易及 API 密钥管理不可用。",
     "entering": "正在进入控制台",
     "restored": "登录态已恢复,正在跳转到受保护区域。",
@@ -770,5 +772,11 @@
       "UNAVAILABLE": "未提供",
       "INVALID": "无效"
     }
+  },
+  "distribution": {
+    "checking": "正在验证发行身份",
+    "unavailable": "发行身份无法确认",
+    "description": "前后端必须来自同一种发行物。请核对服务状态和安装包后重试。",
+    "retry": "重新检查"
   }
 }

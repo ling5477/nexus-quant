@@ -2,6 +2,7 @@ import {expect, test, type BrowserContext} from 'playwright/test';
 
 /** 仅验证前端交互和发行路由；真实注册、邮件、资金及隔离由独立 PostgreSQL/HTTP 测试证明。 */
 async function anonymous(context: BrowserContext) {
+    await context.route('**/api/distribution', (route) => route.fulfill({json: {distribution: 'NQ_PUBLIC_DEMO'}}));
     await context.addInitScript(() => {localStorage.clear(); localStorage.setItem('nq.locale', 'en-US');});
 }
 
@@ -73,6 +74,7 @@ test('Demo 首页使用唯一账户投影进入策略创建，未知状态不保
         const url = new URL(route.request().url());
         let json: unknown;
         switch (url.pathname) {
+            case '/api/distribution': json = {distribution: 'NQ_PUBLIC_DEMO'}; break;
             case '/api/auth/me': json = {userId: 17, username: 'fixture.demo', roles: ['DEMO_USER'], authenticated: true, mustChangePassword: false,
                 defaultExchangeAccountId: 21, defaultExchangeCode: 'PAPER', defaultTradeEnv: 'SIM', defaultAccountAlias: 'Demo SIM'}; break;
             case '/api/demo/sim-account': json = {exchangeAccountId: 21, legacyAccountId: 31, exchangeCode: 'PAPER', tradeEnv: 'SIM', accountAlias: 'Demo SIM', externalAccountRef: null, isDefault: true, status: 'ACTIVE'}; break;

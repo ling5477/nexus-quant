@@ -2,10 +2,14 @@ import {expect, test} from 'playwright/test';
 
 test.describe('login page smoke', () => {
     test('渲染 v2 双区登录入口并保持凭证输入为空', async ({page}) => {
+        // 无后端 smoke 明确提供构建配对身份，保留正式入口的发行校验。
+        await page.route('**/api/distribution', (route) =>
+            route.fulfill({json: {distribution: 'NQ_SELF_HOSTED'}}),
+        );
         await page.goto('/login');
 
         // Why: 登录页是未认证用户可见入口,smoke 只验证展示与表单安全边界,
-        // 不伪造登录态、不绕过鉴权、不依赖后端返回。
+        // 不伪造登录态、不绕过鉴权，仅以 fixture 提供发行身份。
 
         // 左区叙事:产品名 + 定位 + 能力。
         await expect(page.getByRole('heading', {name: 'NexusQuant'})).toBeVisible();

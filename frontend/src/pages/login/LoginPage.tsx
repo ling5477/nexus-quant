@@ -2,7 +2,7 @@ import {AuditOutlined, ExperimentOutlined, LineChartOutlined, LockOutlined, Logi
 import {Alert, Button, Form, Input, Typography} from 'antd';
 import {useMutation} from '@tanstack/react-query';
 import {startTransition, useState} from 'react';
-import {Link, Navigate, useNavigate, useSearchParams} from 'react-router-dom';
+import {Navigate, useNavigate, useSearchParams} from 'react-router-dom';
 
 import {authApi} from '@/api/auth';
 import {AppLoadingScreen} from '@/components/app/AppLoadingScreen';
@@ -18,6 +18,8 @@ import {describeApiError} from '@/api/errors';
 import {BrandLockup} from '@/nq-design-system/brand/BrandLockup';
 
 import './LoginPage.css';
+import {LoginExtras} from '@distribution-features';
+import {loginDestination} from '@/utils/distribution';
 
 interface LoginFormValues {
     username: string;
@@ -50,12 +52,12 @@ export function LoginPage() {
     const [searchParams] = useSearchParams();
     const isAuthenticated = useAuthStore(selectIsAuthenticated);
     const mustChangePassword = useAuthStore((state) => state.currentUser?.mustChangePassword);
+    const roles = useAuthStore((state) => state.currentUser?.roles);
     const bootstrapStatus = useAuthStore((state) => state.bootstrapStatus);
     const setSession = useAuthStore((state) => state.setSession);
 
     const redirect = searchParams.get('redirect');
-    const redirectTo = redirect && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect
-        : import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? '/demo' : '/dashboard';
+    const redirectTo = loginDestination(redirect, roles);
 
     const loginMutation = useMutation({
         mutationFn: authApi.login,
@@ -64,7 +66,7 @@ export function LoginPage() {
             startTransition(() => {
                 // 登录成功后写入既有 session;currentUser 真源仍由 /auth/me 查询补全,这里不塞临时对象。
                 setSession(payload);
-                navigate(payload.mustChangePassword ? '/change-password' : redirectTo, {replace: true});
+                navigate(payload.mustChangePassword ? '/change-password' : loginDestination(redirect, payload.roles), {replace: true});
             });
         },
     });
@@ -208,10 +210,7 @@ function LoginCard({loading, error, credentialRequest, onSubmit}: LoginCardProps
                     </Button>
                 </Form>
 
-                {import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' && <Typography.Paragraph style={{marginTop: 16}}>
-                    <Link to="/register">{t('auth.registerDemo')}</Link>
-                    {' · '}<Link to="/verify-email">{t('auth.verifyEmail')}</Link>
-                </Typography.Paragraph>}
+                <LoginExtras />
 
                 <Alert
                     className="nq-login__security"

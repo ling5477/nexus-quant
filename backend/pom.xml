@@ -18,6 +18,7 @@
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <spring.boot.version>3.5.10</spring.boot.version>
         <jjwt.version>0.12.6</jjwt.version>
+        <nq.distribution>NQ_SELF_HOSTED</nq.distribution>
     </properties>
 
     <modules>
@@ -48,6 +49,7 @@
     <profiles>
         <profile>
             <id>public-demo</id>
+            <properties><nq.distribution>NQ_PUBLIC_DEMO</nq.distribution></properties>
             <modules><module>nq-public-demo</module></modules>
         </profile>
     </profiles>

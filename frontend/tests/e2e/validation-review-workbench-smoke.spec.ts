@@ -109,6 +109,10 @@ async function seedReviewWorkbench(page: Page, options: ReviewStubOptions = {}) 
 
     // Why: 非 GateV-4 既有 read-only query 返回明确 unavailable，避免用结构错误的空数组伪造 DTO。
     await page.route(/^https?:\/\/[^/]+\/api\//, (route: Route) => route.fulfill({status: 503, json: {code: 'FIXTURE_UNAVAILABLE'}}));
+    // 入口必须先确认发行身份；业务只读查询的 unavailable 不适用于该合同。
+    await page.route('**/api/distribution', (route) =>
+        route.fulfill({json: {distribution: 'NQ_SELF_HOSTED'}}),
+    );
     await page.route('**/api/user/preferences', (route: Route) => route.fulfill({
         status: 200,
         json: {

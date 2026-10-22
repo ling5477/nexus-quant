@@ -115,6 +115,17 @@ public class ContinuousSimRepository {
                 Timestamp.from(latestObserved), success, Timestamp.from(now), runId);
     }
 
+    /** 调用方已在同一事务验证并解除人工暂停；仍保留原运行、账户、游标和容量槽。 */
+    public void resumeAfterSuspension(String runId, Instant now) {
+        if (jdbc.update("""
+                UPDATE continuous_sim_runs SET status='RUNNING',block_reason=NULL,
+                    consecutive_poll_failures=0,updated_at=?
+                WHERE paper_run_id=? AND status IN ('RUNNING','STALLED')
+                """, Timestamp.from(now), runId) != 1) {
+            throw new IllegalStateException("CONTINUOUS_SIM_NOT_STOPPED");
+        }
+    }
+
     public void advanceCursor(String runId, Instant expected, HistoricalBar bar, Instant now) {
         if (jdbc.update("""
                 UPDATE continuous_sim_runs SET last_processed_open_time=?,last_processed_close_time=?,

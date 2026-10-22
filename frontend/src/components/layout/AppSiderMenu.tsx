@@ -10,7 +10,8 @@ import {useLocation, useNavigate} from 'react-router-dom';
 
 import {appNavItems, resolveMenuKey} from '@/router/navigation';
 import {useTranslation} from 'react-i18next';
-import {isPublicDemo} from '@/utils/distribution';
+import {useAuthStore} from '@/store/auth-store';
+import {isPublicDemo, isPlatformIdentity} from '@/utils/distribution';
 
 interface AppSiderMenuProps {
     collapsed: boolean;
@@ -21,6 +22,8 @@ export function AppSiderMenu({collapsed, onNavigate}: AppSiderMenuProps) {
     const {t} = useTranslation();
     const location = useLocation();
     const navigate = useNavigate();
+    const roles = useAuthStore((state) => state.currentUser?.roles);
+    const platform = isPlatformIdentity(roles);
     const selectedKey = resolveMenuKey(location.pathname);
     const groups = [
         {
@@ -78,7 +81,10 @@ export function AppSiderMenu({collapsed, onNavigate}: AppSiderMenuProps) {
         const item = appNavItems.find((entry) => entry.key === key);
         return item ? {key: item.key, icon: item.icon, label: item.label} : null;
     };
-    const items = [
+    const items = platform ? [
+        {key: 'platform', label: t('platform:title')},
+        {key: 'platform-tenants', label: t('platform:tenants')},
+    ] : [
         leaf('demo'),
         leaf('dashboard'),
         leaf('accounts'),
@@ -97,11 +103,12 @@ export function AppSiderMenu({collapsed, onNavigate}: AppSiderMenuProps) {
                 mode="inline"
                 theme="dark"
                 className="app-shell__menu"
-                selectedKeys={[selectedKey]}
+                selectedKeys={[platform ? location.pathname === '/platform' ? 'platform' : 'platform-tenants' : selectedKey]}
                 openKeys={collapsed ? undefined : openKeys.map((key) => key + '-group')}
                 onOpenChange={(keys) => setOpenKeys(keys.map((key) => key.replace(/-group$/, '')))}
                 items={items}
                 onClick={({key}) => {
+                    if (platform) { navigate(key === 'platform' ? '/platform' : '/platform/tenants'); onNavigate?.(); return; }
                     const matched = appNavItems.find((item) => item.key === key);
                     if (matched) {
                         navigate(matched.path);

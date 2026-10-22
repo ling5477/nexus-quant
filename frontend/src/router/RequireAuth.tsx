@@ -2,6 +2,8 @@ import {Navigate, Outlet, useLocation} from 'react-router-dom';
 
 import {AppLoadingScreen} from '@/components/app/AppLoadingScreen';
 import {selectIsAuthenticated, useAuthStore} from '@/store/auth-store';
+import {isPublicDemo, isPlatformIdentity} from '@/utils/distribution';
+import {ForbiddenPage} from '@/pages/exceptions/ForbiddenPage';
 import {useTranslation} from 'react-i18next';
 
 /**
@@ -14,6 +16,7 @@ export function RequireAuth() {
     const {t} = useTranslation();
     const location = useLocation();
     const isAuthenticated = useAuthStore(selectIsAuthenticated);
+    const roles = useAuthStore((state) => state.currentUser?.roles);
     const mustChangePassword = useAuthStore((state) => state.currentUser?.mustChangePassword);
     const accessToken = useAuthStore((state) => state.accessToken);
     const bootstrapStatus = useAuthStore((state) => state.bootstrapStatus);
@@ -34,6 +37,12 @@ export function RequireAuth() {
 
     if (mustChangePassword && location.pathname !== '/change-password') {
         return <Navigate to="/change-password" replace/>;
+    }
+    if (isPublicDemo && location.pathname !== '/change-password') {
+        const platformPath = location.pathname === '/platform' || location.pathname.startsWith('/platform/');
+        const platform = isPlatformIdentity(roles);
+        if ((platform && !platformPath && location.pathname !== '/') || (!platform && platformPath))
+            return <ForbiddenPage />;
     }
     return <Outlet/>;
 }

@@ -10,7 +10,7 @@ class PublicDemoConfigurationTest {
         for(String key:java.util.List.of("nq.auth.bootstrap-admin.enabled","nq.env-safety.live-enabled",
                 "nq.env-safety.real-provider-enabled","nq.runtime.minimal-live-pilot.enabled",
                 "nq.runtime.minimal-live-pilot.order-submission-enabled","nq.live-control.exact-pilot-binding.enabled",
-                "nq.okx.ws.enabled","nq.runtime.provider-observation.enabled")) {
+                "nq.okx.ws.enabled","nq.runtime.provider-observation.enabled","nq.okx.private-readonly-diagnostics.enabled")) {
             var env=new MockEnvironment().withProperty(key,"true");
             assertThrows(IllegalStateException.class,()->check(env),key);
         }
@@ -23,6 +23,11 @@ class PublicDemoConfigurationTest {
         for(String venue:java.util.List.of("NQ_OKX_ENV","NQ_BINANCE_ENV")) {
             assertThrows(IllegalStateException.class,()->PublicDemoConfiguration.demoDistributionGuard(
                     new MockEnvironment(),java.util.Map.of(venue," REAL ")).postProcessBeanFactory(new DefaultListableBeanFactory()));
+        }
+        for(String key:java.util.List.of("NQ_OKX_API_KEY","NQ_OKX_API_SECRET","NQ_OKX_API_PASSPHRASE",
+                "NQ_BINANCE_API_KEY","NQ_BINANCE_API_SECRET")) {
+            assertThrows(IllegalStateException.class,()->PublicDemoConfiguration.demoDistributionGuard(
+                    new MockEnvironment(),java.util.Map.of(key,"synthetic-test-only")).postProcessBeanFactory(new DefaultListableBeanFactory()));
         }
     }
 

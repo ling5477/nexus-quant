@@ -5,6 +5,7 @@ import com.guidinglight.nexusquant.app.security.web.ApiSecurityErrorWriter;
 import com.guidinglight.nexusquant.app.security.web.PasswordChangeRequiredFilter;
 import com.guidinglight.nexusquant.app.security.web.TenantFoundationAccessFilter;
 import com.guidinglight.nexusquant.app.security.web.DemoTenantApiPolicy;
+import com.guidinglight.nexusquant.app.security.web.PlatformApiPolicy;
 import com.guidinglight.nexusquant.auth.application.service.TenantIdentityResolver;
 import com.guidinglight.nexusquant.auth.application.port.AuthService;
 import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileService;
@@ -181,9 +182,25 @@ public class SecurityConfiguration {
                                 exception
                                         .authenticationEntryPoint(authenticationEntryPoint)
                                         .accessDeniedHandler(accessDeniedHandler))
-                .authorizeHttpRequests(
+                ;
+        if (demoDistribution.getIfAvailable() != null) {
+            http.authorizeHttpRequests(auth -> auth
+                    .requestMatchers(HttpMethod.GET, "/api/distribution", "/actuator/health").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register",
+                            "/api/auth/verify-email", "/api/auth/resend-verification").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/auth/tenant").authenticated()
+                    .requestMatchers(HttpMethod.POST, "/api/auth/renew", "/api/auth/logout",
+                            "/api/auth/change-password").authenticated()
+                    .requestMatchers(PlatformApiPolicy::allows).hasRole("PLATFORM_ADMIN")
+                    .requestMatchers(DemoTenantApiPolicy::allows).hasRole("DEMO_USER")
+                    .anyRequest().denyAll());
+        } else {
+            http.authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers(request -> demoDistribution.getIfAvailable()!=null
+                                auth.requestMatchers(HttpMethod.GET, "/api/distribution").permitAll()
+                                        .requestMatchers("/api/platform/**", "/api/auth/register", "/api/auth/verify-email",
+                                                "/api/auth/resend-verification").denyAll()
+                                        .requestMatchers(request -> demoDistribution.getIfAvailable()!=null
                                                 && "POST".equals(request.getMethod())
                                                 && java.util.Set.of("/api/auth/register","/api/auth/verify-email","/api/auth/resend-verification")
                                                     .contains(request.getRequestURI().substring(request.getContextPath().length())))
@@ -231,8 +248,9 @@ public class SecurityConfiguration {
                                         .requestMatchers("/api/**")
                                         .hasAnyRole("ADMIN", "OPERATOR")
                                         .anyRequest()
-                                        .permitAll())
-                .addFilterBefore(
+                                        .permitAll());
+        }
+        http.addFilterBefore(
                         jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(
                         new PasswordChangeRequiredFilter(errorWriter),

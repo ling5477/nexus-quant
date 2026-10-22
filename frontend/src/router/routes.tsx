@@ -1,5 +1,6 @@
 import {Navigate, createBrowserRouter} from 'react-router-dom';
-import {lazy} from 'react';
+import {lazy, type ReactNode} from 'react';
+import type {RouteObject} from 'react-router-dom';
 
 import {ConsoleLayout} from '@/layouts/ConsoleLayout';
 import {AuthFailurePage} from '@/pages/exceptions/AuthFailurePage';
@@ -142,11 +143,17 @@ function createHandle(menuKey: string): RouteHandle {
     };
 }
 
-export const appRouter = createBrowserRouter([
-    ...(import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? [
-        {path: '/register', lazy: () => import('@/features/public-demo/RegisterPage')},
-        {path: '/verify-email', lazy: () => import('@/features/public-demo/VerifyEmailPage')},
-    ] : []),
+export interface DistributionRoutes {
+    publicRoutes?: RouteObject[];
+    consoleRoutes?: RouteObject[];
+    home?: ReactNode;
+    simSetup?: RouteObject;
+}
+
+/** 发行入口只传入自身可达页面；共享路由不依赖注册或平台管理模块。 */
+export function createAppRouter(distribution: DistributionRoutes = {}) {
+    return createBrowserRouter([
+    ...(distribution.publicRoutes ?? []),
     {
         path: '/login',
         element: <LoginPage />,
@@ -168,12 +175,10 @@ export const appRouter = createBrowserRouter([
                 element: <ConsoleLayout />,
                 errorElement: <SystemErrorPage />,
                 children: [
-                    ...(import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? [
-                        {path: 'demo', lazy: () => import('@/features/public-demo/DemoAccountPage')},
-                    ] : []),
+                    ...(distribution.consoleRoutes ?? []),
                     {
                         index: true,
-                        element: <Navigate to={import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? '/demo' : '/dashboard'} replace />,
+                        element: distribution.home ?? <Navigate to="/dashboard" replace />,
                     },
                     {
                         path: 'dashboard',
@@ -292,9 +297,7 @@ export const appRouter = createBrowserRouter([
                             },
                             {
                                 path: 'runs',
-                                ...(import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO'
-                                    ? {lazy: () => import('@/features/public-demo/DemoSimSetupPage')}
-                                    : {element: <PaperTradingRunsPage />}),
+                                ...(distribution.simSetup ?? {element: <PaperTradingRunsPage />}),
                                 handle: createHandle('paper-trading'),
                             },
                             {
@@ -381,3 +384,5 @@ export const appRouter = createBrowserRouter([
         } satisfies RouteHandle,
     },
 ]);
+
+}

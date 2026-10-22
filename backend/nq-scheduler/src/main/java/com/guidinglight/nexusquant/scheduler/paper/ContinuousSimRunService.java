@@ -123,6 +123,9 @@ public class ContinuousSimRunService {
                     if ("STOPPED".equals(cursor.status())) {
                         progress.requireAdmissionCapacity();
                         progress.resume(runId, clock.instant());
+                    } else if (manualResume) {
+                        // 禁用与在途轮询竞争可能留下 STALLED；显式恢复须返回 RUNNING 才能生成原回执。
+                        progress.resumeAfterSuspension(runId, clock.instant());
                     }
                     return status(runId);
                 });
