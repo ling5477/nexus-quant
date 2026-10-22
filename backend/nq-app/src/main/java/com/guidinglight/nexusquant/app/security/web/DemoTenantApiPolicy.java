@@ -34,6 +34,9 @@ public final class DemoTenantApiPolicy {
             route("POST", "/api/backtest-runs(?:/[^/]+/(?:start|evaluate|publish))?"),
             route("GET", "/api/(?:evaluations|publishes)(?:/[^/]+)?"),
             route("GET", "/api/paper-trading/strategy-sim/analysis/runs(?:/[^/]+(?:/performance)?)?"),
+            // 只开放既有 canonical 派生快照；服务仍逐次校验运行所有者及冻结估值事件。
+            route("POST", "/api/paper-trading/runs/[^/]+/equity-snapshots"),
+            route("GET", "/api/paper-trading/runs/[^/]+/equity-snapshots/[^/]+"),
             route("GET", "/api/paper-trading/strategy-sim/runs/[^/]+/(?:continuous|decisions|facts)"),
             route("POST", "/api/paper-trading/strategy-sim/runs/[^/]+/continuous/(?:stop|resume)")
     );
