@@ -66,6 +66,9 @@ class TenantIsolationMigrationIntegrationTest {
         for(String table:names) {
             if(!table.matches("[a-z_]+"))throw new IllegalArgumentException("invalid fixture table");
             String projection=ROOTS.contains(table)?"to_jsonb(t)-'tenant_id'-'visibility'":"to_jsonb(t)";
+            if(table.equals("users"))projection+="-'email'-'email_verified_at'";
+            if(table.equals("exchange_accounts"))projection+="-'accepts_credentials'";
+            if(table.equals("exchange_account_credentials"))projection+="-'credential_capability_required'";
             result.put(table,jdbc.queryForList("SELECT ("+projection+")::text FROM "+table+" t ORDER BY ("+projection+")::text",String.class));
         }
         return result;
@@ -113,7 +116,9 @@ class TenantIsolationMigrationIntegrationTest {
     }
 
     static void docker(String... args) throws Exception {
-        var command=new ArrayList<>(List.of("docker","exec","nq-tenant-core-pg-20261021"));command.addAll(List.of(args));
+        String container=System.getProperty("nq.tenant.pg.container");
+        if(container==null || !container.matches("nq-[a-z0-9-]+"))throw new IllegalArgumentException("explicit isolated PostgreSQL container required");
+        var command=new ArrayList<>(List.of("docker","exec",container));command.addAll(List.of(args));
         var process=new ProcessBuilder(command).redirectErrorStream(true).start();
         assertTrue(process.waitFor(45,TimeUnit.SECONDS),"task PostgreSQL backup command timed out");
         assertEquals(0,process.exitValue(),new String(process.getInputStream().readAllBytes(),java.nio.charset.StandardCharsets.UTF_8));

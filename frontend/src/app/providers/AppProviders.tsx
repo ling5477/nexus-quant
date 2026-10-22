@@ -3,6 +3,7 @@ import type {PropsWithChildren} from 'react';
 import {startTransition, useEffect, useEffectEvent} from 'react';
 import {QueryClient, QueryClientProvider, useQuery} from '@tanstack/react-query';
 
+import {DistributionBoundary} from './DistributionBoundary';
 import {authApi} from '@/api/auth';
 import {authQueryKeys} from '@/api/query-keys';
 import {nqAntdTheme} from '@/nq-design-system/theme/nqAntdTheme';
@@ -147,7 +148,7 @@ export function AppProviders({children}: PropsWithChildren) {
             <AntApp>
                 <QueryClientProvider client={queryClient}>
                     <AppErrorBridge />
-                    <AuthBootstrap>{children}</AuthBootstrap>
+                    <DistributionBoundary><AuthBootstrap>{children}</AuthBootstrap></DistributionBoundary>
                 </QueryClientProvider>
             </AntApp>
         </ConfigProvider>

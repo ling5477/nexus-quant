@@ -4,6 +4,7 @@ import ts from 'typescript';
 import {expect, it} from 'vitest';
 import i18n from '@/i18n';
 import '@/features/public-demo/i18n';
+import '@/features/platform/i18n';
 import {
     BOOLEAN_FILTER_OPTIONS,
     TRADE_ENV_OPTIONS,

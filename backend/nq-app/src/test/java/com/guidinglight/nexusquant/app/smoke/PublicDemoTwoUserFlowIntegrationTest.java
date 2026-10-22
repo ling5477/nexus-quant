@@ -187,6 +187,11 @@ class PublicDemoTwoUserFlowIntegrationTest {
     }
 
     static Chain chain(PublicDemoTestHttp http, User user, UUID dataset, String snapshot) throws Exception {
+        return chain(http,user,dataset,snapshot,START);
+    }
+
+    /** 当前时钟证明使用独立起点，不让固定历史 feed 的报价时间污染当前估值判断。 */
+    static Chain chain(PublicDemoTestHttp http, User user, UUID dataset, String snapshot,Instant start) throws Exception {
         long account = user.result().path("accountId").asLong(); String token = user.token();
         var definition = http.ok("POST", "/api/strategies", token, Map.of("strategyCode", "tenant-demo-sma", "strategyName", "Demo SMA",
                 "strategyType", "SPOT_SMA_TARGET_V1", "exchangeCode", "PAPER", "accountId", account, "tradeEnv", "SIM", "configSnapshot", "{}"));
@@ -196,7 +201,7 @@ class PublicDemoTwoUserFlowIntegrationTest {
         String research = http.ok("POST", "/api/research-configs", token, Map.of("sourceStrategyId", strategy, "name", "Demo research",
                 "description", "generated test bars", "parameterSchema", "{}", "parameterDefaults", "{}", "datasetSpec", snapshot)).path("researchConfigId").asText();
         String config = http.ok("POST", "/api/backtest-configs", token, Map.of("researchConfigId", research, "name", "Demo backtest",
-                "startTime", START.toString(), "endTime", START.plusSeconds(18000).minusMillis(1).toString(), "initialCapital", "10000", "executionSpec", COST, "evaluationSpec", "{}")).path("backtestConfigId").asText();
+                "startTime", start.toString(), "endTime", start.plusSeconds(18000).minusMillis(1).toString(), "initialCapital", "10000", "executionSpec", COST, "evaluationSpec", "{}")).path("backtestConfigId").asText();
         http.ok("PATCH", "/api/backtest-configs/" + config + "/dataset", token, Map.of("datasetId", dataset.toString()));
         http.ok("PATCH", "/api/backtest-configs/" + config + "/strategy-version", token, Map.of("strategyVersionId", vid));
         String run = http.ok("POST", "/api/backtest-runs", token, Map.of("backtestConfigId", config)).path("backtestRunId").asText();
@@ -239,7 +244,11 @@ class PublicDemoTwoUserFlowIntegrationTest {
     }
 
     static HistoricalBar hour(int value) {
-        Instant open = START.plusSeconds(value * 3600L); BigDecimal price = new BigDecimal(100 + value);
+        return hour(value,START);
+    }
+
+    static HistoricalBar hour(int value,Instant start) {
+        Instant open = start.plusSeconds(value * 3600L); BigDecimal price = new BigDecimal(100 + value);
         return new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_HOUR, open, open.plusSeconds(3600).minusMillis(1),
                 price, price, price, price, BigDecimal.ONE, null, null, "OK", "{}", open.plusSeconds(3600).minusMillis(1));
     }

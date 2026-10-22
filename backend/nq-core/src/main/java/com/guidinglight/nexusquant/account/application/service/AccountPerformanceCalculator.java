@@ -13,6 +13,24 @@ import java.util.List;
 public final class AccountPerformanceCalculator {
     private static final MathContext DIVISION = MathContext.DECIMAL128;
 
+    /** 已验证的一次性现金注资作为明确基准；它不是市场历史样本，也不能让缺失估值变为零收益。 */
+    public AccountPerformanceSummary summarizeFromFunding(
+            long accountId, String currency, Instant fundedAt, BigDecimal funding,
+            Instant to, List<AccountEquitySample> valuedSamples) {
+        if (fundedAt == null || funding == null || funding.signum() <= 0
+                || to == null || !fundedAt.isBefore(to) || valuedSamples.size() > 999
+                || valuedSamples.stream().anyMatch(s -> !s.sampledAt().isAfter(fundedAt)
+                    || s.cumulativeNetFlow() == null || s.cumulativeNetFlow().compareTo(funding) != 0))
+            throw new IllegalArgumentException("invalid single funding performance basis");
+        if (valuedSamples.isEmpty())
+            return summarize(accountId, currency, fundedAt, to, List.of());
+        var samples = new java.util.ArrayList<AccountEquitySample>();
+        samples.add(new AccountEquitySample(new java.util.UUID(0, 0), accountId, currency,
+                fundedAt, funding, funding, "AVAILABLE", "{\"basis\":\"CANONICAL_CASH_FUNDING\"}"));
+        samples.addAll(valuedSamples);
+        return summarize(accountId, currency, fundedAt, to, samples);
+    }
+
     /** 只计算同账户同币种的有界样本；完整样本不足两点或资金流缺失时，收益与回撤保持不可用。 */
     public AccountPerformanceSummary summarize(
             long accountId,

@@ -102,5 +102,7 @@ release/
 !/release/installers/nexusquant.ps1
 !/release/installers/nexusquant.sh
 !/release/build-package.ps1
+!/release/build-distributions.ps1
+!/release/docker/verify-distribution.sh
 
 !scripts/release/tests/test_installer.py

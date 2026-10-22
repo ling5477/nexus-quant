@@ -39,7 +39,7 @@ class PublicDemoRegistrationMigrationIntegrationTest {
             var before = snapshot(db);
             var users = db.admin.queryForList("SELECT to_jsonb(u)::text FROM users u ORDER BY id", String.class);
             var checksums = db.admin.queryForList("SELECT version,checksum FROM flyway_schema_history ORDER BY installed_rank");
-            var migration = db.migration(null);
+            var migration = db.migration("45");
             assertEquals(1, migration.migrate().migrationsExecuted); migration.validate();
             assertEquals("45", migration.info().current().getVersion().toString());
             assertEquals(before, snapshot(db));

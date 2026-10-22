@@ -28,11 +28,28 @@ export default defineConfig(({mode}) => {
     );
 
     return {
-        plugins: [react()],
+        plugins: [react(), {
+            name: 'distribution-identity',
+            generateBundle(_options, bundle) {
+                if (distribution === 'SELF_HOSTED') {
+                    for (const output of Object.values(bundle)) {
+                        if (output.type !== 'chunk') continue;
+                        for (const moduleId of Object.keys(output.modules)) {
+                            if (/\/src\/features\/(public-demo|platform)\//.test(moduleId.replace(/\\/g, '/')))
+                                this.error('SELF_HOSTED_CONTAINS_DEMO_MODULE: ' + moduleId);
+                        }
+                    }
+                }
+                this.emitFile({type: 'asset', fileName: 'distribution.json',
+                    source: JSON.stringify({distribution: `NQ_${distribution}`})});
+            },
+        }],
         define: {...simulationEntryFlags, 'import.meta.env.VITE_DISTRIBUTION': JSON.stringify(distribution)},
         resolve: {
             alias: {
                 '@': path.resolve(__dirname, './src'),
+                '@distribution-entry': path.resolve(__dirname, `./src/distributions/${distribution === 'PUBLIC_DEMO' ? 'public-demo' : 'self-hosted'}.tsx`),
+                '@distribution-features': path.resolve(__dirname, `./src/distributions/${distribution === 'PUBLIC_DEMO' ? 'public-demo' : 'self-hosted'}-features.tsx`),
             },
         },
         server: proxyTarget

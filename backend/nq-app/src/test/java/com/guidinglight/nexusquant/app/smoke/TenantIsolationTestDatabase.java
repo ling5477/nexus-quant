@@ -96,7 +96,8 @@ public final class TenantIsolationTestDatabase implements AutoCloseable {
     void grantRuntimePrivileges(String role) {
         if(!role.matches("nq_runtime_[a-f0-9]{32}"))throw new IllegalArgumentException("invalid isolated runtime role");
         admin.execute("GRANT USAGE ON SCHEMA public TO " + role);
-        var protectedMetadata = Set.of("flyway_schema_history", "tenant_background_work", "tenant_continuous_slots", "tenant_work_scan_cursors");
+        var protectedMetadata = Set.of("flyway_schema_history", "tenant_background_work", "tenant_continuous_slots", "tenant_work_scan_cursors",
+                "platform_user_operations", "platform_identity_initializations");
         var readOnly = Set.of("tenants", "tenant_memberships", "roles", "user_roles", "tenant_execution_controls",
                 "audit_log_tenant_scopes", "event_tenant_scopes", "risk_event_tenant_scopes", "marketdata_dataset_publications");
         for (String table : admin.queryForList("SELECT tablename FROM pg_tables WHERE schemaname='public'", String.class)) {
@@ -112,7 +113,7 @@ public final class TenantIsolationTestDatabase implements AutoCloseable {
                     'nq_project_strategy_run','nq_bind_strategy_effective','nq_create_ordinary_place_order',
                     'nq_decide_ordinary_place','nq_finish_strategy_cancel','nq_require_continuous_capacity',
                     'nq_resume_tenant_execution','nq_poll_tenant_work','nq_restore_tenant_work',
-                    'nq_create_demo_pending','nq_initialize_demo_identity')
+                    'nq_create_demo_pending','nq_initialize_demo_identity','nq_platform_user_operation')
                 """, String.class)) admin.execute("GRANT EXECUTE ON FUNCTION " + function + " TO " + role);
     }
 

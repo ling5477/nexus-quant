@@ -8,3 +8,23 @@ export function canWriteResearch(roles: readonly string[] | undefined): boolean 
         || (isPublicDemo && ['DEMO_USER', 'ROLE_DEMO_USER'].includes(role)),
     ) ?? false;
 }
+
+/** 平台角色独占身份，不继承普通业务权限。 */
+export function isPlatformIdentity(roles: readonly string[] | undefined): boolean {
+    return roles?.some((role) => role === 'PLATFORM_ADMIN' || role === 'ROLE_PLATFORM_ADMIN') ?? false;
+}
+
+export function sessionHome(roles: readonly string[] | undefined): string {
+    return isPublicDemo ? isPlatformIdentity(roles) ? '/platform' : '/demo' : '/dashboard';
+}
+
+/** 登录后的返回路径保持当前身份边界，旧账号书签不能把新账号带入另一权限域。 */
+export function loginDestination(redirect: string | null, roles: readonly string[] | undefined): string {
+    if (!redirect || !redirect.startsWith('/') || redirect.startsWith('//')) return sessionHome(roles);
+    if (isPublicDemo) {
+        const path = redirect.split(/[?#]/, 1)[0];
+        const platformPath = path === '/platform' || path.startsWith('/platform/');
+        if (isPlatformIdentity(roles) !== platformPath) return sessionHome(roles);
+    }
+    return redirect;
+}

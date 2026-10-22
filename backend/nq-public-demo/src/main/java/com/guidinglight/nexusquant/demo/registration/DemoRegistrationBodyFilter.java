@@ -25,13 +25,14 @@ public class DemoRegistrationBodyFilter extends OncePerRequestFilter {
     private static final int LIMIT=8192;
     private static final Set<String> PATHS=Set.of("/api/auth/register","/api/auth/verify-email","/api/auth/resend-verification");
     @Override protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !"POST".equals(request.getMethod()) || !PATHS.contains(request.getRequestURI().substring(request.getContextPath().length()));
+        String path=request.getRequestURI().substring(request.getContextPath().length());
+        return !"POST".equals(request.getMethod()) || !(PATHS.contains(path) || path.startsWith("/api/platform/"));
     }
     @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain)
             throws ServletException,IOException {
-        if(request.getContentLengthLong()>LIMIT){response.sendError(413);return;}
+        if(request.getContentLengthLong()>LIMIT){response.setStatus(413);return;}
         byte[] content=request.getInputStream().readNBytes(LIMIT+1);
-        if(content.length>LIMIT){response.sendError(413);return;}
+        if(content.length>LIMIT){response.setStatus(413);return;}
         chain.doFilter(new HttpServletRequestWrapper(request) {
             @Override public ServletInputStream getInputStream() {
                 var input=new ByteArrayInputStream(content);

@@ -9,7 +9,7 @@ import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {useQuery, useQueryClient} from '@tanstack/react-query';
 
-import {accountsApi} from '@/features/accounts/api/accounts';
+import {readSessionAccounts} from '@distribution-features';
 import {accountQueryKeys} from '@/api/query-keys';
 import type {ExchangeAccountSummary} from '@/features/accounts/types/accounts';
 import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
@@ -21,7 +21,7 @@ import {ExchangeIcon} from '@/nq-design-system/brand/ExchangeBadge';
 import {resolveDefaultAccount} from '@/features/accounts/default-account';
 import {ObjectSearch} from './ObjectSearch';
 import {NotificationCenter} from '@/features/notifications/NotificationCenter';
-import {isPublicDemo} from '@/utils/distribution';
+import {isPublicDemo, isPlatformIdentity} from '@/utils/distribution';
 
 interface AppHeaderProps {
     collapsed: boolean;
@@ -35,6 +35,7 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
     const queryClient = useQueryClient();
     const accessToken = useAuthStore(selectSessionIdentity);
     const currentUser = useAuthStore((state) => state.currentUser);
+    const platform = isPlatformIdentity(currentUser?.roles);
     const clearAuth = useAuthStore((state) => state.clearAuth);
     const clearAccountContext = useAccountContextStore((state) => state.clearAccountContext);
     const selectedExchangeAccountId = useAccountContextStore(
@@ -48,10 +49,8 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
 
     const accountsQuery = useQuery({
         queryKey: accountQueryKeys.list(accessToken),
-        queryFn: import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO'
-            ? async () => (await import('@/features/public-demo/api')).demoRegistrationApi.simAccount()
-            : accountsApi.list,
-        enabled: Boolean(accessToken),
+        queryFn: readSessionAccounts,
+        enabled: Boolean(accessToken) && !platform,
     });
 
     const defaultAccount = resolveDefaultAccount(
@@ -144,7 +143,7 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                         {tradeEnv}
                     </Tag>
                 )}
-                <Dropdown
+                {!platform && <> <Dropdown
                     menu={{
                         items: accountItems,
                         onClick: ({key}) => {
@@ -176,7 +175,7 @@ export function AppHeader({collapsed, onToggleCollapsed}: AppHeaderProps) {
                         <DownOutlined />
                     </Button>
                 </Dropdown>
-                <Button onClick={() => navigate(isPublicDemo ? '/demo' : '/accounts')}>{t('shell.accounts')}</Button>
+                <Button onClick={() => navigate(isPublicDemo ? '/demo' : '/accounts')}>{t('shell.accounts')}</Button></>}
                 <Space className="app-shell__roles" size={8} wrap>
                     {currentUser?.roles.map((role) => (
                         <Tag key={role}>{role}</Tag>

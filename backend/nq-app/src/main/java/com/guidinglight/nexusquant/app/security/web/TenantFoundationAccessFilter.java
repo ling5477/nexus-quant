@@ -40,12 +40,16 @@ public final class TenantFoundationAccessFilter extends OncePerRequestFilter {
         boolean demo = authentication != null && authentication.getAuthorities().stream().anyMatch(
                 authority -> authority.getAuthority().equals("ROLE_" + TenantIdentityResolver.DEMO_USER));
         boolean business = businessEnabled && demo && DemoTenantApiPolicy.allows(request);
-        if (restricted && !identityRead && !identityWrite && !business) {
+        boolean platform = authentication != null && authentication.getAuthorities().stream().anyMatch(
+                authority -> authority.getAuthority().equals("ROLE_" + TenantIdentityResolver.PLATFORM_ADMIN));
+        boolean platformAccess = platform && PlatformApiPolicy.allows(request);
+        boolean distribution = "GET".equals(request.getMethod()) && "/api/distribution".equals(path);
+        if (restricted && !identityRead && !identityWrite && !business && !platformAccess && !distribution) {
             errors.write(request, response, HttpStatus.FORBIDDEN, "DEMO_BUSINESS_ACCESS_DENIED",
                     "business access is not enabled for this identity");
             return;
         }
-        if ((demo || "/api/auth/tenant".equals(path)) && (request.getHeader("X-Tenant-ID") != null
+        if ((restricted || "/api/auth/tenant".equals(path)) && (request.getHeader("X-Tenant-ID") != null
                 || request.getParameterMap().containsKey("tenantId") || request.getParameterMap().containsKey("tenant_id"))) {
             errors.write(request, response, HttpStatus.FORBIDDEN, "TENANT_OVERRIDE_FORBIDDEN",
                     "tenant identity is resolved by the server");

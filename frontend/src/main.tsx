@@ -1,24 +1,2 @@
-import {StrictMode} from 'react';
-import {createRoot} from 'react-dom/client';
-import {RouterProvider} from 'react-router-dom';
-
-import {AppProviders} from '@/app/providers/AppProviders';
-import {appRouter} from '@/router/routes';
-
-import '@/styles/index.css';
-import '@/styles/workspace.css';
-import '@/styles/product-workspace.css';
-
-const rootElement = document.getElementById('root');
-
-if (!rootElement) {
-    throw new Error('root element not found');
-}
-
-createRoot(rootElement).render(
-    <StrictMode>
-        <AppProviders>
-            <RouterProvider router={appRouter} />
-        </AppProviders>
-    </StrictMode>,
-);
+// Vite 选择实际发行入口；另一发行物的模块不会进入依赖图。
+import '@distribution-entry';
