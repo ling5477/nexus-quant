@@ -1,3 +1,4 @@
+import {canWriteResearch, isPublicDemo} from '@/utils/distribution';
 import {ObjectConfigurationSummary} from '@/components/configuration/ObjectConfigurationSummary';
 import {ObjectConfigurationInput} from '@/components/configuration/ObjectConfigurationInput';
 import {configurationObject} from '@/components/configuration/object-configuration';
@@ -71,7 +72,7 @@ export function StrategiesPage() {
     const {message} = App.useApp();
     const canWrite = useAuthStore(
         (state) =>
-            state.currentUser?.roles.some((role) => ['ADMIN', 'OPERATOR'].includes(role)) ?? false,
+            canWriteResearch(state.currentUser?.roles),
     );
     const [form] = useLocalizedForm<StrategyListFilters>();
     const [versionForm] = useLocalizedForm<StrategyVersionCreateRequest>();
@@ -580,31 +581,31 @@ export function StrategiesPage() {
                         </Descriptions>
                         <Card title={t('pages:actions2')} size="small">
                             <Space wrap>
-                                <Button
+                                {!isPublicDemo && <Button
                                     type="primary"
                                     disabled={!canWrite || strategyDetailQuery.data.enabled}
                                     loading={updateStatusMutation.isPending}
                                     onClick={() => handleStatusUpdate(true)}
                                 >
                                     {t('pages:enableStrategy')}
-                                </Button>
-                                <Button
+                                </Button>}
+                                {!isPublicDemo && <Button
                                     danger
                                     disabled={!canWrite || !strategyDetailQuery.data.enabled}
                                     loading={updateStatusMutation.isPending}
                                     onClick={() => handleStatusUpdate(false)}
                                 >
                                     {t('pages:disableStrategy')}
-                                </Button>
+                                </Button>}
                                 <Button onClick={() => strategyDetailQuery.refetch()}>
                                     {t('pages:refreshDetails')}
                                 </Button>
                             </Space>
                         </Card>
-                        <StrategyExecutionRelations
+                        {!isPublicDemo && <StrategyExecutionRelations
                             key={strategyDetailQuery.data.strategyId}
                             strategyId={strategyDetailQuery.data.strategyId}
-                        />
+                        />}
                         <Card title={t('pages:strategyVersions')} size="small">
                             {locatedVersionId &&
                                 (locatedVersion.error ? (

@@ -43,6 +43,8 @@
     "appTitle": "NexusQuant 控制台"
   },
   "auth": {
+    "registerDemo": "注册模拟账户", "verifyEmail": "验证邮箱", "demoAccount": "独立模拟账户",
+    "demoBoundary": "仅限隔离模拟账户；LIVE、真实交易及 API 密钥管理不可用。",
     "entering": "正在进入控制台",
     "restored": "登录态已恢复,正在跳转到受保护区域。",
     "restoring": "正在恢复登录状态",

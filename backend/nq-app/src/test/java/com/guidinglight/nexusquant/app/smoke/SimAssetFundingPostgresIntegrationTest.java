@@ -6,6 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
+import com.guidinglight.nexusquant.common.tenant.TenantIdentity;
+import com.guidinglight.nexusquant.tenant.infra.jdbc.TenantJdbcTemplateFactory;
+import com.guidinglight.nexusquant.tenant.infra.jdbc.TenantTransactionManager;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.eventstore.infra.EventStoreAppender;
@@ -30,9 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.math.BigDecimal;
@@ -48,6 +51,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
+
+import javax.sql.DataSource;
 
 /** 全部事实位于随机库；订单/成交为层级夹具，正式 Ledger 消费不冒充 Risk/Execution 或全站验收。 */
 @EnabledIfSystemProperty(named = "nq.postgres.smoke.required", matches = "true")
@@ -258,15 +263,16 @@ class SimAssetFundingPostgresIntegrationTest {
             Bound run = f.bound();
             var plan = plan("100", "0.1", "600", source("rollback"));
             String before = f.snapshot(run.account());
-            f.jdbc.execute(
+            f.database.admin.execute(
                     "CREATE FUNCTION sim_funding_fail_asset() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.currency='BNB' THEN RAISE EXCEPTION 'synthetic asset insertion rejection'; END IF; RETURN NEW; END $$");
-            f.jdbc.execute(
+            f.database.admin.execute(
                     "CREATE TRIGGER sim_funding_fail_asset BEFORE INSERT ON ledger_entries FOR EACH ROW EXECUTE FUNCTION sim_funding_fail_asset()");
-            assertThrows(
+            var failure = assertThrows(
                     RuntimeException.class,
                     () -> f.funding.fundOnce(run.account(), run.run(), plan, "funding-rollback"));
+            assertTrue(rootMessage(failure).contains("synthetic asset insertion rejection"), failure.toString());
             assertEquals(before, f.snapshot(run.account()));
-            f.jdbc.execute("DROP TRIGGER sim_funding_fail_asset ON ledger_entries");
+            f.database.admin.execute("DROP TRIGGER sim_funding_fail_asset ON ledger_entries");
             f.funding.fundOnce(run.account(), run.run(), plan, "funding-after-rollback");
             f.assertPosting(run, plan);
         }
@@ -278,13 +284,14 @@ class SimAssetFundingPostgresIntegrationTest {
             Bound run = f.bound();
             var plan = plan("100", "0.1", "600", source("deferred"));
             String before = f.snapshot(run.account());
-            f.jdbc.execute(
+            f.database.admin.execute(
                     "CREATE FUNCTION sim_funding_fail_commit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic funding commit rejection'; END $$");
-            f.jdbc.execute(
+            f.database.admin.execute(
                     "CREATE CONSTRAINT TRIGGER sim_funding_fail_commit AFTER INSERT ON sim_asset_funding_receipts DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION sim_funding_fail_commit()");
-            assertThrows(
+            var failure = assertThrows(
                     RuntimeException.class,
                     () -> f.funding.fundOnce(run.account(), run.run(), plan, "funding-deferred"));
+            assertTrue(rootMessage(failure).contains("synthetic funding commit rejection"), failure.toString());
             assertEquals(before, f.snapshot(run.account()));
         }
     }
@@ -309,15 +316,15 @@ class SimAssetFundingPostgresIntegrationTest {
                     pool.submit(
                             () -> {
                                 entered.countDown();
-                                return f.funding.fundOnce(
-                                        run.account(), run.run(), plan, "concurrent-one");
+                                return f.database.as(f.identity, () -> f.funding.fundOnce(
+                                        run.account(), run.run(), plan, "concurrent-one"));
                             });
             var two =
                     pool.submit(
                             () -> {
                                 entered.countDown();
-                                return f.funding.fundOnce(
-                                        run.account(), run.run(), plan, "concurrent-two");
+                                return f.database.as(f.identity, () -> f.funding.fundOnce(
+                                        run.account(), run.run(), plan, "concurrent-two"));
                             });
             try {
                 assertTrue(entered.await(5, TimeUnit.SECONDS));
@@ -361,10 +368,10 @@ class SimAssetFundingPostgresIntegrationTest {
 
     @Test
     void v13UpgradePreservesExistingFactsAndValidatesRepeatMigrate() throws Exception {
-        try (var f = new Fixture(false)) {
+        try (var f = new Fixture("13")) {
             Bound run = f.bound();
-            f.app.getBean(SimCashFundingPort.class)
-                    .fundOnce(run.account(), run.run(), d("100"), "pre-v14");
+            equal("100", HistoricalSimCashFundingFixture.fundOnce(
+                    f.jdbc, run.account(), run.run(), d("100")));
             String before = f.snapshotWithoutReceipt(run.account());
             f.flyway("14").migrate();
             f.flyway("14").validate();
@@ -375,6 +382,25 @@ class SimAssetFundingPostgresIntegrationTest {
                     0,
                     f.jdbc.queryForObject(
                             "SELECT count(*) FROM sim_asset_funding_receipts", Integer.class));
+            // 直接保留旧 Schema 与现代读取不兼容的诊断证据，不把它当资金业务失败。
+            var incompatible = assertThrows(BadSqlGrammarException.class,
+                    () -> new JdbcLedgerPostingRepository(f.jdbc).assertAccountEnvironment(run.account(), "SIM"));
+            assertEquals("42703", incompatible.getSQLException().getSQLState());
+            assertTrue(incompatible.getSQLException().getMessage().contains("ta.tenant_id"));
+            assertEquals(before, f.snapshotWithoutReceipt(run.account()));
+            System.out.println("SIM_FUNDING_HISTORICAL V13_TO_V14=PASS SQLSTATE="
+                    + incompatible.getSQLException().getSQLState() + " facts=UNCHANGED");
+
+            // 历史迁移验收已在 V14 完成；现代端口只在继续正向迁移后的受限租户环境运行。
+            f.database.migrate(null);
+            f.openModernRuntime();
+            assertEquals(0, f.flyway(null).info().pending().length);
+            assertTrue(f.flyway(null).info().current().getVersion().compareTo(
+                    org.flywaydb.core.api.MigrationVersion.fromVersion("14")) > 0);
+            assertEquals(before, f.snapshotWithoutReceipt(run.account()));
+            equal("100", f.app.getBean(SimCashFundingPort.class).cashBalance(run.account()));
+            equal("100", f.app.getBean(SimCashFundingPort.class)
+                    .fundOnce(run.account(), run.run(), d("100"), "modern-cash-replay"));
             assertThrows(
                     IllegalStateException.class,
                     () ->
@@ -389,7 +415,7 @@ class SimAssetFundingPostgresIntegrationTest {
 
     @Test
     void actualMigrationCheckExpressionsRejectBadSourceUnitTimeAndBudget() throws Exception {
-        try (var f = new Fixture()) {
+        try (var f = new Fixture("14")) {
             // 本随机库内复制真实 CHECK 到无外键/trigger 的证明表，隔离约束 oracle 与正式分录装配的影响。
             f.jdbc.execute(
                     "CREATE TABLE sim_funding_constraint_probe(LIKE sim_asset_funding_receipts INCLUDING CONSTRAINTS)");
@@ -508,21 +534,22 @@ class SimAssetFundingPostgresIntegrationTest {
         }
     }
 
-    static AnnotationConfigApplicationContext context(DriverManagerDataSource source) {
+    static AnnotationConfigApplicationContext context(DataSource source) {
         var app = new AnnotationConfigApplicationContext();
+        var transactions = new TenantTransactionManager(source);
         app.register(Transactions.class);
         app.registerBean(
                 JdbcTemplate.class,
                 () -> {
-                    var jdbc = new JdbcTemplate(source);
+                    var jdbc = TenantJdbcTemplateFactory.create(source, transactions);
                     jdbc.setQueryTimeout(15);
                     return jdbc;
                 });
         app.registerBean(ObjectMapper.class, () -> new ObjectMapper().findAndRegisterModules());
         app.registerBean(
                 "transactionManager",
-                DataSourceTransactionManager.class,
-                () -> new DataSourceTransactionManager(source));
+                TenantTransactionManager.class,
+                () -> transactions);
         app.register(
                 JdbcLedgerPostingRepository.class,
                 JdbcSimAssetFundingRepository.class,
@@ -539,29 +566,33 @@ class SimAssetFundingPostgresIntegrationTest {
     private record Bound(long account, String run) {}
 
     private static final class Fixture implements AutoCloseable {
-        final ReleaseBaselineTestDatabase database;
-        final DriverManagerDataSource source;
-        final JdbcTemplate jdbc;
-        final AnnotationConfigApplicationContext app;
-        final SimAssetFundingPort funding;
+        final TenantIsolationTestDatabase database;
+        DataSource source;
+        JdbcTemplate jdbc;
+        AnnotationConfigApplicationContext app;
+        SimAssetFundingPort funding;
+        TenantIdentity identity;
+        TenantContext.Scope scope;
+        final String username = "sim-funding-" + UUID.randomUUID();
 
         Fixture() throws Exception {
-            this(true);
+            this(null);
         }
 
-        Fixture(boolean upgrade) throws Exception {
-            database = ReleaseBaselineTestDatabase.create();
-            source = database.source();
-            jdbc = new JdbcTemplate(source);
+        Fixture(String historicalVersion) throws Exception {
+            database = TenantIsolationTestDatabase.create(
+                    historicalVersion,
+                    System.getProperty("nq.postgres.smoke.url"),
+                    System.getProperty("nq.postgres.smoke.user"),
+                    System.getProperty("nq.postgres.smoke.password"));
+            source = database.database.source();
+            jdbc = database.admin;
             jdbc.setQueryTimeout(15);
             try {
-                flyway(upgrade ? "14" : "13").migrate();
-                flyway(upgrade ? "14" : "13").validate();
-                app = context(source);
-                funding = app.getBean(SimAssetFundingPort.class);
+                if (historicalVersion == null) openModernRuntime();
             } catch (Exception failure) {
                 try {
-                    database.close();
+                    close();
                 } catch (Exception cleanup) {
                     failure.addSuppressed(cleanup);
                 }
@@ -569,13 +600,20 @@ class SimAssetFundingPostgresIntegrationTest {
             }
         }
 
+        void openModernRuntime() {
+            if (database.pool == null) database.runtime();
+            // 两个资金线程必须同时抵达 PostgreSQL advisory lock，不能在连接池前串行。
+            database.pool.setMaximumPoolSize(8);
+            source = database.runtimeDataSource();
+            identity = database.local(username);
+            scope = TenantContext.open(identity);
+            app = context(source);
+            jdbc = app.getBean(JdbcTemplate.class);
+            funding = app.getBean(SimAssetFundingPort.class);
+        }
+
         Flyway flyway(String version) {
-            return Flyway.configure()
-                    .dataSource(source)
-                    .locations("classpath:db/migration")
-                    .cleanDisabled(true)
-                    .target(version)
-                    .load();
+            return database.migration(version);
         }
 
         Bound bound() {
@@ -615,11 +653,12 @@ class SimAssetFundingPostgresIntegrationTest {
                     research,
                     config);
             jdbc.update(
-                    "INSERT INTO backtest_runs(backtest_run_id,backtest_config_id,research_config_id,source_strategy_id,status,strategy_snapshot,backtest_config_snapshot,requested_at) VALUES(?,?,?,?,'CREATED','{}','{}',now())",
+                    "INSERT INTO backtest_runs(backtest_run_id,backtest_config_id,research_config_id,source_strategy_id,strategy_version_id,status,strategy_snapshot,backtest_config_snapshot,requested_at) VALUES(?,?,?,?,?,'CREATED','{}','{}',now())",
                     backtest,
                     config,
                     research,
-                    strategy);
+                    strategy,
+                    version);
             jdbc.update(
                     "INSERT INTO backtest_publish_records(publish_record_id,backtest_run_id,research_config_id,backtest_config_id,source_strategy_id,publish_status,publish_name,strategy_version_id) VALUES(?,?,?,?,?,'SUCCEEDED','funding',?)",
                     publish,
@@ -757,11 +796,12 @@ class SimAssetFundingPostgresIntegrationTest {
             builder.environment()
                     .put(
                             "NQ_SIM_ASSET_FUNDING_DB_USER",
-                            System.getProperty("nq.postgres.smoke.user"));
+                            database.runtime);
             builder.environment()
                     .put(
                             "NQ_SIM_ASSET_FUNDING_DB_PASSWORD",
-                            System.getProperty("nq.postgres.smoke.password"));
+                            database.runtimePassword);
+            builder.environment().put("NQ_SIM_ASSET_FUNDING_USERNAME", username);
             builder.redirectErrorStream(true);
             Process child = builder.start();
             try {
@@ -787,11 +827,17 @@ class SimAssetFundingPostgresIntegrationTest {
         @Override
         public void close() throws Exception {
             try {
-                app.close();
+                if (app != null) app.close();
             } finally {
+                if (scope != null) scope.close();
                 database.close();
             }
         }
+    }
+
+    private static String rootMessage(Throwable failure) {
+        while (failure.getCause() != null) failure = failure.getCause();
+        return failure.getMessage();
     }
 
     private static String source(String identity) {

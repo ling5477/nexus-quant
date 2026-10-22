@@ -2,7 +2,7 @@ import {AuditOutlined, ExperimentOutlined, LineChartOutlined, LockOutlined, Logi
 import {Alert, Button, Form, Input, Typography} from 'antd';
 import {useMutation} from '@tanstack/react-query';
 import {startTransition, useState} from 'react';
-import {Navigate, useNavigate, useSearchParams} from 'react-router-dom';
+import {Link, Navigate, useNavigate, useSearchParams} from 'react-router-dom';
 
 import {authApi} from '@/api/auth';
 import {AppLoadingScreen} from '@/components/app/AppLoadingScreen';
@@ -54,7 +54,8 @@ export function LoginPage() {
     const setSession = useAuthStore((state) => state.setSession);
 
     const redirect = searchParams.get('redirect');
-    const redirectTo = redirect && redirect.startsWith('/') ? redirect : '/dashboard';
+    const redirectTo = redirect && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect
+        : import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? '/demo' : '/dashboard';
 
     const loginMutation = useMutation({
         mutationFn: authApi.login,
@@ -108,7 +109,7 @@ export function LoginPage() {
             </div>
             <footer className="nq-login__page-footer">
                 <span>NexusQuant</span>
-                <span>{t('auth.footer')}</span>
+                <span>{t(import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? 'auth.demoBoundary' : 'auth.footer')}</span>
             </footer>
         </StandaloneSurface>
     );
@@ -140,7 +141,7 @@ function ProductNarrative() {
 
             <p className="nq-login__promise">
                 <SafetyCertificateOutlined aria-hidden="true"/>
-                <span>{t('auth.promise')}</span>
+                <span>{t(import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? 'auth.demoBoundary' : 'auth.promise')}</span>
             </p>
         </section>
     );
@@ -207,13 +208,18 @@ function LoginCard({loading, error, credentialRequest, onSubmit}: LoginCardProps
                     </Button>
                 </Form>
 
+                {import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' && <Typography.Paragraph style={{marginTop: 16}}>
+                    <Link to="/register">{t('auth.registerDemo')}</Link>
+                    {' · '}<Link to="/verify-email">{t('auth.verifyEmail')}</Link>
+                </Typography.Paragraph>}
+
                 <Alert
                     className="nq-login__security"
                     type="info"
                     showIcon
                     icon={<SafetyCertificateOutlined/>}
                     message={t('auth.security')}
-                    description={t('auth.securityDescription')}
+                    description={t(import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? 'auth.demoBoundary' : 'auth.securityDescription')}
                 />
 
             </div>

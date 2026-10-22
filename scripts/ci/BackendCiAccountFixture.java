@@ -10,10 +10,7 @@ import java.sql.ResultSet;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationInfo;
 import org.flywaydb.core.api.MigrationVersion;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.nio.file.Path;
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 
 public final class BackendCiAccountFixture {
     private static final String FIXTURE_ACCOUNT_CODE = "ci-backend-test-account";
@@ -25,6 +22,11 @@ public final class BackendCiAccountFixture {
         String url = requireEnv("NQ_DB_URL");
         String user = requireEnv("NQ_DB_USER");
         String password = requireEnv("NQ_DB_PASSWORD");
+
+        if (args.length > 1) throw new IllegalArgumentException("Expected at most one source manifest path");
+        var sourceManifest = args.length == 1 ? args[0] : "release/source-manifest.json";
+        // 开发 CI 消费本次生成的身份；未传参时保留正式发行清单。
+        var expected = MigrationInventory.load(sourceManifest);
 
         Flyway flyway = Flyway.configure()
                 .dataSource(url, user, password)
@@ -49,20 +51,6 @@ public final class BackendCiAccountFixture {
         }
 
         String currentVersion = current.getVersion().getVersion();
-        // CI 可显式选择开发来源清单；缺省仍核对原正式清单，禁止自动发现并接受新增迁移。
-        var expected = new TreeMap<MigrationVersion, String>();
-        if (args.length > 1) throw new IllegalArgumentException("Expected at most one source manifest path");
-        var sourceManifest = args.length == 1 ? args[0] : "release/source-manifest.json";
-        var manifest = new ObjectMapper().readTree(Path.of(sourceManifest).toFile());
-        var migration = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
-        for (var group : manifest.path("groups")) {
-            if (!"INCLUDE_RUNTIME".equals(group.path("category").asText())) continue;
-            for (var path : group.path("paths")) {
-                var match = migration.matcher(path.asText());
-                if (match.matches() && expected.put(MigrationVersion.fromVersion(match.group(2)), match.group(1)) != null)
-                    throw new IllegalStateException("Duplicate formal migration version");
-            }
-        }
         var actual = new TreeMap<MigrationVersion, String>();
         for (var info : flyway.info().applied()) {
             if (info.getVersion() == null || !"SUCCESS".equals(info.getState().name())

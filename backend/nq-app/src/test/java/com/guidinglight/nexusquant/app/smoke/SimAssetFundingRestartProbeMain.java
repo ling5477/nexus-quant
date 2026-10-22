@@ -1,6 +1,10 @@
 package com.guidinglight.nexusquant.app.smoke;
 
 import com.guidinglight.nexusquant.ledger.service.port.SimAssetFundingPort;
+import com.guidinglight.nexusquant.auth.application.service.TenantIdentityResolver;
+import com.guidinglight.nexusquant.auth.infra.jdbc.JdbcAuthUserRepository;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
@@ -14,7 +18,11 @@ public final class SimAssetFundingRestartProbeMain {
                         System.getenv("NQ_SIM_ASSET_FUNDING_DB_URL"),
                         System.getenv("NQ_SIM_ASSET_FUNDING_DB_USER"),
                         System.getenv("NQ_SIM_ASSET_FUNDING_DB_PASSWORD"));
-        try (var app = SimAssetFundingPostgresIntegrationTest.context(source)) {
+        // 每个新进程从持久化用户和成员关系重新解析身份，不能依赖父进程 ThreadLocal。
+        var identity = new TenantIdentityResolver(new JdbcAuthUserRepository(new JdbcTemplate(source)))
+                .resolve(System.getenv("NQ_SIM_ASSET_FUNDING_USERNAME")).tenant();
+        try (var scope = TenantContext.open(identity);
+                var app = SimAssetFundingPostgresIntegrationTest.context(source)) {
             SimAssetFundingPort funding = app.getBean(SimAssetFundingPort.class);
             long account = Long.parseLong(args[0]);
             String run = args[1];

@@ -1,3 +1,4 @@
+import {canWriteResearch} from '@/utils/distribution';
 import {ObjectConfigurationInput} from '@/components/configuration/ObjectConfigurationInput';
 import {configurationObject} from '@/components/configuration/object-configuration';
 import {businessColumns} from '@/components/layout/business-columns';
@@ -116,7 +117,7 @@ export function BacktestsPage() {
     const {message} = App.useApp();
     const canWrite = useAuthStore(
         (state) =>
-            state.currentUser?.roles.some((role) => ['ADMIN', 'OPERATOR'].includes(role)) ?? false,
+            canWriteResearch(state.currentUser?.roles),
     );
     const navigate = useNavigate();
     const [params, setParams] = useSearchParams();

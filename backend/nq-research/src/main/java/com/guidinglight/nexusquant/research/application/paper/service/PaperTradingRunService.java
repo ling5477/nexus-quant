@@ -20,6 +20,8 @@ import com.guidinglight.nexusquant.research.domain.paper.port.PaperTradingTradeR
 import com.guidinglight.nexusquant.research.domain.port.BacktestPublishRecordRepository;
 import com.guidinglight.nexusquant.research.domain.port.BacktestRunRepository;
 import com.guidinglight.nexusquant.research.domain.port.ResearchFeeSourcePort;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
+import com.guidinglight.nexusquant.common.tenant.TenantKind;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -112,6 +114,18 @@ public class PaperTradingRunService {
     }
 
     public PaperTradingRun create(PaperTradingRunCreateCommand command) {
+        return create(command, "ptr-" + UUID.randomUUID());
+    }
+
+    /** 身份仅由受控演示绑定路径提供；验证及冻结输入仍复用正式运行创建。 */
+    public PaperTradingRun createForDemo(PaperTradingRunCreateCommand command, ReservedIdentity identity) {
+        if (TenantContext.requireCurrent().kind() != TenantKind.DEMO || !"SIM".equals(command.tradeEnv())) {
+            throw new IllegalArgumentException("DEMO_SIM_RESERVED_IDENTITY_REQUIRED");
+        }
+        return create(command, Objects.requireNonNull(identity, "reserved identity").paperRunId());
+    }
+
+    private PaperTradingRun create(PaperTradingRunCreateCommand command, String paperRunId) {
         BacktestPublishRecord publish =
                 publishRecordRepository
                         .findByPublishRecordId(command.publishId())
@@ -149,7 +163,7 @@ public class PaperTradingRunService {
         Instant now = clock.instant();
         PaperTradingRun run =
                 new PaperTradingRun(
-                        "ptr-" + UUID.randomUUID(),
+                        paperRunId,
                         command.publishId(),
                         strategyVersionId,
                         PaperTradingRunStatus.CREATED,
@@ -170,6 +184,14 @@ public class PaperTradingRunService {
                         now);
         runRepository.insert(run);
         return run;
+    }
+
+    public record ReservedIdentity(String paperRunId) {
+        public ReservedIdentity {
+            if (paperRunId == null || !paperRunId.matches("ptr-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
+                throw new IllegalArgumentException("INVALID_RESERVED_PAPER_RUN_ID");
+            }
+        }
     }
 
     /** 运行配置可保留预算等字段，但费用模型只能来自原回测，不能删除或选择另一来源。 */

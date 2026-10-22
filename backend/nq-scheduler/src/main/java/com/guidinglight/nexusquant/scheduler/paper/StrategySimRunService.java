@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.contracts.model.OrderSide;
 import com.guidinglight.nexusquant.contracts.model.OrderStatus;
 import com.guidinglight.nexusquant.contracts.model.OrderType;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
+import com.guidinglight.nexusquant.common.tenant.TenantKind;
 import com.guidinglight.nexusquant.ledger.contracts.model.SimAssetFundingPlan;
 import com.guidinglight.nexusquant.ledger.service.port.SimAssetFundingPort;
 import com.guidinglight.nexusquant.ledger.service.port.SimCashFundingPort;
@@ -176,6 +178,13 @@ public class StrategySimRunService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED, timeout = 30)
     public RunView create(String publishId, BigDecimal budget, String createdBy) {
+        boolean demo = TenantContext.current().map(identity -> identity.kind() == TenantKind.DEMO).orElse(false);
+        if (demo) {
+            if (budget != null && budget.compareTo(new BigDecimal("10000.00000000")) != 0) {
+                throw new IllegalArgumentException("DEMO_SIM_BUDGET_FIXED");
+            }
+            budget = new BigDecimal("10000.00000000");
+        }
         if (budget == null
                 || budget.signum() <= 0
                 || budget.scale() > 8
@@ -202,6 +211,10 @@ public class StrategySimRunService {
         }
         JsonNode executionSpec = read(backtest.configSnapshotJson()).path("executionSpec");
         SpotFeeModel directionalFee = SpotFeeExecutionSpec.directional(executionSpec, mapper);
+        if (demo && ("CURRENT_ACCOUNT_OBSERVATION".equals(executionSpec.path("costSource").asText())
+                || directionalFee != null && directionalFee.policy() == Policy.DISCOUNT_ASSET_IF_FUNDED)) {
+            throw new IllegalArgumentException("DEMO_SIM_PUBLIC_CASH_ASSUMPTIONS_REQUIRED");
+        }
         SpotTargetSizer.Rules rules =
                 directionalFee == null ? rules(summary.path("costAndRuleAssumptions")) : null;
         if (directionalFee != null)
@@ -223,9 +236,8 @@ public class StrategySimRunService {
             config.put("costAndRuleSha256", costSha);
         }
         config.put("barContentSha256", summary.path("barContentSha256").asText());
-        PaperTradingRun run =
-                paperRuns.create(
-                        new PaperTradingRunCreateCommand(
+        DemoAccount demoAccount = demo ? lockDemoAccount(publish, backtest, bars) : null;
+        PaperTradingRunCreateCommand command = new PaperTradingRunCreateCommand(
                                 publishId,
                                 "SIM",
                                 bars.getFirst().exchangeCode(),
@@ -233,9 +245,11 @@ public class StrategySimRunService {
                                 bars.getFirst().symbol(),
                                 bars.getFirst().interval().wireValue(),
                                 config.toString(),
-                                createdBy));
+                                createdBy);
+        PaperTradingRun run = demoAccount == null ? paperRuns.create(command)
+                : paperRuns.createForDemo(command, new PaperTradingRunService.ReservedIdentity(demoAccount.runId()));
         Long accountId =
-                jdbc.queryForObject(
+                demoAccount != null ? demoAccount.accountId() : jdbc.queryForObject(
                         """
                 INSERT INTO accounts(account_code,venue,status)
                 VALUES (?,'PAPER','ACTIVE') RETURNING account_id
@@ -253,7 +267,15 @@ public class StrategySimRunService {
                         != 1) {
             throw new IllegalStateException("SIM_ACCOUNT_BINDING_FAILED");
         }
-        if (directionalFee != null && directionalFee.policy() == Policy.DISCOUNT_ASSET_IF_FUNDED) {
+        if (demoAccount != null) {
+            if (jdbc.update("""
+                    UPDATE tenant_sim_accounts SET bound_paper_run_id=reserved_paper_run_id
+                    WHERE tenant_id=nq_current_tenant_id() AND account_id=?
+                        AND reserved_paper_run_id=? AND bound_paper_run_id IS NULL
+                    """, accountId, run.paperRunId()) != 1) {
+                throw new IllegalStateException("DEMO_SIM_ALREADY_BOUND");
+            }
+        } else if (directionalFee != null && directionalFee.policy() == Policy.DISCOUNT_ASSET_IF_FUNDED) {
             DiscountAssetPriceSnapshot prices = discountSource(executionSpec);
             assetFunding()
                     .fundOnce(
@@ -278,6 +300,86 @@ public class StrategySimRunService {
                 budget,
                 rules);
     }
+
+    /** 行锁及原注资账户锁共同保护首次绑定；失败回滚只释放绑定，不撤销已完成的注册资金。 */
+    private DemoAccount lockDemoAccount(BacktestPublishRecord publish, BacktestRun backtest, List<HistoricalBar> bars) {
+        var identity = TenantContext.requireCurrent();
+        List<DemoAccount> accounts = jdbc.query("""
+                SELECT s.account_id,s.reserved_paper_run_id,s.bound_paper_run_id
+                FROM tenant_sim_accounts s
+                JOIN exchange_accounts e ON e.exchange_account_id=s.exchange_account_id
+                    AND e.legacy_account_id=s.account_id AND e.tenant_id=s.tenant_id
+                JOIN accounts a ON a.account_id=s.account_id AND a.tenant_id=s.tenant_id
+                JOIN tenant_memberships m ON m.tenant_id=s.tenant_id AND m.user_id=e.owner_user_id
+                JOIN tenants t ON t.tenant_id=s.tenant_id
+                JOIN users u ON u.id=m.user_id
+                WHERE s.tenant_id=nq_current_tenant_id() AND e.owner_user_id=?
+                    AND e.exchange_code='PAPER' AND e.trade_env='SIM' AND e.status='ACTIVE'
+                    AND a.venue='PAPER' AND a.status='ACTIVE'
+                    AND t.tenant_kind='DEMO' AND t.status='ACTIVE'
+                    AND m.membership_kind='DEMO' AND m.membership_role='DEMO_USER' AND m.status='ACTIVE'
+                    AND u.enabled=true
+                    AND NOT EXISTS(SELECT 1 FROM exchange_account_credentials c WHERE c.exchange_account_id=e.exchange_account_id)
+                FOR UPDATE OF s
+                """, (rs, row) -> new DemoAccount(rs.getLong(1), rs.getString(2), rs.getString(3)), identity.userId());
+        if (accounts.size() != 1) throw new IllegalStateException("DEMO_SIM_ACCOUNT_UNAVAILABLE");
+        DemoAccount account = accounts.getFirst();
+        if (account.boundRunId() != null) throw new IllegalStateException("DEMO_SIM_ALREADY_BOUND");
+        jdbc.queryForObject("SELECT pg_advisory_xact_lock(hashtextextended(?,0))", Object.class,
+                "nq:account-environment:" + account.accountId());
+        if (!Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT count(*)=2 AND count(*) FILTER(WHERE currency='USDT' AND ref_id=?
+                    AND ((ref_type='SIM_FUNDING_CASH' AND delta=10000.00000000
+                        AND idempotency_key=? AND direction='CREDIT')
+                    OR (ref_type='SIM_FUNDING_CONTRA' AND delta=-10000.00000000
+                        AND idempotency_key=? AND direction='DEBIT')))=2
+                FROM ledger_entries WHERE account_id=?
+                """, Boolean.class, account.runId(), account.runId()+":SIM_FUND:CASH",
+                account.runId()+":SIM_FUND:CONTRA", account.accountId()))
+                || !Boolean.FALSE.equals(jdbc.queryForObject("""
+                SELECT EXISTS(SELECT 1 FROM orders WHERE account_id=?)
+                    OR EXISTS(SELECT 1 FROM trades WHERE account_id=?)
+                    OR EXISTS(SELECT 1 FROM positions WHERE account_id=?)
+                    OR EXISTS(SELECT 1 FROM paper_trading_runs WHERE canonical_account_id=?)
+                """, Boolean.class, account.accountId(), account.accountId(), account.accountId(), account.accountId()))
+                || funding.cashBalance(account.accountId()).compareTo(new BigDecimal("10000.00000000")) != 0) {
+            throw new IllegalStateException("DEMO_SIM_OPENING_FACTS_INVALID");
+        }
+        if (!Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS(SELECT 1 FROM backtest_publish_records p
+                    JOIN backtest_runs b ON b.backtest_run_id=p.backtest_run_id
+                    JOIN strategy_definitions d ON d.strategy_id=p.source_strategy_id
+                    JOIN strategy_versions v ON v.strategy_version_id=p.strategy_version_id
+                        AND v.strategy_code=d.strategy_code AND v.tenant_id=d.tenant_id
+                    WHERE p.publish_record_id=? AND b.backtest_run_id=?
+                        AND d.tenant_id=nq_current_tenant_id() AND d.account_id=?
+                        AND d.trade_env='SIM' AND b.strategy_version_id=v.strategy_version_id)
+                """, Boolean.class, publish.publishRecordId(), backtest.backtestRunId(), account.accountId()))) {
+            throw new IllegalArgumentException("DEMO_SIM_PUBLICATION_SCOPE_INVALID");
+        }
+        requireDemoDataset(backtest, bars);
+        return account;
+    }
+
+    private void requireDemoDataset(BacktestRun backtest, List<HistoricalBar> bars) {
+        UUID dataset;
+        try { dataset = UUID.fromString(read(backtest.datasetSnapshotJson()).path("datasetId").asText()); }
+        catch (IllegalArgumentException invalid) { throw new IllegalArgumentException("DEMO_SIM_APPROVED_DATASET_REQUIRED"); }
+        HistoricalBar first = bars.getFirst(), last = bars.getLast();
+        if (!Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS(SELECT 1 FROM marketdata_datasets d
+                    JOIN marketdata_dataset_publications p ON p.dataset_id=d.dataset_id
+                    WHERE d.dataset_id=? AND d.visibility='SHARED_READONLY'
+                        AND p.status='APPROVED' AND p.expires_at>CURRENT_TIMESTAMP
+                        AND d.exchange_code=? AND d.market_type='SPOT' AND d.symbol=? AND d."interval"=?
+                        AND p.permitted_from<=? AND p.permitted_until>=?)
+                """, Boolean.class, dataset, first.exchangeCode(), first.symbol(), first.interval().wireValue(),
+                Timestamp.from(first.openTime()), Timestamp.from(last.closeTime())))) {
+            throw new IllegalArgumentException("DEMO_SIM_APPROVED_DATASET_REQUIRED");
+        }
+    }
+
+    private record DemoAccount(long accountId, String runId, String boundRunId) {}
 
     public StrategySimDecisionRepository.DecisionView advance(String paperRunId) {
         if (continuous != null && continuous.exists(paperRunId)) {
@@ -910,6 +1012,14 @@ public class StrategySimRunService {
         BacktestRun backtest = boundBacktest(publish);
         JsonNode summary = read(backtest.summaryJson());
         List<HistoricalBar> bars = validatedBars(backtest, summary);
+        boolean registeredDemo = Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS(SELECT 1 FROM tenant_sim_accounts
+                    WHERE tenant_id=nq_current_tenant_id() AND bound_paper_run_id=? AND account_id=?)
+                """, Boolean.class, paperRunId, run.canonicalAccountId()));
+        boolean approvedDatabaseSeed = registeredDemo
+                && "db".equals(summary.path("datasetProvider").asText())
+                && "db".equals(read(backtest.datasetSnapshotJson()).path("provider").asText());
+        if (registeredDemo) requireDemoDataset(backtest, bars);
         SpotSmaTargetStrategy strategy =
                 SpotSmaTargetStrategy.fromSnapshot(run.strategyVersionSnapshotJson(), mapper);
         if (!"OKX".equals(run.exchangeCode())
@@ -917,7 +1027,7 @@ public class StrategySimRunService {
                 || !"SPOT".equals(run.marketType())
                 || !"1h".equals(run.intervalCode())
                 || !"SIM".equals(run.tradeEnv())
-                || !"public-capture".equals(summary.path("datasetProvider").asText())
+                || !("public-capture".equals(summary.path("datasetProvider").asText()) || approvedDatabaseSeed)
                 || !strategy.strategyVersionId().equals(run.strategyVersionId())
                 || !sameFrozenStrategy(
                         strategy,

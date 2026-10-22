@@ -1,3 +1,4 @@
+import {canWriteResearch} from '@/utils/distribution';
 import {useEffect, useState} from 'react';
 import {Alert, App, Button, Space, Typography} from 'antd';
 import {Link} from 'react-router-dom';
@@ -73,7 +74,7 @@ function RecoveryItem({kind}: {kind: CreationKind}) {
     const {message} = App.useApp();
     const canWrite = useAuthStore(
         (state) =>
-            state.currentUser?.roles.some((role) => ['ADMIN', 'OPERATOR'].includes(role)) ?? false,
+            canWriteResearch(state.currentUser?.roles),
     );
     const user = useAuthStore((state) => state.currentUser?.userId);
     const [original, setOriginal] = useState<PendingCreation | null>(null);

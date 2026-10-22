@@ -11,17 +11,18 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnabledIfSystemProperty(named="nq.product.pg.required",matches="true")
 class AccountActivityPostgresIntegrationTest {
     @Test void accountFactsRejectCrossScopeAndRetainExactPageAndAmounts() throws Exception {
-        try (var db = ReleaseBaselineTestDatabase.create("nq.product.pg")) {
-            var flyway = Flyway.configure().dataSource(db.source()).locations("classpath:db/migration").cleanDisabled(true).load();
-            var expected = TradingRestartRecoveryPostgresIntegrationTest.releaseMigrationScripts(
-                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(
-                            B0Processes.root().resolve("scripts/ci/development-source-manifest.json").toFile()));
+        try (var db = TenantIsolationTestDatabase.create(null,
+                System.getProperty("nq.product.pg.url"),System.getProperty("nq.product.pg.user"),
+                System.getProperty("nq.product.pg.password"));
+                var scope = com.guidinglight.nexusquant.common.tenant.TenantContext.open(db.local("product-owner"))) {
+            var flyway = db.migration(null);
+            var expected = CurrentMigrationTestInventory.scripts();
             flyway.migrate();
             flyway.validate();
-            var jdbc = new JdbcTemplate(db.source());
+            var jdbc = db.jdbc();
             assertEquals(expected.lastKey(), flyway.info().current().getVersion());
             TradingRestartRecoveryPostgresIntegrationTest.assertReleaseMigrationScripts(expected, flyway.info().applied());
-            Long owner = jdbc.queryForObject("INSERT INTO users(username,password_hash) VALUES ('product-owner','NON_LOGIN_FIXTURE') RETURNING id",Long.class);
+            Long owner = com.guidinglight.nexusquant.common.tenant.TenantContext.requireCurrent().userId();
             long a = account(jdbc,owner,"a"), b = account(jdbc,owner,"b");
             orderTrade(jdbc,a,"a1","OKX","SIM","BTC-USDT");
             orderTrade(jdbc,a,"a2","OKX","SIM","BTC-USDT");

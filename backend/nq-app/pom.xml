@@ -154,6 +154,19 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>public-demo</id>
+            <dependencies>
+                <dependency>
+                    <groupId>com.guidinglight.nexusquant</groupId>
+                    <artifactId>nq-public-demo</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>

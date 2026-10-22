@@ -111,7 +111,8 @@ public final class TenantIsolationTestDatabase implements AutoCloseable {
                 WHERE n.nspname='public' AND p.proname IN ('nq_admit_strategy_work','nq_begin_strategy_dispatch',
                     'nq_project_strategy_run','nq_bind_strategy_effective','nq_create_ordinary_place_order',
                     'nq_decide_ordinary_place','nq_finish_strategy_cancel','nq_require_continuous_capacity',
-                    'nq_resume_tenant_execution','nq_poll_tenant_work','nq_restore_tenant_work')
+                    'nq_resume_tenant_execution','nq_poll_tenant_work','nq_restore_tenant_work',
+                    'nq_create_demo_pending','nq_initialize_demo_identity')
                 """, String.class)) admin.execute("GRANT EXECUTE ON FUNCTION " + function + " TO " + role);
     }
 

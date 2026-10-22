@@ -1,3 +1,4 @@
+import {canWriteResearch} from '@/utils/distribution';
 import {apiClient} from '@/api/client';
 import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
@@ -136,9 +137,7 @@ export function canOperateContinuous(): boolean {
     return Boolean(
         user?.authenticated &&
             user.userId > 0 &&
-            user.roles.some((role) =>
-                ['ADMIN', 'OPERATOR', 'ROLE_ADMIN', 'ROLE_OPERATOR'].includes(role),
-            ),
+            canWriteResearch(user.roles),
     );
 }
 function session(write: boolean, pending?: PendingContinuousOperation): Session {

@@ -1,3 +1,4 @@
+import {canWriteResearch} from '@/utils/distribution';
 import {businessColumns} from '@/components/layout/business-columns';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
@@ -320,9 +321,7 @@ export function EvaluationsPage() {
     };
     const pendingEvaluation = usePendingResultAction('EVALUATE');
     const roles = currentUser?.roles ?? [];
-    const canWrite = roles.some((role) =>
-        ['ADMIN', 'OPERATOR', 'ROLE_ADMIN', 'ROLE_OPERATOR'].includes(role),
-    );
+    const canWrite = canWriteResearch(roles);
     const evaluateMutation = useEvaluateMutation();
     const hasSearched = searchVersion > 0;
 

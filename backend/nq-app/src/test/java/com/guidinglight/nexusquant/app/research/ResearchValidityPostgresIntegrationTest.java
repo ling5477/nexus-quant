@@ -71,16 +71,7 @@ class ResearchValidityPostgresIntegrationTest {
                                 database.user("research-validity-fixture", "ADMIN", "OPERATOR", "VIEWER")))) {
             var flyway = database.migration(null);
             flyway.validate();
-            var manifest = MAPPER.readTree(Path.of("../../scripts/ci/development-source-manifest.json").toFile());
-            var expected = new TreeMap<MigrationVersion, String>();
-            var pattern = Pattern.compile("^backend/nq-infra/src/main/resources/db/migration/(V([0-9]+)__[^/]+\\.sql)$");
-            for (var group : manifest.path("groups")) {
-                if (!"INCLUDE_RUNTIME".equals(group.path("category").asText())) continue;
-                for (var path : group.path("paths")) {
-                    var match = pattern.matcher(path.asText());
-                    if (match.matches()) assertNull(expected.put(MigrationVersion.fromVersion(match.group(2)), match.group(1)));
-                }
-            }
+            var expected = com.guidinglight.nexusquant.app.smoke.CurrentMigrationTestInventory.scripts();
             assertFalse(expected.isEmpty());
             var applied = new TreeMap<MigrationVersion, String>();
             for (var migration : flyway.info().applied()) {

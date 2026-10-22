@@ -352,7 +352,7 @@ class StrategySimPostgresIntegrationTest {
                 runs, feed, jdbc, Clock.fixed(firstTime.plusSeconds(2), java.time.ZoneOffset.UTC)));
         String runA = driver.start(fixture.publishId(), new BigDecimal("100")).paperRunId();
         var tenantB=tenantDatabase.demo("RESTART_B_"+UUID.randomUUID().toString().substring(0,8).toUpperCase(),"restart-b-"+UUID.randomUUID());
-        String runB=tenantDatabase.as(tenantB,()->driver.start(seedPublicHourly().publishId(),new BigDecimal("100")).paperRunId());
+        String runB=tenantDatabase.as(tenantB,()->driver.start(seedPublicHourly().publishId(),new BigDecimal("10000")).paperRunId());
         var firstA = driver.pollOnce(runA);
         var firstB = tenantDatabase.as(tenantB,()->driver.pollOnce(runB));
         assertEquals("RUNNING", firstA.status());
@@ -926,19 +926,29 @@ class StrategySimPostgresIntegrationTest {
             tenants.add(tenant);fixtures.add(tenantDatabase.as(tenant,this::seedPublicHourly));
         }
         try {
-            for(int i=0;i<8;i++) {int n=i;ids.add(tenantDatabase.as(tenants.get(n),()->driver.start(fixtures.get(n).publishId(),new BigDecimal("100")).paperRunId()));}
+            for(int i=0;i<8;i++) {int n=i;ids.add(tenantDatabase.as(tenants.get(n),()->driver.start(fixtures.get(n).publishId(),new BigDecimal("10000")).paperRunId()));}
             int before=tenantDatabase.admin.queryForObject("SELECT count(*) FROM accounts WHERE venue='PAPER'",Integer.class);
-            var rejected=assertThrows(org.springframework.dao.DataAccessException.class,()->tenantDatabase.as(tenants.get(8),()->driver.start(fixtures.get(8).publishId(),new BigDecimal("100"))));
+            Object[] tenantIds=tenants.stream().map(tenant->tenant.tenantId().value()).toArray();
+            String fundingSql="SELECT count(*) FROM ledger_entries e JOIN accounts a USING(account_id) "
+                    +"WHERE ref_type LIKE 'SIM_FUNDING_%' AND a.tenant_id IN ("
+                    +String.join(",",java.util.Collections.nCopies(tenants.size(),"?"))+")";
+            int fundingBefore=tenantDatabase.admin.queryForObject(fundingSql,Integer.class,tenantIds);
+            assertEquals(18,fundingBefore);
+            var rejected=assertThrows(org.springframework.dao.DataAccessException.class,()->tenantDatabase.as(tenants.get(8),()->driver.start(fixtures.get(8).publishId(),new BigDecimal("10000"))));
             assertTrue(rejected.getMostSpecificCause().getMessage().contains("CAPACITY_LIMIT"));
             assertEquals(before,tenantDatabase.admin.queryForObject("SELECT count(*) FROM accounts WHERE venue='PAPER'",Integer.class));
+            assertEquals(fundingBefore,tenantDatabase.admin.queryForObject(fundingSql,Integer.class,tenantIds));
             assertEquals(8,tenantDatabase.admin.queryForObject("SELECT count(*) FROM tenant_continuous_slots WHERE active",Integer.class));
             String stopped=ids.getFirst();tenantDatabase.as(tenants.getFirst(),()->driver.stop(stopped));
-            String replacement=tenantDatabase.as(tenants.getFirst(),()->driver.start(fixtures.getFirst().publishId(),new BigDecimal("100")).paperRunId());
+            // Demo 首次绑定不可重建；释放容量后由仍未绑定的第九个租户占用，再验证旧运行不能超容量恢复。
+            assertThrows(IllegalStateException.class,()->tenantDatabase.as(tenants.getFirst(),
+                    ()->driver.start(fixtures.getFirst().publishId(),new BigDecimal("10000"))));
+            String replacement=tenantDatabase.as(tenants.get(8),()->driver.start(fixtures.get(8).publishId(),new BigDecimal("10000")).paperRunId());
             ids.add(replacement);
             assertThrows(org.springframework.dao.DataAccessException.class,()->tenantDatabase.as(tenants.getFirst(),()->driver.resume(stopped)));
             assertEquals(8,tenantDatabase.admin.queryForObject("SELECT count(*) FROM tenant_continuous_slots WHERE active",Integer.class));
         } finally {
-            for(int i=0;i<ids.size();i++) {int n=i==8?0:i;String id=ids.get(i);tenantDatabase.as(tenants.get(n),()->{if(!"STOPPED".equals(driver.status(id).status()))driver.stop(id);return null;});}
+            for(int i=0;i<ids.size();i++) {int n=i;String id=ids.get(i);tenantDatabase.as(tenants.get(n),()->{if(!"STOPPED".equals(driver.status(id).status()))driver.stop(id);return null;});}
         }
     }
 
@@ -2337,6 +2347,13 @@ class StrategySimPostgresIntegrationTest {
                 INSERT INTO accounts(account_code,venue,status) VALUES (?,?,'ACTIVE') RETURNING account_id
                 """, Long.class, "STRATEGY-SIM-TEST-SOURCE-" + id,
                 com.guidinglight.nexusquant.common.tenant.TenantContext.requireCurrent().kind()==com.guidinglight.nexusquant.common.tenant.TenantKind.DEMO?"PAPER":"OKX");
+        boolean demo = com.guidinglight.nexusquant.common.tenant.TenantContext.requireCurrent().kind()
+                == com.guidinglight.nexusquant.common.tenant.TenantKind.DEMO;
+        if (demo) {
+            // 只补齐注册后的夹具前提；资金仍由原 fundOnce 写入，邮箱/注册产品闭环由专用 HTTP 测试证明。
+            PublicDemoAccountTestFixture.initialize(tenantDatabase,
+                    com.guidinglight.nexusquant.common.tenant.TenantContext.requireCurrent(),account);
+        }
         jdbc.update("""
                 INSERT INTO strategy_definitions(strategy_id,strategy_code,strategy_name,strategy_type,
                     exchange_code,account_id,trade_env,enabled,config_snapshot)
@@ -2384,6 +2401,19 @@ class StrategySimPostgresIntegrationTest {
         } else {
             dataset = "{\"provider\":\"synthetic\",\"datasetId\":\"gz-" + id
                     + "\",\"exchangeCode\":\"OKX\",\"symbol\":\"BTC-USDT\",\"interval\":\"1m\"}";
+        }
+        if (demo && publicCapture) {
+            UUID approvedDataset=UUID.randomUUID();
+            tenantDatabase.admin.update("""
+                    INSERT INTO marketdata_datasets(dataset_id,dataset_name,exchange_code,market_type,symbol,"interval",start_time,end_time,
+                        status,quality_status,bar_count,source,created_by,tenant_id,visibility)
+                    VALUES(?,?,'OKX','SPOT','BTC-USDT','1h',?,?,'READY','OK',?,'marketdata_bars','synthetic',NULL,'SHARED_READONLY')
+                    """,approvedDataset,"Synthetic licensed continuous bars "+approvedDataset,Timestamp.from(bars.getFirst().openTime()),Timestamp.from(bars.getLast().closeTime()),bars.size());
+            tenantDatabase.admin.update("""
+                    INSERT INTO marketdata_dataset_publications(dataset_id,source_reference,license_reference,permitted_from,permitted_until,expires_at,status)
+                    VALUES(?,'GENERATED_TEST_ONLY','SYNTHETIC_TEST_PERMISSION',?,?,now()+interval '1 hour','APPROVED')
+                    """,approvedDataset,Timestamp.from(bars.getFirst().openTime()),Timestamp.from(bars.getLast().closeTime()));
+            dataset = ((ObjectNode)read(dataset)).put("datasetId",approvedDataset.toString()).toString();
         }
         summary.set("costAndRuleAssumptions", assumptions);
         jdbc.update("""

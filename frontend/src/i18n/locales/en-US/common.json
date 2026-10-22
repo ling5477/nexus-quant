@@ -43,6 +43,8 @@
     "appTitle": "NexusQuant Console"
   },
   "auth": {
+    "registerDemo": "Create demo account", "verifyEmail": "Verify email", "demoAccount": "Independent simulation account",
+    "demoBoundary": "Independent simulation only. LIVE, real trading and API key management are unavailable.",
     "entering": "Opening the console",
     "restored": "Your session has been restored. Opening the protected workspace.",
     "restoring": "Restoring your session",

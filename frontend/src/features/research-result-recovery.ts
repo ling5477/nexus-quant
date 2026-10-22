@@ -1,3 +1,4 @@
+import {canWriteResearch} from '@/utils/distribution';
 import {useAuthStore} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
 
@@ -94,9 +95,7 @@ export async function submitResultAction<T>(
         const actor = useAuthStore.getState().currentUser;
         if (
             actor?.userId !== owner ||
-            !actor.roles.some((role) =>
-                ['ADMIN', 'OPERATOR', 'ROLE_ADMIN', 'ROLE_OPERATOR'].includes(role),
-            ) ||
+            !canWriteResearch(actor.roles) ||
             readResultAction(owner, kind) !== null
         )
             throw invalid();

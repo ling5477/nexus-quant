@@ -1,3 +1,4 @@
+import {canWriteResearch} from '@/utils/distribution';
 import {useAuthStore} from '@/store/auth-store';
 import {Alert, App, Button, Input, Modal, Space, Typography} from 'antd';
 import {useTranslation} from 'react-i18next';
@@ -52,7 +53,7 @@ export function ConfigurationArchiveAction({
     const {t} = useTranslation('pages');
     const canWrite = useAuthStore(
         (state) =>
-            state.currentUser?.roles.some((role) => ['ADMIN', 'OPERATOR'].includes(role)) ?? false,
+            canWriteResearch(state.currentUser?.roles),
     );
     const {message} = App.useApp();
     const [open, setOpen] = useState(false);

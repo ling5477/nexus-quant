@@ -1,3 +1,4 @@
+import {canWriteResearch} from '@/utils/distribution';
 import {ObjectConfigurationSummary} from '@/components/configuration/ObjectConfigurationSummary';
 import {ObjectConfigurationInput} from '@/components/configuration/ObjectConfigurationInput';
 import {configurationObject} from '@/components/configuration/object-configuration';
@@ -56,7 +57,7 @@ export function ResearchPage() {
     const {message} = App.useApp();
     const canWrite = useAuthStore(
         (state) =>
-            state.currentUser?.roles.some((role) => ['ADMIN', 'OPERATOR'].includes(role)) ?? false,
+            canWriteResearch(state.currentUser?.roles),
     );
     const [params, setParams] = useSearchParams();
     // 列表选择与创建结果都保留正式对象深链；地址变化时不复用旧的局部详情身份。
