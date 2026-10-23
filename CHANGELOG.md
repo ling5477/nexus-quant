@@ -25,7 +25,7 @@ Release URL: 无（尚未创建 Release） / None (no Release created)
 ## Known Issues
 
 - Self-Hosted v1.0.0 → v1.0.1 正式包升级待候选资格验证。
-- 版本历史、What's New 与目标更新说明属于工作区候选，尚未合并或发布；不计作已合并功能。
+- 版本历史、What's New 与目标更新说明已合并，尚未发布；正式包更新体验仍待资格验证。
 - Public Demo 未公网正式上线：真实邮件、HTTPS/TLS、容量与公共行情再展示许可仍待资格证据。本地 SMTP 不代表真实投递资格。
 - LIVE 禁用；普通账户权益、真实手续费、OHLC 事件时点与旧 Paper 未知币种权益限制保留。
 

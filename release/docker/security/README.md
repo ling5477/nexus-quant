@@ -8,7 +8,7 @@
 - 对应 OpenJDK 21 修复：https://github.com/openjdk/jdk21u/commit/85974eed594aa5a9e13a6a20713156ed8d9cd0ed （JDK-8395142，包含证书编码变体处理）。由该固定源码生成的文件与供应商下载字节相同。
 - Oracle 公开关联：JDK-8395555 / CVE-2026-91403，https://www.oracle.com/java/technologies/javase/21-0-13-0-2-relnotes.html 。
 
-NQ 保留 Eclipse Temurin Java 21，并在实际 Temurin 构建 JDK 和最终 JRE 验证此上游数据缓解。这里不宣称 Azul 为 Temurin 提供产品支持，也不把 Temurin 版本号或 Oracle 修复版本当作 NQ 已升级的证明。资格与局限记录在 `docs/current/evidence/NQ_V101_JDK_SECURITY_REMEDIATION.md`。
+NQ 保留 Eclipse Temurin Java 21，并在实际 Temurin 构建 JDK 和最终 JRE 验证此上游数据缓解。这里不宣称 Azul 为 Temurin 提供产品支持，也不把 Temurin 版本号或 Oracle 修复版本当作 NQ 已升级的证明。此策略属于经验证的临时缓解，不是供应商已修复二进制或供应商支持声明。
 
 安装器先检查完整文件摘要和 Java 主版本，并要求现有阻断项为新文件的子集；若未来 JDK 增加其他条目，安装失败，必须重新核对供应商策略，不能删除已有保护。文件覆盖默认 `java.home/lib/security/blocked.certs`，不修改 `cacerts`、信任锚、撤销检查或 TLS 算法约束。
 
