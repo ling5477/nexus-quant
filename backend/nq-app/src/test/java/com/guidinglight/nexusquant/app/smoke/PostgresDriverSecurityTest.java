@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /** 仅在独立 PostgreSQL 验证驱动的短写隔离和拒绝全部认证方法的边界。 */
 @EnabledIfSystemProperty(named = "nq.product.pg.required", matches = "true")
-class JdbcDriverSecurityPostgresTest {
+class PostgresDriverSecurityTest {
     @Test
     void shortWritesCannotPersistBytesFromEarlierStatements() throws Exception {
         try (var database = ReleaseBaselineTestDatabase.create("nq.product.pg");

@@ -27,9 +27,9 @@
     "wrapper_status": "NOT_PRESENT"
   },
   "spring": {
-    "boot": "3.5.10",
-    "framework": "6.2.15",
-    "security": "6.5.7",
+    "boot": "3.5.16",
+    "framework": "6.2.19",
+    "security": "6.5.11",
     "data": null,
     "status": "CONSISTENT"
   },
@@ -41,7 +41,7 @@
     "testcontainers": null
   },
   "database": {
-    "postgresql_driver": "42.7.9",
+    "postgresql_driver": "42.7.14",
     "flyway": "11.7.2",
     "local_compose_image": "postgres:17.7",
     "ci_image": "postgres:16"
