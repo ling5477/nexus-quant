@@ -33,6 +33,10 @@ jobs:
           java-version: "21"
           cache: maven
 
+      - name: Install pinned Java certificate policy
+        shell: bash
+        run: sh release/docker/security/install-certificate-policy.sh
+
       - name: Check whitespace in changed files
         shell: bash
         run: |
@@ -145,6 +149,10 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
+
+      - name: Install pinned Java certificate policy
+        shell: bash
+        run: sh release/docker/security/install-certificate-policy.sh
 
       - name: Verify no exchange credential env is injected
         shell: bash
@@ -299,6 +307,10 @@ jobs:
           java-version: "21"
           cache: maven
 
+      - name: Install pinned Java certificate policy
+        shell: bash
+        run: sh release/docker/security/install-certificate-policy.sh
+
       - name: Run production configuration fail-closed regression
         shell: bash
         run: mvn -f backend/pom.xml -pl nq-app -am test -Dtest=ProductionConfigurationApplicationContextInitializerTest,ProductionSecretProfileRegressionTest -Dsurefire.failIfNoSpecifiedTests=false
@@ -384,6 +396,10 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
+
+      - name: Install pinned Java certificate policy
+        shell: bash
+        run: sh release/docker/security/install-certificate-policy.sh
 
       - name: Install PostgreSQL client
         shell: bash
@@ -765,6 +781,10 @@ jobs:
           java-version: "21"
           cache: maven
 
+      - name: Install pinned Java certificate policy
+        shell: bash
+        run: sh release/docker/security/install-certificate-policy.sh
+
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -1050,6 +1070,10 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      - name: Install pinned Java certificate policy
+        shell: bash
+        run: sh release/docker/security/install-certificate-policy.sh
+
       - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -1125,7 +1149,9 @@ jobs:
           cache-dependency-path: research/py/pyproject.toml
 
       - name: Install research dev dependencies
-        run: python -m pip install -e ".[dev]"
+        run: |
+          python -m pip install --upgrade "pip>=26.2"
+          python -m pip install -e ".[dev]"
 
       - name: Run pytest
         run: python -m pytest -q
