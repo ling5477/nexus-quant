@@ -43,7 +43,7 @@ function Assert-NoReparseTree([string]$Path) {
 }
 function Remove-RuntimeEnvironment([Diagnostics.ProcessStartInfo]$Info) {
     # Compose 的 shell 环境优先于 --env-file；仅清洗子进程，避免越过安装身份或读取其他数据目录。
-    $names = @('NQ_HOME','NQ_VERSION','SOURCE_SHA','RELEASE_SOURCE_HASH','SCHEMA_VERSION','PACKAGE_MANIFEST_SHA256','AUTO_UPDATE','ARCH','RUNTIME_PROFILE','BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE','BACKEND_MEMORY','BACKEND_CPUS','FRONTEND_MEMORY','FRONTEND_CPUS','POSTGRES_MEMORY','POSTGRES_CPUS','DB_PASSWORD','JWT_SECRET','CREDENTIALS_KEY','FRONTEND_PORT','BACKEND_PORT','PROJECT_NAME')
+    $names = @('NQ_HOME','NQ_VERSION','SOURCE_SHA','RELEASE_SOURCE_HASH','SCHEMA_VERSION','PACKAGE_MANIFEST_SHA256','AUTO_UPDATE','ARCH','RUNTIME_PROFILE','BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE','BACKEND_MEMORY','BACKEND_CPUS','FRONTEND_MEMORY','FRONTEND_CPUS','POSTGRES_MEMORY','POSTGRES_CPUS','DB_PASSWORD','RUNTIME_DB_PASSWORD','DB_ROLE_FORMAT','JWT_SECRET','CREDENTIALS_KEY','FRONTEND_PORT','BACKEND_PORT','PROJECT_NAME')
     foreach ($name in @($Info.EnvironmentVariables.Keys)) {
         if ($name -in $names -or $name -like 'COMPOSE_*' -or $name -eq 'DOCKER_DEFAULT_PLATFORM') { $Info.EnvironmentVariables.Remove($name) }
     }
@@ -143,6 +143,14 @@ function Set-PackageConfig([hashtable]$Config, [hashtable]$Package) {
     Assert-ImageMembership $Package.ResolvedImages $Package.Manifest
     foreach ($key in @('BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE')) { $Config[$key]=$Package.ResolvedImages[$key] }
     $Config.PACKAGE_MANIFEST_SHA256 = $Package.Hash; $Config.ARCH = $Package.Manifest.ARCH; $Config.AUTO_UPDATE = 'OFF'
+    if ([int]$Config.SCHEMA_VERSION -ge 35) {
+        if ($Config.ContainsKey('DB_ROLE_FORMAT') -and $Config.DB_ROLE_FORMAT -cne '2') { throw 'Unsupported database role format' }
+        if (-not $Config.ContainsKey('RUNTIME_DB_PASSWORD')) { $Config.RUNTIME_DB_PASSWORD=New-Secret }
+        $Config.DB_ROLE_FORMAT='2'; Assert-DatabaseRoleConfig $Config
+    }
+}
+function Assert-DatabaseRoleConfig([hashtable]$Config) {
+    if ([int]$Config.SCHEMA_VERSION -ge 35 -and ($Config.DB_ROLE_FORMAT -cne '2' -or $Config.RUNTIME_DB_PASSWORD -cnotmatch '^[a-f0-9]{64}$' -or $Config.RUNTIME_DB_PASSWORD -ceq $Config.DB_PASSWORD)) { throw 'Protected runtime database identity missing or invalid; recover known installation configuration' }
 }
 function Assert-ImageMembership([hashtable]$Config, [hashtable]$Manifest) {
     foreach ($component in @('BACKEND','FRONTEND','POSTGRES')) {
@@ -166,6 +174,7 @@ function Assert-Installed {
     Assert-ImageMembership $config $manifest
     if ($config.NQ_VERSION -cne $manifest.VERSION -or $config.AUTO_UPDATE -cne 'OFF' -or $config.NQ_HOME -cne $InstallRoot.Replace('\','/') -or $config.PROJECT_NAME -cnotmatch '^[a-z0-9][a-z0-9-]{0,48}$') { throw 'Installed configuration identity mismatch' }
     if ([IO.File]::ReadAllText((Join-Path $InstallRoot 'runtime/VERSION')).Trim() -cne $config.NQ_VERSION) { throw 'Committed installed VERSION identity mismatch' }
+    Assert-DatabaseRoleConfig $config
     return $config
 }
 function Assert-LocalDocker {
@@ -325,6 +334,14 @@ function Assert-RuntimePorts([hashtable]$Config) {
 function Start-Runtime([switch]$ForceRecreate) {
     $config = Read-Config
     Assert-RuntimePorts $config
+    if ([int]$config.SCHEMA_VERSION -ge 35) {
+        Assert-DatabaseRoleConfig $config
+        # 授权和归属转换期间业务必须停写；失败只保留可重试安装/更新事务，不启动受限应用。
+        [void](Compose @('stop','--timeout','30','frontend','backend'))
+        [void](Compose @('up','-d','--no-build','--pull','never','--wait','--wait-timeout','120','postgres'))
+        [void](Compose @('--profile','maintenance','run','--rm','--no-deps','--pull','never','maintenance'))
+        $ForceRecreate=$true
+    }
     if ($ForceRecreate) {
         [void](Compose @('up','-d','--no-build','--pull','never','--wait','--wait-timeout','120','postgres'))
         [void](Compose @('up','-d','--no-build','--pull','never','--no-deps','--force-recreate','--wait','--wait-timeout','300','backend'))
@@ -393,6 +410,7 @@ function Validate-Backup([string]$Path) {
     $package = Read-Env (Join-Path $Path 'assets/package.env')
     foreach ($pair in @(@('compose.yml','COMPOSE_SHA256'),@('runtime.yml','RUNTIME_SHA256'),@('nexusquant.ps1','PS_INSTALLER_SHA256'),@('nexusquant.sh','SH_INSTALLER_SHA256'))) { [void](Assert-SafePath (Join-Path $Path ('assets/' + $pair[0]))); Assert-Hash (Join-Path $Path ('assets/' + $pair[0])) $package[$pair[1]] }
     $saved = Read-Env (Join-Path $Path 'runtime.env')
+    Assert-DatabaseRoleConfig $saved
     Assert-ImageMembership $saved $package
     foreach ($key in @('JWT_SECRET','CREDENTIALS_KEY','DB_PASSWORD')) { if ($saved[$key] -cnotmatch '^[a-f0-9]{64}$') { throw 'Invalid protected backup configuration' } }
     if ($saved.NQ_VERSION -cne $manifest.APP_VERSION -or $saved.SCHEMA_VERSION -cne $manifest.SCHEMA_VERSION -or $saved.PACKAGE_MANIFEST_SHA256 -cne $manifest.PACKAGE_MANIFEST_SHA256 -or $package.VERSION -cne $saved.NQ_VERSION -or $package.SCHEMA_VERSION -cne $saved.SCHEMA_VERSION) { throw 'Backup identity mismatch' }
@@ -409,7 +427,8 @@ function Restore-Database([string]$Path) {
         [void](Compose @('exec','-T','postgres','psql','-U','nexusquant','-d','postgres','-v','ON_ERROR_STOP=1','-c',"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='nexus_quant' AND pid<>pg_backend_pid()"))
         [void](Compose @('exec','-T','postgres','dropdb','-U','nexusquant','--if-exists','nexus_quant'))
         [void](Compose @('exec','-T','postgres','createdb','-U','nexusquant','-O','nexusquant','-T','template0','nexus_quant'))
-        [void](Compose @('exec','-T','postgres','pg_restore','-U','nexusquant','-d','nexus_quant','--no-owner','--exit-on-error','--single-transaction','/tmp/nexusquant-restore.dump'))
+        # 角色是集群对象；普通 dump 的归属/ACL 不作为运行授权来源，由匹配版本的维护入口确定性重建。
+        [void](Compose @('exec','-T','postgres','pg_restore','-U','nexusquant','-d','nexus_quant','--no-owner','--no-privileges','--exit-on-error','--single-transaction','/tmp/nexusquant-restore.dump'))
     } finally { [void](Compose @('exec','-T','postgres','rm','-f','/tmp/nexusquant-restore.dump')) }
 }
 function Confirm-Choice([switch]$Confirmed, [string]$Word) {
@@ -709,6 +728,7 @@ try {
             [void](Diagnostic-Value { Host-Preflight })
             Write-Host ('Installed version='+$config.NQ_VERSION+'; profile='+$config.RUNTIME_PROFILE+'; schema='+(Diagnostic-Value { Read-Schema }))
             $postgres=Diagnostic-Value { Compose @('exec','-T','postgres','psql','-U','nexusquant','-d','nexus_quant','-At','-v','ON_ERROR_STOP=1','-c','SELECT version()') }; Write-Host ('PostgreSQL='+$postgres)
+            if ([int]$config.SCHEMA_VERSION -ge 35) { Write-Host ('Database runtime='+(Diagnostic-Value { Compose @('--profile','maintenance','run','--rm','--no-deps','--pull','never','maintenance','--verify-runtime') })) }
             foreach ($service in @('postgres','backend','frontend')) { $container=Diagnostic-Value { Compose @('ps','-q',$service) }; if ($container -and $container -ne 'UNKNOWN') { Write-Host ($service+'='+(Diagnostic-Value { Invoke-Docker @('inspect','--format','{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{else}}UNKNOWN{{end}}',$container) 15 })) } else { Write-Host ($service+'=NOT_RUNNING_OR_UNKNOWN') } }
             $kill=Diagnostic-Value { Compose @('exec','-T','postgres','psql','-U','nexusquant','-d','nexus_quant','-At','-v','ON_ERROR_STOP=1','-c',"SELECT coalesce((SELECT status FROM kill_switch_states WHERE scope='GLOBAL_TRADING'),'UNKNOWN')") }; if ($kill -notin @('ENGAGED','DISENGAGED')) { $kill='UNKNOWN' }; Write-Host ('kill='+$kill)
             foreach ($key in @('NQ_CONTINUOUS_SIM_ENABLED','NQ_LIVE_ENABLED','NQ_REAL_EXCHANGE_ENABLED','NQ_REAL_PROVIDER_ENABLED','NQ_REAL_CLIENT_ENABLED')) { $value=Diagnostic-Value { Compose @('exec','-T','backend','printenv',$key) }; if ($value -notin @('true','false')) { $value='UNKNOWN' }; Write-Host ($key+'='+$value) }
@@ -727,6 +747,7 @@ try {
             Write-Metadata $pendingRestorePath @{FORMAT='1'; BACKUP_PATH=$backup.Path; BACKUP_MANIFEST_SHA256=$backupManifestHash; PHASE='DB_MAY_CHANGE'}
             Restore-Database $backup.Path
             foreach ($key in @('JWT_SECRET','CREDENTIALS_KEY')) { $config[$key]=$backup.Config[$key] }
+            if ([int]$config.SCHEMA_VERSION -ge 35) { foreach ($key in @('DB_ROLE_FORMAT','RUNTIME_DB_PASSWORD')) { $config[$key]=$backup.Config[$key] } }
             Write-Metadata (Join-Path $InstallRoot 'config/runtime.env') $config; Start-Runtime -ForceRecreate
             Remove-Item -LiteralPath $pendingRestorePath -Force
         }

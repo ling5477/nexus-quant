@@ -99,7 +99,7 @@ docker_cmd() {
 compose_with_env() (
     selected_env=$1; selected_project=$2; selected_compose=$3; shift 3
     # Compose 优先使用父进程环境；必须隔离这些键才能使已验证配置成为唯一挂载及镜像身份。
-    unset NQ_HOME NQ_VERSION DB_PASSWORD JWT_SECRET CREDENTIALS_KEY FRONTEND_PORT BACKEND_PORT PROJECT_NAME AUTO_UPDATE RUNTIME_PROFILE BACKEND_MEMORY BACKEND_CPUS POSTGRES_MEMORY POSTGRES_CPUS FRONTEND_MEMORY FRONTEND_CPUS SCHEMA_VERSION SOURCE_SHA RELEASE_SOURCE_HASH BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE PACKAGE_MANIFEST_SHA256
+    unset NQ_HOME NQ_VERSION DB_PASSWORD RUNTIME_DB_PASSWORD DB_ROLE_FORMAT JWT_SECRET CREDENTIALS_KEY FRONTEND_PORT BACKEND_PORT PROJECT_NAME AUTO_UPDATE RUNTIME_PROFILE BACKEND_MEMORY BACKEND_CPUS POSTGRES_MEMORY POSTGRES_CPUS FRONTEND_MEMORY FRONTEND_CPUS SCHEMA_VERSION SOURCE_SHA RELEASE_SOURCE_HASH BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE PACKAGE_MANIFEST_SHA256
     unset COMPOSE_FILE COMPOSE_PROJECT_NAME COMPOSE_ENV_FILES COMPOSE_PROFILES COMPOSE_DISABLE_ENV_FILE COMPOSE_PATH_SEPARATOR DOCKER_DEFAULT_PLATFORM
     docker_cmd compose --env-file "$selected_env" -p "$selected_project" -f "$selected_compose" "$@"
 )
@@ -114,6 +114,7 @@ atomic_copy() {
     mv -f "$2.tmp" "$2"
 }
 atomic_text() { printf '%s\n' "$1" > "$2.tmp"; chmod 600 "$2.tmp"; mv -f "$2.tmp" "$2"; }
+random_secret() { dd if=/dev/urandom bs=32 count=1 2>/dev/null | od -An -tx1 | tr -d ' \n'; }
 version_valid() { printf '%s' "$1" | grep -Eq '^[0-9]{1,6}\.[0-9]{1,6}\.[0-9]{1,6}$'; }
 version_greater() { awk -v a="$1" -v b="$2" 'BEGIN{split(a,x,".");split(b,y,".");for(i=1;i<=3;i++){if(x[i]+0>y[i]+0)exit 0;if(x[i]+0<y[i]+0)exit 1}exit 1}'; }
 verify_manifest() {
@@ -340,6 +341,7 @@ verify_installed() {
     [ "$(value NQ_HOME)" = "$install_root" ] || fail 'Installation location mismatch'
     project=$(value PROJECT_NAME); case "$project" in ''|*[!a-z0-9-]*) fail 'Invalid installed project identity';; esac
     for key in DB_PASSWORD JWT_SECRET CREDENTIALS_KEY; do hex_hash "$(value "$key")" || fail 'Invalid installed secret metadata'; done
+    verify_database_role_config "$install_root/config/runtime.env"
     [ "$(value AUTO_UPDATE)" = OFF ] || fail 'Automatic update must remain OFF'
     frontend_port=$(value FRONTEND_PORT); backend_port=$(value BACKEND_PORT)
     port_valid "$frontend_port" && port_valid "$backend_port" && [ "$frontend_port" != "$backend_port" ] || fail 'Invalid installed ports'
@@ -370,10 +372,28 @@ verify_runtime_env() {
     [ -f "$1" ] && [ ! -L "$1" ] || fail 'Runtime configuration missing or unsafe'
     [ "$(wc -c < "$1" | tr -d ' ')" -le 16384 ] || fail 'Runtime configuration is too large'
     strict_lf "$1"
-    awk -F= 'BEGIN{n=split("NQ_HOME NQ_VERSION DB_PASSWORD JWT_SECRET CREDENTIALS_KEY FRONTEND_PORT BACKEND_PORT PROJECT_NAME AUTO_UPDATE RUNTIME_PROFILE BACKEND_MEMORY BACKEND_CPUS POSTGRES_MEMORY POSTGRES_CPUS FRONTEND_MEMORY FRONTEND_CPUS SCHEMA_VERSION SOURCE_SHA RELEASE_SOURCE_HASH BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE PACKAGE_MANIFEST_SHA256",k," ");for(i=1;i<=n;i++)a[k[i]]=1}NF!=2||!a[$1]||seen[$1]++||$2==""||$0~/\r/{exit 1}END{for(i=1;i<=n;i++)if(!seen[k[i]])exit 1}' "$1" || fail 'Runtime configuration requires exact known fields and unique LF keys'
+    awk -F= 'BEGIN{n=split("NQ_HOME NQ_VERSION DB_PASSWORD JWT_SECRET CREDENTIALS_KEY FRONTEND_PORT BACKEND_PORT PROJECT_NAME AUTO_UPDATE RUNTIME_PROFILE BACKEND_MEMORY BACKEND_CPUS POSTGRES_MEMORY POSTGRES_CPUS FRONTEND_MEMORY FRONTEND_CPUS SCHEMA_VERSION SOURCE_SHA RELEASE_SOURCE_HASH BACKEND_IMAGE FRONTEND_IMAGE POSTGRES_IMAGE PACKAGE_MANIFEST_SHA256",k," ");for(i=1;i<=n;i++)a[k[i]]=1;a["DB_ROLE_FORMAT"]=1;a["RUNTIME_DB_PASSWORD"]=1}NF!=2||!a[$1]||seen[$1]++||$2==""||$0~/\r/{exit 1}END{for(i=1;i<=n;i++)if(!seen[k[i]])exit 1}' "$1" || fail 'Runtime configuration requires exact known fields and unique LF keys'
+    verify_database_role_config "$1"
     for field in BACKEND_MEMORY POSTGRES_MEMORY FRONTEND_MEMORY; do printf '%s' "$(meta "$1" "$field")" | grep -Eq '^[1-9][0-9]{1,5}m$' || fail 'Invalid runtime memory allocation'; done
     for field in BACKEND_CPUS POSTGRES_CPUS FRONTEND_CPUS; do printf '%s' "$(meta "$1" "$field")" | grep -Eq '^[0-9]{1,2}(\.[0-9]{1,2})?$' || fail 'Invalid runtime CPU allocation'; done
     case "$(meta "$1" RUNTIME_PROFILE)" in LIGHT|STANDARD|PERFORMANCE) ;; *) fail 'Invalid installed runtime profile';; esac
+}
+verify_database_role_config() {
+    if [ "$(meta "$1" SCHEMA_VERSION)" -ge 35 ]; then
+        [ "$(meta "$1" DB_ROLE_FORMAT)" = 2 ] && hex_hash "$(meta "$1" RUNTIME_DB_PASSWORD)" && [ "$(meta "$1" RUNTIME_DB_PASSWORD)" != "$(meta "$1" DB_PASSWORD)" ] || fail 'Protected runtime database identity missing or invalid; recover known installation configuration'
+    else
+        [ -z "$(meta "$1" DB_ROLE_FORMAT)$(meta "$1" RUNTIME_DB_PASSWORD)" ] || fail 'Legacy installation cannot declare split role credentials'
+    fi
+}
+prepare_database_role_config() {
+    [ "$(value SCHEMA_VERSION)" -ge 35 ] || return 0
+    case "$(value DB_ROLE_FORMAT)" in ''|2) ;; *) fail 'Unsupported database role format';; esac
+    runtime_password=$(value RUNTIME_DB_PASSWORD)
+    if [ -z "$runtime_password" ]; then runtime_password=$(random_secret); fi
+    hex_hash "$runtime_password" && [ "$runtime_password" != "$(value DB_PASSWORD)" ] || fail 'Invalid restricted runtime credential'
+    set_env RUNTIME_DB_PASSWORD "$runtime_password"
+    set_env DB_ROLE_FORMAT 2
+    unset runtime_password
 }
 load_images() {
     package_stage=$(mktemp -d "$install_root/runtime/.package-stage.XXXXXX")
@@ -404,11 +424,19 @@ switch_package() {
     done
     set_selected_images
     set_env PACKAGE_MANIFEST_SHA256 "$(file_hash "$2")"
+    prepare_database_role_config
 }
 start_runtime() {
     command -v curl >/dev/null 2>&1 || fail 'Local health checks require the system curl installed by the installer'
     frontend_port=$(value FRONTEND_PORT); backend_port=$(value BACKEND_PORT)
     port_check
+    if [ "$(value SCHEMA_VERSION)" -ge 35 ]; then
+        verify_database_role_config "$install_root/config/runtime.env"
+        # 角色/归属变更前停写；失败不得启动应用，仍由原安装或更新事务恢复。
+        compose stop --timeout 30 frontend backend >/dev/null 2>&1 || fail 'Cannot quiesce application before database preparation'
+        compose up -d --no-build --pull never --wait --wait-timeout 120 postgres >/dev/null 2>&1 || fail 'Installation PostgreSQL startup failed'
+        compose --profile maintenance run --rm --no-deps --pull never maintenance >/dev/null 2>&1 || fail 'Installation database role/migration preparation failed; application remains stopped'
+    fi
     if [ "${1:-false}" = true ]; then
         # 原子替换 runtime.yml 会更换 inode；即使 image ID 相同也必须重建挂载配置的容器。
         compose up -d --no-build --pull never --force-recreate --wait --wait-timeout 300 postgres backend >/dev/null 2>&1 || fail 'PostgreSQL/backend startup or health validation failed'
@@ -482,9 +510,9 @@ restore_database() {
         # 新版迁移可能新增旧 dump 未知的对象；重建独立应用库才能完整去除这些对象。
         compose exec -T postgres psql -v ON_ERROR_STOP=1 -U nexusquant -d postgres -c 'DROP DATABASE IF EXISTS nexus_quant WITH (FORCE)' >/dev/null 2>&1 || fail 'Known-backup rollback database reset failed; application remains stopped'
         compose exec -T postgres psql -v ON_ERROR_STOP=1 -U nexusquant -d postgres -c 'CREATE DATABASE nexus_quant OWNER nexusquant' >/dev/null 2>&1 || fail 'Known-backup rollback database recreation failed; application remains stopped'
-        compose exec -T postgres pg_restore -U nexusquant -d nexus_quant --no-owner --exit-on-error --single-transaction < "$1/database.dump" >/dev/null 2>&1 || fail 'Known-backup rollback restore failed; application remains stopped with retryable journal'
+        compose exec -T postgres pg_restore -U nexusquant -d nexus_quant --no-owner --no-privileges --exit-on-error --single-transaction < "$1/database.dump" >/dev/null 2>&1 || fail 'Known-backup rollback restore failed; application remains stopped with retryable journal'
     else
-        compose exec -T postgres pg_restore -U nexusquant -d nexus_quant --clean --if-exists --no-owner --exit-on-error --single-transaction < "$1/database.dump" >/dev/null 2>&1 || fail 'Transactional database restore failed; applications remain stopped'
+        compose exec -T postgres pg_restore -U nexusquant -d nexus_quant --clean --if-exists --no-owner --no-privileges --exit-on-error --single-transaction < "$1/database.dump" >/dev/null 2>&1 || fail 'Transactional database restore failed; applications remain stopped'
     fi
 }
 confirm_action() {
@@ -806,7 +834,6 @@ if [ "$action" = install ]; then
         load_images "$package_root" "$manifest"
         fresh=true
         atomic_text FRESH "$install_root/runtime/first-install-pending"
-        random_secret() { dd if=/dev/urandom bs=32 count=1 2>/dev/null | od -An -tx1 | tr -d ' \n'; }
         cat > "$install_root/config/runtime.env.tmp" <<EOF
 NQ_HOME=$install_root
 DB_PASSWORD=$(random_secret)
@@ -902,6 +929,10 @@ case "$action" in
             kill_state=$(db_query "SELECT status FROM kill_switch_states WHERE scope='GLOBAL_TRADING'" 2>/dev/null) || kill_state=UNKNOWN
             case "$kill_state" in ENGAGED|DISENGAGED) ;; *) kill_state=UNKNOWN;; esac
             printf 'SCHEMA_ACTUAL=%s POSTGRESQL=%s KILL_STATE=%s\n' "$schema" "$postgres" "$kill_state"
+            if [ "$(value SCHEMA_VERSION)" -ge 35 ]; then
+                database_role=$(compose --profile maintenance run --rm --no-deps --pull never maintenance --verify-runtime 2>/dev/null) || database_role=UNKNOWN
+                printf 'DATABASE_RUNTIME=%s\n' "$database_role"
+            fi
             backend_id=$(compose ps -q backend 2>/dev/null) || backend_id=
             safety=
             if [ -n "$backend_id" ]; then safety=$(docker_cmd inspect --format '{{range .Config.Env}}{{if eq . "NQ_CONTINUOUS_SIM_ENABLED=true"}}SIM=ENABLED {{end}}{{if eq . "NQ_LIVE_ENABLED=false"}}LIVE=DISABLED {{end}}{{if eq . "NQ_REAL_EXCHANGE_ENABLED=false"}}REAL_EXCHANGE=DISABLED {{end}}{{if eq . "NQ_REAL_PROVIDER_ENABLED=false"}}REAL_PROVIDER=DISABLED {{end}}{{if eq . "NQ_REAL_CLIENT_ENABLED=false"}}REAL_CLIENT=DISABLED {{end}}{{end}}' "$backend_id" 2>/dev/null) || safety=; fi
@@ -927,6 +958,9 @@ EOF
         restore_database "$backup_path" true
         # 普通恢复保留当前目录、数据库密码、端口及资源配置，只恢复认证加密代际。
         for key in JWT_SECRET CREDENTIALS_KEY; do set_env "$key" "$(meta "$backup_path/runtime.env" "$key")"; done
+        if [ "$(value SCHEMA_VERSION)" -ge 35 ]; then
+            for key in DB_ROLE_FORMAT RUNTIME_DB_PASSWORD; do set_env "$key" "$(meta "$backup_path/runtime.env" "$key")"; done
+        fi
         start_runtime
         rm -f "$install_root/runtime/pending-restore.env"; sync;;
     uninstall)

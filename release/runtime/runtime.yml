@@ -1,6 +1,7 @@
 spring:
   flyway:
-    enabled: true
+    # 正式迁移由独立一次性维护进程执行，业务容器不持有迁移或 Owner 凭据。
+    enabled: false
     clean-disabled: true
     baseline-on-migrate: false
     validate-on-migrate: true
@@ -8,7 +9,8 @@ nq:
   production-configuration: true
   auth:
     bootstrap-admin:
-      enabled: true
+      # 管理员由维护进程复用原空库初始化合同准备，受限应用不能授予角色。
+      enabled: false
   strategy-sim:
     enabled: true
   runtime:

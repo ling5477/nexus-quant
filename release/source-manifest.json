@@ -455,6 +455,7 @@
         "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/livecontrol/executionworker/DisposableFakeVenueLauncher.java",
         "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/logging/SensitiveLogEncoder.java",
         "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/maintenance/ExistingUserPasswordRotationMain.java",
+        "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/maintenance/InstallationDatabaseMaintenanceMain.java",
         "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/maintenance/ProtectedMaintenanceFiles.java",
         "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/marketdata/InstrumentCatalogSyncRequestController.java",
         "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/marketdata/InstrumentCatalogSyncRequestService.java",
