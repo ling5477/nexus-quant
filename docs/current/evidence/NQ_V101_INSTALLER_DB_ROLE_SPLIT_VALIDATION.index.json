@@ -1,0 +1,365 @@
+{
+  "task": "NQ-V101-INSTALLER-DB-ROLE-SPLIT-UPGRADE-UNBLOCK",
+  "kind": "SANITIZED_IMPLEMENTATION_EVIDENCE_INDEX",
+  "baseline": "04b19f444cc5ddb8bfcdbdaa58f00d2ed4e8a69f",
+  "branch": "codex/nq-v101-installer-db-role-split",
+  "formalImmutablePackageUpgrade": "NOT_RUN",
+  "evidenceRoot": "C:\\nq-v101-installer-roles-20261023\\evidence",
+  "sourceFiles": {
+    "INSTALL.md": "b88780e5f1eb18a485fdc8a03e49a469fc746e92a9eb69153ab7ec2758412771",
+    "release/installers/nexusquant.ps1": "848a5db52f1162a1a99d612e71a0a858d27d78712c18e509201ae02a62a1a072",
+    "release/installers/nexusquant.sh": "c3bc0881d9b9525c557784dc55626c58ab44ca0d99fb8c84f9c45ded1f18370e",
+    "release/runtime/compose.yml": "1bd398f6fd1c531b18c1cefadf7109162df8790197cdcc31e5058007ca9b943e",
+    "release/runtime/runtime.yml": "e8b029d53bb87ca484542fc82a68003c06b5eb034e243dae707349fd32edac09",
+    "release/source-manifest.json": "16aa3574e87cfd809717e8a79304cb38b7a38cafcbdc7cc91f4f29d68c1311aa",
+    "scripts/release/tests/test_installer.py": "ce249ef6302ec61ad90cf64608de63f532bc4f21f0ce08573f863fed7bd5cf47",
+    "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/maintenance/InstallationDatabaseMaintenanceMain.java": "2e6ffd67856b1f3881e584d4eaaaac006f359d6644ec0a146501c32ebb533c7f",
+    "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/maintenance/InstallationDatabaseMaintenancePostgresTest.java": "f32f76ded8aec2b836e17e2e495463e3b80cc843fa5cbcdd3bf1527f16a11063"
+  },
+  "fixture": {
+    "revision": "r2",
+    "manifestSha256": "fb41f6ec9f7ef527ea7d83dcad2240fb7aecf3ea3fc5e9d0097ea483acb4503b",
+    "imageIdentities": {
+      "backend": {
+        "tag": "nexusquant/installer-validation-backend:20261023-r2",
+        "imageId": "sha256:8f6cdefc6e405fec1bd7fcae7455017d1ffcdf6c26d8a106c5bd4a04d5a20943",
+        "configDigest": "sha256:0b5fbe88892c9ec753cc0cf20edf47c5cceccb675b4556459edb3c4003ab4110"
+      },
+      "frontend": {
+        "tag": "nexusquant/installer-validation-frontend:20261023-r1",
+        "imageId": "sha256:fb657f03644b1bc3957d204deda492883d3d7871d608509807cf12dd5c157f86",
+        "configDigest": "sha256:df8124321d00cb57f524a194909c38d81f8007eec0ba1afbcb119c95132fde36"
+      },
+      "postgres": {
+        "tag": "postgres:16.15",
+        "imageId": "sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d",
+        "configDigest": "sha256:275447c94b11b151decd1f29877965301d5a77032037c46de93d990f739f00a9"
+      }
+    },
+    "sourceDirty": true,
+    "sourceCommitIsBaselineOnly": true,
+    "notFormalReleasePackage": true,
+    "note": "Final test-only additions and INSTALL documentation postdate image creation; shipping runtime main/installers/compose/runtime bytes are unchanged from r2."
+  },
+  "historicalComparisons": {
+    "upgrade-compare-r2.log": {
+      "result": "DIFFERENT",
+      "changes": [
+        {
+          "table": "account_equity_measurements",
+          "missing": [],
+          "added": [
+            "[\"3328884d-5372-4f57-b84e-d00b4d5cf604\"]"
+          ],
+          "changed": []
+        }
+      ],
+      "tablesCompared": 32,
+      "beforeVersion": "1.0.0",
+      "afterVersion": "1.0.1"
+    },
+    "upgrade-restart-compare-r2.log": {
+      "result": "DIFFERENT",
+      "changes": [
+        {
+          "table": "account_equity_measurements",
+          "missing": [],
+          "added": [
+            "[\"3328884d-5372-4f57-b84e-d00b4d5cf604\"]"
+          ],
+          "changed": []
+        }
+      ],
+      "tablesCompared": 32,
+      "beforeVersion": "1.0.0",
+      "afterVersion": "1.0.1"
+    },
+    "failure2-compare.log": {
+      "result": "MATCH",
+      "changes": [],
+      "tablesCompared": 32,
+      "beforeVersion": "1.0.0",
+      "afterVersion": "1.0.0"
+    },
+    "interrupt-compare.log": {
+      "result": "MATCH",
+      "changes": [],
+      "tablesCompared": 32,
+      "beforeVersion": "1.0.0",
+      "afterVersion": "1.0.0"
+    }
+  },
+  "database": {
+    "schema": 47,
+    "rlsTables": 98,
+    "forcedRlsTables": 98,
+    "unsafeDefiners": 0,
+    "demoFunding": 0,
+    "membershipOutsideLocal": 0
+  },
+  "businessContainer": {
+    "dbUser": "nq_runtime",
+    "maintenancePasswordAbsent": true,
+    "image": "sha256:8f6cdefc6e405fec1bd7fcae7455017d1ffcdf6c26d8a106c5bd4a04d5a20943",
+    "live": "DISABLED"
+  },
+  "tests": {
+    "postgresMaintenance": {
+      "passed": 3,
+      "failed": 0
+    },
+    "installerExistingSuiteBeforeMockExtension": {
+      "passed": 30,
+      "skipped": 1,
+      "reused": "Installer runtime source unchanged; skip requires real POSIX modes, separately observed in real POSIX installation."
+    },
+    "newRoleContracts": {
+      "passed": 2
+    },
+    "affectedExistingInstallerContracts": {
+      "passed": 3
+    },
+    "sourceExporter": {
+      "passed": 29
+    },
+    "sourceSchemaContracts": {
+      "passed": 16
+    },
+    "businessBaselineComparator": {
+      "passed": 7
+    }
+  },
+  "evidenceFiles": [
+    {
+      "path": "implementation-fixture-identity-r2.json",
+      "sha256": "eb3fd5c6db3eab3c4882ed996189f59e2bb4d19d633311517dbd35ed1b2adcf9",
+      "bytes": 2275
+    },
+    {
+      "path": "implementation-fixture-identity-failure2.json",
+      "sha256": "5ad99d33a821a1c5f659ae85e630b5a1cdcca875e9f35f56d7ea3b95e20acd67",
+      "bytes": 2399
+    },
+    {
+      "path": "implementation-backend-image-build-r2.log",
+      "sha256": "8cf0b5733e16912e01c09cc7b09e20dd41d0ca4807fcd2110fb1f6c2c59b8560",
+      "bytes": 1759
+    },
+    {
+      "path": "implementation-frontend-image-build.log",
+      "sha256": "05834cf4a4e60165336eafd1816a0172621bf051c7178b09143875e88d74cc44",
+      "bytes": 3175
+    },
+    {
+      "path": "maintenance-postgres-tests-final.log",
+      "sha256": "f7ad8359799e54e71692c418a215affd9d6db92ccb2a3dbf98c729b40220ff92",
+      "bytes": 56222
+    },
+    {
+      "path": "installer-contract-tests-utf8.log",
+      "sha256": "4cad68da420a0e2bd590e6a50b5d436de02bc7e60d65c38a2207ec8713ec60fa",
+      "bytes": 5713
+    },
+    {
+      "path": "installer-role-contract-tests-final.log",
+      "sha256": "3f70c466ec0cd899f40211ea291cc3a1648c81d16b19b7330c0cf08db36edb66",
+      "bytes": 584
+    },
+    {
+      "path": "installer-affected-legacy-tests.log",
+      "sha256": "da4292006685e3817b5e70622b2b0ecc6d5afd80a70fdec112ac6568ea354074",
+      "bytes": 655
+    },
+    {
+      "path": "release-source-tests.log",
+      "sha256": "08408dd3786e67b9c8d026d8d99f132ad6cfd9c03554f43ee9d1cd0dfb09a381",
+      "bytes": 4231
+    },
+    {
+      "path": "source-schema-contract-tests.log",
+      "sha256": "31f217cd235e7899188f6e02684ea52247def333bcb580ad26f8d669a5f7d5b9",
+      "bytes": 2704
+    },
+    {
+      "path": "baseline-contract-tests-final.log",
+      "sha256": "5e805d3a19f92008abc2eec93812a7ce045a45c0a7575d14702ffe4b3e5d96a2",
+      "bytes": 1310
+    },
+    {
+      "path": "upgrade-compare-r2.log",
+      "sha256": "75d5e03bdecd9cdb0b3aaecdc1bbca719d556a92c2a63ebe8319be0f6fd09ab1",
+      "bytes": 321
+    },
+    {
+      "path": "upgrade-restart-compare-r2.log",
+      "sha256": "75d5e03bdecd9cdb0b3aaecdc1bbca719d556a92c2a63ebe8319be0f6fd09ab1",
+      "bytes": 321
+    },
+    {
+      "path": "failure2-compare.log",
+      "sha256": "6d01ca9f6f0514a983ef55115cf2f899d059fa8721b7396f6a2114fa8b7487dc",
+      "bytes": 127
+    },
+    {
+      "path": "interrupt-compare.log",
+      "sha256": "6d01ca9f6f0514a983ef55115cf2f899d059fa8721b7396f6a2114fa8b7487dc",
+      "bytes": 127
+    },
+    {
+      "path": "actual-flyway-failure2-postgres.log",
+      "sha256": "357cba8b5e9653299e91e41c651f17d7275df0438e7be8800104b3faea7cef26",
+      "bytes": 12401
+    },
+    {
+      "path": "windows-actual-flyway-failure2.log",
+      "sha256": "d7c6d2749d4f13e2f91cb7eb5a55170be6b29b1c8b6644965fbf75830ec8ad29",
+      "bytes": 748
+    },
+    {
+      "path": "windows-interrupt-start-refused.log",
+      "sha256": "66209e8c8305a3a78cd3249ff2804a8195ca601c77e19376aa0b121f27a73527",
+      "bytes": 372
+    },
+    {
+      "path": "windows-interrupt-explicit-rollback.log",
+      "sha256": "4ef135428ec0305e43a84e15e7e17396d09e7941256809e093716d2eb9721a23",
+      "bytes": 18
+    },
+    {
+      "path": "windows-role-initialization-interruption.log",
+      "sha256": "41f1c1731589a876983641c374f4e649262b9d45725ac7f1fd048d6612ef6882",
+      "bytes": 106
+    },
+    {
+      "path": "windows-role-initialization-retry.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "windows-final-doctor.log",
+      "sha256": "a075cee79525301231c57b11523411dc19401ffb21d8fedefb53f2310d751e21",
+      "bytes": 899
+    },
+    {
+      "path": "windows-final-backup.log",
+      "sha256": "f0f733cc9dd89582c40f00db2d8c4b1a3e1576d3da41cfb6a41a979604b483b8",
+      "bytes": 98
+    },
+    {
+      "path": "posix-doctor-r2.log",
+      "sha256": "179aa9c9e7246ff28a6c67de60d7519406f0c227377708ba600056ebbb434a29",
+      "bytes": 1033
+    },
+    {
+      "path": "posix-restore-r2.log",
+      "sha256": "e3a9bcc0f2d07059a0625d606e73ca209c1a18e6d6892a4390144c3686d1a637",
+      "bytes": 45
+    },
+    {
+      "path": "posix-actual-file-modes.log",
+      "sha256": "bae7f57afa8de220dba642e9e67427b4e5961c2648fd288b36d4bc88f2ccbd27",
+      "bytes": 657
+    },
+    {
+      "path": "stage-assets-check.log",
+      "sha256": "21b1da5cc4f15c75377681288e1469c325da7b9f3e7085bd23cc61b1023c066e",
+      "bytes": 64
+    },
+    {
+      "path": "stage-semantics-check.log",
+      "sha256": "e1673705055773bfe86bb6bf3529226178aead23957a3d3077e6aaeba36d09a9",
+      "bytes": 73
+    },
+    {
+      "path": "doc-links-check.log",
+      "sha256": "246ffcc5c55b64cea201cc2ce81d656427edf8a9920dcc760c0ca32c2d7157fa",
+      "bytes": 19338
+    },
+    {
+      "path": "installer-static-checks.log",
+      "sha256": "45542dd5b2bde82779b7b062d0d60ab7fa9c7656aa39e19296c605355012e303",
+      "bytes": 66
+    },
+    {
+      "path": "cleanup.json",
+      "sha256": "95a3fceff89cf611f1d66ad056a5403f9c57c92d0262d302d544457dee6fabbf",
+      "bytes": 766
+    },
+    {
+      "path": "stage-assets-final.log",
+      "sha256": "21b1da5cc4f15c75377681288e1469c325da7b9f3e7085bd23cc61b1023c066e",
+      "bytes": 64
+    },
+    {
+      "path": "stage-semantics-final.log",
+      "sha256": "e1673705055773bfe86bb6bf3529226178aead23957a3d3077e6aaeba36d09a9",
+      "bytes": 73
+    },
+    {
+      "path": "doc-links-final.log",
+      "sha256": "246ffcc5c55b64cea201cc2ce81d656427edf8a9920dcc760c0ca32c2d7157fa",
+      "bytes": 19338
+    },
+    {
+      "path": "official-v100-artifact-integrity.json",
+      "sha256": "2455416bc70b4880cceb147aa1adfdb62a8395bee017ba2602d2909291808e74",
+      "bytes": 148
+    }
+  ],
+  "secretsAndRawBusinessData": "NOT_INCLUDED",
+  "cleanup": "Task containers removed; protected data/backups and task Docker volume/images retained; 37 other containers retained by identity.",
+  "implementationCollectors": [
+    {
+      "path": "proof_support.py",
+      "sha256": "dacee6a671ae23ec4ada9c9b99c3ce903c7a1f3810e28502e6fe8803a04a9796"
+    },
+    {
+      "path": "windows-proof.py",
+      "sha256": "62541c7568c66b3dfc73535f436006b05ecf2559f856ca1dcf420c8cd414599f"
+    },
+    {
+      "path": "fresh-r2.py",
+      "sha256": "d14525c3c2d88e3787f6c3b90ca1d9073d4085b8eff730b005df07233b7daba7"
+    },
+    {
+      "path": "upgrade-r2.py",
+      "sha256": "7fbe6b9ce763941360430598407fd5ee32c03ae0862b6cc359bbb03b86455db4"
+    },
+    {
+      "path": "windows-continue.py",
+      "sha256": "d54002af28b3f45781819a3d550835e3f87076543b42e4dec709cb2c8a0c9ed9"
+    },
+    {
+      "path": "fresh-business.py",
+      "sha256": "22ab96f799ef6e25cb1780be0b06af77fb62193286ba87754eba9a616b32377d"
+    },
+    {
+      "path": "posix-proof.py",
+      "sha256": "bebe09fc35056a43e8928f0d2cd1d4020ccb4ee5f2c3c86f52945a91024218e6"
+    },
+    {
+      "path": "posix-business.py",
+      "sha256": "cc02f611ffe37784d0be0ffb8d262aaa0a1c843514dce236ecde4efeaf9e3acd"
+    },
+    {
+      "path": "recovery-proof2.py",
+      "sha256": "2e5ae8ada6bc0a13b6fab64db26f4a623a852c4c2e28d9d63cd4b2f182cb4beb"
+    },
+    {
+      "path": "interrupt-proof.py",
+      "sha256": "efac9316bbda2d5e9a44338644af6ad418a7da3e9cd4f5345321b79df624b9f5"
+    },
+    {
+      "path": "role-interrupt.py",
+      "sha256": "35d31fd43a825d260329664246f1af2ec6d16b880698705226a03e9dc87b8036"
+    },
+    {
+      "path": "final-runtime.py",
+      "sha256": "169a50ed2c92748ac1b9278c4d26342463d406d98e24b949646bf6728b1fac08"
+    },
+    {
+      "path": "cleanup.py",
+      "sha256": "6fb9ca3f1f5a4909d7feedfc9ce3e7b67724875dd63cf2d66b6709a1768147f3"
+    }
+  ]
+}

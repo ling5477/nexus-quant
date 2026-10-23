@@ -139,6 +139,10 @@ inspect)
 compose)
     case "$*" in
     *'compose version --short'*) echo "$NQ_FIX_COMPOSE_VERSION";;
+    *'run --rm --no-deps --pull never maintenance'*)
+        [ "$NQ_FIX_FAIL" != MAINTENANCE ] || exit 1
+        case "$*" in *--verify-runtime*) echo DATABASE_RUNTIME_RESTRICTED;;
+        *) printf '47\\nFACTS_A\\n' > "$NQ_FIX_STATE/facts";; esac;;
     *pg_dump*) cat "$NQ_FIX_STATE/facts";;
     *pg_restore*) [ "$NQ_FIX_FAIL" != RESTORE ] || exit 1; cat > "$NQ_FIX_STATE/facts";;
     *psql*) case "$*" in *flyway_schema_history*) head -n 1 "$NQ_FIX_STATE/facts";;
@@ -243,6 +247,40 @@ class PosixInstallerTest(unittest.TestCase):
         f.run('install')
         self.assertEqual(config, f.config())
         self.assertFalse((f.home / 'runtime/first-install-pending').exists())
+
+    def test_role_format_preserves_independent_credentials_and_orders_maintenance_before_business(self):
+        f = self.fixture
+        f.manifest.write_text(f.manifest.read_text().replace('SCHEMA_VERSION=1\n', 'SCHEMA_VERSION=47\n'),
+                              encoding='utf-8', newline='\n')
+        f.run('install', RUNTIME_DB_PASSWORD='ambient-must-not-win', DB_ROLE_FORMAT='999')
+        config = metadata(f.home / 'config/runtime.env')
+        self.assertEqual('2', config['DB_ROLE_FORMAT'])
+        self.assertRegex(config['RUNTIME_DB_PASSWORD'], r'^[a-f0-9]{64}$')
+        self.assertNotEqual(config['DB_PASSWORD'], config['RUNTIME_DB_PASSWORD'])
+        calls = f.calls()
+        self.assertLess(calls.index('run --rm --no-deps --pull never maintenance'), calls.index('up -d --no-build --pull never --wait --wait-timeout 300 postgres backend'))
+        before = f.config()
+        f.run('restart'); self.assertEqual(before, f.config())
+        self.assertIn('DATABASE_RUNTIME=DATABASE_RUNTIME_RESTRICTED', f.run('doctor').stdout)
+        # 普通启动不能用新随机口令掩盖安装状态丢失。
+        path = f.home / 'config/runtime.env'
+        path.write_text(''.join(line+'\n' for line in path.read_text().splitlines()
+                                if not line.startswith('RUNTIME_DB_PASSWORD=')), encoding='utf-8', newline='\n')
+        f.clear_calls(); f.run('start', success=False)
+        self.assertNotIn(' maintenance', f.calls())
+        self.assertNotIn('up -d ', f.calls())
+
+    def test_role_maintenance_failure_never_starts_business_and_retry_uses_same_credentials(self):
+        f = self.fixture
+        f.manifest.write_text(f.manifest.read_text().replace('SCHEMA_VERSION=1\n', 'SCHEMA_VERSION=47\n'),
+                              encoding='utf-8', newline='\n')
+        result = f.run('install', success=False, NQ_FIX_FAIL='MAINTENANCE')
+        self.assertIn('application remains stopped', result.stderr)
+        self.assertNotIn('--wait-timeout 300 postgres backend', f.calls())
+        before = f.config()
+        f.clear_calls(); f.run('install')
+        self.assertEqual(before, f.config())
+        self.assertIn('run --rm --no-deps --pull never maintenance', f.calls())
 
     def test_interrupted_bootstrap_preserves_already_changed_admin(self):
         f = self.fixture

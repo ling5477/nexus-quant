@@ -80,6 +80,14 @@ JVM MaxRAMPercentage=65、InitialRAMPercentage=20。Profile 仅设置容器资�
 
 UI: <http://127.0.0.1:18080>；backend: <http://127.0.0.1:18888>；健康检查 `/actuator/health`。PostgreSQL 只在 Compose 内网，未发布主机端口。服务默认仅本机可访问，不应直接暴露默认登录到公网。首次安装 Windows 可传 `-FrontendPort` / `-BackendPort`；macOS/Linux 可设置 `NQ_FRONTEND_PORT` / `NQ_BACKEND_PORT`。已有安装以持久化配置为准。
 
+## 候选 Schema 35+ 的数据库身份
+
+v1.0.1 候选将 `nexusquant` 保留为 PostgreSQL 初始化、迁移和备份恢复身份，原 `DB_PASSWORD` 不变。业务容器改用独立 `nq_runtime` 和随机 `RUNTIME_DB_PASSWORD`；配置以 `DB_ROLE_FORMAT=2` 区分。`nq_schema_owner` 不可登录、不具备 SUPERUSER/BYPASSRLS；运行角色无 Schema CREATE 或 Owner 成员关系。
+
+安装、启动和重启先停止业务写入，启动 PostgreSQL，再由同一已验证后端镜像的一次性维护入口准备角色、执行并校验原 Flyway、初始化空库管理员、重建 Owner/ACL，通过完整 Tenant 运行检查后才启动业务。业务容器不接收维护密码，也不执行 Flyway 或管理员初始化。任何角色、迁移或权限失败均不启动业务；普通启动丢失运行凭据时拒绝，不重新生成密码。已有用户的密码、角色和 Session 不因安装重试而覆盖。
+
+备份包含受限配置中的运行凭据。恢复使用 `--no-owner --no-privileges`，随后维护入口重建对象归属、RLS 所需权限和受限函数 EXECUTE；数据库 dump 不被当作集群角色备份。`doctor` 另行验证真实运行身份。配置、备份和维护容器环境含秘密，不要打印、分享或提交。
+
 ## 首次登录
 
 **Initial username: admin / Initial password: 123456 / Password change required on first login.**
@@ -149,6 +157,23 @@ sh ~/.nexusquant/runtime/nexusquant.sh update --package '<目标包绝对目录>
 sh ~/.nexusquant/runtime/nexusquant.sh rollback --yes
 ```
 
+### 从 v1.0.0 进入角色分离候选
+
+已发布 v1.0.0 的安装器进程不包含新维护步骤。首次跨到 Schema 35+ 时，必须从**已验证目标包内的新版安装器**执行现有更新动作；不能只用旧安装器进程加载新镜像。仍需独立可信 manifest 摘要和用户明确确认，不修改已发布旧脚本。失败恢复使用事务保存的旧安装资产、配置和完整备份。
+
+```powershell
+$target = '<已验证目标包目录>'
+& "$target\installers\nexusquant.ps1" -InstallRoot '<原安装目录>' -Action check-update -TargetPackageRoot $target -TrustedManifestSha256 '<独立可信摘要>'
+& "$target\installers\nexusquant.ps1" -InstallRoot '<原安装目录>' -Action update -TargetPackageRoot $target -TrustedManifestSha256 '<独立可信摘要>' -ConfirmUpdate
+```
+
+```sh
+NQ_INSTALL_ROOT='<原安装绝对目录>' sh '<已验证目标包>/installers/nexusquant.sh' check-update --package '<已验证目标包>' --manifest-sha256 '<独立可信摘要>'
+NQ_INSTALL_ROOT='<原安装绝对目录>' sh '<已验证目标包>/installers/nexusquant.sh' update --package '<已验证目标包>' --manifest-sha256 '<独立可信摘要>' --yes
+```
+
+以上说明是安装器兼容路径；v1.0.1 尚未发布，未提交源码的本地实现夹具不构成正式升级资格。
+
 确认后验证并加载目标 assets，停止应用写入，创建更新前完整备份，再切换目标应用、检查 health/schema/smoke。只有成功后才提交本地 VERSION 和 SUCCESS receipt。停止应用后备份消除了备份到停写之间产生事实、回滚时丢失的窗口。开始目标 backend 前先持久化数据库可能变更的 journal，migration 仍由既有 Flyway 路径执行。
 
 DB 变更前的 image/验证失败保持旧数据库；目标启动可能触发 schema 变更后的失败恢复更新前完整数据库与旧应用。不会执行 Flyway repair。进程中断且 journal 未收敛时阻止普通启动，保留恢复信息。rollback 仅接受已知上次成功更新的 manifest、immutable image IDs、备份和 receipt，不接收任意镜像。
@@ -184,7 +209,7 @@ sh ~/.nexusquant/runtime/nexusquant.sh uninstall --purge-data --confirm-purge
   runtime/compose.yml, runtime.yml, VERSION, 运维脚本
 ```
 
-随机 DB_PASSWORD / JWT_SECRET / CREDENTIALS_KEY 仅保存在本地配置中；不要打印该文件或执行会完整展示 secrets 的 `docker compose config`。Docker 日志按大小轮转。
+随机 DB_PASSWORD / RUNTIME_DB_PASSWORD（Schema 35+）/ JWT_SECRET / CREDENTIALS_KEY 仅保存在本地配置中；不要打印该文件或执行会完整展示 secrets 的 `docker compose config`。Docker 日志按大小轮转。
 
 ## 安全默认值
 

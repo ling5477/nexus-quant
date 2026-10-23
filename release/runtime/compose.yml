@@ -35,8 +35,8 @@ services:
       SCHEMA_VERSION: ${SCHEMA_VERSION:?installer package schema required}
       JAVA_TOOL_OPTIONS: '-XX:MaxRAMPercentage=65 -XX:InitialRAMPercentage=20'
       NQ_PROD_DB_URL: jdbc:postgresql://postgres:5432/nexus_quant
-      NQ_PROD_DB_USER: nexusquant
-      NQ_PROD_DB_PASSWORD: ${DB_PASSWORD}
+      NQ_PROD_DB_USER: nq_runtime
+      NQ_PROD_DB_PASSWORD: ${RUNTIME_DB_PASSWORD:?restricted runtime identity required}
       NQ_SECURITY_SECRET: ${JWT_SECRET:?installer secret required}
       NQ_ACCOUNT_CREDENTIALS_MASTER_KEY: ${CREDENTIALS_KEY:?installer secret required}
       NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED: 'true'
@@ -63,6 +63,20 @@ services:
       timeout: 5s
       retries: 60
       start_period: 30s
+    logging: *logging
+  maintenance:
+    profiles: [maintenance]
+    image: ${BACKEND_IMAGE:?verified backend image digest required}
+    mem_limit: ${BACKEND_MEMORY:?runtime profile required}
+    cpus: ${BACKEND_CPUS:?runtime profile required}
+    restart: 'no'
+    entrypoint: [java, -Dloader.main=com.guidinglight.nexusquant.app.maintenance.InstallationDatabaseMaintenanceMain, -cp, /opt/nexusquant/app.jar, org.springframework.boot.loader.launch.PropertiesLauncher]
+    command: [--provision-and-migrate]
+    environment:
+      NQ_INSTALL_DB_URL: jdbc:postgresql://postgres:5432/nexus_quant
+      NQ_INSTALL_DB_PASSWORD: ${DB_PASSWORD:?installation identity required}
+      NQ_RUNTIME_DB_PASSWORD: ${RUNTIME_DB_PASSWORD:?restricted runtime identity required}
+      SCHEMA_VERSION: ${SCHEMA_VERSION:?installer package schema required}
     logging: *logging
   frontend:
     image: ${FRONTEND_IMAGE:?verified frontend image digest required}
