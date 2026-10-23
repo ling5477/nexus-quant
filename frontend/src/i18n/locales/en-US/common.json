@@ -778,5 +778,26 @@
     "unavailable": "Distribution identity could not be verified",
     "description": "The frontend and backend must use the same distribution. Check service availability and installed artifacts, then retry.",
     "retry": "Check again"
+  },
+  "releaseHistory": {
+    "title": "Version history",
+    "whatsNew": "What’s New",
+    "version": "Version",
+    "releaseDate": "Release date",
+    "releaseUrl": "Release URL",
+    "RELEASED": "Released",
+    "CANDIDATE": "Candidate (unpublished)",
+    "unreleased": "Not released",
+    "features": "Features",
+    "improvements": "Improvements",
+    "bugFixes": "Bug fixes",
+    "breakingChanges": "Breaking changes",
+    "knownIssues": "Known issues and pending verification",
+    "none": "None recorded",
+    "read": "Mark as read",
+    "reopen": "Reopen anytime in Settings → Version and updates → Version history. This notice does not confirm installer update success.",
+    "unavailable": "Notes for this target are not bundled. Read the release notes from a trusted release channel before confirming.",
+    "storageFailed": "Your browser could not save the reading record; this notice may appear at the next login.",
+    "closeSession": "Close for this session"
   }
 }

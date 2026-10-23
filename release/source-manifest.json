@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "targetVersion": "1.0.0",
+  "targetVersion": "1.0.1",
   "sourceIdentity": "exact-40-hex-git-commit;git-blobs-only",
   "treeHashAlgorithm": "sha256-canonical-json-v1",
   "groups": [
@@ -1863,6 +1863,8 @@
         "frontend/src/features/system/api/version.ts",
         "frontend/src/features/system/components/SystemVersionPanel.tsx",
         "frontend/src/features/system/components/UpdateHandoffPanel.tsx",
+        "frontend/src/features/system/components/VersionHistory.tsx",
+        "frontend/src/features/system/release-records.ts",
         "frontend/src/features/system/update-handoff.ts",
         "frontend/src/features/trading/api/trading-workbench.ts",
         "frontend/src/features/trading/components/MaintenanceOperationDrawer.tsx",

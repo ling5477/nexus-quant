@@ -176,11 +176,15 @@ def plan(repo: Path, commit: str) -> tuple[dict, dict[str, bytes], dict]:
     policy = json.loads(raw.decode("utf-8"), object_pairs_hook=unique_object)
     fields = {"schemaVersion", "targetVersion", "sourceIdentity", "treeHashAlgorithm", "groups",
               "excludedPaths", "resourceExceptions", "forbiddenCategories", "requiredFinalAssets"}
-    if (set(policy) != fields or policy["schemaVersion"] != 1 or policy["targetVersion"] != "1.0.0"
+    if (set(policy) != fields or policy["schemaVersion"] != 1
+            or not isinstance(policy["targetVersion"], str)
+            or not re.fullmatch(r"(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})", policy["targetVersion"])
             or policy["sourceIdentity"] != "exact-40-hex-git-commit;git-blobs-only"
             or policy["treeHashAlgorithm"] != "sha256-canonical-json-v1"
             or set(policy["forbiddenCategories"]) != EXCLUDES):
         raise ValueError("INVALID_MANIFEST")
+    if "VERSION" not in entries or blobs(repo, [entries["VERSION"][1]])[entries["VERSION"][1]].decode("ascii").strip() != policy["targetVersion"]:
+        raise ValueError("VERSION_MANIFEST_MISMATCH")
     included, classifications = [], {}
     for group in policy["groups"]:
         if set(group) != {"category", "purpose", "paths"} or group["category"] not in INCLUDES or not group["purpose"]:

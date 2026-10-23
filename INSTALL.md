@@ -4,7 +4,7 @@
 
 ## 当前资格范围
 
-本地 Windows 11 amd64、Docker Desktop 已运行的 V1.0.0 候选已通过隔离全新安装、PG16.15/V34、备份恢复及恢复后重启。结论限 `QUALIFIED_LOCAL_SCOPED`，不代表公开发布、完整 长时运行观察 接受或升级验证。旧正式包同为1.0.0，不符合更新器严格更高版本条件，保留 `UPGRADE_NOT_VERIFIED`；更新仍使用 Web 请求/回执人工交接。用户已决定 `OWNER_DECISION=ACCEPT_WITH_EVIDENCE_EXCEPTION`、`LONG_RUN_RERUN=WAIVED`；此决定保留历史UI缺口，原审查不改判；历史UI缺口按 `ADMITTED_WITH_DOCUMENTED_EXCEPTION` 准入，当前运行差异另由定向验证覆盖。该状态不替代准确候选身份的CI及公开发布授权。以下最终运行资格要求继续有效。
+[v1.0.0](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.0) 已于 2026-10-20（UTC）正式发布。本地 Windows 11 amd64、Docker Desktop 已运行的 V1.0.0 正式包已通过隔离全新安装、PG16.15/V34、备份恢复及恢复后重启。安装验证结论限 `QUALIFIED_LOCAL_SCOPED`；正式发布不追认完整长时运行观察接受或跨版本升级验证。v1.0.1 候选尚未发布，真实跨版本升级资格仍为 `UPGRADE_NOT_VERIFIED`；更新仍使用 Web 请求/回执人工交接。用户已决定 `OWNER_DECISION=ACCEPT_WITH_EVIDENCE_EXCEPTION`、`LONG_RUN_RERUN=WAIVED`；此决定保留历史UI缺口，原审查不改判；历史UI缺口按 `ADMITTED_WITH_DOCUMENTED_EXCEPTION` 准入，当前运行差异另由定向验证覆盖。该状态不替代准确候选身份的CI及公开发布授权。以下最终运行资格要求继续有效。
 
 ## 系统要求与发行包
 

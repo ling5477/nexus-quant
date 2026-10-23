@@ -778,5 +778,26 @@
     "unavailable": "发行身份无法确认",
     "description": "前后端必须来自同一种发行物。请核对服务状态和安装包后重试。",
     "retry": "重新检查"
+  },
+  "releaseHistory": {
+    "title": "版本历史",
+    "whatsNew": "本次更新",
+    "version": "版本",
+    "releaseDate": "发布日期",
+    "releaseUrl": "发布链接",
+    "RELEASED": "已发布",
+    "CANDIDATE": "候选（未发布）",
+    "unreleased": "尚未发布",
+    "features": "新功能",
+    "improvements": "改进",
+    "bugFixes": "问题修复",
+    "breakingChanges": "兼容性变化",
+    "knownIssues": "已知限制与待验证事项",
+    "none": "无已记录事项",
+    "read": "已阅读",
+    "reopen": "可随时在设置 → 版本与更新 → 版本历史重新查看。此提示不代表安装器更新成功。",
+    "unavailable": "当前界面未内置该目标版本的说明，请在确认前阅读可信发行渠道的版本说明。",
+    "storageFailed": "浏览器无法保存阅读记录，下次登录可能再次提示。",
+    "closeSession": "本次关闭"
   }
 }

@@ -1,0 +1,114 @@
+{
+  "task": "NQ-V101-SELF-HOSTED-UPGRADE-AND-RELEASE-UX",
+  "baseline": "137ab44cadaa56c6740a0d085aa2902027a22b1d",
+  "candidate": "UNCOMMITTED_WORKTREE",
+  "decision": "BLOCKED",
+  "localEvidenceRoot": "C:/nq-v101-upgrade-20261023/evidence",
+  "entries": [
+    {
+      "path": "baseline.json",
+      "sha256": "4547648fe93fb3ea5b933428798dd158aaa20e1b4d0d4883e41fdc8bfbb257d3",
+      "bytes": 1068
+    },
+    {
+      "path": "restored-before.json",
+      "sha256": "5222a37fbb8957a2d93f9bd0addb50de8f60e1ad42b6f8f658b1707c2e0832ee",
+      "bytes": 55053
+    },
+    {
+      "path": "restored-restarted.json",
+      "sha256": "f8a305e5112918c03ae2fd3a677a64ea30a852a3f0a7ca23002e6bfc382d0123",
+      "bytes": 55176
+    },
+    {
+      "path": "restore-compare.log",
+      "sha256": "6d01ca9f6f0514a983ef55115cf2f899d059fa8721b7396f6a2114fa8b7487dc",
+      "bytes": 127
+    },
+    {
+      "path": "restart-compare.log",
+      "sha256": "f899ef9f8f70ed0f1ee5272319dbcff23662408befac1ca1fc15a89d07af47c5",
+      "bytes": 321
+    },
+    {
+      "path": "restart-observation-review.json",
+      "sha256": "8ea24ec125c7c8eeb3cc7cf3264b7689fc374fcac239e06bc74c91906ecf29bb",
+      "bytes": 546
+    },
+    {
+      "path": "official-installer-role-preflight.json",
+      "sha256": "d5dbc707df09fee6003adf9d973b44b037a5b797b1bb0e55d67a9fbd8a9b2bad",
+      "bytes": 472
+    },
+    {
+      "path": "candidate-package-preflight.log",
+      "sha256": "63b9c6dba7e121819aa8689902376f64744634234a99fab9039e704aae21cff8",
+      "bytes": 302
+    },
+    {
+      "path": "same-version-check.log",
+      "sha256": "729229e50de1a70753bee8fb16e2918676d3455b1061af961f897b7864d807fb",
+      "bytes": 74
+    },
+    {
+      "path": "same-version-update-rejected.log",
+      "sha256": "04ef1a9be87e3470c73ba51449862bdc24b65ab246f92690aa8b67b3bb77f970",
+      "bytes": 361
+    },
+    {
+      "path": "self-hosted-production-build-final.log",
+      "sha256": "cc6abfe671918867a87ae4ab56940aa0aa3b6db0bf87cc75bde4fd26dfbf4655",
+      "bytes": 11955
+    },
+    {
+      "path": "frontend-unit-final.log",
+      "sha256": "172c9a28017527b7e13196204c90e371ee40196201a07fc5bfed4c1d09c7e333",
+      "bytes": 3459
+    },
+    {
+      "path": "frontend-unit-final-targeted.log",
+      "sha256": "fbae4665a640fcdf91de9cde44ac61df4aa3b35cae9aafe252594f087ecd116b",
+      "bytes": 417
+    },
+    {
+      "path": "playwright-final.log",
+      "sha256": "ecb57830028c0f2b7ef0708cb05aeb8a2870913d5fb9c707bea9c88bb948c8d2",
+      "bytes": 1213
+    },
+    {
+      "path": "release-source-tests-final.log",
+      "sha256": "abe1df9fc6d6428e0c0a519755599a62a8f772bd58f4db182015669c4f4d8489",
+      "bytes": 4231
+    },
+    {
+      "path": "baseline-comparison-tests.log",
+      "sha256": "5e805d3a19f92008abc2eec93812a7ce045a45c0a7575d14702ffe4b3e5d96a2",
+      "bytes": 1310
+    },
+    {
+      "path": "stage-assets-final.log",
+      "sha256": "45bae5d0539b6c87324c4b9ed9339772bd6cb653ec8453e2f5b59c482c7561a3",
+      "bytes": 64
+    },
+    {
+      "path": "independent-review.txt",
+      "sha256": "18f13c4cd1f93fa25bbb00a00e29dbbe022568a4da9ed28633eae3b72d2d6318",
+      "bytes": 881
+    },
+    {
+      "path": "official-cleanup.json",
+      "sha256": "c42f688698281e1fe15d99315ff838ef493cb3a563dc12c3623e18d0c4462d32",
+      "bytes": 239
+    },
+    {
+      "path": "playwright-final-results/release-update-ux-en-US-首次提示按安装版本只读一次，设置可重看历史，候选不等于可更新-chromium/history-en-US.png",
+      "sha256": "51202af4735ac0e9375b437d4cc637597cf942ce897b30ab418470e411d08bde",
+      "bytes": 141495
+    },
+    {
+      "path": "playwright-final-results/release-update-ux-zh-CN-首次提示按安装版本只读一次，设置可重看历史，候选不等于可更新-chromium/history-zh-CN.png",
+      "sha256": "12250679f8e9bcc9b5290633a2fb6a9927d106a2cc431b4e33a348fe60f9b2f3",
+      "bytes": 145271
+    }
+  ]
+}

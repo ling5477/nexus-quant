@@ -34,8 +34,19 @@ class ReleaseSourceTest(unittest.TestCase):
                        "excludedPaths": {"EXCLUDE_DEV_ONLY": [source.MANIFEST]}, "resourceExceptions": [],
                        "forbiddenCategories": sorted(source.EXCLUDES), "requiredFinalAssets": []}
         self.write("app.txt", b"commit A\n")
+        self.write("VERSION", b"1.0.0\n")
         self.save_policy()
-        self.a = self.commit("A", ["app.txt", source.MANIFEST])
+        self.a = self.commit("A", ["app.txt", "VERSION", source.MANIFEST])
+
+    def test_version_matches_manifest_at_same_commit(self):
+        self.policy['targetVersion'] = '1.0.1'
+        self.save_policy()
+        mismatch = self.commit('mismatch', [source.MANIFEST])
+        with self.assertRaisesRegex(ValueError, 'VERSION_MANIFEST_MISMATCH'):
+            source.plan(self.repo, mismatch)
+        self.write('VERSION', b'1.0.1\n')
+        candidate = self.commit('version', ['VERSION'])
+        self.assertEqual(source.plan(self.repo, candidate)[0]['targetVersion'], '1.0.1')
 
     def tearDown(self):
         self.temp.cleanup()
@@ -274,6 +285,7 @@ class ReleaseBusinessBoundaryTest(unittest.TestCase):
         }
         for path in names:
             self.write(path, (repo / path).read_bytes())
+        self.policy['targetVersion'] = (repo / 'VERSION').read_text(encoding='ascii').strip()
         for path, marker in guarded.items():
             lines = [line for line in (repo / path).read_text(encoding="utf-8").splitlines() if marker in line]
             self.write(path, ("\n".join(lines) + "\n").encode())
