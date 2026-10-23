@@ -95,8 +95,18 @@ class ReleaseSchemaContractTests(unittest.TestCase):
                 (directory / row['script']).write_bytes(
                     (ROOT / 'backend/nq-infra/src/main/resources/db/migration' / row['script']).read_bytes())
             (root / 'release').mkdir()
-            (root / 'release/source-manifest.json').write_bytes((ROOT / 'release/source-manifest.json').read_bytes())
+            # 合成夹具只声明已审查的 V34 集合，不能借用后续版本的可变发行清单。
+            policy_path = root / 'release/source-manifest.json'
+            prefix = 'backend/nq-infra/src/main/resources/db/migration/'
+            policy_path.write_text(json.dumps({'groups': [{'category': 'INCLUDE_RUNTIME',
+                'paths': [prefix + row['script'] for row in formal['migrations']]}]}), encoding='utf8')
             CONTRACT.verify_source(root, formal)
+            # 当前清单包含新迁移时，旧合同必须继续拒绝，不能默认为新版本授予资格。
+            policy = json.loads(policy_path.read_bytes())
+            policy['groups'][0]['paths'].append(prefix + 'V35__tenant_identity_and_membership.sql')
+            policy_path.write_text(json.dumps(policy), encoding='utf8')
+            with self.assertRaisesRegex(ValueError, 'coverage'):
+                CONTRACT.verify_source(root, formal)
 
     def test_development_migration_inventory_is_complete_without_manual_paths(self):
         with tempfile.TemporaryDirectory() as temporary:
