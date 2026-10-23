@@ -14,6 +14,7 @@ import {LoginDisclosures} from '@/components/legal/LoginDisclosures';
 import {useUserPreferences} from '@/features/preferences/hooks/useUserPreferences';
 import {setLocale} from '@/i18n';
 import {SessionLifecycle} from '@/features/session/SessionLifecycle';
+import {WhatsNew} from '@/features/system/components/VersionHistory';
 
 export function ConsoleLayout() {
     const {pathname} = useLocation();
@@ -57,6 +58,7 @@ export function ConsoleLayout() {
         >
             <LoginDisclosures />
             <SessionLifecycle />
+            <WhatsNew />
             <Suspense
                 fallback={
                     <div

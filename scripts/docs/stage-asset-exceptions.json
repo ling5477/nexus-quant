@@ -691,7 +691,7 @@
     },
     {
       "path": "scripts/release/tests/test_release_source.py",
-      "sha256": "3d6e046dd08c2df154770544ad5c0434b45740c7f28b27d3ccc701ea2409ada4",
+      "sha256": "1f4fe25dcbd1d392231fc479433432be2749f326032d0e6ec3a9aa5ddc082b12",
       "kind": "NEGATIVE_REGRESSION",
       "reason": "发行导出器的反例夹具包含Phase 99/FREEZE及历史目录；用于证明正式边界拒绝阶段残留，不是运行配置。",
       "owner": "对应业务模块与CI合同维护者",

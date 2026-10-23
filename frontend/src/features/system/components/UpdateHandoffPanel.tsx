@@ -4,6 +4,9 @@ import {useTranslation} from 'react-i18next';
 import {useAuthStore} from '@/store/auth-store';
 import {apiClient} from '@/api/client';
 import {readRuntimeVersion, type RuntimeVersionSnapshot} from '../api/version';
+import {isPublicDemo} from '@/utils/distribution';
+import {releaseRecords} from '../release-records';
+import {ReleaseDetails} from './VersionHistory';
 import {
     confirmUpdateRequest,
     createUpdateCheck,
@@ -117,6 +120,8 @@ export function UpdateHandoffPanel({runtime}: {runtime?: RuntimeVersionSnapshot}
             (!state.update &&
                 (receipt?.status === 'REJECTED' ||
                     (receipt?.status === 'CHECKED' && receipt.resultCode !== 'UPDATE_ELIGIBLE'))));
+    if (isPublicDemo) return null;
+    const targetRelease = releaseRecords.find((record) => record.version === current?.targetVersion);
     return (
         <Card size="small" title={t('updateHandoff.title')}>
             <Space direction="vertical" size={12} style={{width: '100%'}}>
@@ -191,6 +196,7 @@ export function UpdateHandoffPanel({runtime}: {runtime?: RuntimeVersionSnapshot}
                 )}
                 {state && current && (
                     <>
+                        {targetRelease ? <ReleaseDetails record={targetRelease} /> : <Alert type="info" message={t('releaseHistory.unavailable')} />}
                         <Descriptions size="small" column={{xs: 1, md: 2}}>
                             <Descriptions.Item label={t('updateHandoff.environment')}>
                                 {current.environmentId}

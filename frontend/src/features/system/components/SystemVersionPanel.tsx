@@ -18,6 +18,8 @@ import {systemVersionQueryKeys} from '@/api/query-keys';
 import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import {readRuntimeVersion} from '../api/version';
 import {UpdateHandoffPanel} from './UpdateHandoffPanel';
+import {VersionHistory} from './VersionHistory';
+import {isPublicDemo} from '@/utils/distribution';
 
 const windowsCheck = String.raw`& '<安装目录>\runtime\nexusquant.ps1' -Action check-update -InstallRoot '<安装目录>' -TargetPackageRoot '<目标包目录>' -TrustedManifestSha256 '<独立可信清单SHA256>'`;
 const windowsUpdate = windowsCheck.replace('-Action check-update', '-Action update');
@@ -126,11 +128,12 @@ export function SystemVersionPanel() {
                         </>
                     )
                 )}
-                <Typography.Text type="secondary">
+                <VersionHistory />
+                {!isPublicDemo && <><Typography.Text type="secondary">
                     {t('systemVersion.installerScope')}
                 </Typography.Text>
                 <Button onClick={() => setOpen(true)}>{t('systemVersion.steps')}</Button>
-                <UpdateHandoffPanel runtime={version.isError ? undefined : version.data} />
+                <UpdateHandoffPanel runtime={version.isError ? undefined : version.data} /></>}
             </Space>
             <Drawer
                 open={open}
