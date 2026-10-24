@@ -104,7 +104,7 @@ def fixed_inputs():
     for path, key in (('release/installers/legacy_upgrade_bridge.py', 'bridgeSha256'),
                       ('scripts/verify/upgrade_business_baseline.py', 'baselineToolSha256')):
         require(digest(command(['git', 'show', SOURCE_COMMIT + ':' + path])) == transition[key], 'FROZEN_SOURCE_TOOL_MISMATCH')
-    manifest_raw = (PUBLIC / 'target-package-amd64.env').read_bytes()
+    manifest_raw = (PUBLIC / 'target-package-amd64.properties').read_bytes()
     require(digest(manifest_raw) == TARGET_MANIFEST_SHA256 == transition['targetManifestSha256'], 'TARGET_MANIFEST_BYTES_CHANGED')
     manifest = dict(line.split('=', 1) for line in manifest_raw.decode().splitlines())
     require(manifest['SOURCE_SHA'] == SOURCE_COMMIT and manifest['VERSION'] == '1.0.1'
