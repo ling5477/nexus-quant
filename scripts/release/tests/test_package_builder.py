@@ -150,6 +150,10 @@ $refs | ConvertTo-Json -Depth 9
     def complete_export(self):
         for name in ('runtime', 'installers', 'docker'):
             shutil.copytree(REPO / 'release' / name, self.export / 'release' / name)
+        # 桥接器正式包复用既有比较工具；合成导出同样必须包含这个已声明输入。
+        baseline_tool = self.export / 'scripts/verify/upgrade_business_baseline.py'
+        baseline_tool.parent.mkdir(parents=True)
+        shutil.copyfile(REPO / 'scripts/verify/upgrade_business_baseline.py', baseline_tool)
         for name in ('README.md', 'INSTALL.md', 'CHANGELOG.md', 'LICENSE', 'DISCLAIMER.md', 'THIRD_PARTY_NOTICES.md'):
             if name in ('THIRD_PARTY_NOTICES.md', 'DISCLAIMER.md'):
                 shutil.copyfile(REPO / name, self.export / name)
@@ -232,6 +236,10 @@ public class FixtureDocker {
         self.assertEqual(digest(archive), manifest['ARCHIVE_SHA256'])
         self.assertEqual(digest(self.output / 'package-amd64.env'),
                          (self.output / 'package-amd64.env.sha256').read_text().strip())
+        for source, packaged in (
+                ('release/installers/legacy_upgrade_bridge.py', 'installers/legacy_upgrade_bridge.py'),
+                ('scripts/verify/upgrade_business_baseline.py', 'installers/upgrade_business_baseline.py')):
+            self.assertEqual((self.export / source).read_bytes(), (self.output / packaged).read_bytes())
         self.assertTrue(self.sentinel.exists())
 
         for name in ('README.md', 'INSTALL.md', 'CHANGELOG.md', 'LICENSE', 'DISCLAIMER.md', 'THIRD_PARTY_NOTICES.md', 'VERSION'):

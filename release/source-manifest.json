@@ -2192,11 +2192,13 @@
         "release/installers/install-linux.sh",
         "release/installers/install-macos.sh",
         "release/installers/install.ps1",
+        "release/installers/legacy_upgrade_bridge.py",
         "release/installers/nexusquant.ps1",
         "release/installers/nexusquant.sh",
         "release/runtime/compose.yml",
         "release/runtime/runtime.yml",
-        "release/support-matrix.json"
+        "release/support-matrix.json",
+        "scripts/verify/upgrade_business_baseline.py"
       ]
     },
     {

@@ -215,6 +215,24 @@ sh ~/.nexusquant/runtime/nexusquant.sh uninstall --purge-data --confirm-purge
 
 PG16（`postgres:16.15`）、backend、frontend 三个服务。允许受现有 policy 约束的 OKX public marketdata；CI/test 继续 no-outbound。SIM available，LIVE / REAL_EXCHANGE / REAL_PROVIDER / REAL_CLIENT / AI / DH 关闭；private diagnostics、真实 order submission、transfer/withdraw 关闭；baseline 初始化 kill switch=ENGAGED。安装器不打开 LIVE，也不解除 kill switch。
 
+## v1.0.0 一次性升级桥接
+
+原 v1.0.0 安装器对数据库镜像摘要变化仍应报告 `UPDATE_INELIGIBLE`。跨数据库镜像及运行身份协议的转换使用独立 `installers/legacy_upgrade_bridge.py`，普通更新继续使用正式安装器。不修改历史包或其严格 Manifest 合同。需要 Python 3.12 或更新版本、Docker Linux containers 和 Compose v2。
+
+桥接器与32表比较工具的摘要、桥接源码 Commit、原安装配置摘要、项目身份、原/目标包 Manifest 摘要、目标 ZIP 摘要、架构及目标源码 Commit 必须由独立可信渠道提供的 `NQ_LEGACY_BRIDGE_V1` 过渡清单绑定。该清单与桥接脚本在执行前须使用操作系统的 SHA-256 工具核验，不能从待验证目录的自带摘要建立信任。清单固定字段为 `format`、`bridgeSourceCommit`、`bridgeSha256`、`baselineToolSha256`、`sourceManifestSha256`、`targetManifestSha256`、`targetArchiveSha256`、`targetSourceCommit`、`architecture`、`installationConfigSha256`、`projectName`；所有摘要为64位小写十六进制，Commit 为完整40位小写十六进制。
+
+例如 Windows 使用 `Get-FileHash -Algorithm SHA256`，POSIX 使用 `sha256sum` 或 `shasum -a 256`，与独立取得的摘要逐一比较后才运行 Python。`--trusted-transition-sha256` 也必须使用该独立来源给出的值，不能现场对未知清单计算后直接当作可信值。
+
+```text
+python installers/legacy_upgrade_bridge.py preflight --install-root <绝对安装路径> --transition <可信过渡清单> --trusted-transition-sha256 <独立清单摘要> --baseline-tool installers/upgrade_business_baseline.py --source-package <原正式包> --target-package <目标正式包> --target-archive <目标ZIP>
+```
+
+`preflight` 只读取身份及本地 Docker 状态，不下载、加载镜像、创建目录或改库；两包声明的镜像须已通过正式包校验并加载。`execute` 使用相同参数，另需 `--confirm "BRIDGE 1.0.0 TO 1.0.1"`。桥接器先停写，生成原合同逻辑备份和停库完整集群副本，在隔离恢复副本中验证原/新 PG16 镜像、locale/collation、扩展、索引、32表及认证事实，随后才切换镜像并调用既有 maintenance。原维护口令不变，独立运行口令仅生成一次并持久保存；应用只获得受限凭据。
+
+事务保存在安装目录 `runtime/bridge-transactions/<id>`，与原操作锁互斥。数据库变化前建立原安装器的两个待恢复标记，阻止旧/新安装器接管；不要手工删除标记。`status --transaction <id>` 使用同一可信清单及工具，只读输出事务阶段。失败保持应用停止，`recover --transaction <id> --confirm "RECOVER 1.0.0"` 从已绑定事务恢复原完整集群、角色、配置和应用；未知身份、备份漂移或恢复失败继续停机。已经持久提交的事务只允许完成回执交接，不允许将旧镜像连接到已升级数据库。
+
+尚未提交的桥接代码只能在任务隔离验证中使用 `bridgeSourceCommit=UNCOMMITTED` 和显式 `--local-candidate`，结果不构成正式发行来源或正式升级资格。桥接、打包工具及清单修改须先完成 Git 交付，再从同一新 Commit 导出、校验、扫描和构建正式候选；历史包不能冒充修复后的正式包。
+
 ## Troubleshooting
 
 - Docker 不可用：启动 Docker daemon，确认 Linux containers 和 Compose v2 可用。
