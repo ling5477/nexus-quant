@@ -1,0 +1,13 @@
+{
+  "architecture": "amd64",
+  "baselineToolSha256": "523305aae28e4d8b3a6c500b592d84bdf7ff5669b7c45b3f9c17d03ae9def51c",
+  "bridgeSha256": "555d6471291757edd3314293e3ff82bffb6a8cc72093ce7be42ce763d04948b8",
+  "bridgeSourceCommit": "1dc5ea7ea5971a7621c3bbfc66a0e9fe8cd14d71",
+  "format": "NQ_LEGACY_BRIDGE_V1",
+  "installationConfigSha256": "0c149976a9b2c2d60f8b2dcdb7938bb4ee66706f6bfbce97e51d83593eb01954",
+  "projectName": "nq-v101-formal-bridge-20261024",
+  "sourceManifestSha256": "c0d350875c822c48edd489992fe27a0cf5e5c9dae44d1dd772938dd33b482ff1",
+  "targetArchiveSha256": "477e41ac8fc838063257142f944e0465a5d1fe1ee727853e30a8795f4bbbfef2",
+  "targetManifestSha256": "c3437d4bab960546cfba57d065cda375610ccd700f593ea95827a77020e1a67d",
+  "targetSourceCommit": "1dc5ea7ea5971a7621c3bbfc66a0e9fe8cd14d71"
+}
