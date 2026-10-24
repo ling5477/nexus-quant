@@ -141,6 +141,8 @@ if ($dockerEndpoint -cnotmatch '^(npipe:////\./pipe/(docker_engine|dockerDesktop
 [void](New-Item -ItemType Directory -Path $output)
 Copy-Item -LiteralPath (Join-Path $root 'VERSION') -Destination $output
 foreach ($name in @('runtime','installers')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination $output -Recurse }
+# 桥接器的事实比较复用原32表工具；额外文件由独立过渡清单绑定，不改变历史包Manifest。
+Copy-Item -LiteralPath (Join-Path $root 'scripts/verify/upgrade_business_baseline.py') -Destination (Join-Path $output 'installers/upgrade_business_baseline.py')
 foreach ($name in @('README.md','INSTALL.md','CHANGELOG.md','LICENSE','DISCLAIMER.md','THIRD_PARTY_NOTICES.md')) { Copy-Item -LiteralPath (Join-Path $root $name) -Destination $output }
 foreach ($arch in $Architectures) {
     $refs = @{}
