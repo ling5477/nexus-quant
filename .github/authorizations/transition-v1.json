@@ -2,12 +2,12 @@
   "architecture": "amd64",
   "baselineToolSha256": "523305aae28e4d8b3a6c500b592d84bdf7ff5669b7c45b3f9c17d03ae9def51c",
   "bridgeSha256": "555d6471291757edd3314293e3ff82bffb6a8cc72093ce7be42ce763d04948b8",
-  "bridgeSourceCommit": "1dc5ea7ea5971a7621c3bbfc66a0e9fe8cd14d71",
+  "bridgeSourceCommit": "b0433fca6a9ce86d8b9c34abed2be2e48f25a3ae",
   "format": "NQ_LEGACY_BRIDGE_V1",
-  "installationConfigSha256": "0c149976a9b2c2d60f8b2dcdb7938bb4ee66706f6bfbce97e51d83593eb01954",
-  "projectName": "nq-v101-formal-bridge-20261024",
+  "installationConfigSha256": "9bef9096d144095298187e3fda6146f2d4f5428acbd18cea2805fe482f062e73",
+  "projectName": "nq-v101-refreeze-legacy-20261025",
   "sourceManifestSha256": "c0d350875c822c48edd489992fe27a0cf5e5c9dae44d1dd772938dd33b482ff1",
-  "targetArchiveSha256": "477e41ac8fc838063257142f944e0465a5d1fe1ee727853e30a8795f4bbbfef2",
-  "targetManifestSha256": "c3437d4bab960546cfba57d065cda375610ccd700f593ea95827a77020e1a67d",
-  "targetSourceCommit": "1dc5ea7ea5971a7621c3bbfc66a0e9fe8cd14d71"
+  "targetArchiveSha256": "7248a47823571fb112ea91f317e092cb6c47108b934d90ef52c299adb7c9e006",
+  "targetManifestSha256": "f0beba4f37481c85ff1677e8c546f10deaeba57fb5144f69f5d7edcd839ef5db",
+  "targetSourceCommit": "b0433fca6a9ce86d8b9c34abed2be2e48f25a3ae"
 }

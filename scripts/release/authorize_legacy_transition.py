@@ -17,10 +17,10 @@ OWNER_ID = '128130348'
 ENVIRONMENT = 'nq-release-transition-signing'
 WORKFLOW = REPOSITORY + '/.github/workflows/nq-release-transition-attest.yml'
 PREDICATE = 'https://github.com/' + REPOSITORY + '/attestations/legacy-transition-authorization/v1'
-SOURCE_COMMIT = '1dc5ea7ea5971a7621c3bbfc66a0e9fe8cd14d71'
-SOURCE_TREE = 'c323207865b8ef6a978746dd2ae63f15fdcc3ca4'
-TRANSITION_SHA256 = 'c084eda5916007d90d1e3799a906ab4f7b95da0e87b8b0f3a7cb08f88d95fd56'
-TARGET_MANIFEST_SHA256 = 'c3437d4bab960546cfba57d065cda375610ccd700f593ea95827a77020e1a67d'
+SOURCE_COMMIT = 'b0433fca6a9ce86d8b9c34abed2be2e48f25a3ae'
+SOURCE_TREE = '3b77583e0e1e0d2b52ccfa0cade1588d0075bc45'
+TRANSITION_SHA256 = 'bf3aa164f2f26f6b3f65b379ece7e457dffa31b3cd6be6fe5dd1a57bd0865d6e'
+TARGET_MANIFEST_SHA256 = 'f0beba4f37481c85ff1677e8c546f10deaeba57fb5144f69f5d7edcd839ef5db'
 REPO = Path(__file__).resolve().parents[2]
 PUBLIC = REPO / '.github/authorizations'
 FIELDS = {'format', 'bridgeSourceCommit', 'bridgeSha256', 'baselineToolSha256',
@@ -99,7 +99,7 @@ def fixed_inputs():
     transition = json.loads(raw, object_pairs_hook=strict_object)
     require(set(transition) == FIELDS and transition['format'] == 'NQ_LEGACY_BRIDGE_V1', 'TRANSITION_CONTRACT_CHANGED')
     require(transition['bridgeSourceCommit'] == transition['targetSourceCommit'] == SOURCE_COMMIT, 'WRONG_RELEASE_COMMIT')
-    require(transition['projectName'] == 'nq-v101-formal-bridge-20261024' and transition['architecture'] == 'amd64', 'WRONG_FIXED_INSTALLATION')
+    require(transition['projectName'] == 'nq-v101-refreeze-legacy-20261025' and transition['architecture'] == 'amd64', 'WRONG_FIXED_INSTALLATION')
     require(command(['git', 'rev-parse', SOURCE_COMMIT + '^{tree}']).decode().strip() == SOURCE_TREE, 'WRONG_RELEASE_TREE')
     for path, key in (('release/installers/legacy_upgrade_bridge.py', 'bridgeSha256'),
                       ('scripts/verify/upgrade_business_baseline.py', 'baselineToolSha256')):
