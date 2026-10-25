@@ -24,7 +24,7 @@ Docker bootstrap、daemon recovery 和 Linux/macOS 安装器保留为 `AVAILABLE
 
 最低 2 logical CPU、4 GiB RAM、10 GiB 可用空间（镜像及备份另计）；建议至少 4 CPU、8 GiB RAM。Docker Engine 最低 24.0.0、Compose 最低 2.20.0。Windows/macOS 使用 Docker Desktop Linux containers；Ubuntu 使用 Docker Engine + Compose plugin。macOS/Linux 需要系统 shell、curl 和标准文件工具。
 
-用户无需 Java、Maven、Node、PostgreSQL 或 Python。安装器不编译源码。正式支持范围要求 Docker 已安装并运行，安装器直接复用。已安装但停止时的启动恢复、缺失时的官方渠道安装及 UAC / sudo 提权能力尚未取得本版本正式资格。Docker 版本过低时报告显式升级路径，不静默替换现有版本。安装失败按阶段报告，保留数据，不改变用户 Docker 代理或全局资源配置。
+全新安装与常规运维无需宿主 Java、Maven、Node、PostgreSQL 或 Python；v1.0.0 一次性升级桥接另需 Python 3.12 或更新版本，见下文。安装器不编译源码。正式支持范围要求 Docker 已安装并运行，安装器直接复用。已安装但停止时的启动恢复、缺失时的官方渠道安装及 UAC / sudo 提权能力尚未取得本版本正式资格。Docker 版本过低时报告显式升级路径，不静默替换现有版本。安装失败按阶段报告，保留数据，不改变用户 Docker 代理或全局资源配置。
 
 Ubuntu 安装使用 Docker 官方签名 apt 仓库。普通用户加入 docker 组后可运行容器，无需持续 sudo；docker 组具有主机管理权限。macOS/Windows 首次启动 Docker Desktop 可能需要完成操作系统或 Docker Desktop 自身的交互提示。
 
@@ -159,20 +159,11 @@ sh ~/.nexusquant/runtime/nexusquant.sh rollback --yes
 
 ### 从 v1.0.0 进入角色分离候选
 
-已发布 v1.0.0 的安装器进程不包含新维护步骤。首次跨到 Schema 35+ 时，必须从**已验证目标包内的新版安装器**执行现有更新动作；不能只用旧安装器进程加载新镜像。仍需独立可信 manifest 摘要和用户明确确认，不修改已发布旧脚本。失败恢复使用事务保存的旧安装资产、配置和完整备份。
+已发布 v1.0.0 的安装器进程不包含新维护步骤。本次 v1.0.1 目标还改变了 PostgreSQL 镜像身份；旧版和目标包内新版安装器的普通 `update` 均要求 PostgreSQL 配置摘要不变，因此不能直接完成此次转换。`UPDATE_INELIGIBLE` 是应保留的安全拒绝，不得修改 Manifest、配置或历史安装器以绕过。
 
-```powershell
-$target = '<已验证目标包目录>'
-& "$target\installers\nexusquant.ps1" -InstallRoot '<原安装目录>' -Action check-update -TargetPackageRoot $target -TrustedManifestSha256 '<独立可信摘要>'
-& "$target\installers\nexusquant.ps1" -InstallRoot '<原安装目录>' -Action update -TargetPackageRoot $target -TrustedManifestSha256 '<独立可信摘要>' -ConfirmUpdate
-```
+此路径必须使用下文的一次性 Legacy Upgrade Bridge，并先取得绑定**该安装实例**的可信过渡授权。只有 Bridge 持久提交并完成交接后，才使用新版安装器进行常规启动、重启及备份恢复。失败恢复由 Bridge 的已绑定事务处理，不把旧镜像连接到已升级数据库。
 
-```sh
-NQ_INSTALL_ROOT='<原安装绝对目录>' sh '<已验证目标包>/installers/nexusquant.sh' check-update --package '<已验证目标包>' --manifest-sha256 '<独立可信摘要>'
-NQ_INSTALL_ROOT='<原安装绝对目录>' sh '<已验证目标包>/installers/nexusquant.sh' update --package '<已验证目标包>' --manifest-sha256 '<独立可信摘要>' --yes
-```
-
-以上说明是安装器兼容路径；v1.0.1 尚未发布，未提交源码的本地实现夹具不构成正式升级资格。
+### 普通安装器更新事务（不适用于上述首次桥接）
 
 确认后验证并加载目标 assets，停止应用写入，创建更新前完整备份，再切换目标应用、检查 health/schema/smoke。只有成功后才提交本地 VERSION 和 SUCCESS receipt。停止应用后备份消除了备份到停写之间产生事实、回滚时丢失的窗口。开始目标 backend 前先持久化数据库可能变更的 journal，migration 仍由既有 Flyway 路径执行。
 
@@ -219,12 +210,14 @@ PG16（`postgres:16.15`）、backend、frontend 三个服务。允许受现有 p
 
 原 v1.0.0 安装器对数据库镜像摘要变化仍应报告 `UPDATE_INELIGIBLE`。跨数据库镜像及运行身份协议的转换使用独立 `installers/legacy_upgrade_bridge.py`，普通更新继续使用正式安装器。不修改历史包或其严格 Manifest 合同。需要 Python 3.12 或更新版本、Docker Linux containers 和 Compose v2。
 
-桥接器与32表比较工具的摘要、桥接源码 Commit、原安装配置摘要、项目身份、原/目标包 Manifest 摘要、目标 ZIP 摘要、架构及目标源码 Commit 必须由独立可信渠道提供的 `NQ_LEGACY_BRIDGE_V1` 过渡清单绑定。该清单与桥接脚本在执行前须使用操作系统的 SHA-256 工具核验，不能从待验证目录的自带摘要建立信任。清单固定字段为 `format`、`bridgeSourceCommit`、`bridgeSha256`、`baselineToolSha256`、`sourceManifestSha256`、`targetManifestSha256`、`targetArchiveSha256`、`targetSourceCommit`、`architecture`、`installationConfigSha256`、`projectName`；所有摘要为64位小写十六进制，Commit 为完整40位小写十六进制。
+桥接器与32表比较工具的摘要、桥接源码 Commit、原安装配置摘要、项目身份、原/目标包 Manifest 摘要、目标镜像归档 `images-<arch>.tar` 摘要、架构及目标源码 Commit 必须由独立可信渠道提供的 `NQ_LEGACY_BRIDGE_V1` 过渡清单绑定。`targetArchiveSha256` 对应目标 Manifest 的 `ARCHIVE_SHA256`，不是外层发行 ZIP 的摘要。该清单与桥接脚本在执行前须使用操作系统的 SHA-256 工具核验，不能从待验证目录的自带摘要建立信任。清单固定字段为 `format`、`bridgeSourceCommit`、`bridgeSha256`、`baselineToolSha256`、`sourceManifestSha256`、`targetManifestSha256`、`targetArchiveSha256`、`targetSourceCommit`、`architecture`、`installationConfigSha256`、`projectName`；所有摘要为64位小写十六进制，Commit 为完整40位小写十六进制。
+
+已有隔离实例的签名授权不自动适用于其他安装。其他用户须向维护者申请绑定自身原配置摘要、项目、架构及准确原/目标发行身份的完整过渡清单，并独立验证签名身份、签名主体、完整授权字段及本地配置摘要后再执行。不要上传原始 `runtime.env`、口令或密钥；若尚未取得这种实例授权，应停止升级。通用发行物签名不能替代实例级升级授权，也不授予 LIVE 或产品发布权限。
 
 例如 Windows 使用 `Get-FileHash -Algorithm SHA256`，POSIX 使用 `sha256sum` 或 `shasum -a 256`，与独立取得的摘要逐一比较后才运行 Python。`--trusted-transition-sha256` 也必须使用该独立来源给出的值，不能现场对未知清单计算后直接当作可信值。
 
 ```text
-python installers/legacy_upgrade_bridge.py preflight --install-root <绝对安装路径> --transition <可信过渡清单> --trusted-transition-sha256 <独立清单摘要> --baseline-tool installers/upgrade_business_baseline.py --source-package <原正式包> --target-package <目标正式包> --target-archive <目标ZIP>
+python installers/legacy_upgrade_bridge.py preflight --install-root <绝对安装路径> --transition <可信过渡清单> --trusted-transition-sha256 <独立清单摘要> --baseline-tool installers/upgrade_business_baseline.py --source-package <原正式包> --target-package <目标正式包> --target-archive <目标正式包内images-amd64.tar>
 ```
 
 `preflight` 只读取身份及本地 Docker 状态，不下载、加载镜像、创建目录或改库；两包声明的镜像须已通过正式包校验并加载。`execute` 使用相同参数，另需 `--confirm "BRIDGE 1.0.0 TO 1.0.1"`。桥接器先停写，生成原合同逻辑备份和停库完整集群副本，在隔离恢复副本中验证原/新 PG16 镜像、locale/collation、扩展、索引、32表及认证事实，随后才切换镜像并调用既有 maintenance。原维护口令不变，独立运行口令仅生成一次并持久保存；应用只获得受限凭据。
