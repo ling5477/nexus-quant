@@ -1,0 +1,22 @@
+package com.guidinglight.nexusquant.contracts.model;
+
+/**
+ * OrderStatus 冻结 状态机可用状态集合。
+ */
+public enum OrderStatus {
+    NEW,
+    RISK_PASSED,
+    RISK_REJECTED,
+    SENT,
+    ACCEPTED,
+    VALIDATED,
+    SUBMITTING,
+    ACKED,
+    PARTIALLY_FILLED,
+    FILLED,
+    CANCEL_REQUESTED,
+    CANCEL_REJECTED,
+    CANCELLED,
+    REJECTED,
+    FAILED
+}

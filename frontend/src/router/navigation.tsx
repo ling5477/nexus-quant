@@ -1,0 +1,368 @@
+import {t} from '@/i18n';
+import {
+    ApiOutlined,
+    AreaChartOutlined,
+    DashboardOutlined,
+    DatabaseOutlined,
+    ExperimentOutlined,
+    FileSearchOutlined,
+    FundProjectionScreenOutlined,
+    RocketOutlined,
+    ScheduleOutlined,
+    SettingOutlined,
+    SwapOutlined,
+} from '@ant-design/icons';
+
+import type {AppNavItem} from '@/types/navigation';
+
+export const appNavItems: AppNavItem[] = [
+    ...(import.meta.env.VITE_DISTRIBUTION === 'PUBLIC_DEMO' ? [{
+        key: 'demo', path: '/demo', icon: <ExperimentOutlined />,
+        get label() { return t('auth.demoAccount'); },
+        get title() { return t('auth.demoAccount'); },
+        get description() { return t('auth.demoAccount'); },
+        get section() { return t('navigation.dashboard.section'); },
+    }] : []),
+    {
+        key: 'dashboard',
+        path: '/dashboard',
+        get label() {
+            return t('navigation.dashboard.label');
+        },
+        icon: <DashboardOutlined />,
+        get title() {
+            return t('navigation.dashboard.title');
+        },
+        get description() {
+            return t('navigation.dashboard.description');
+        },
+        get section() {
+            return t('navigation.dashboard.section');
+        },
+    },
+    {
+        key: 'accounts',
+        path: '/accounts',
+        get label() {
+            return t('navigation.accounts.label');
+        },
+        icon: <DatabaseOutlined />,
+        get title() {
+            return t('navigation.accounts.title');
+        },
+        get description() {
+            return t('navigation.accounts.description');
+        },
+        get section() {
+            return t('navigation.accounts.section');
+        },
+    },
+    {
+        key: 'trading',
+        path: '/trading',
+        get label() {
+            return t('navigation.trading.label');
+        },
+        icon: <SwapOutlined />,
+        get title() {
+            return t('navigation.trading.title');
+        },
+        get description() {
+            return t('navigation.trading.description');
+        },
+        get section() {
+            return t('navigation.trading.section');
+        },
+    },
+    {
+        key: 'instruments',
+        path: '/instruments',
+        get label() {
+            return t('navigation.instruments.label');
+        },
+        icon: <DatabaseOutlined />,
+        get title() {
+            return t('navigation.instruments.title');
+        },
+        get description() {
+            return t('navigation.instruments.description');
+        },
+        get section() {
+            return t('navigation.instruments.section');
+        },
+    },
+    {
+        key: 'marketdata',
+        path: '/marketdata',
+        get label() {
+            return t('navigation.marketdata.label');
+        },
+        icon: <FileSearchOutlined />,
+        get title() {
+            return t('navigation.marketdata.title');
+        },
+        get description() {
+            return t('navigation.marketdata.description');
+        },
+        get section() {
+            return t('navigation.marketdata.section');
+        },
+    },
+    {
+        key: 'adapter-readiness',
+        path: '/adapter-readiness',
+        get label() {
+            return t('navigation.adapter-readiness.label');
+        },
+        icon: <ApiOutlined />,
+        get title() {
+            return t('navigation.adapter-readiness.title');
+        },
+        get description() {
+            return t('navigation.adapter-readiness.description');
+        },
+        get section() {
+            return t('navigation.adapter-readiness.section');
+        },
+    },
+    {
+        key: 'runtime-readiness',
+        path: '/runtime/readiness',
+        get label() {
+            return t('navigation.runtime-readiness.label');
+        },
+        icon: <ApiOutlined />,
+        get title() {
+            return t('navigation.runtime-readiness.title');
+        },
+        get description() {
+            return t('navigation.runtime-readiness.description');
+        },
+        get section() {
+            return t('navigation.runtime-readiness.section');
+        },
+    },
+    {
+        key: 'strategy-validation',
+        path: '/strategies/validation',
+        get label() {
+            return t('navigation.strategy-validation.label');
+        },
+        icon: <FileSearchOutlined />,
+        get title() {
+            return t('navigation.strategy-validation.title');
+        },
+        get description() {
+            return t('navigation.strategy-validation.description');
+        },
+        get section() {
+            return t('navigation.strategy-validation.section');
+        },
+    },
+    {
+        key: 'shadow-runs',
+        path: '/strategies/shadow-runs',
+        get label() {
+            return t('navigation.shadow-runs.label');
+        },
+        icon: <FileSearchOutlined />,
+        get title() {
+            return t('navigation.shadow-runs.title');
+        },
+        get description() {
+            return t('navigation.shadow-runs.description');
+        },
+        get section() {
+            return t('navigation.shadow-runs.section');
+        },
+    },
+    {
+        key: 'strategies',
+        path: '/strategies',
+        get label() {
+            return t('navigation.strategies.label');
+        },
+        icon: <SettingOutlined />,
+        get title() {
+            return t('navigation.strategies.title');
+        },
+        get description() {
+            return t('navigation.strategies.description');
+        },
+        get section() {
+            return t('navigation.strategies.section');
+        },
+    },
+    {
+        key: 'schedules',
+        path: '/schedules',
+        get label() {
+            return t('navigation.schedules.label');
+        },
+        icon: <ScheduleOutlined />,
+        get title() {
+            return t('navigation.schedules.title');
+        },
+        get description() {
+            return t('navigation.schedules.description');
+        },
+        get section() {
+            return t('navigation.schedules.section');
+        },
+    },
+    {
+        key: 'runs',
+        path: '/runs',
+        get label() {
+            return t('navigation.runs.label');
+        },
+        icon: <RocketOutlined />,
+        get title() {
+            return t('navigation.runs.title');
+        },
+        get description() {
+            return t('navigation.runs.description');
+        },
+        get section() {
+            return t('navigation.runs.section');
+        },
+    },
+    {
+        key: 'research',
+        path: '/research',
+        get label() {
+            return t('navigation.research.label');
+        },
+        icon: <ExperimentOutlined />,
+        get title() {
+            return t('navigation.research.title');
+        },
+        get description() {
+            return t('navigation.research.description');
+        },
+        get section() {
+            return t('navigation.research.section');
+        },
+    },
+    {
+        key: 'backtests',
+        path: '/backtests',
+        get label() {
+            return t('navigation.backtests.label');
+        },
+        icon: <FundProjectionScreenOutlined />,
+        get title() {
+            return t('navigation.backtests.title');
+        },
+        get description() {
+            return t('navigation.backtests.description');
+        },
+        get section() {
+            return t('navigation.backtests.section');
+        },
+    },
+    {
+        key: 'evaluations',
+        path: '/evaluations',
+        get label() {
+            return t('navigation.evaluations.label');
+        },
+        icon: <AreaChartOutlined />,
+        get title() {
+            return t('navigation.evaluations.title');
+        },
+        get description() {
+            return t('navigation.evaluations.description');
+        },
+        get section() {
+            return t('navigation.evaluations.section');
+        },
+    },
+    {
+        key: 'publishes',
+        path: '/publishes',
+        get label() {
+            return t('navigation.publishes.label');
+        },
+        icon: <FileSearchOutlined />,
+        get title() {
+            return t('navigation.publishes.title');
+        },
+        get description() {
+            return t('navigation.publishes.description');
+        },
+        get section() {
+            return t('navigation.publishes.section');
+        },
+    },
+    {
+        key: 'paper-trading',
+        path: '/paper-trading',
+        get label() {
+            return t('navigation.paper-trading.label');
+        },
+        icon: <SwapOutlined />,
+        get title() {
+            return t('navigation.paper-trading.title');
+        },
+        get description() {
+            return t('navigation.paper-trading.description');
+        },
+        get section() {
+            return t('navigation.paper-trading.section');
+        },
+    },
+    {
+        key: 'scheduler-jobs',
+        path: '/system/scheduler',
+        get label() {
+            return t('navigation.scheduler-jobs.label');
+        },
+        icon: <ScheduleOutlined />,
+        get title() {
+            return t('navigation.scheduler-jobs.title');
+        },
+        get description() {
+            return t('navigation.scheduler-jobs.description');
+        },
+        get section() {
+            return t('navigation.scheduler-jobs.section');
+        },
+    },
+    ...[
+        ['paper-portfolio', '/paper-trading/portfolio', 'workspace.navigation.assets'],
+        ['paper-reviews', '/paper-trading/reviews', 'workspace.navigation.reviews'],
+        ['paper-diagnostics', '/paper-trading/diagnostics', 'workspace.navigation.diagnostics'],
+    ].map(([key, path, label]) => ({
+        key,
+        path,
+        get label() {
+            return t(label);
+        },
+        icon: <AreaChartOutlined />,
+        get title() {
+            return t(label);
+        },
+        description: '',
+    })),
+    {
+        key: 'settings',
+        path: '/settings',
+        get label() {
+            return t('preferences.settings');
+        },
+        get title() {
+            return t('preferences.settings');
+        },
+        icon: <SettingOutlined />,
+        description: '',
+    },
+];
+
+export function resolveMenuKey(pathname: string): string {
+    const matched = [...appNavItems]
+        .sort((left, right) => right.path.length - left.path.length)
+        .find((item) => pathname === item.path || pathname.startsWith(`${item.path}/`));
+
+    return matched?.key ?? 'dashboard';
+}
