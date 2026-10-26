@@ -34,7 +34,7 @@ import {useMutation, useQueryClient} from '@tanstack/react-query';
 import {Link, useSearchParams} from 'react-router-dom';
 import {strategiesApi} from '@/features/strategies/api/strategies';
 import {strategyQueryKeys} from '@/api/query-keys';
-import {SpotSmaVersionForm} from '@/features/strategies/components/SpotSmaVersionForm';
+import {SpotTargetVersionForm} from '@/features/strategies/components/SpotTargetVersionForm';
 import {StrategyVersionList} from '@/features/strategies/components/StrategyVersionList';
 import {useAccountContextStore} from '@/store/account-context-store';
 
@@ -403,7 +403,7 @@ export function StrategiesPage() {
                                         allowClear
                                         showSearch
                                         placeholder={t('pages:allTypes')}
-                                        options={STRATEGY_TYPE_OPTIONS.map(({value, label}) => ({value, label}))}
+                                        options={STRATEGY_TYPE_OPTIONS.filter(({value}) => !isPublicDemo || value !== 'SPOT_CHANNEL_BREAKOUT_V1').map(({value, label}) => ({value, label}))}
                                     />
                                 </Form.Item>
                             </Col>
@@ -645,8 +645,10 @@ export function StrategiesPage() {
                             />
                         </Card>
                         <Card title={t('pages:createStrategyVersion')} size="small">
-                            {strategyDetailQuery.data.strategyType === 'SPOT_SMA_TARGET_V1' ? (
-                                <SpotSmaVersionForm
+                            {(strategyDetailQuery.data.strategyType === 'SPOT_SMA_TARGET_V1' || strategyDetailQuery.data.strategyType === 'SPOT_CHANNEL_BREAKOUT_V1') ? (
+                                <SpotTargetVersionForm
+                                    key={strategyDetailQuery.data.strategyType}
+                                    strategyType={strategyDetailQuery.data.strategyType as 'SPOT_SMA_TARGET_V1' | 'SPOT_CHANNEL_BREAKOUT_V1'}
                                     onCreate={handleCreateVersion}
                                     busy={createVersionMutation.isPending}
                                     disabled={!canWrite}
@@ -797,10 +799,10 @@ export function StrategiesPage() {
                         rules={[{required: true}]}
                     >
                         {/* 创建与筛选复用同一份真实类型，避免相同value重复出现。 */}
-                        <Select options={STRATEGY_TYPE_OPTIONS.map(({value, label}) => ({value, label}))} />
+                        <Select options={STRATEGY_TYPE_OPTIONS.filter(({value}) => !isPublicDemo || value !== 'SPOT_CHANNEL_BREAKOUT_V1').map(({value, label}) => ({value, label}))} />
                     </Form.Item>
-                    <Alert type={createStrategyType === 'SPOT_SMA_TARGET_V1' ? 'info' : 'warning'} showIcon style={{marginBottom: 16}}
-                        message={t(createStrategyType === 'SPOT_SMA_TARGET_V1' ? 'product:configSmaNext' : 'product:configLegacyTypeHelp')} />
+                    <Alert type={['SPOT_SMA_TARGET_V1', 'SPOT_CHANNEL_BREAKOUT_V1'].includes(createStrategyType ?? '') ? 'info' : 'warning'} showIcon style={{marginBottom: 16}}
+                        message={t(createStrategyType === 'SPOT_CHANNEL_BREAKOUT_V1' ? 'pages:channelNext' : createStrategyType === 'SPOT_SMA_TARGET_V1' ? 'product:configSmaNext' : 'product:configLegacyTypeHelp')} />
                     <Form.Item name="configSnapshot" label={t('product:configExtraDefinition')} extra={t('product:configDefinitionExtraHelp')}
                         rules={[{validator: async (_, value?: string) => {try {configurationObject(value);} catch {throw new Error(t('product:configIncomplete'));}}}]}>
                         <ObjectConfigurationInput label={t('product:configExtraDefinition')} disabled={!canWrite} />

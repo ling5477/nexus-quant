@@ -90,14 +90,14 @@ public final class StrategySimRestartProbeMain {
                     throw new AssertionError("second process duplicated or missed canonical facts");
                 }
                 System.out.println("STRATEGY_SIM_RESTART_B " + recovered.orderId());
-            } else if ("C".equals(mode)) {
+            } else if ("C".equals(mode) || "CHANNEL_HOLD".equals(mode) || "CHANNEL_EXIT".equals(mode)) {
                 ContinuousSimRepository progress = context.getBean(ContinuousSimRepository.class);
                 var previous = progress.recentBars(paperRunId);
                 HistoricalBar last = previous.getLast();
                 var nextOpen = last.openTime().plus(Duration.ofHours(1));
                 var nextClose = nextOpen.plus(Duration.ofHours(1)).minusMillis(1);
                 var serverTime = nextClose.plusSeconds(61);
-                BigDecimal price = new BigDecimal("90");
+                BigDecimal price = new BigDecimal("CHANNEL_HOLD".equals(mode) ? "104" : "90");
                 HistoricalBar next = new HistoricalBar(last.exchangeCode(), last.marketType(),
                         last.symbol(), last.interval(), nextOpen, nextClose, price, price, price,
                         price, BigDecimal.ONE, null, null, "OK", "{}", serverTime);
@@ -115,7 +115,14 @@ public final class StrategySimRestartProbeMain {
                 if (!nextOpen.equals(status.lastProcessedBar()) || !"RUNNING".equals(status.status())) {
                     throw new AssertionError("continuous restart failed: " + status);
                 }
-                System.out.println("STRATEGY_SIM_RESTART_C " + nextOpen);
+                if ("CHANNEL_HOLD".equals(mode)) {
+                    var decision = sim.decisions(paperRunId).getFirst();
+                    if (!"HOLD_LONG".equals(decision.reason()) || decision.orderId() != null
+                            || decision.targetExposure().compareTo(new BigDecimal("0.5")) != 0) {
+                        throw new AssertionError("channel intent was lost after rolling-window restart");
+                    }
+                }
+                System.out.println("STRATEGY_SIM_RESTART_" + mode + " " + nextOpen);
             } else {
                 throw new IllegalArgumentException("unknown restart mode");
             }

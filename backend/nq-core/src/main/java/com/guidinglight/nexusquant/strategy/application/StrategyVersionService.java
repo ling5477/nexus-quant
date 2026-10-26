@@ -1,6 +1,9 @@
 package com.guidinglight.nexusquant.strategy.application;
 
 import com.guidinglight.nexusquant.strategy.domain.SpotSmaTargetStrategy;
+import com.guidinglight.nexusquant.strategy.domain.SpotTargetStrategy;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.guidinglight.nexusquant.common.tenant.TenantKind;
 import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -133,6 +136,26 @@ public class StrategyVersionService {
                                 : request.createdBy().trim(),
                         now,
                         now);
+        try {
+            var source = snapshotReader.readTree(sourceSnapshot);
+            if (SpotTargetStrategy.CHANNEL_BREAKOUT
+                    .equals(strategyDefinition.strategyType())
+                    || SpotTargetStrategy.CHANNEL_BREAKOUT
+                    .equals(source.path("executable").asText())) {
+                if (!strategyDefinition.strategyType().equals(source.path("executable").asText())) {
+                    throw new IllegalArgumentException("STRATEGY_TYPE_EXECUTABLE_MISMATCH");
+                }
+                var snapshot = JsonNodeFactory.instance.objectNode();
+                snapshot.put("strategyVersionId", version.strategyVersionId());
+                snapshot.put("checksum", version.checksum());
+                snapshot.set("sourceSnapshotJson", source);
+                snapshot.set("paramSnapshotJson", snapshotReader.readTree(paramSnapshot));
+                SpotTargetStrategy.fromSnapshot(
+                        snapshot.toString(), new ObjectMapper());
+            }
+        } catch (java.io.IOException failure) {
+            throw new IllegalArgumentException("invalid strategy snapshot", failure);
+        }
         strategyVersionRepository.insert(version);
         return version;
     }

@@ -2141,6 +2141,194 @@ class StrategySimPostgresIntegrationTest {
     }
 
     @Test
+    void channelFormalBacktestAndReplayHoldWithoutRebalancing() throws Exception {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        var bars = new ArrayList<HistoricalBar>();
+        for (int hour = 0; hour < 20; hour++) bars.add(channelBar(hour, "100"));
+        bars.addAll(List.of(channelBar(20,"102"),channelBar(21,"110"),channelBar(22,"105"),
+                channelBar(23,"104"),channelBar(24,"90"),channelBar(25,"90"),channelBar(26,"90")));
+        for(int index=0;index<bars.size();index++) {
+            HistoricalBar value=bars.get(index);
+            bars.set(index,availableAt(value,value.openTime().plusSeconds(3600).toString()));
+        }
+        var candles=mapper.createObjectNode().put("code","0");
+        var data=candles.putArray("data");
+        for(int index=bars.size()-1;index>=0;index--) {
+            var bar=bars.get(index);
+            data.addArray().add(Long.toString(bar.openTime().toEpochMilli()))
+                    .add(bar.openPrice().toPlainString()).add(bar.highPrice().toPlainString())
+                    .add(bar.lowPrice().toPlainString()).add(bar.closePrice().toPlainString())
+                    .add("1").add("100").add("100").add("1");
+        }
+        ObjectNode rawRules;
+        try(var input=getClass().getResourceAsStream("/public-market-replay/okx-btc-usdt-public-instrument-20260925.json")) {
+            rawRules=(ObjectNode)mapper.readTree(input);
+        }
+        ((ObjectNode)rawRules.path("data").get(0)).put("tickSz","0.01").put("lotSz","0.0001").put("minSz","0.0001");
+        HttpServer server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
+        for(var entry:Map.of("/api/v5/market/history-candles",candles.toString(),"/api/v5/public/instruments",rawRules.toString()).entrySet()) {
+            server.createContext(entry.getKey(),exchange->{
+                byte[] payload=entry.getValue().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200,payload.length);
+                try(var output=exchange.getResponseBody()){output.write(payload);}
+            });
+        }
+        server.start();
+        PublicMarketReplayCaptureService.CaptureView dataset;
+        try {
+            var capture=new PublicMarketReplayCaptureService(HttpClient.newHttpClient(),
+                    URI.create("http://127.0.0.1:"+server.getAddress().getPort()),mapper,jdbc,
+                    new TransactionTemplate(applicationContext.getBean(org.springframework.transaction.PlatformTransactionManager.class)),Clock.systemUTC());
+            dataset=capture.capture(bars.getFirst().openTime(),bars.getLast().closeTime().plusMillis(1),"GENERATED_CHANNEL_TEST_ONLY");
+        } finally {server.stop(0);}
+        String snapshot=datasets.buildDatasetSnapshot(dataset.datasetId());
+        Long account = jdbc.queryForObject("INSERT INTO accounts(account_code,venue,status) VALUES (?,'OKX','ACTIVE') RETURNING account_id",
+                Long.class, "CHANNEL-SOURCE-"+suffix);
+        String strategyId = "str-channel-"+suffix;
+        String code = "channel-"+suffix;
+        Instant now = Instant.now();
+        definitions.insert(new StrategyDefinition(strategyId, code, "Synthetic channel",
+                "SPOT_CHANNEL_BREAKOUT_V1", "OKX", account, "SIM", true, "{}", 1, now, now));
+        var version = versions.create(new StrategyVersionCreateRequest(code,"v1","ACTIVE",
+                "{\"entryLookbackBars\":20,\"exitLookbackBars\":10,\"investedExposure\":\"0.5\"}","{}",
+                "{\"executable\":\"SPOT_CHANNEL_BREAKOUT_V1\"}","synthetic-test"));
+        var research = researchConfigs.create(new ResearchConfigCreateRequest(strategyId,
+                "Synthetic channel research","synthetic","{}","{}",snapshot));
+        ObjectNode costs=(ObjectNode)read("""
+                {"quantityStep":"0.0001","priceTick":"0.01","minimumQuantity":"0.0001",
+                 "minimumNotional":"5","feeRate":"0.001","slippageBps":"10",
+                 "minimumNotionalSource":"EXPERIMENT_ASSUMPTION","costSource":"EXPERIMENT_ASSUMPTION",
+                 "feeAssumptionVersion":"PUBLIC_SIM_FEE_V1","slippageAssumptionVersion":"PUBLIC_SIM_SLIPPAGE_V1",
+                 "rulePolicy":"CURRENTLY_OBSERVED_PUBLIC_RULES"}
+                """);
+        costs.put("ruleSha256",dataset.ruleSha256());
+        var config = backtestConfigs.create(new BacktestConfigCreateRequest(research.researchConfigId(),
+                "Synthetic channel backtest","synthetic",bars.getFirst().openTime(),bars.getLast().closeTime(),
+                new BigDecimal("100"),costs.toString(),"{}"));
+        backtestConfigs.bindDataset(config.backtestConfigId(),dataset.datasetId().toString(),snapshot);
+        backtestConfigs.bindStrategyVersion(config.backtestConfigId(),version.strategyVersionId());
+        var backtest = backtestRuns.create(new BacktestRunStartRequest(config.backtestConfigId()));
+        assertEquals("SUCCEEDED",backtestExecution.startRun(backtest.backtestRunId()).resultStatus().name());
+        assertEquals("SUCCEEDED",evaluations.evaluate(backtest.backtestRunId()).evaluationStatus().name());
+        var publish = publishing.publish(new BacktestPublishRequest(backtest.backtestRunId(),"Synthetic channel",version.strategyVersionId()));
+        jdbc.update("UPDATE kill_switch_states SET status='DISENGAGED',version=version+1 WHERE scope='GLOBAL_TRADING'");
+        String runId = sim.create(publish.publishRecordId(),new BigDecimal("100"),"synthetic-test").paperRunId();
+        runs.start(runId);
+        for (int index=0; index<bars.size(); index++) {sim.advance(runId); matching.matchOnce(100);}
+        assertEquals(2,sim.facts(runId).orders().size());
+        assertEquals(2,sim.facts(runId).trades().size());
+        assertEquals(2,jdbc.queryForObject("SELECT count(*) FROM sim_trades WHERE backtest_run_id=?",Integer.class,backtest.backtestRunId()));
+        assertEquals(List.of("BUY","SELL"),jdbc.queryForList("SELECT side FROM sim_trades WHERE backtest_run_id=? ORDER BY traded_at",String.class,backtest.backtestRunId()));
+        assertEquals(List.of("ENTER_LONG","HOLD_LONG","HOLD_LONG","HOLD_LONG","EXIT_LONG","HOLD_FLAT","HOLD_FLAT"),
+                jdbc.queryForList("SELECT input_snapshot_json->'strategyDecision'->>'reason' FROM strategy_sim_decisions WHERE paper_run_id=? AND signal_open_time>=? ORDER BY signal_open_time",
+                        String.class,runId,Timestamp.from(bars.get(20).openTime())));
+        assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM strategy_sim_decisions WHERE paper_run_id=? AND input_snapshot_json->'strategyDecision'->>'action'='HOLD' AND (order_id IS NOT NULL OR strategy_run_id IS NOT NULL)",Integer.class,runId));
+        for(int repeat=0;repeat<3;repeat++)sim.advance(runId);
+        assertEquals(2,sim.facts(runId).orders().size());
+        assertEquals(0,jdbc.queryForObject("SELECT count(*) FROM strategy_sim_decisions WHERE paper_run_id=? AND order_id IS NOT NULL AND execution_open_time<=signal_available_at",Integer.class,runId));
+    }
+
+    @Test
+    void channelContinuousRestoresIntentAfterRollingWindowAndFreshJvm() throws Exception {
+        var seedBars = new ArrayList<HistoricalBar>();
+        for(int hour=0;hour<20;hour++)seedBars.add(channelBar(hour,"100"));
+        Fixture fixture=seed(seedBars,true,true);
+        jdbc.update("UPDATE kill_switch_states SET status='DISENGAGED',version=version+1 WHERE scope='GLOBAL_TRADING'");
+        String runId=channelDriver(null,seedBars).start(fixture.publishId(),new BigDecimal("100")).paperRunId();
+        channelDriver(runId,List.of(channelBar(20,"102"))).pollOnce(runId);
+        matching.matchOnce(100);
+        assertEquals(1,sim.facts(runId).orders().size());
+        for(int first=21;first<526;first+=22){
+            var next=new ArrayList<HistoricalBar>();
+            for(int hour=first;hour<Math.min(first+22,526);hour++)next.add(channelBar(hour,Integer.toString(103+hour%3)));
+            channelDriver(runId,next).pollOnce(runId);
+        }
+        assertEquals(channelBar(525,"103").openTime(),continuousProgress.get(runId).lastProcessedOpenTime());
+        assertEquals(500,continuousProgress.recentBars(runId).size());
+        assertTrue(continuousProgress.recentBars(runId).getFirst().openTime().isAfter(channelBar(20,"102").openTime()));
+        assertEquals(1,sim.facts(runId).orders().size(),"HOLD窗口禁止再平衡或重复入场");
+        assertEquals(channelBar(526,"104").openTime().toString(),restartProcess("CHANNEL_HOLD",runId));
+        assertEquals("HOLD_LONG",sim.decisions(runId).getFirst().reason());
+        assertEquals(1,sim.facts(runId).orders().size());
+        assertEquals(channelBar(527,"90").openTime().toString(),restartProcess("CHANNEL_EXIT",runId));
+        matching.matchOnce(100);
+        assertEquals(2,sim.facts(runId).orders().size());
+        assertEquals(2,sim.facts(runId).trades().size());
+        assertEquals(0,sim.facts(runId).positionQuantity().signum());
+    }
+
+    @Test
+    void channelRejectedEntryPersistsIntentAndDoesNotRetryDuringHold() {
+        var bars=new ArrayList<HistoricalBar>();
+        for(int hour=0;hour<20;hour++)bars.add(channelBar(hour,"100"));
+        bars.addAll(List.of(channelBar(20,"102"),channelBar(21,"103"),channelBar(22,"104")));
+        var fixture=seed(bars,true,true);
+        jdbc.update("UPDATE kill_switch_states SET status='DISENGAGED',version=version+1 WHERE scope='GLOBAL_TRADING'");
+        String runId=sim.create(fixture.publishId(),new BigDecimal("100"),"synthetic-test").paperRunId();
+        runs.start(runId);
+        for(int index=0;index<20;index++)sim.advance(runId);
+        var rejected=sim.advance(runId);
+        assertEquals("ACCEPTED",rejected.status());
+        assertEquals(0,new BigDecimal("0.5").compareTo(rejected.targetExposure()));
+        // 仅在隔离夹具构造 durable 拒单；验证恢复与不重试，生产 Risk Engine 不在此处替换。
+        jdbc.update("UPDATE orders SET status='RISK_REJECTED',reason='SYNTHETIC_CHANNEL_REJECTION' WHERE order_id=?",rejected.orderId());
+        jdbc.update("""
+                INSERT INTO risk_events(risk_event_id,rule_id,scope,scope_id,decision,reason,severity,trace_id)
+                VALUES (?,?,'ORDER',?,'REJECT','SYNTHETIC_CHANNEL_REJECTION','HIGH',?)
+                ""","risk-"+UUID.randomUUID(),"synthetic-channel-test",rejected.orderId(),"risk-"+UUID.randomUUID());
+        assertEquals(0,sim.facts(runId).positionQuantity().signum());
+        int attempts=jdbc.queryForObject("SELECT count(*) FROM strategy_runs WHERE strategy_id=?",Integer.class,"sim-sim-"+runId);
+        jdbc.update("UPDATE kill_switch_states SET status='DISENGAGED',version=version+1 WHERE scope='GLOBAL_TRADING'");
+        var hold=sim.advance(runId);
+        assertEquals("HOLD_LONG",hold.reason());
+        assertTrue(hold.orderId()==null && hold.strategyRunId()==null);
+        assertEquals(attempts,jdbc.queryForObject("SELECT count(*) FROM strategy_runs WHERE strategy_id=?",Integer.class,"sim-sim-"+runId));
+        assertEquals(0,matching.matchOnce(100));
+        assertEquals(0,sim.facts(runId).positionQuantity().signum());
+    }
+
+    @Test
+    void channelReplayAccepts720BarsAndRejectsOverflowBeforeFunding() {
+        var bars=new ArrayList<HistoricalBar>();
+        for(int hour=0;hour<720;hour++)bars.add(channelBar(hour,"100"));
+        var fixture=seed(bars,true,true);
+        var created=sim.create(fixture.publishId(),new BigDecimal("100"),"synthetic-test");
+        assertEquals(fixture.digest(),created.barContentSha256());
+        assertNotNull(created.canonicalAccountId());
+        var record=jdbc.queryForMap("SELECT b.backtest_run_id,b.summary_json::text FROM backtest_runs b JOIN backtest_publish_records p USING(backtest_run_id) WHERE p.publish_record_id=?",fixture.publishId());
+        ObjectNode summary=(ObjectNode)read(record.get("summary_json").toString());
+        var consumed=(ArrayNode)summary.path("consumedBars");
+        consumed.add(consumed.get(consumed.size()-1).deepCopy());
+        summary.put("barCount",721);
+        jdbc.update("UPDATE backtest_runs SET summary_json=?::jsonb WHERE backtest_run_id=?",summary.toString(),record.get("backtest_run_id"));
+        int accounts=jdbc.queryForObject("SELECT count(*) FROM accounts",Integer.class);
+        assertEquals("BACKTEST_INPUT_IDENTITY_INVALID",assertThrows(IllegalStateException.class,
+                ()->sim.create(fixture.publishId(),new BigDecimal("100"),"synthetic-test")).getMessage());
+        assertEquals(accounts,jdbc.queryForObject("SELECT count(*) FROM accounts",Integer.class));
+    }
+
+    private ContinuousSimRunService channelDriver(String runId,List<HistoricalBar> bars) {
+        var observed = new ArrayList<HistoricalBar>();
+        if(runId!=null) {
+            var previous=continuousProgress.recentBars(runId);
+            observed.addAll(previous.subList(Math.max(0,previous.size()-2),previous.size()));
+        }
+        observed.addAll(bars);
+        Instant server=bars.getLast().closeTime().plusSeconds(60);
+        ClosedBarMarketFeed feed=(first,maximum)->new ClosedBarMarketFeed.Observation(server,server,
+                observed.stream().filter(bar->!bar.openTime().isBefore(first)).limit(maximum).toList(),
+                new ClosedBarMarketFeed.Rule(server,"LIVE",new BigDecimal("0.01"),new BigDecimal("0.0001"),new BigDecimal("0.0001")),
+                new ClosedBarMarketFeed.Quote(server.plusSeconds(1),bars.getLast().closePrice()));
+        return tenantAware(new ContinuousSimRunService(continuousProgress,sim,runs,feed,jdbc,
+                Clock.fixed(server.plusSeconds(2),java.time.ZoneOffset.UTC)));
+    }
+
+    private HistoricalBar channelBar(int hour,String price) {
+        HistoricalBar value=hourBar(hour,price);
+        return availableAt(value,value.openTime().plusSeconds(3600).toString());
+    }
+
+    @Test
     void formalServicesBindDatasetVersionBacktestEvaluationPublishAndCanonicalSim() {
         String suffix = UUID.randomUUID().toString().substring(0, 8);
         List<HistoricalBar> bars = List.of(bar(0, "100"), bar(1, "101"),
@@ -2326,6 +2514,10 @@ class StrategySimPostgresIntegrationTest {
     }
 
     private Fixture seed(List<HistoricalBar> bars, boolean publicCapture) {
+        return seed(bars, publicCapture, false);
+    }
+
+    private Fixture seed(List<HistoricalBar> bars, boolean publicCapture, boolean channel) {
         String id = UUID.randomUUID().toString().substring(0, 8);
         String strategyId = "str-gz-" + id;
         String strategyCode = "gz-" + id;
@@ -2335,8 +2527,10 @@ class StrategySimPostgresIntegrationTest {
         String backtestId = "br-gz-" + id;
         String publishId = "pub-gz-" + id;
         String checksum = "a".repeat(64);
-        String params = "{\"window\":3,\"investedExposure\":\"1\"}";
-        String source = "{\"executable\":\"SPOT_SMA_TARGET_V1\"}";
+        String params = channel ? "{\"entryLookbackBars\":20,\"exitLookbackBars\":10,\"investedExposure\":\"0.5\"}"
+                : "{\"window\":3,\"investedExposure\":\"1\"}";
+        String source = channel ? "{\"executable\":\"SPOT_CHANNEL_BREAKOUT_V1\"}"
+                : "{\"executable\":\"SPOT_SMA_TARGET_V1\"}";
         String backtestVersion = "{\"strategyVersionId\":\"" + versionId
                 + "\",\"checksum\":\"" + checksum + "\",\"paramSnapshotJson\":"
                 + params + ",\"sourceSnapshotJson\":" + source + "}";
@@ -2357,8 +2551,9 @@ class StrategySimPostgresIntegrationTest {
         jdbc.update("""
                 INSERT INTO strategy_definitions(strategy_id,strategy_code,strategy_name,strategy_type,
                     exchange_code,account_id,trade_env,enabled,config_snapshot)
-                VALUES (?,?,?,'SPOT_SMA_TARGET_V1','OKX',?,'SIM',true,'{}'::jsonb)
-                """, strategyId, strategyCode, "Strategy SIM synthetic", account);
+                VALUES (?,?,?,?,'OKX',?,'SIM',true,'{}'::jsonb)
+                """, strategyId, strategyCode, "Strategy SIM synthetic",
+                channel ? "SPOT_CHANNEL_BREAKOUT_V1" : "SPOT_SMA_TARGET_V1", account);
         jdbc.update("""
                 INSERT INTO strategy_versions(strategy_version_id,strategy_code,version,version_name,status,
                     param_snapshot_json,source_snapshot_json,checksum)

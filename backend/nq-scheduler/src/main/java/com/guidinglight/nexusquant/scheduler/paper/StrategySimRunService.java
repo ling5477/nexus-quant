@@ -36,7 +36,7 @@ import com.guidinglight.nexusquant.strategy.domain.SpotFeeModel;
 import com.guidinglight.nexusquant.strategy.domain.SpotFeeModel.Charge;
 import com.guidinglight.nexusquant.strategy.domain.SpotFeeModel.DiscountFunding;
 import com.guidinglight.nexusquant.strategy.domain.SpotFeeModel.Policy;
-import com.guidinglight.nexusquant.strategy.domain.SpotSmaTargetStrategy;
+import com.guidinglight.nexusquant.strategy.domain.SpotTargetStrategy;
 import com.guidinglight.nexusquant.strategy.domain.SpotTargetSizer;
 import com.guidinglight.nexusquant.strategy.domain.StrategyDefinition;
 import com.guidinglight.nexusquant.strategy.domain.StrategyRunStatus;
@@ -198,14 +198,14 @@ public class StrategySimRunService {
         BacktestRun backtest = boundBacktest(publish);
         JsonNode summary = read(backtest.summaryJson());
         List<HistoricalBar> bars = validatedBars(backtest, summary);
-        SpotSmaTargetStrategy strategy =
-                SpotSmaTargetStrategy.fromSnapshot(backtest.strategyVersionSnapshotJson(), mapper);
+        SpotTargetStrategy strategy =
+                SpotTargetStrategy.fromSnapshot(backtest.strategyVersionSnapshotJson(), mapper);
         // 在资金入账前验证整个冻结输入，避免运行中途才发现缺 bar 或迟到数据。
-        strategy.evaluate(bars);
+        strategy.validate(bars);
         if (!strategy.strategyVersionId().equals(publish.strategyVersionId())
                 || !sameFrozenStrategy(
                         strategy,
-                        SpotSmaTargetStrategy.fromSnapshot(publish.versionSnapshotJson(), mapper))
+                        SpotTargetStrategy.fromSnapshot(publish.versionSnapshotJson(), mapper))
                 || !strategy.checksum().matches("[0-9a-f]{64}")) {
             throw new IllegalStateException("PUBLISH_VERSION_SNAPSHOT_MISMATCH");
         }
@@ -474,13 +474,13 @@ public class StrategySimRunService {
         JsonNode summary = read(backtest.summaryJson());
         List<HistoricalBar> bars =
                 observedBars == null ? validatedBars(backtest, summary) : observedBars;
-        SpotSmaTargetStrategy strategy =
-                SpotSmaTargetStrategy.fromSnapshot(run.strategyVersionSnapshotJson(), mapper);
-        strategy.evaluate(bars);
+        SpotTargetStrategy strategy =
+                SpotTargetStrategy.fromSnapshot(run.strategyVersionSnapshotJson(), mapper);
+        strategy.validate(bars);
         if (!strategy.strategyVersionId().equals(run.strategyVersionId())
                 || !sameFrozenStrategy(
                         strategy,
-                        SpotSmaTargetStrategy.fromSnapshot(
+                        SpotTargetStrategy.fromSnapshot(
                                 backtest.strategyVersionSnapshotJson(), mapper))) {
             throw new IllegalStateException("SIM_STRATEGY_VERSION_DRIFT");
         }
@@ -590,7 +590,10 @@ public class StrategySimRunService {
                 continue;
             }
             if (cursorConsumed) continue;
-            SpotSmaTargetStrategy.Decision signal = strategy.evaluate(bars.subList(0, index + 1));
+            SpotTargetStrategy.PositionState previousState = previousStrategyState(
+                    strategy, run, bars, index, observedBars != null, backtest, summary);
+            SpotTargetStrategy.Decision signal =
+                    strategy.evaluate(bars.subList(0, index + 1), previousState);
             HistoricalBar executionBar = null;
             if (observedBars == null) {
                 for (int later = index + 1; later < bars.size(); later++) {
@@ -647,6 +650,12 @@ public class StrategySimRunService {
                             : SpotBarIdentity.capture(List.of(executionBar), mapper);
             ObjectNode snapshot = mapper.createObjectNode();
             snapshot.set("signalBars", read(input.canonicalJson()));
+            ObjectNode strategyDecision = snapshot.putObject("strategyDecision");
+            strategyDecision.put("executable", strategy.executable());
+            strategyDecision.put("previousState", previousState.name());
+            strategyDecision.put("desiredState", signal.desiredState().name());
+            strategyDecision.put("action", signal.action().name());
+            strategyDecision.put("reason", signal.reason());
             if (execution == null) snapshot.putNull("executionBar");
             else snapshot.set("executionBar", read(execution.canonicalJson()).get(0));
             if (freshContinuousQuote) {
@@ -659,7 +668,7 @@ public class StrategySimRunService {
             String reason = signal.reason();
             SpotTargetSizer.Result sizing = null;
             FrozenSimFeeCharge frozenPayment = null;
-            if (!"INSUFFICIENT_HISTORY".equals(signal.reason())) {
+            if (signal.requestsTrade() && !"INSUFFICIENT_HISTORY".equals(signal.reason())) {
                 if (staleContinuousSignal) {
                     status = "NOT_TRADABLE";
                     reason = "STALE_DATA";
@@ -987,13 +996,13 @@ public class StrategySimRunService {
                 .orElseThrow();
     }
 
-    private static StrategyDefinition simDefinition(PaperTradingRun run, long accountId) {
+    private StrategyDefinition simDefinition(PaperTradingRun run, long accountId) {
         String identity = "sim-sim-" + run.paperRunId();
         return new StrategyDefinition(
                 identity,
                 identity,
                 identity,
-                SpotSmaTargetStrategy.EXECUTABLE,
+                SpotTargetStrategy.fromSnapshot(run.strategyVersionSnapshotJson(), mapper).executable(),
                 "PAPER",
                 accountId,
                 "SIM",
@@ -1004,7 +1013,7 @@ public class StrategySimRunService {
                 run.createdAt());
     }
 
-    /** 新连续 run 以发布时冻结窗口作 SMA 预热，不重放该窗口的经济事实。 */
+    /** 新连续 run 以发布时冻结窗口预热；突破初始方向为空仓，不重放种子窗口的交易。 */
     public ContinuousSeed continuousSeed(String paperRunId) {
         PaperTradingRun run = paperRuns.getById(paperRunId);
         BacktestPublishRecord publish =
@@ -1020,8 +1029,8 @@ public class StrategySimRunService {
                 && "db".equals(summary.path("datasetProvider").asText())
                 && "db".equals(read(backtest.datasetSnapshotJson()).path("provider").asText());
         if (registeredDemo) requireDemoDataset(backtest, bars);
-        SpotSmaTargetStrategy strategy =
-                SpotSmaTargetStrategy.fromSnapshot(run.strategyVersionSnapshotJson(), mapper);
+        SpotTargetStrategy strategy =
+                SpotTargetStrategy.fromSnapshot(run.strategyVersionSnapshotJson(), mapper);
         if (!"OKX".equals(run.exchangeCode())
                 || !"BTC-USDT".equals(run.symbol())
                 || !"SPOT".equals(run.marketType())
@@ -1031,7 +1040,7 @@ public class StrategySimRunService {
                 || !strategy.strategyVersionId().equals(run.strategyVersionId())
                 || !sameFrozenStrategy(
                         strategy,
-                        SpotSmaTargetStrategy.fromSnapshot(
+                        SpotTargetStrategy.fromSnapshot(
                                 backtest.strategyVersionSnapshotJson(), mapper))) {
             throw new IllegalStateException("CONTINUOUS_SIM_SEED_INVALID");
         }
@@ -1372,7 +1381,7 @@ public class StrategySimRunService {
             throw new IllegalStateException("SIM_DATASET_PROVIDER_MISMATCH");
         }
         JsonNode stored = summary.path("consumedBars");
-        if (!stored.isArray() || stored.isEmpty() || stored.size() > 500) {
+        if (!stored.isArray() || stored.isEmpty() || stored.size() > 720) {
             throw new IllegalStateException("BACKTEST_INPUT_IDENTITY_INVALID");
         }
         List<HistoricalBar> bars = new ArrayList<>(stored.size());
@@ -1455,12 +1464,36 @@ public class StrategySimRunService {
         return List.copyOf(bars);
     }
 
+    /** 只从相邻 durable 决策恢复策略意图；rolling window 截断和账户持仓都不能重置方向。 */
+    private SpotTargetStrategy.PositionState previousStrategyState(
+            SpotTargetStrategy strategy, PaperTradingRun run, List<HistoricalBar> bars, int index,
+            boolean continuous, BacktestRun backtest, JsonNode summary) {
+        if (!strategy.stateful()) return SpotTargetStrategy.PositionState.FLAT;
+        HistoricalBar current = bars.get(index);
+        var previous = decisions.findPreviousWindow(run.paperRunId(), current.openTime());
+        if (previous.isPresent()) {
+            var value = previous.get();
+            if (!value.signalOpenTime().plus(current.interval().duration()).equals(current.openTime())
+                    || !strategy.strategyVersionId().equals(value.strategyVersionId())
+                    || !strategy.checksum().equals(value.strategyChecksum())) {
+                throw new IllegalStateException("SIM_STRATEGY_STATE_IDENTITY_DRIFT");
+            }
+            return strategy.stateForTarget(value.targetExposure());
+        }
+        if (continuous) {
+            var seed = validatedBars(backtest, summary);
+            if (!seed.getLast().openTime().plus(current.interval().duration()).equals(current.openTime())) {
+                throw new IllegalStateException("SIM_STRATEGY_STATE_UNAVAILABLE");
+            }
+        } else if (index != 0) {
+            throw new IllegalStateException("SIM_STRATEGY_STATE_UNAVAILABLE");
+        }
+        return SpotTargetStrategy.PositionState.FLAT;
+    }
+
     private static boolean sameFrozenStrategy(
-            SpotSmaTargetStrategy left, SpotSmaTargetStrategy right) {
-        return left.strategyVersionId().equals(right.strategyVersionId())
-                && left.checksum().equals(right.checksum())
-                && left.window() == right.window()
-                && left.investedExposure().compareTo(right.investedExposure()) == 0;
+            SpotTargetStrategy left, SpotTargetStrategy right) {
+        return left.sameFrozenStrategy(right);
     }
 
     private SpotTargetSizer.Rules rules(JsonNode node) {
