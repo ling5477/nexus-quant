@@ -16,6 +16,7 @@ import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.DiscountAssetPriceSnapshot;
 import com.guidinglight.nexusquant.marketdata.domain.DiscountAssetPriceSnapshot.Point;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
+import com.guidinglight.nexusquant.marketdata.domain.FrozenHistoricalInput;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalDatasetSpec;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
@@ -260,26 +261,32 @@ public class BacktestExecutionService {
                                     executionRequest.datasetSpec().interval(),
                                     executionRequest.startTime(),
                                     executionRequest.endTime());
-            bars = historicalMarketDataPort.loadBars(query);
+            JsonNode datasetSnapshot = readJson(currentRun.datasetSnapshotJson());
+            if (datasetSnapshot.has("frozenInput")) {
+                if (!frozenVersion) {
+                    throw new IllegalStateException("FROZEN_INPUT_REQUIRES_STRATEGY_VERSION");
+                }
+                if (!executionRequest.startTime().equals(Instant.parse(datasetSnapshot.path("startTime").asText()))
+                        || !executionRequest.endTime().equals(Instant.parse(datasetSnapshot.path("endTime").asText())))
+                    throw new IllegalStateException("FROZEN_INPUT_EXECUTION_WINDOW_MISMATCH");
+                bars = FrozenHistoricalInput.read(datasetSnapshot, objectMapper);
+            } else {
+                bars = historicalMarketDataPort.loadBars(query);
+                if (frozenVersion && "db".equalsIgnoreCase(executionRequest.datasetSpec().provider())) {
+                    List<HistoricalBar> remaining = historicalMarketDataPort.loadBars(
+                            new HistoricalMarketDataQuery(executionRequest.datasetSpec(),
+                                    executionRequest.datasetSpec().exchangeCode(), "SPOT",
+                                    executionRequest.datasetSpec().symbol(), executionRequest.datasetSpec().interval(),
+                                    executionRequest.startTime(), executionRequest.endTime(), 1, 500));
+                    if (bars.size() + remaining.size() > FrozenHistoricalInput.MAX_BARS)
+                        throw new IllegalStateException("frozen backtest bar limit exceeded");
+                    List<HistoricalBar> complete = new ArrayList<>(bars);
+                    complete.addAll(remaining);
+                    bars = List.copyOf(complete);
+                }
+            }
             if (bars.isEmpty()) {
                 throw new IllegalStateException("no historical bars found for requested window");
-            }
-            if (frozenVersion
-                    && "db".equalsIgnoreCase(executionRequest.datasetSpec().provider())
-                    && !historicalMarketDataPort
-                            .loadBars(
-                                    new HistoricalMarketDataQuery(
-                                            executionRequest.datasetSpec(),
-                                            executionRequest.datasetSpec().exchangeCode(),
-                                            "SPOT",
-                                            executionRequest.datasetSpec().symbol(),
-                                            executionRequest.datasetSpec().interval(),
-                                            executionRequest.startTime(),
-                                            executionRequest.endTime(),
-                                            1,
-                                            500))
-                            .isEmpty()) {
-                throw new IllegalStateException("frozen backtest bar limit exceeded");
             }
             initializeDiscountCapital(
                     executionRequest, executionContext, bars.getFirst().openTime());

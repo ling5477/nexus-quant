@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=565764cce5862ecc02ca7d1ce18d56fc382d8841
 accepted_batch_acceptance_head=565764cce5862ecc02ca7d1ce18d56fc382d8841
 accepted_batch_ci_run=39373837941
-work_batch=NQ-V1-RELEASE-PUBLICATION
-work_batch_status=BLOCKED
+work_batch=NQ-V102-01-RESEARCH-DATASET-PRODUCTIZATION
+work_batch_status=IMPLEMENTED|TARGETED_VALIDATION_PASS
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-V1-PUBLICATION-UNBLOCK
+next_action=USER_REVIEW_STAGED_CHANGES
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,7 +31,13 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
-## 当前 V1 Release 准备
+## 当前 v1.0.2 研究数据集产品化
+
+v1.0.1 已发布，当前任务为 `NQ-V102-01-RESEARCH-DATASET-PRODUCTIZATION`，开发基线为 `58af3c8badae2eb2b535cd512680743538d31a61`。范围是 Self-Hosted OKX Spot BTC/ETH 的1h、最多30个完整UTC日：正式接入、质量检查、完整输入冻结及现有 `SPOT_SMA_TARGET_V1` 回测。只执行代码、定向验证及精确暂存；不 Commit、Push、PR、Merge、Tag 或 Release。实际结果与限制见[本轮实施报告](evidence/NQ_V102_01_RESEARCH_DATASET_PRODUCTIZATION.md)。
+
+以下发布准备文字为2026-10-20历史记录，不重新触发发布审计，也不覆盖当前迭代。历史 Gate、C4 原审查与例外决定不变，LIVE保持关闭。
+
+## 历史 V1 Release 准备
 
 截至 2026-10-20，dev 集成源码为 `565764cce5862ecc02ca7d1ce18d56fc382d8841`，tree=`39d472ade2d678e0e053875fcd425611f991614f`；PR #64 已合并，同一 head 的 CI `39373837941` 为 completed/success、9/9 SUCCESS。该CI只绑定集成基线，新文档与Snapshot提交的远端CI必须单独获得。
 

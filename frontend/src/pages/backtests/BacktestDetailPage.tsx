@@ -1,3 +1,4 @@
+import {FrozenResearchInputSummary} from '@/features/backtests/FrozenResearchInputSummary';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {Alert, Button, Card, Col, Descriptions, Empty, Row, Space, Spin, Typography} from 'antd';
@@ -722,6 +723,8 @@ export function BacktestDetailPage() {
                             </Descriptions>
                         )}
                     </Card>
+
+                    <FrozenResearchInputSummary datasetSnapshot={factsRunId ? factsRun?.datasetSnapshotJson : config?.datasetSnapshotJson} />
 
                     {/* 参数 / 策略 / 配置快照 */}
                     <Card

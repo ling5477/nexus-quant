@@ -4407,5 +4407,23 @@
       "MAINTENANCE_RESPONSE_INVALID": "响应无法确认原请求，结果继续保持UNKNOWN。"
     },
     "result": "原服务返回结果"
+  },
+  "researchDataset": {
+    "create": "创建研究历史区间",
+    "start": "开始日期（UTC，包含）",
+    "end": "结束日期（UTC，不包含）",
+    "help": "仅 Self-Hosted：OKX 现货 BTC/ETH · 1h · 1—30 个完整 UTC 日（最多 720 根）。日期按 UTC 解释，结束日不包含。不会纳入今天未完成的 UTC 日；30 天不能证明策略有效。",
+    "windowInvalid": "请选择 1—30 个完整 UTC 日，结束日期不得晚于今天 UTC 00:00。",
+    "afterIngestion": "接入结果需通过数据集质量检查后再冻结研究输入；缺失数据不会自动补造。",
+    "createDataset": "使用此区间创建数据集并检查质量",
+    "fromJob": "已读取原接入任务区间，请核对后明确创建数据集",
+    "jobUnavailable": "无法读取有效的 OKX BTC/ETH 1h 完整 UTC 日任务，请核对任务编号。",
+    "createResearch": "使用此数据集创建研究",
+    "freezeHelp": "选择现有策略，然后在回测配置中绑定正式策略版本与成本假设。研究输入按服务端数据冻结；后续补采不会修改已冻结输入。创建运行时，服务端读取对应 BTC/ETH 的当前交易规则；当前规则、费用及滑点均不代表历史当时事实。",
+    "frozenUnavailable": "冻结输入身份不可读取，请检查原始快照。",
+    "frozenTitle": "已冻结研究输入",
+    "frozenAt": "冻结时间（UTC）",
+    "visibility": "历史可见性假设",
+    "rulesHelp": "该 OKX BTC/ETH 1h 数据集创建运行时，由服务端读取对应标的当前交易规则并冻结。当前规则不是历史规则；费用、滑点和最小名义金额保留为显式研究假设。"
   }
 }

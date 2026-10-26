@@ -7,6 +7,7 @@ import com.guidinglight.nexusquant.adapter.api.model.HistoricalKlineRequest;
 import com.guidinglight.nexusquant.adapter.api.service.error.HistoricalKlineAdapterException;
 import com.guidinglight.nexusquant.adapter.api.service.port.HistoricalKlineAdapter;
 import com.guidinglight.nexusquant.adapter.okx.http.OkxHttpClient;
+import com.guidinglight.nexusquant.adapter.okx.error.OkxApiException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -66,6 +67,7 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
                     "1d", Duration.ofDays(1));
 
     private final OkxHttpClient client;
+    private long nextRequestNanos;
 
     @Autowired
     public OkxHistoricalKlineAdapter(
@@ -74,7 +76,7 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
                     String baseUrl,
             @Value("${nq.public-marketdata.outbound.total-request-timeout:PT8S}")
                     Duration timeout) {
-        this(new OkxHttpClient(HttpClient.newHttpClient(), new ObjectMapper(), baseUrl, timeout));
+        this(new OkxHttpClient(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build(), new ObjectMapper(), baseUrl, timeout));
     }
 
     OkxHistoricalKlineAdapter(OkxHttpClient client) {
@@ -103,7 +105,7 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
                         + "&limit="
                         + normalizeLimit(request.limit());
         try {
-            JsonNode payload = client.get(path, null);
+            JsonNode payload = readPage(path);
             if (!"0".equals(payload.path("code").asText())) {
                 throw new HistoricalKlineAdapterException(
                         "OKX history-candles failed, code=" + payload.path("code").asText());
@@ -125,9 +127,48 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
         }
     }
 
+    private JsonNode readPage(String path) {
+        for (int attempt = 0; attempt < 3; attempt++) {
+            throttle();
+            try {
+                JsonNode payload = client.getBounded(path, null, 262144);
+                if ("50011".equals(payload.path("code").asText())) {
+                    if (attempt == 2) throw new HistoricalKlineAdapterException("OKX_HISTORY_RATE_LIMITED");
+                    pause(250L * (attempt + 1));
+                    continue;
+                }
+                return payload;
+            } catch (OkxApiException failure) {
+                if (Thread.currentThread().isInterrupted())
+                    throw new HistoricalKlineAdapterException("OKX_HISTORY_INTERRUPTED", failure);
+                boolean retry = failure.httpStatus() == 429 || failure.httpStatus() >= 500
+                        || (failure.httpStatus() == 0 && failure.getCause() instanceof java.io.IOException
+                                && !"PUBLIC_RESPONSE_LIMIT_EXCEEDED".equals(failure.getCause().getMessage()));
+                if (!retry || attempt == 2) throw failure;
+                pause(250L * (attempt + 1));
+            }
+        }
+        throw new HistoricalKlineAdapterException("OKX_HISTORY_RETRY_EXHAUSTED");
+    }
+
+    /** 当前进程的公开历史读取低于供应方每IP每两秒20次的上限，不并发突发抢占额度。 */
+    private synchronized void throttle() {
+        long remaining = nextRequestNanos - System.nanoTime();
+        if (remaining > 0) pause(Math.max(1, (remaining + 999999L) / 1000000L));
+        nextRequestNanos = System.nanoTime() + Duration.ofMillis(125).toNanos();
+    }
+
+    private void pause(long millis) {
+        try { Thread.sleep(millis); }
+        catch (InterruptedException failure) {
+            Thread.currentThread().interrupt();
+            throw new HistoricalKlineAdapterException("OKX_HISTORY_INTERRUPTED", failure);
+        }
+    }
+
     private HistoricalKlineBar parseBar(HistoricalKlineRequest request, JsonNode row) {
-        if (!row.isArray() || row.size() < 7) {
-            throw new HistoricalKlineAdapterException("OKX candle row has unexpected shape");
+        if (!row.isArray() || row.size() < 9 || !"1".equals(row.get(8).asText())) {
+            throw new HistoricalKlineAdapterException("OKX candle row is unclosed or has unexpected shape");
         }
         Instant openTime = Instant.ofEpochMilli(row.get(0).asLong());
         return new HistoricalKlineBar(

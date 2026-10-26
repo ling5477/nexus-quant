@@ -1,3 +1,7 @@
+import {useAuthStore} from '@/store/auth-store';
+import {isPublicDemo} from '@/utils/distribution';
+import {ingestionReads, validIngestionId} from '@/features/marketdata/ingestion-operations';
+import {isResearchJob, researchFromDatasetLink, researchSymbols} from '@/features/marketdata/research-dataset';
 import {DatasetOperationRecovery} from '@/features/marketdata/DatasetOperationRecovery';
 import {useDatasetOperationState} from '@/features/marketdata/useDatasetOperationState';
 import {datasetNameForSelection} from '@/features/marketdata/dataset-operations';
@@ -1995,6 +1999,9 @@ const datasetColumns = (
                 {disabledReason(record) && (
                     <Typography.Text type="secondary">{disabledReason(record)}</Typography.Text>
                 )}
+                {!isPublicDemo && isResearchJob(record) && record.source === 'marketdata_bars' && record.status === 'READY' && record.qualityStatus === 'OK' && record.gapCount === 0 && (
+                    <Link to={researchFromDatasetLink(record.datasetId)}>{t('pages:researchDataset.createResearch')}</Link>
+                )}
             </Space>
         ),
     },
@@ -2202,6 +2209,26 @@ export function MarketdataPage() {
     const datasetOperation = useDatasetOperationState(
         activeSection === 'preparation' && preparationTab === 'datasets',
     );
+    const fromJobId = searchParams.get('datasetFromJob');
+    const datasetOwner = useAuthStore((state) => state.currentUser?.userId);
+    const fromJob = useQuery({
+        queryKey: ['research-dataset-from-job', datasetOwner, fromJobId],
+        queryFn: ({signal}) => ingestionReads.job(fromJobId!, signal),
+        enabled: !isPublicDemo && Boolean(datasetOwner) && activeSection === 'preparation' && preparationTab === 'datasets' && validIngestionId(fromJobId),
+        gcTime: 0,
+        retry: false,
+    });
+    const appliedJob = useRef<string | null>(null);
+    useEffect(() => {
+        const job = fromJob.data;
+        if (!job || appliedJob.current === job.jobId || !isResearchJob(job)) return;
+        appliedJob.current = job.jobId;
+        datasetForm.setFieldsValue({exchangeCode: job.exchangeCode, marketType: job.marketType,
+            symbol: job.symbol, interval: job.interval, startTime: dayjs(job.startTime), endTime: dayjs(job.endTime)});
+    }, [fromJob.data, datasetForm]);
+    const datasetSymbolOptions = !isPublicDemo && datasetExchange === 'OKX' && fromJob.data && isResearchJob(fromJob.data)
+        ? researchSymbols.map((value) => ({value, label: value}))
+        : symbolOptions(datasetExchange);
     const datasetDisabledReason = (dataset?: MarketdataDataset) => {
         if (!datasetOperation.canWrite) return t('pages:datasetRecovery.readOnlyAction');
         if (dataset?.source === 'OKX_PUBLIC_CAPTURE') return t('pages:datasetRecovery.immutable');
@@ -2894,6 +2921,15 @@ export function MarketdataPage() {
                                                 <DatasetOperationRecovery
                                                     state={datasetOperation}
                                                 />
+                                                {!isPublicDemo && fromJobId && (
+                                                    <Alert showIcon style={{marginBottom: 16}}
+                                                        type={fromJob.isError || (fromJob.isSuccess && !isResearchJob(fromJob.data)) || !validIngestionId(fromJobId) ? 'error' : 'info'}
+                                                        message={t('pages:researchDataset.fromJob')}
+                                                        description={fromJob.isFetching ? t('pages:loading') : fromJob.isError ? formatApiError(fromJob.error as AppApiError) : fromJob.data && isResearchJob(fromJob.data)
+                                                            ? `${fromJob.data.symbol} · ${fromJob.data.startTime} → ${fromJob.data.endTime} · UTC`
+                                                            : t('pages:researchDataset.jobUnavailable')}
+                                                    />
+                                                )}
                                                 <Form<CreateMarketdataDatasetFormValues>
                                                     name="marketdata-dataset"
                                                     disabled={datasetOperation.blocked}
@@ -2960,14 +2996,15 @@ export function MarketdataPage() {
                                                             label={t('pages:tradingPair')}
                                                             name="symbol"
                                                             dependencies={['exchangeCode']}
-                                                            rules={[symbolRule(datasetExchange)]}
+                                                            rules={[{validator: async (_, symbol) => {
+                                                                if (!datasetSymbolOptions.some((item) => item.value === symbol))
+                                                                    throw new Error(t('markets.chooseSupported'));
+                                                            }}]}
                                                         >
                                                             <Select
                                                                 showSearch
                                                                 style={{width: 160}}
-                                                                options={symbolOptions(
-                                                                    datasetExchange,
-                                                                )}
+                                                                options={datasetSymbolOptions}
                                                                 placeholder={t(
                                                                     'markets.chooseSupported',
                                                                 )}

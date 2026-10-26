@@ -4407,5 +4407,23 @@
       "MAINTENANCE_RESPONSE_INVALID": "The response does not confirm the original request. Keep its result UNKNOWN."
     },
     "result": "Recorded service result"
+  },
+  "researchDataset": {
+    "create": "Create research history window",
+    "start": "Start date (UTC, inclusive)",
+    "end": "End date (UTC, exclusive)",
+    "help": "Self-Hosted only: OKX spot BTC/ETH · 1h · 1–30 complete UTC days (at most 720 bars). Dates are UTC; the end date is excluded. The current incomplete UTC day is excluded. Thirty days do not establish strategy effectiveness.",
+    "windowInvalid": "Choose 1–30 complete UTC days; the end date must be no later than today at 00:00 UTC.",
+    "afterIngestion": "Check dataset quality before freezing research input. Missing data is never fabricated.",
+    "createDataset": "Create a dataset from this window and check quality",
+    "fromJob": "Original ingestion window loaded; verify it before explicitly creating a dataset",
+    "jobUnavailable": "A valid OKX BTC/ETH 1h complete UTC-day job could not be read. Check the job ID.",
+    "createResearch": "Create research from this dataset",
+    "freezeHelp": "Choose an existing strategy, then bind a formal strategy version and cost assumptions in the backtest configuration. The server freezes research input; subsequent ingestion does not alter frozen input. At run creation the server reads current rules for the selected BTC/ETH instrument. Current rules, fees and slippage are not historical facts.",
+    "frozenUnavailable": "Frozen input identity is unavailable. Check the original snapshot.",
+    "frozenTitle": "Frozen research input",
+    "frozenAt": "Frozen at (UTC)",
+    "visibility": "Historical visibility assumption",
+    "rulesHelp": "At run creation the server reads and freezes current rules for the selected OKX BTC/ETH 1h instrument. Current rules are not historical rules; fees, slippage and minimum notional remain explicit research assumptions."
   }
 }

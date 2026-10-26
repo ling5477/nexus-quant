@@ -11,6 +11,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.guidinglight.nexusquant.marketdata.application.service.FixtureMarketdataRegistry;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
+import com.guidinglight.nexusquant.marketdata.domain.FrozenHistoricalInput;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
 import com.guidinglight.nexusquant.research.application.BacktestRunService;
@@ -130,6 +131,65 @@ class BacktestExecutionServiceTest {
         assertEquals(Instant.parse("2026-01-01T00:03:59Z"), snapshots.get(1).snapshotTime());
         assertEquals(snapshots.get(1).snapshotTime(), snapshots.get(2).snapshotTime());
         assertEquals(snapshots.get(2).snapshotTime(), snapshots.get(3).snapshotTime());
+    }
+
+    @Test
+    void frozenBtcAndEthConsumeAll720BarsAndRepeatBusinessResultsWithoutSharedReads() throws Exception {
+        for (String symbol : List.of("BTC-USDT", "ETH-USDT")) {
+            var dataset = objectMapper.createObjectNode();
+            dataset.put("provider", "db"); dataset.put("datasetId", "historical-" + symbol);
+            dataset.put("resourcePath", "marketdata_bars"); dataset.put("exchangeCode", "OKX");
+            dataset.put("marketType", "SPOT"); dataset.put("symbol", symbol); dataset.put("interval", "1h");
+            dataset.put("startTime", "2026-01-01T00:00:00Z");
+            dataset.put("endTime", "2026-01-30T23:59:59.999Z");
+            dataset.put("status", "READY"); dataset.put("qualityStatus", "OK");
+            dataset.put("source", "marketdata_bars"); dataset.put("barCount", 720); dataset.put("gapCount", 0);
+            var source = new ArrayList<HistoricalBar>();
+            for (int index = 0; index < 720; index++) {
+                Instant open = Instant.parse("2026-01-01T00:00:00Z").plusSeconds(index * 3600L);
+                BigDecimal price = BigDecimal.valueOf(100 + index % 20);
+                source.add(new HistoricalBar("OKX", "SPOT", symbol, BarInterval.ONE_HOUR, open,
+                        open.plusSeconds(3600).minusMillis(1), price, price, price, price,
+                        BigDecimal.ONE, null, null, "OK", "{}", fixedClock.instant()));
+            }
+            dataset.set("frozenInput", FrozenHistoricalInput.freeze(dataset, source, fixedClock.instant(), objectMapper));
+            // 冻结后清空共享源，实际执行仍必须完整消费原快照。
+            source.clear();
+            Scenario scenario = createScenario(query -> { throw new AssertionError("frozen input must not query shared bars"); });
+            JsonNode previous = null;
+            List<String> previousTrades = null;
+            for (int repeat = 0; repeat < 2; repeat++) {
+                BacktestRun legacy = scenario.createRun(dataset.toString());
+                String params = "{\"window\":3,\"investedExposure\":\"1\"}";
+                String version = "{\"strategyVersionId\":\"sv-1\",\"checksum\":\"sha-1\",\"status\":\"ACTIVE\","
+                        + "\"paramSnapshotJson\":" + params + ",\"sourceSnapshotJson\":{\"executable\":\"SPOT_SMA_TARGET_V1\"}}";
+                String config = "{\"startTime\":\"2026-01-01T00:00:00Z\",\"endTime\":\"2026-01-30T23:59:59.999Z\","
+                        + "\"initialCapital\":\"10000\",\"executionSpec\":{\"quantityStep\":\"0.0001\",\"priceTick\":\"0.01\","
+                        + "\"minimumQuantity\":\"0.0001\",\"minimumNotional\":\"5\",\"feeRate\":\"0.001\",\"slippageBps\":\"10\"}}";
+                scenario.backtestRunRepository.insert(new BacktestRun(legacy.backtestRunId(), legacy.backtestConfigId(),
+                        legacy.researchConfigId(), legacy.sourceStrategyId(), legacy.strategySnapshot(), "sv-1", version,
+                        params, config, config, dataset.toString(), BacktestRunStatus.CREATED, legacy.requestedAt(),
+                        null, null, null, null, "{}", legacy.createdAt(), legacy.updatedAt()));
+                var result = scenario.backtestExecutionService.startRun(legacy.backtestRunId());
+                assertEquals(BacktestRunStatus.SUCCEEDED, result.resultStatus());
+                var summary = objectMapper.readTree(result.summaryJson());
+                assertEquals(720, summary.path("consumedBars").size());
+                assertEquals(symbol, summary.path("symbol").asText());
+                assertEquals(dataset.path("frozenInput").path("sha256").asText(), summary.path("barContentSha256").asText());
+                if (previous != null) {
+                    for (String field : List.of("decisionReasons", "finalCashBalance", "finalEquity", "totalFee", "totalSlippage", "tradeCount"))
+                        assertEquals(previous.path(field), summary.path(field), field);
+                }
+                var actualTrades = scenario.simTradeRepository.listByBacktestRunId(legacy.backtestRunId()).stream()
+                        .map(trade -> trade.side() + ":" + trade.quantity() + ":" + trade.tradePrice()
+                                + ":" + trade.feeAmount() + ":" + trade.slippageAmount() + ":" + trade.tradedAt())
+                        .toList();
+                assertTrue(!actualTrades.isEmpty());
+                if (previousTrades != null) assertEquals(previousTrades, actualTrades);
+                previousTrades = actualTrades;
+                previous = summary;
+            }
+        }
     }
 
     @Test

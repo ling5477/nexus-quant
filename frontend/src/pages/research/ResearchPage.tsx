@@ -1,3 +1,5 @@
+import {useDatasetDetailQuery} from '@/features/marketdata/hooks/useDatasetQueries';
+import {validDatasetOperationId} from '@/features/marketdata/dataset-operations';
 import {canWriteResearch} from '@/utils/distribution';
 import {ObjectConfigurationSummary} from '@/components/configuration/ObjectConfigurationSummary';
 import {ObjectConfigurationInput} from '@/components/configuration/ObjectConfigurationInput';
@@ -28,7 +30,7 @@ import {
     Typography,
 } from 'antd';
 import type {ColumnsType} from 'antd/es/table';
-import {useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {StrategyDefinitionPicker} from '@/features/strategies/components/StrategyDefinitionPicker';
 import {Link, useSearchParams} from 'react-router-dom';
 
@@ -88,7 +90,17 @@ export function ResearchPage() {
     const createResearchMutation = useCreateResearchMutation();
     const archiveResearchMutation = useArchiveResearchMutation();
     const createRequestInFlight = useRef(false);
-    const [createDatasetId, setCreateDatasetId] = useState<string>();
+    const linkedDatasetId = params.get('datasetId');
+    const [createDatasetId, setCreateDatasetId] = useState<string | undefined>(() => linkedDatasetId && validDatasetOperationId(linkedDatasetId) ? linkedDatasetId : undefined);
+    const linkedDataset = useDatasetDetailQuery(linkedDatasetId && validDatasetOperationId(linkedDatasetId) ? linkedDatasetId : undefined, createOpen);
+    const appliedDataset = useRef<string | null>(null);
+    useEffect(() => {
+        const dataset = linkedDataset.data;
+        if (!dataset || appliedDataset.current === dataset.datasetId) return;
+        appliedDataset.current = dataset.datasetId;
+        createForm.setFieldValue('datasetSpec', JSON.stringify({datasetId: dataset.datasetId, exchangeCode: dataset.exchangeCode,
+            marketType: dataset.marketType, symbol: dataset.symbol, interval: dataset.interval}));
+    }, [linkedDataset.data, createForm]);
     const hasSearched = searchVersion > 0;
 
     const visibleItems = researchQuery.data?.items ?? [];
@@ -468,6 +480,11 @@ export function ResearchPage() {
                         parameterDefaults: '{}',
                     }}
                 >
+                    {linkedDatasetId && <Alert showIcon style={{marginBottom: 16}}
+                        type={linkedDataset.isError || !validDatasetOperationId(linkedDatasetId) ? 'error' : 'info'}
+                        message={t('pages:researchDataset.createResearch')}
+                        description={linkedDataset.isError ? formatApiError(linkedDataset.error as AppApiError) : t('pages:researchDataset.freezeHelp')}
+                    />}
                     <Form.Item
                         label={t('pages:sourceStrategySelection')}
                         name="sourceStrategyId"

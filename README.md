@@ -4,7 +4,9 @@ NexusQuant 是面向 OKX Spot 的研究与模拟交易工作台。Java Control P
 
 ## 发行状态
 
-[v1.0.0](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.0) 已于 2026-10-20（UTC）正式发布；当前源码面向尚未发布的 v1.0.1 候选。Windows 11 amd64 / 已运行 Docker Desktop 的本地隔离安装、PG16、备份恢复和重启已验证；升级仍为 `UPGRADE_NOT_VERIFIED`。72小时 长时运行观察 观察已执行，原审查因定点 UI 证据缺口未接受；用户已作 `ACCEPT_WITH_EVIDENCE_EXCEPTION` 决定并豁免72小时重跑，原审查不改判。历史UI缺口以 `ADMITTED_WITH_DOCUMENTED_EXCEPTION` 单列准入，当前运行差异另经定向验证覆盖。已发布包保持冻结，每个包使用其独立 Manifest；v1.0.1 必须另行取得候选升级、准确源码身份 CI 与发布资格。
+[v1.0.0](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.0) 与 [v1.0.1](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.1) 已发布；当前开发进入 v1.0.2 的研究数据集产品化。在 Self-Hosted 正式行情页面，可选择 OKX Spot BTC/ETH、1h、最多30个完整UTC日，接入并检查质量后绑定现有策略版本回测。研究输入保存完整冻结序列与摘要，公开规则使用当前观察值，历史可见性、费用及滑点均明确标注假设。当前任务不授予新版发布或真实交易权限。
+
+已发布 Tag、Snapshot、包与签名证据保持冻结。历史 C4 审查仍为 `NOT_ACCEPTED / EVIDENCE_GAPS`，owner 例外决定与72小时重跑豁免保留；`UPGRADE_NOT_VERIFIED` 不因本轮功能实现被改判。
 
 普通账户缺可信权益来源时不显示虚构收益；真实手续费必须有可信来源；OHLC 不能提供真实事件发生时点；旧 Paper 未知币种权益不改写。
 

@@ -95,4 +95,32 @@ class OkxHistoricalKlineRangeTest {
             server.stop(0);
         }
     }
+    @Test
+    void unclosedRowsAreRejectedAndRateLimitRetriesAreBounded() throws Exception {
+        for (boolean limited : new boolean[] {false, true}) {
+            var calls = new java.util.concurrent.atomic.AtomicInteger();
+            var start = Instant.parse("2026-10-01T00:00:00Z");
+            var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+            server.createContext("/api/v5/market/history-candles", exchange -> {
+                calls.incrementAndGet();
+                String json = limited ? "{\"code\":\"50011\",\"data\":[]}"
+                        : "{\"code\":\"0\",\"data\":[[\"" + start.toEpochMilli()
+                                + "\",\"100\",\"110\",\"90\",\"105\",\"1\",\"1\",\"105\",\"0\"]]}";
+                byte[] body = json.getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(limited ? 429 : 200, body.length);
+                try (var stream = exchange.getResponseBody()) { stream.write(body); }
+                finally { exchange.close(); }
+            });
+            server.start();
+            try (var http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build()) {
+                var adapter = new OkxHistoricalKlineAdapter(new OkxHttpClient(http,
+                        new ObjectMapper(), "http://127.0.0.1:" + server.getAddress().getPort(), Duration.ofSeconds(2)));
+                assertThrows(com.guidinglight.nexusquant.adapter.api.service.error.HistoricalKlineAdapterException.class,
+                        () -> adapter.fetchHistoricalKlines(new HistoricalKlineRequest("OKX", "SPOT",
+                                "ETH-USDT", "1h", start, start.plusSeconds(3600).minusMillis(1), 300)));
+                assertEquals(limited ? 3 : 1, calls.get());
+            } finally { server.stop(0); }
+        }
+    }
+
 }

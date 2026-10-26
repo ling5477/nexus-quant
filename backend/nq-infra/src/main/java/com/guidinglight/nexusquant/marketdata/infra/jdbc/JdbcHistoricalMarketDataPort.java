@@ -99,8 +99,8 @@ public class JdbcHistoricalMarketDataPort implements HistoricalMarketDataPort {
                 query.interval().wireValue(),
                 Timestamp.from(query.startTime()),
                 Timestamp.from(query.endTime()),
-                Math.max(1, Math.min(query.size(), 500)),
-                Math.max(0, query.page()) * Math.max(1, Math.min(query.size(), 500))
+                Math.max(1, Math.min(query.size(), 1000)),
+                Math.max(0, query.page()) * Math.max(1, Math.min(query.size(), 1000))
         );
     }
 

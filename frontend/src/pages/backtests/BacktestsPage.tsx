@@ -1,3 +1,4 @@
+import {FrozenResearchInputSummary} from '@/features/backtests/FrozenResearchInputSummary';
 import {canWriteResearch} from '@/utils/distribution';
 import {ObjectConfigurationInput} from '@/components/configuration/ObjectConfigurationInput';
 import {configurationObject} from '@/components/configuration/object-configuration';
@@ -675,6 +676,7 @@ export function BacktestsPage() {
                                     t('pages:notBound')}
                             </Descriptions.Item>
                         </Descriptions>
+                        <FrozenResearchInputSummary datasetSnapshot={backtestDetailQuery.data.datasetSnapshotJson} />
                         {boundVersion.isError && (
                             <Alert
                                 type="error"
@@ -1193,6 +1195,9 @@ export function BacktestsPage() {
                     >
                         <InputNumber style={{width: '100%'}} min={0.0001} />
                     </Form.Item>
+                    {createDataset?.exchangeCode === 'OKX' && ['BTC-USDT', 'ETH-USDT'].includes(createDataset.symbol) && createDataset.interval === '1h' && (
+                        <Alert type="info" showIcon message={t('pages:researchDataset.rulesHelp')} style={{marginBottom: 16}} />
+                    )}
                     <Form.Item
                         label={t('pages:executionParameters')}
                         name="executionSpec"

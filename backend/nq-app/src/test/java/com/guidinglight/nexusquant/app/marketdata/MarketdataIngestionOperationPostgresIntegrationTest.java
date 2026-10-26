@@ -119,14 +119,14 @@ class MarketdataIngestionOperationPostgresIntegrationTest {
                     var left = workers.submit(() -> service.runOnce(jobId, runId));
                     assertTrue(entered.await(5, TimeUnit.SECONDS));
                     var right = workers.submit(() -> service.runOnce(jobId, runId));
-                    // 确认第二条数据库连接实际等待行锁，而不以线程尚未结束冒充并发覆盖。
-                    awaitDatabaseLock(jdbc);
-                    assertTrue(
-                            service.findRun(jobId, runId).isEmpty(),
-                            "uncommitted running state is not a durable outcome");
+                    // 下载期间RUNNING已提交；并发同编号只读返回，来源线程不持有长事务。
+                    var concurrent = right.get(5, TimeUnit.SECONDS);
+                    assertEquals(MarketdataIngestionStatus.RUNNING, concurrent.status());
+                    assertEquals(concurrent, service.findRun(jobId, runId).orElseThrow());
+                    assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity "
+                            + "WHERE datname=current_database() AND state='idle in transaction'", Integer.class));
                     release.countDown();
                     original = left.get(10, TimeUnit.SECONDS);
-                    assertEquals(original, right.get(10, TimeUnit.SECONDS));
                 } finally {
                     release.countDown();
                     workers.shutdownNow();
@@ -167,8 +167,8 @@ class MarketdataIngestionOperationPostgresIntegrationTest {
                             service.runOnce(jobId, rolledBack);
                             status.setRollbackOnly();
                         });
-                assertTrue(service.findRun(jobId, rolledBack).isEmpty());
-                assertEquals(2, count(jdbc, "marketdata_bars"));
+                assertTrue(service.findRun(jobId, rolledBack).isPresent());
+                assertEquals(3, count(jdbc, "marketdata_bars"));
                 var committed = service.runOnce(jobId, rolledBack);
                 assertEquals(MarketdataIngestionStatus.SUCCEEDED, committed.status());
                 assertEquals(3, count(jdbc, "marketdata_bars"));
@@ -199,21 +199,64 @@ class MarketdataIngestionOperationPostgresIntegrationTest {
                 assertEquals(partial, service.findRun(partialJob, partialId).orElseThrow());
                 assertEquals(partial, service.runOnce(partialJob, partialId));
                 assertEquals(0, jdbc.queryForObject("SELECT count(*) FROM marketdata_bars WHERE symbol='ETH-USDT'", Integer.class));
+                // 超过500根的真实数据库前缀、来源失败及重建服务后的续拉，均通过持久化数量证明。
+                Instant thirtyDayStart = START.minusSeconds(30 * 86400L);
+                var pageCalls = new AtomicInteger();
+                provider.set((job, from, to) -> {
+                    if (pageCalls.incrementAndGet() == 2)
+                        throw new IllegalStateException("controlled second page interruption");
+                    return hourlyBars(job, from, to);
+                });
+                UUID longJob = service.createJob(new CreateMarketdataIngestionJobCommand(
+                        "OKX", "SPOT", "ETH-USDT", "1h", thirtyDayStart,
+                        START.minusMillis(1), "synthetic-ingestion-owner")).jobId();
+                var interrupted = service.runOnce(longJob);
+                assertEquals(MarketdataIngestionStatus.FAILED, interrupted.status());
+                assertEquals(300, interrupted.insertedBars());
+                assertEquals(thirtyDayStart.plusSeconds(300 * 3600L).minusMillis(1), interrupted.actualEndTime());
+                assertEquals(300, jdbc.queryForObject("SELECT count(*) FROM marketdata_bars WHERE symbol='ETH-USDT'", Integer.class));
+                try (var reopened = context(new DriverManagerDataSource(url, user, password),
+                        MarketdataIngestionOperationPostgresIntegrationTest::hourlyBars)) {
+                    var resumedService = reopened.getBean(MarketdataIngestionService.class);
+                    assertEquals(interrupted, resumedService.findRun(longJob, interrupted.runId()).orElseThrow());
+                    var continued = resumedService.runOnce(longJob);
+                    assertEquals(MarketdataIngestionStatus.SUCCEEDED, continued.status());
+                    assertEquals(thirtyDayStart.plusSeconds(300 * 3600L), continued.requestedStartTime());
+                    assertEquals(420, continued.insertedBars());
+                    assertEquals(0, continued.updatedBars());
+                    assertEquals(continued, resumedService.runOnce(longJob, continued.runId()));
+                }
+                assertEquals(720, jdbc.queryForObject("SELECT count(*) FROM marketdata_bars WHERE symbol='ETH-USDT'", Integer.class));
+                assertEquals(720, jdbc.queryForObject("SELECT count(DISTINCT open_time) FROM marketdata_bars WHERE symbol='ETH-USDT'", Integer.class));
                 assertEquals(0, count(jdbc, "orders"));
                 assertEquals(0, count(jdbc, "trades"));
                 assertEquals(0, count(jdbc, "ledger_entries"));
                 Files.writeString(
                         evidence.resolve("result.txt"),
                         "PASS_SERVICE_REPOSITORY_PG24_REAL_SPRING_TRANSACTION_PROXY\n"
-                                + "same-id replay; changed-input409; observed row-lock contention; source called once; "
-                                + "adjacent-bar resume; failure replay; rollback then same-id commit; "
-                                + "new context exact read; zero trading facts\n"
+                                + "same-id replay; changed-input409; committed RUNNING and no idle network transaction; source called once; "
+                                + "adjacent-bar resume; failure replay; independent batch commit survives caller rollback; "
+                                + "new context exact read; ETH720 database count; second-page failure preserves300; reopened service resumes420; zero trading facts\n"
                                 + "No Servlet, browser, application-process restart, real provider or installer claim.\n");
             }
             passed = true;
         } finally {
             if (passed) control.execute("DROP DATABASE " + name);
         }
+    }
+
+    private static List<HistoricalBar> hourlyBars(
+            com.guidinglight.nexusquant.marketdata.domain.MarketdataIngestionJob job,
+            Instant from, Instant to) {
+        var values = new java.util.ArrayList<HistoricalBar>();
+        for (Instant open = from; !open.plusSeconds(3600).minusMillis(1).isAfter(to);
+                open = open.plusSeconds(3600)) {
+            values.add(new HistoricalBar("OKX", job.symbol(), BarInterval.ONE_HOUR, open,
+                    open.plusSeconds(3600).minusMillis(1), BigDecimal.TEN, BigDecimal.TEN,
+                    BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ONE));
+        }
+        java.util.Collections.reverse(values);
+        return values;
     }
 
     private static AnnotationConfigApplicationContext context(

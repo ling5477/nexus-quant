@@ -14,9 +14,14 @@ import com.guidinglight.nexusquant.marketdata.domain.port.MarketdataIngestionJob
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
@@ -26,6 +31,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Semaphore;
+import java.util.function.Supplier;
 
 /**
  * MarketdataIngestionService 编排历史 K 线接入历史 K 线接入最小闭环。
@@ -48,34 +55,47 @@ public class MarketdataIngestionService {
     private final MarketdataBarRepository marketdataBarRepository;
     private final HistoricalKlineProvider historicalKlineProvider;
     private final Clock clock;
+    private final TransactionTemplate batches;
+    private final Semaphore capacity = new Semaphore(2);
+    private static final int BATCH_BARS = 300;
+    private static final int MAX_BATCHES = 10;
+    private static final Duration RUN_LEASE = Duration.ofMinutes(5);
 
     @Autowired
     public MarketdataIngestionService(
-            MarketdataIngestionJobRepository ingestionJobRepository,
-            MarketdataBarRepository marketdataBarRepository,
-            HistoricalKlineProvider historicalKlineProvider) {
-        this(
-                ingestionJobRepository,
-                marketdataBarRepository,
-                historicalKlineProvider,
-                Clock.systemUTC());
+            MarketdataIngestionJobRepository jobs, MarketdataBarRepository bars,
+            HistoricalKlineProvider provider, PlatformTransactionManager manager) {
+        this(jobs, bars, provider, Clock.systemUTC(), manager);
+    }
+
+    public MarketdataIngestionService(
+            MarketdataIngestionJobRepository jobs, MarketdataBarRepository bars,
+            HistoricalKlineProvider provider) {
+        this(jobs, bars, provider, Clock.systemUTC(), null);
     }
 
     MarketdataIngestionService(
-            MarketdataIngestionJobRepository ingestionJobRepository,
-            MarketdataBarRepository marketdataBarRepository,
-            HistoricalKlineProvider historicalKlineProvider,
-            Clock clock) {
-        this.ingestionJobRepository =
-                Objects.requireNonNull(
-                        ingestionJobRepository, "ingestionJobRepository must not be null");
-        this.marketdataBarRepository =
-                Objects.requireNonNull(
-                        marketdataBarRepository, "marketdataBarRepository must not be null");
-        this.historicalKlineProvider =
-                Objects.requireNonNull(
-                        historicalKlineProvider, "historicalKlineProvider must not be null");
-        this.clock = Objects.requireNonNull(clock, "clock must not be null");
+            MarketdataIngestionJobRepository jobs, MarketdataBarRepository bars,
+            HistoricalKlineProvider provider, Clock clock) {
+        this(jobs, bars, provider, clock, null);
+    }
+
+    MarketdataIngestionService(
+            MarketdataIngestionJobRepository jobs, MarketdataBarRepository bars,
+            HistoricalKlineProvider provider, Clock clock, PlatformTransactionManager manager) {
+        this.ingestionJobRepository = Objects.requireNonNull(jobs);
+        this.marketdataBarRepository = Objects.requireNonNull(bars);
+        this.historicalKlineProvider = Objects.requireNonNull(provider);
+        this.clock = Objects.requireNonNull(clock);
+        this.batches = manager == null ? null : new TransactionTemplate(manager);
+        if (batches != null) {
+            batches.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            batches.setTimeout(10);
+        }
+    }
+
+    private <T> T transaction(Supplier<T> action) {
+        return batches == null ? action.get() : batches.execute(status -> action.get());
     }
 
     /**
@@ -185,173 +205,187 @@ public class MarketdataIngestionService {
                 .filter(run -> run.jobId().equals(jobId));
     }
 
-    /**
-     * 执行一次历史 K 线接入。
-     * <p>
-     * Why:
-     * 每次 run-once 都先写 RUNNING 记录，再调用交易所；即使外部网络失败，也能留下可查询的失败状态。
-     */
-    @Transactional
+    /** 网络读取不持有数据库事务；每批行情和连续前缀进度在同一短事务中确认。 */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public MarketdataIngestionRun runOnce(UUID jobId) {
         return runOnce(jobId, UUID.randomUUID());
     }
 
-    /** 同一执行编号包括失败结果也只执行一次；另一次显式执行必须使用新编号。 */
-    @Transactional
+    /** 同一运行编号重读原状态；中断后使用新的显式运行编号从已确认前缀继续。 */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public MarketdataIngestionRun runOnce(UUID jobId, UUID runId) {
-        Objects.requireNonNull(runId, "runId must not be null");
-        MarketdataIngestionJob job =
-                ingestionJobRepository
-                        .lockJob(Objects.requireNonNull(jobId, "jobId must not be null"))
-                        .orElseThrow(
-                                () ->
-                                        new IllegalArgumentException(
-                                                "marketdata ingestion job not found"));
-        var existing = ingestionJobRepository.findRun(runId);
-        if (existing.isPresent()) {
-            if (!existing.get().jobId().equals(jobId)) {
-                throw new IllegalStateException(
-                        "ingestion run identity already belongs to another request");
-            }
-            return existing.get();
-        }
-        Instant startedAt = Instant.now(clock).truncatedTo(ChronoUnit.MICROS);
-        Instant requestedStart = resolveResumeStart(job);
-        Instant requestedEnd = job.endTime();
-        MarketdataIngestionRun running =
-                ingestionJobRepository.createRun(
-                        new MarketdataIngestionRun(
-                                runId,
-                                job.jobId(),
-                                MarketdataIngestionStatus.RUNNING,
-                                startedAt,
-                                null,
-                                requestedStart,
-                                requestedEnd,
-                                null,
-                                null,
-                                0,
-                                0,
-                                0,
-                                0,
-                                null,
-                                "{}",
-                                startedAt));
-        // 不同任务竞争同一个运行主键时，唯一约束重读不能把另一任务的结果当作本次RUNNING。
-        if (!running.jobId().equals(jobId)) {
-            throw new IllegalStateException(
-                    "ingestion run identity already belongs to another request");
-        }
-        ingestionJobRepository.updateJobStatus(
-                job.jobId(), MarketdataIngestionStatus.RUNNING, startedAt);
+        Objects.requireNonNull(jobId);
+        Objects.requireNonNull(runId);
+        if (!capacity.tryAcquire()) throw new IllegalStateException("INGESTION_CAPACITY_BUSY");
         try {
-            List<HistoricalBar> fetchedBars =
-                    historicalKlineProvider.fetchBars(job, requestedStart, requestedEnd);
-            // 公开行情只有响应收到后才进入本次采集的观察范围，不能使用请求开始时间提前发布可见性。
-            Instant observedAt = Instant.now(clock).truncatedTo(ChronoUnit.MICROS);
-            List<HistoricalBar> validBars =
-                    fetchedBars.stream()
-                            .filter(bar -> isValidBar(job, bar))
-                            .sorted(Comparator.comparing(HistoricalBar::openTime))
-                            .toList();
-            int skippedBars = fetchedBars.size() - validBars.size();
-            MarketdataBarUpsertStats stats =
-                    validBars.isEmpty()
-                            ? new MarketdataBarUpsertStats(0, 0, skippedBars)
-                            : marketdataBarRepository.upsertBars(
-                                    validBars, job.source(), observedAt);
-            Instant finishedAt = Instant.now(clock).truncatedTo(ChronoUnit.MICROS);
-            MarketdataIngestionStatus status =
-                    skippedBars > 0
-                            ? MarketdataIngestionStatus.PARTIAL
-                            : MarketdataIngestionStatus.SUCCEEDED;
-            MarketdataIngestionRun finished =
-                    new MarketdataIngestionRun(
-                            running.runId(),
-                            running.jobId(),
-                            status,
-                            running.startedAt(),
-                            finishedAt,
-                            requestedStart,
-                            requestedEnd,
-                            validBars.stream()
-                                    .map(HistoricalBar::openTime)
-                                    .min(Comparator.naturalOrder())
-                                    .orElse(null),
-                            validBars.stream()
-                                    .map(HistoricalBar::closeTime)
-                                    .max(Comparator.naturalOrder())
-                                    .orElse(null),
-                            fetchedBars.size(),
-                            stats.insertedCount(),
-                            stats.updatedCount(),
-                            skippedBars + stats.skippedCount(),
-                            skippedBars > 0
-                                    ? "some bars failed historical kline quality validation"
-                                    : null,
-                            buildSummaryJson(
-                                    fetchedBars.size(),
-                                    stats.insertedCount(),
-                                    stats.updatedCount(),
-                                    skippedBars + stats.skippedCount()),
-                            running.createdAt());
-            ingestionJobRepository.updateJobStatus(job.jobId(), status, finishedAt);
-            return ingestionJobRepository.finishRun(finished);
-        } catch (RuntimeException ex) {
-            Instant finishedAt = Instant.now(clock).truncatedTo(ChronoUnit.MICROS);
-            MarketdataIngestionRun failed =
-                    new MarketdataIngestionRun(
-                            running.runId(),
-                            running.jobId(),
-                            MarketdataIngestionStatus.FAILED,
-                            running.startedAt(),
-                            finishedAt,
-                            requestedStart,
-                            requestedEnd,
-                            null,
-                            null,
-                            0,
-                            0,
-                            0,
-                            0,
-                            safeErrorMessage(ex),
-                            buildErrorSummaryJson(ex),
-                            running.createdAt());
-            ingestionJobRepository.updateJobStatus(
-                    job.jobId(), MarketdataIngestionStatus.FAILED, finishedAt);
-            return ingestionJobRepository.finishRun(failed);
+            Claim claim = transaction(() -> claim(jobId, runId));
+            if (!claim.execute()) return claim.run();
+            MarketdataIngestionJob job = claim.job();
+            MarketdataIngestionRun progress = claim.run();
+            try {
+                for (int page = 0; page < MAX_BATCHES; page++) {
+                    Instant from = progress.actualEndTime() == null
+                            ? progress.requestedStartTime() : progress.actualEndTime().plusMillis(1);
+                    if (from.plus(job.interval().duration()).minusMillis(1).isAfter(job.endTime())) {
+                        MarketdataIngestionRun complete = progress;
+                        boolean covered = !from.isBefore(job.endTime());
+                        return transaction(() -> finishOwned(job, complete,
+                                covered ? MarketdataIngestionStatus.SUCCEEDED : MarketdataIngestionStatus.PARTIAL,
+                                covered ? null : "INGESTION_WINDOW_HAS_INCOMPLETE_INTERVAL"));
+                    }
+                    Instant until = from.plus(job.interval().duration().multipliedBy(BATCH_BARS))
+                            .minusMillis(1);
+                    if (until.isAfter(job.endTime())) until = job.endTime();
+                    List<HistoricalBar> fetched = historicalKlineProvider.fetchBars(job, from, until);
+                    Instant observedAt = now();
+                    Batch checked = validateBatch(job, from, until, fetched, observedAt);
+                    MarketdataIngestionRun previous = progress;
+                    progress = transaction(() -> checkpoint(job, previous, checked, observedAt));
+                    if (checked.failure() != null) {
+                        MarketdataIngestionRun partial = progress;
+                        return transaction(() -> finishOwned(job, partial,
+                                MarketdataIngestionStatus.PARTIAL, checked.failure()));
+                    }
+                }
+                MarketdataIngestionRun partial = progress;
+                return transaction(() -> finishOwned(job, partial,
+                        MarketdataIngestionStatus.PARTIAL, "INGESTION_BATCH_LIMIT_CONTINUE"));
+            } catch (RuntimeException failure) {
+                MarketdataIngestionRun previous = progress;
+                return transaction(() -> finishOwned(job, previous,
+                        MarketdataIngestionStatus.FAILED, safeErrorMessage(failure)));
+            }
+        } finally {
+            capacity.release();
         }
+    }
+
+    private Claim claim(UUID jobId, UUID runId) {
+        MarketdataIngestionJob job = ingestionJobRepository.lockJob(jobId)
+                .orElseThrow(() -> new IllegalArgumentException("marketdata ingestion job not found"));
+        Optional<MarketdataIngestionRun> existing = ingestionJobRepository.findRun(runId);
+        if (existing.isPresent()) {
+            if (!existing.get().jobId().equals(jobId))
+                throw new IllegalStateException("ingestion run identity already belongs to another request");
+            return new Claim(job, existing.get(), false);
+        }
+        Instant at = now();
+        for (MarketdataIngestionRun active : ingestionJobRepository.listRuns(jobId)) {
+            if (active.status() != MarketdataIngestionStatus.RUNNING) continue;
+            if (job.updatedAt().plus(RUN_LEASE).isAfter(at))
+                throw new IllegalStateException("INGESTION_RUN_IN_PROGRESS");
+            // 失联工作者只有租约过期后才被接替，旧工作者的后续批次必须在写入前重新核对归属。
+            ingestionJobRepository.finishRun(copy(active, MarketdataIngestionStatus.FAILED, at,
+                    active.actualStartTime(), active.actualEndTime(), active.fetchedBars(),
+                    active.insertedBars(), active.updatedBars(), active.skippedBars(),
+                    "INGESTION_INTERRUPTED_RESUME_REQUIRED"));
+        }
+        Instant from = resolveResumeStart(job);
+        var run = ingestionJobRepository.createRun(new MarketdataIngestionRun(runId, jobId,
+                MarketdataIngestionStatus.RUNNING, at, null, from, job.endTime(), null, null,
+                0, 0, 0, 0, null, "{}", at));
+        if (!run.jobId().equals(jobId))
+            throw new IllegalStateException("ingestion run identity already belongs to another request");
+        ingestionJobRepository.updateJobStatus(jobId, MarketdataIngestionStatus.RUNNING, at);
+        return new Claim(job, run, true);
+    }
+
+    private MarketdataIngestionRun checkpoint(MarketdataIngestionJob job,
+            MarketdataIngestionRun previous, Batch batch, Instant observedAt) {
+        requireOwned(job, previous);
+        MarketdataBarUpsertStats stats = batch.bars().isEmpty()
+                ? new MarketdataBarUpsertStats(0, 0)
+                : marketdataBarRepository.upsertBars(batch.bars(), job.source(), observedAt);
+        if (stats.skippedCount() != 0)
+            throw new IllegalStateException("INGESTION_BATCH_PERSISTENCE_INCOMPLETE");
+        var saved = ingestionJobRepository.finishRun(copy(previous,
+                MarketdataIngestionStatus.RUNNING, null,
+                previous.actualStartTime() != null ? previous.actualStartTime()
+                        : batch.bars().isEmpty() ? null : batch.bars().getFirst().openTime(),
+                batch.bars().isEmpty() ? previous.actualEndTime() : batch.bars().getLast().closeTime(),
+                previous.fetchedBars() + batch.fetched(),
+                previous.insertedBars() + stats.insertedCount(),
+                previous.updatedBars() + stats.updatedCount(),
+                previous.skippedBars() + batch.fetched() - batch.bars().size(), batch.failure()));
+        ingestionJobRepository.updateJobStatus(job.jobId(), MarketdataIngestionStatus.RUNNING, now());
+        return saved;
+    }
+
+    private MarketdataIngestionRun finishOwned(MarketdataIngestionJob job,
+            MarketdataIngestionRun previous, MarketdataIngestionStatus status, String reason) {
+        requireOwned(job, previous);
+        Instant at = now();
+        var finished = ingestionJobRepository.finishRun(copy(previous, status, at,
+                previous.actualStartTime(), previous.actualEndTime(), previous.fetchedBars(),
+                previous.insertedBars(), previous.updatedBars(), previous.skippedBars(), reason));
+        ingestionJobRepository.updateJobStatus(job.jobId(), status, at);
+        return finished;
+    }
+
+    private void requireOwned(MarketdataIngestionJob job, MarketdataIngestionRun run) {
+        ingestionJobRepository.lockJob(job.jobId()).orElseThrow();
+        MarketdataIngestionRun stored = ingestionJobRepository.findRun(run.runId()).orElseThrow();
+        if (stored.status() != MarketdataIngestionStatus.RUNNING
+                || !stored.jobId().equals(job.jobId()))
+            throw new IllegalStateException("INGESTION_RUN_OWNERSHIP_LOST");
+    }
+
+    private Batch validateBatch(MarketdataIngestionJob job, Instant from, Instant until,
+            List<HistoricalBar> fetched, Instant observedAt) {
+        if (fetched == null || fetched.size() > BATCH_BARS)
+            throw new IllegalStateException("INGESTION_PAGE_BOUND_EXCEEDED");
+        if (fetched.isEmpty()) return new Batch(List.of(), 0, "INGESTION_EMPTY_PAGE");
+        var ordered = fetched.stream().sorted(Comparator.comparing(HistoricalBar::openTime)).toList();
+        var accepted = new java.util.ArrayList<HistoricalBar>();
+        Instant expected = from;
+        Set<Instant> seen = new java.util.HashSet<>();
+        for (HistoricalBar bar : ordered) {
+            if (!seen.add(bar.openTime()))
+                return new Batch(List.copyOf(accepted), fetched.size(), "INGESTION_DUPLICATE_PAGE");
+            if (!bar.openTime().equals(expected) || bar.closeTime().isAfter(until)
+                    || !isValidBar(job, bar, observedAt))
+                return new Batch(List.copyOf(accepted), fetched.size(), "INGESTION_GAP_OR_INVALID_BAR");
+            accepted.add(bar);
+            expected = expected.plus(job.interval().duration());
+        }
+        // 短页只确认连续前缀，下一次显式续拉仍从紧邻开盘时间开始，绝不跨过缺口。
+        String failure = expected.plus(job.interval().duration()).minusMillis(1).isAfter(until)
+                ? null : "INGESTION_INCOMPLETE_PAGE";
+        return new Batch(List.copyOf(accepted), fetched.size(), failure);
+    }
+
+    private MarketdataIngestionRun copy(MarketdataIngestionRun run, MarketdataIngestionStatus status,
+            Instant finished, Instant first, Instant last, int fetched, int inserted, int updated,
+            int skipped, String error) {
+        return new MarketdataIngestionRun(run.runId(), run.jobId(), status, run.startedAt(), finished,
+                run.requestedStartTime(), run.requestedEndTime(), first, last, fetched, inserted,
+                updated, skipped, error, buildSummaryJson(fetched, inserted, updated, skipped), run.createdAt());
     }
 
     private Instant resolveResumeStart(MarketdataIngestionJob job) {
-        Optional<Instant> latestEnd =
-                ingestionJobRepository.findLatestSuccessfulActualEnd(job.jobId());
-        if (latestEnd.isEmpty()) {
-            return job.startTime();
-        }
-        // 适配器的closeTime是包含最后一毫秒的闭区间；再加一个周期会跳过紧邻的完整K线。
-        Instant next = latestEnd.get().plusMillis(1);
-        return next.isAfter(job.endTime()) ? job.endTime() : next;
+        Optional<Instant> latestEnd = ingestionJobRepository.findLatestSuccessfulActualEnd(job.jobId());
+        return latestEnd.map(value -> value.plusMillis(1)).orElse(job.startTime());
     }
 
-    private boolean isValidBar(MarketdataIngestionJob job, HistoricalBar bar) {
+    private boolean isValidBar(MarketdataIngestionJob job, HistoricalBar bar, Instant observedAt) {
         return job.exchangeCode().equals(bar.exchangeCode())
-                && job.marketType().equals(bar.marketType())
-                && job.symbol().equals(bar.symbol())
+                && job.marketType().equals(bar.marketType()) && job.symbol().equals(bar.symbol())
                 && job.interval() == bar.interval()
-                && !bar.openTime().isBefore(job.startTime())
-                && !bar.closeTime().isAfter(job.endTime())
-                && isPositive(bar.openPrice())
-                && isPositive(bar.highPrice())
-                && isPositive(bar.lowPrice())
-                && isPositive(bar.closePrice())
-                && bar.volume() != null
-                && bar.volume().signum() >= 0;
+                && !bar.openTime().isBefore(job.startTime()) && !bar.closeTime().isAfter(job.endTime())
+                && bar.openTime().toEpochMilli() % job.interval().duration().toMillis() == 0
+                && bar.closeTime().equals(bar.openTime().plus(job.interval().duration()).minusMillis(1))
+                && bar.closeTime().isBefore(observedAt)
+                && isPositive(bar.openPrice()) && isPositive(bar.highPrice())
+                && isPositive(bar.lowPrice()) && isPositive(bar.closePrice())
+                && bar.highPrice().compareTo(bar.openPrice().max(bar.closePrice()).max(bar.lowPrice())) >= 0
+                && bar.lowPrice().compareTo(bar.openPrice().min(bar.closePrice()).min(bar.highPrice())) <= 0
+                && bar.volume() != null && bar.volume().signum() >= 0;
     }
 
-    private boolean isPositive(BigDecimal value) {
-        return value != null && value.signum() > 0;
-    }
+    private boolean isPositive(BigDecimal value) { return value != null && value.signum() > 0; }
+    private Instant now() { return Instant.now(clock).truncatedTo(ChronoUnit.MICROS); }
+    private record Claim(MarketdataIngestionJob job, MarketdataIngestionRun run, boolean execute) {}
+    private record Batch(List<HistoricalBar> bars, int fetched, String failure) {}
 
     private String normalizeExchange(String exchangeCode) {
         String normalized = requireText(exchangeCode, "exchangeCode").toUpperCase(Locale.ROOT);
@@ -412,11 +446,4 @@ public class MarketdataIngestionService {
                 .trim();
     }
 
-    private String buildErrorSummaryJson(RuntimeException ex) {
-        return """
-                {"errorType":"%s"}
-                """
-                .formatted(ex.getClass().getSimpleName())
-                .trim();
-    }
 }

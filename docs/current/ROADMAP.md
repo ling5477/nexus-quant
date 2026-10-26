@@ -1,8 +1,14 @@
 # Roadmap
 
-当前阶段和安全状态由 [STATUS.md](STATUS.md) 的机器区块唯一拥有。本文件解释发布准备的剩余动作，不授予提交、公开发行或部署权限。
+当前阶段和安全状态由 [STATUS.md](STATUS.md) 的机器区块唯一拥有。本文件解释当前迭代及历史发布动作，不授予提交、公开发行或部署权限。
 
-## 当前状态
+## 当前 v1.0.2 范围
+
+v1.0.1 已发布。当前实施 `NQ-V102-01-RESEARCH-DATASET-PRODUCTIZATION`：OKX Spot BTC/ETH、1h、最多30完整UTC日接入，质量检查，完整研究输入冻结，现有正式策略版本回测与结果页面贯通。沿用历史接入、Dataset和研究链，不新增策略或批量实验平台。本轮收尾以[实施报告](evidence/NQ_V102_01_RESEARCH_DATASET_PRODUCTIZATION.md)的实际验证结论为准；不提前实施第二种正式策略，不授予Git发布、LIVE或生产部署权限。
+
+下文为2026-10-20发布准备历史，保留原始身份与结论，不作为本轮待办。
+
+## 历史状态
 
 截至 2026-10-20，dev 集成源码为 `565764cce5862ecc02ca7d1ce18d56fc382d8841`，tree=`39d472ade2d678e0e053875fcd425611f991614f`；PR #64 已合并，同一 head 的 CI `39373837941` 为 completed/success、9/9 SUCCESS。该CI只绑定集成基线，新文档与Snapshot提交的远端CI必须单独获得。
 
@@ -18,7 +24,7 @@ C1/C2/C3 已完成；下一阶段是解决 Release 发布门槛，再进入版�
 
 本轮正式清单内产品文档随新的本地开发提交、独立白名单Snapshot和新目录发行包共同冻结；来源及最终摘要见 `C:/nq-v1-freeze-20261020-565764cc/NQ_V1_FINAL_RELEASE_ADMISSION_AND_PACKAGE_FREEZE_REPORT.md`。旧包不修改、不复用旧摘要代表新内容。开发文档不进入Release，精确白名单不扩大。当前机器work batch指向尚未公开发布的新候选；远端exact-head CI未经执行，不声明已通过。
 
-## 下一允许工作
+## 历史下一允许工作
 
 1. 保留已接受的历史UI证据例外和重跑豁免，复用已完成的39项定向证明及独立审查；后续发布前取得新SOURCE_SHA和Release Snapshot准确身份的远端CI，不重跑72小时。
 2. 本轮已授权文档本地提交及新包冻结；最终源码、包与安装恢复身份由本轮最终报告记录，原包保持不变。
