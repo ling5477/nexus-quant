@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -59,38 +58,12 @@ public final class SpotSmaTargetStrategy {
         if (closedBars.isEmpty()) {
             return new Decision(BigDecimal.ZERO, "INSUFFICIENT_HISTORY", null);
         }
-        for (int index = 0; index < closedBars.size(); index++) {
-            HistoricalBar bar = Objects.requireNonNull(closedBars.get(index), "bar");
-            if (!bar.closeTime().isAfter(bar.openTime()) || bar.availableAt() == null
-                    || bar.availableAt().isBefore(bar.closeTime()) || bar.closePrice() == null
-                    || bar.closePrice().signum() <= 0 || !"OK".equals(bar.qualityStatus())) {
-                throw new IllegalArgumentException("INVALID_BAR");
-            }
-            if (index > 0) {
-                HistoricalBar previous = closedBars.get(index - 1);
-                if (!bar.openTime().isAfter(previous.openTime())) {
-                    throw new IllegalArgumentException("DUPLICATE_OR_OUT_OF_ORDER_BAR");
-                }
-                if (!bar.openTime().equals(previous.openTime().plus(previous.interval().duration()))
-                        || !bar.exchangeCode().equals(previous.exchangeCode())
-                        || !bar.marketType().equals(previous.marketType())
-                        || !bar.symbol().equals(previous.symbol()) || bar.interval() != previous.interval()) {
-                    throw new IllegalArgumentException("MISSING_OR_MIXED_BAR");
-                }
-                if (bar.availableAt().isBefore(previous.availableAt())) {
-                    throw new IllegalArgumentException("LATE_ARRIVING_BAR_IN_SIGNAL_WINDOW");
-                }
-            }
-        }
+        SpotIndicators.validateClosedBars(closedBars);
         HistoricalBar latest = closedBars.getLast();
         if (closedBars.size() < window) {
             return new Decision(BigDecimal.ZERO, "INSUFFICIENT_HISTORY", latest.availableAt());
         }
-        BigDecimal sum = BigDecimal.ZERO;
-        for (int index = closedBars.size() - window; index < closedBars.size(); index++) {
-            sum = sum.add(closedBars.get(index).closePrice());
-        }
-        BigDecimal average = sum.divide(BigDecimal.valueOf(window), MathContext.DECIMAL128);
+        BigDecimal average = SpotIndicators.closeAverage(closedBars, window);
         BigDecimal target = latest.closePrice().compareTo(average) > 0
                 ? investedExposure : BigDecimal.ZERO;
         return new Decision(target, target.signum() > 0 ? "ABOVE_SMA" : "AT_OR_BELOW_SMA",

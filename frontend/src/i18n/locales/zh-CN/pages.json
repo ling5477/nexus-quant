@@ -4425,5 +4425,12 @@
     "frozenAt": "冻结时间（UTC）",
     "visibility": "历史可见性假设",
     "rulesHelp": "该 OKX BTC/ETH 1h 数据集创建运行时，由服务端读取对应标的当前交易规则并冻结。当前规则不是历史规则；费用、滑点和最小名义金额保留为显式研究假设。"
-  }
+  },
+  "spotChannelBreakoutStrategy": "现货通道突破（收盘确认）",
+  "channelEntryLookback": "入场回看根数（1h）",
+  "channelExitLookback": "退出回看根数（1h）",
+  "channelLookbackInvalid": "需满足 2 ≤ 退出根数 < 入场根数 ≤ 200",
+  "channelExposurePrecision": "持仓比例最多保留8位小数",
+  "channelBehavior": "仅做多、1小时收盘确认；默认20/10为研究基准。通道排除当前K线，严格突破此前最高价入场、跌破此前最低价退出，等于阈值不触发。HOLD不交易、不再平衡、不加仓；初始目标方向为空仓。仅在信号实际可用后的合法事件执行，通道退出不是硬止损，收益与参数最优性未证明。",
+  "channelNext": "现货通道突破：下一步设置入场/退出回看根数与目标持仓比例。默认20/10为研究基准，HOLD不交易。"
 }

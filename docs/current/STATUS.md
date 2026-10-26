@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-V1-DEV-INTEGRATION
+accepted_batch=NQ-V102-01-RESEARCH-DATASET-PRODUCTIZATION
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=565764cce5862ecc02ca7d1ce18d56fc382d8841
-accepted_batch_acceptance_head=565764cce5862ecc02ca7d1ce18d56fc382d8841
-accepted_batch_ci_run=39373837941
-work_batch=NQ-V102-01-RESEARCH-DATASET-PRODUCTIZATION
-work_batch_status=CI_FAILED
-work_batch_commit=6159400d4a148b1294f8b1752ad28a3c2d0835db
-work_batch_ci_run=40291019054
-next_action=NQ-V102-01-RESEARCH-DATASET-PRODUCTIZATION-REMEDIATION
+accepted_batch_implementation_commit=0b386759da43edf67cc45f507f7a8a612e3ebfb6
+accepted_batch_acceptance_head=89eed70162fdebf87cccd15c54130847d527ca93
+accepted_batch_ci_run=40296744230
+work_batch=NQ-V102-02-STRATEGY-EXECUTION-EXPANSION
+work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
+work_batch_commit=NONE
+work_batch_ci_run=NOT_RUN
+next_action=NQ-V102-02-STRATEGY-EXECUTION-EXPANSION-COMMIT
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,9 +31,11 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
-## 当前 v1.0.2 研究数据集产品化
+## 当前 v1.0.2 策略执行扩展
 
-v1.0.1 已发布，当前任务为 `NQ-V102-01-RESEARCH-DATASET-PRODUCTIZATION`，开发基线为 `58af3c8badae2eb2b535cd512680743538d31a61`。范围是 Self-Hosted OKX Spot BTC/ETH 的1h、最多30个完整UTC日：正式接入、质量检查、完整输入冻结及现有 `SPOT_SMA_TARGET_V1` 回测。只执行代码、定向验证及精确暂存；不 Commit、Push、PR、Merge、Tag 或 Release。实际结果与限制见[本轮实施报告](evidence/NQ_V102_01_RESEARCH_DATASET_PRODUCTIZATION.md)。
+v1.0.1 已发布。研究数据集产品化已通过[PR #83](https://github.com/ling5477/nexus-quant/pull/83)正常合并至 `89eed70162fdebf87cccd15c54130847d527ca93`：候选CI `40294468193`与合并后CI `40296744230`均9/9成功。PG16补测7项零跳过；旧Demo401为原基线已有夹具缺口，未放宽权限。原实施及交付记录保留。
+
+当前 `NQ-V102-02-STRATEGY-EXECUTION-EXPANSION` 已完成本地实现、定向验证及限定独立审查：新增仅做多/1h/收盘确认的 `SPOT_CHANNEL_BREAKOUT_V1`（20/10可配置），最小共享指标，回测与SIM共用决策合同，HOLD不交易，持久化目标方向恢复。正式BTC/ETH各720根重复回测结果一致；Continuous SIM标的/provider边界不扩展。具体来源、测试与限制见[实施报告](evidence/NQ_V102_02_STRATEGY_EXECUTION_EXPANSION.md)。本阶段尚未Commit/Push/PR，远端CI未运行；前项Git授权与CI不冒充本阶段交付或真实交易权限。
 
 以下发布准备文字为2026-10-20历史记录，不重新触发发布审计，也不覆盖当前迭代。历史 Gate、C4 原审查与例外决定不变，LIVE保持关闭。
 

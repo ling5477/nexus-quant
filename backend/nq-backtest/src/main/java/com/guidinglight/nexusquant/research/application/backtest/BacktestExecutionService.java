@@ -51,7 +51,7 @@ import com.guidinglight.nexusquant.strategy.domain.SpotFeeExecutionSpec;
 import com.guidinglight.nexusquant.strategy.domain.SpotFeeModel;
 import com.guidinglight.nexusquant.strategy.domain.SpotFeeModel.Charge;
 import com.guidinglight.nexusquant.strategy.domain.SpotFeeModel.Policy;
-import com.guidinglight.nexusquant.strategy.domain.SpotSmaTargetStrategy;
+import com.guidinglight.nexusquant.strategy.domain.SpotTargetStrategy;
 import com.guidinglight.nexusquant.strategy.domain.SpotTargetSizer;
 
 import org.springframework.beans.factory.ObjectProvider;
@@ -544,19 +544,20 @@ public class BacktestExecutionService {
             List<SimPnlSnapshot> pnl,
             List<String> reasons) {
         JsonNode version = readJson(run.strategyVersionSnapshotJson());
-        SpotSmaTargetStrategy strategy =
-                SpotSmaTargetStrategy.fromSnapshot(run.strategyVersionSnapshotJson(), objectMapper);
+        SpotTargetStrategy strategy =
+                SpotTargetStrategy.fromSnapshot(run.strategyVersionSnapshotJson(), objectMapper);
         if (!run.strategyVersionId().equals(strategy.strategyVersionId())
                 || !version.path("paramSnapshotJson").equals(readJson(run.paramSnapshotJson()))) {
             throw new IllegalStateException("FROZEN_STRATEGY_SNAPSHOT_MISMATCH");
         }
         ExecutionRules rules = frozenRules(request.executionSpecJson());
-        List<SpotSmaTargetStrategy.Decision> pendingSignals = new ArrayList<>();
+        List<SpotTargetStrategy.Decision> pendingSignals = new ArrayList<>();
+        SpotTargetStrategy.PositionState strategyState = SpotTargetStrategy.PositionState.FLAT;
         for (int index = 0; index < bars.size(); index++) {
             HistoricalBar bar = bars.get(index);
             // 延迟可见的信号保留到首次严格晚于可见时间的开盘，不能被新 bar 覆盖。
             for (int pendingIndex = 0; pendingIndex < pendingSignals.size(); ) {
-                SpotSmaTargetStrategy.Decision executableSignal = pendingSignals.get(pendingIndex);
+                SpotTargetStrategy.Decision executableSignal = pendingSignals.get(pendingIndex);
                 if (!executableSignal.availableAt().isBefore(bar.openTime())) {
                     pendingIndex++;
                     continue;
@@ -642,18 +643,24 @@ public class BacktestExecutionService {
                     }
                 }
             }
-            SpotSmaTargetStrategy.Decision latestSignal =
-                    strategy.evaluate(bars.subList(0, index + 1));
+            SpotTargetStrategy.Decision latestSignal =
+                    strategy.evaluate(bars.subList(0, index + 1), strategyState);
+            strategyState = latestSignal.desiredState();
+            if (strategy.stateful() && latestSignal.requestsTrade()) {
+                reasons.add(bar.availableAt() + ":" + latestSignal.reason());
+            }
             if ("INSUFFICIENT_HISTORY".equals(latestSignal.reason())) {
                 reasons.add(bar.availableAt() + ":INSUFFICIENT_HISTORY");
-            } else {
+            } else if (latestSignal.requestsTrade()) {
                 pendingSignals.add(latestSignal);
+            } else {
+                reasons.add(bar.availableAt() + ":" + latestSignal.reason());
             }
             pnl.add(
                     createPnlSnapshot(
                             context, bar.availableAt(), bar.closePrice(), pnl.size() + 1L));
         }
-        for (SpotSmaTargetStrategy.Decision pending : pendingSignals) {
+        for (SpotTargetStrategy.Decision pending : pendingSignals) {
             reasons.add(pending.availableAt() + ":NO_LATER_TRADABLE_EVENT");
         }
     }
@@ -804,7 +811,7 @@ public class BacktestExecutionService {
                     backtestRun.researchConfigId(),
                     backtestRun.backtestConfigId(),
                     backtestRun.sourceStrategyId(),
-                    SpotSmaTargetStrategy.EXECUTABLE,
+                    SpotTargetStrategy.fromSnapshot(backtestRun.strategyVersionSnapshotJson(), objectMapper).executable(),
                     backtestRun.strategyVersionSnapshotJson(),
                     frozenDataset,
                     Instant.parse(requiredText(frozenConfig, "startTime", "startTime")),

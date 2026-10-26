@@ -85,6 +85,16 @@ public class StrategySimDecisionRepository {
         return rows.stream().findFirst();
     }
 
+    /** 使用现有 run/window 索引只读取相邻决策，状态恢复不受列表500行上限影响。 */
+    public Optional<DecisionView> findPreviousWindow(String paperRunId, Instant before) {
+        return jdbc.query("""
+                SELECT tr.* FROM strategy_sim_decisions tr
+                WHERE paper_run_id=? AND signal_open_time<?
+                  AND nq_entity_tenant('paper',tr.paper_run_id)=nq_current_tenant_id()
+                ORDER BY signal_open_time DESC LIMIT 1
+                """, (rs, n) -> map(rs), paperRunId, Timestamp.from(before)).stream().findFirst();
+    }
+
     public List<DecisionView> listByRun(String paperRunId) {
         return jdbc.query(
                 """

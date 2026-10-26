@@ -57,6 +57,7 @@ export const STRATEGY_TYPE_OPTIONS = [
         },
         value: 'SPOT_SMA_TARGET_V1',
     },
+    {get label() {return t('pages:spotChannelBreakoutStrategy');}, value: 'SPOT_CHANNEL_BREAKOUT_V1'},
     ...([
         ['GRID', 'grid'], ['BUY_AND_HOLD_FIXTURE', 'fixture'], ['E2E_SMOKE', 'smoke'],
     ] as const).map(([value, label]) => ({get label() {return t('product:' + label);}, value})),

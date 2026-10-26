@@ -4,7 +4,9 @@
 
 ## 当前 v1.0.2 范围
 
-v1.0.1 已发布。当前实施 `NQ-V102-01-RESEARCH-DATASET-PRODUCTIZATION`：OKX Spot BTC/ETH、1h、最多30完整UTC日接入，质量检查，完整研究输入冻结，现有正式策略版本回测与结果页面贯通。沿用历史接入、Dataset和研究链，不新增策略或批量实验平台。本轮收尾以[实施报告](evidence/NQ_V102_01_RESEARCH_DATASET_PRODUCTIZATION.md)的实际验证结论为准；不提前实施第二种正式策略，不授予Git发布、LIVE或生产部署权限。
+v1.0.1 已发布。`NQ-V102-01-RESEARCH-DATASET-PRODUCTIZATION`已由PR #83合并，PR与合并后CI均9/9成功。当前 `NQ-V102-02-STRATEGY-EXECUTION-EXPANSION` 完成现货收盘确认型通道突破（20/10可配置）、最小共享指标和回测/SIM共用决策语义；包括HOLD不交易、目标方向持久化及重启恢复。以[实施报告](evidence/NQ_V102_02_STRATEGY_EXECUTION_EXPANSION.md)记录的本地验证与未交付边界为准，本阶段Commit/Push/PR及远端CI尚未执行。
+
+继续保持当前BTC-only Continuous SIM、Demo策略权限和canonical交易事实源。不提前实施批量实验、Walk-Forward、完整Factor Library、ATR止损或金字塔加仓；20/10只是研究基准，不代表参数最优或盈利已证明。
 
 下文为2026-10-20发布准备历史，保留原始身份与结论，不作为本轮待办。
 

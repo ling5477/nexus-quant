@@ -19,38 +19,46 @@ interface Values {
     versionName: string;
     status: string;
     window: number;
+    entryLookbackBars: number;
+    exitLookbackBars: number;
     investedExposure: string;
     configSnapshotJson?: string;
 }
 
-/** 单均线策略的正式参数；版本号和冻结校验值由服务端生成。 */
-export function SpotSmaVersionForm({
+/** 正式现货策略的版本化参数；版本号和冻结校验值由服务端生成。 */
+export function SpotTargetVersionForm({
     onCreate,
+    strategyType,
     busy,
     disabled = false,
 }: {
     onCreate: (request: StrategyVersionCreateRequest) => Promise<boolean>;
+    strategyType: 'SPOT_SMA_TARGET_V1' | 'SPOT_CHANNEL_BREAKOUT_V1';
     busy: boolean;
     disabled?: boolean;
 }) {
     const {t} = useTranslation('pages');
+    const channel = strategyType === 'SPOT_CHANNEL_BREAKOUT_V1';
     const [form] = Form.useForm<Values>();
     return (
         <Form
             disabled={disabled}
-            name="spot-sma-version"
+            name="spot-target-version"
             form={form}
             layout="vertical"
-            initialValues={{status: 'DRAFT', window: 20, investedExposure: '1'}}
+            initialValues={{status: 'DRAFT', window: 20, entryLookbackBars: 20, exitLookbackBars: 10, investedExposure: '1'}}
             onFinish={async (values) => {
                 const created = await onCreate({
                     versionName: values.versionName,
                     status: values.status,
                     paramSnapshotJson: JSON.stringify({
-                        window: values.window,
+                        ...(channel ? {
+                            entryLookbackBars: values.entryLookbackBars,
+                            exitLookbackBars: values.exitLookbackBars,
+                        } : {window: values.window}),
                         investedExposure: values.investedExposure.trim(),
                     }),
-                    sourceSnapshotJson: JSON.stringify({executable: 'SPOT_SMA_TARGET_V1'}),
+                    sourceSnapshotJson: JSON.stringify({executable: strategyType, ...(channel ? {timeframe: '1h', confirmation: 'BAR_CLOSE', currentBarExcluded: true, pyramiding: false, allowShort: false} : {})}),
                     configSnapshotJson: values.configSnapshotJson,
                 });
                 if (created) form.resetFields();
@@ -76,7 +84,28 @@ export function SpotSmaVersionForm({
                         />
                     </Form.Item>
                 </Col>
-                <Col xs={24} md={12}>
+                {channel ? <>
+                    <Col xs={24} md={12}>
+                        <Form.Item label={t('pages:channelEntryLookback')} name="entryLookbackBars"
+                            dependencies={['exitLookbackBars']}
+                            rules={[{required: true}, {type: 'integer', min: 3, max: 200},
+                                ({getFieldValue}) => ({validator: async (_, value) => {
+                                    if (value <= getFieldValue('exitLookbackBars')) throw new Error(t('pages:channelLookbackInvalid'));
+                                }})]}>
+                            <InputNumber min={3} max={200} precision={0} style={{width: '100%'}} />
+                        </Form.Item>
+                    </Col>
+                    <Col xs={24} md={12}>
+                        <Form.Item label={t('pages:channelExitLookback')} name="exitLookbackBars"
+                            dependencies={['entryLookbackBars']}
+                            rules={[{required: true}, {type: 'integer', min: 2, max: 199},
+                                ({getFieldValue}) => ({validator: async (_, value) => {
+                                    if (value >= getFieldValue('entryLookbackBars')) throw new Error(t('pages:channelLookbackInvalid'));
+                                }})]}>
+                            <InputNumber min={2} max={199} precision={0} style={{width: '100%'}} />
+                        </Form.Item>
+                    </Col>
+                </> : <Col xs={24} md={12}>
                     <Form.Item
                         label={t('pages:smaWindow')}
                         name="window"
@@ -85,7 +114,7 @@ export function SpotSmaVersionForm({
                     >
                         <InputNumber min={2} max={200} precision={0} style={{width: '100%'}} />
                     </Form.Item>
-                </Col>
+                </Col>}
                 <Col xs={24} md={12}>
                     <Form.Item
                         label={t('pages:smaExposure')}
@@ -99,6 +128,8 @@ export function SpotSmaVersionForm({
                                         !/^(?:0\.\d*[1-9]\d*|1(?:\.0+)?)$/.test(value?.trim() ?? '')
                                     )
                                         throw new Error(t('pages:smaExposureInvalid'));
+                                    if (channel && (value.trim().split('.')[1]?.replace(/0+$/, '').length ?? 0) > 8)
+                                        throw new Error(t('pages:channelExposurePrecision'));
                                 },
                             },
                         ]}
@@ -107,7 +138,7 @@ export function SpotSmaVersionForm({
                     </Form.Item>
                 </Col>
             </Row>
-            <Typography.Paragraph type="secondary">{t('pages:smaBehavior')}</Typography.Paragraph>
+            <Typography.Paragraph type="secondary">{t(channel ? 'pages:channelBehavior' : 'pages:smaBehavior')}</Typography.Paragraph>
             <Collapse
                 items={[
                     {

@@ -12,6 +12,6 @@ describe('策略类型的业务标签', () => {
         expect(i18n.language).toBe('en-US');
         expect(STRATEGY_TYPE_OPTIONS.find(option => option.value === 'E2E_SMOKE')?.label).toBe('End-to-end smoke (test definition)');
         expect(STRATEGY_TYPE_OPTIONS.map(option => option.value)).toEqual(ids);
-        expect(ids).toEqual(['SPOT_SMA_TARGET_V1', 'GRID', 'BUY_AND_HOLD_FIXTURE', 'E2E_SMOKE']);
+        expect(ids).toEqual(['SPOT_SMA_TARGET_V1', 'SPOT_CHANNEL_BREAKOUT_V1', 'GRID', 'BUY_AND_HOLD_FIXTURE', 'E2E_SMOKE']);
     });
 });

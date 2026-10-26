@@ -4425,5 +4425,12 @@
     "frozenAt": "Frozen at (UTC)",
     "visibility": "Historical visibility assumption",
     "rulesHelp": "At run creation the server reads and freezes current rules for the selected OKX BTC/ETH 1h instrument. Current rules are not historical rules; fees, slippage and minimum notional remain explicit research assumptions."
-  }
+  },
+  "spotChannelBreakoutStrategy": "Spot channel breakout (close confirmed)",
+  "channelEntryLookback": "Entry lookback bars (1h)",
+  "channelExitLookback": "Exit lookback bars (1h)",
+  "channelLookbackInvalid": "Require 2 ≤ exit lookback < entry lookback ≤ 200",
+  "channelExposurePrecision": "Exposure supports at most 8 decimal places",
+  "channelBehavior": "Long only, confirmed at 1h bar close; 20/10 is a research baseline. Channels exclude the current bar. Enter strictly above prior highs, exit strictly below prior lows; equality does not trigger. HOLD creates no trade, rebalancing or pyramiding. Initial desired state is FLAT. Execution uses a legal event after actual signal availability. Channel exit is not a hard stop; profitability and optimal parameters are unproven.",
+  "channelNext": "Spot channel breakout: set entry/exit lookbacks and target allocation in the next step. 20/10 is a research baseline; HOLD creates no trade."
 }
