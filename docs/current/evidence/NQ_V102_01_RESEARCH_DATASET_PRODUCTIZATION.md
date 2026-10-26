@@ -107,3 +107,15 @@ Commit: NOT_COMMITTED
 Push: NOT_PUSHED
 Release: NOT_CREATED
 LIVE: DISABLED
+
+
+## Git交付补充（2026-10-26）
+
+已按用户授权核对初始38文件和tree=`cda72a49efd17f2733efaea4f5699ba767e32191`后提交为`6159400d4a148b1294f8b1752ad28a3c2d0835db`，推送并创建[PR #83](https://github.com/ling5477/nexus-quant/pull/83)。初始提交保持不改写。
+
+- **PG16补测通过**：复用CI固定的`postgres:16@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94`，实际版本16.15。将6159400d的精确Git archive置于任务隔离Maven/Java21容器，与任务PG16共享独立网络，原15442固定测试合同不变；显式启用接入、Dataset及租户数据库测试，7项实际执行、0失败、0错误、0跳过。`pg16-targeted-result.json`与`pg16-targeted-container-02.log`保存命令、来源和结果；后端21份本轮变更文件与后续交付修正仍逐字节相同。
+- **Demo401归因完成**：原dev基线58af3c8b与6159400d，在相同PG16.15、JDK21.0.9、URL及命令下，均在旧HTTP测试第48行首次登录返回401，未进入研究链。四份认证/旧夹具文件逐字节相同。真实任务DB探针为`email_verified=false / READY registrations=0 / permitsUser=false`，属于`PRE_EXISTING_NON_BLOCKING_TEST_FIXTURE_GAP`，不是本轮认证回归，未修改或放宽权限。两次失败不追认为PASS。
+- 首轮CI `40291019054`暴露STATUS机器状态值不符合既有合同、源码业务词内容登记失效/缺失，以及旧研究提交SSR测试缺少QueryClientProvider。本次只修正状态合同/README历史引用，独立复核后补齐6份源码的内容固定业务词登记，并为原前端测试提供真实查询上下文。validator、权限及原断言保持不变。登记检查和66项登记回归通过（其中2项平台条件跳过），研究提交及相关前端74项通过。
+- 初始38文件之外，仅新增涉及两个已存在路径：`frontend/tests/unit/research-create-submission.test.ts`及`scripts/docs/stage-asset-exceptions.json`；业务实现没有扩大。机器区块保留首轮失败候选与run的精确身份，后续修正候选、PR CI及合并身份以PR检查和最终交接记录单列。
+
+上述Git交付原始证据位于`E:/Project/nexus-quant/artifacts/nq-v102-research-dataset/git-delivery/`，包含基线与候选日志、`demo-baseline-attribution.json`、`pg16-source-identity.json`及独立登记提案/复核记录，不将原始日志全部入Git。当前补充提交仍须通过其准确候选的9项CI；本记录不提前宣称合并或合并后CI成功。已发布Tag、包及签名证据不变，Release未创建，LIVE保持关闭。

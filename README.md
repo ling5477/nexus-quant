@@ -6,7 +6,7 @@ NexusQuant 是面向 OKX Spot 的研究与模拟交易工作台。Java Control P
 
 [v1.0.0](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.0) 与 [v1.0.1](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.1) 已发布；当前开发进入 v1.0.2 的研究数据集产品化。在 Self-Hosted 正式行情页面，可选择 OKX Spot BTC/ETH、1h、最多30个完整UTC日，接入并检查质量后绑定现有策略版本回测。研究输入保存完整冻结序列与摘要，公开规则使用当前观察值，历史可见性、费用及滑点均明确标注假设。当前任务不授予新版发布或真实交易权限。
 
-已发布 Tag、Snapshot、包与签名证据保持冻结。历史 C4 审查仍为 `NOT_ACCEPTED / EVIDENCE_GAPS`，owner 例外决定与72小时重跑豁免保留；`UPGRADE_NOT_VERIFIED` 不因本轮功能实现被改判。
+已发布 Tag、Snapshot、包及签名证据保持不变。历史验收与升级限制见[当前状态](docs/current/STATUS.md)。
 
 普通账户缺可信权益来源时不显示虚构收益；真实手续费必须有可信来源；OHLC 不能提供真实事件发生时点；旧 Paper 未知币种权益不改写。
 
