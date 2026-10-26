@@ -20,8 +20,8 @@ public final class SpotBarIdentity {
     public static Snapshot capture(List<HistoricalBar> bars, ObjectMapper mapper) {
         Objects.requireNonNull(bars, "bars");
         Objects.requireNonNull(mapper, "mapper");
-        if (bars.isEmpty() || bars.size() > 500) {
-            throw new IllegalArgumentException("bar snapshot must contain 1 to 500 bars");
+        if (bars.isEmpty() || bars.size() > 720) {
+            throw new IllegalArgumentException("bar snapshot must contain 1 to 720 bars");
         }
         ArrayNode snapshot = mapper.createArrayNode();
         for (HistoricalBar bar : bars) {

@@ -16,6 +16,8 @@ import com.guidinglight.nexusquant.marketdata.application.service.DiscountAssetP
 import com.guidinglight.nexusquant.marketdata.domain.DiscountAssetPriceSnapshot;
 import com.guidinglight.nexusquant.research.domain.port.ResearchFeeSourcePort;
 import com.guidinglight.nexusquant.strategy.domain.SpotFeeModel.Policy;
+import com.guidinglight.nexusquant.app.marketdata.PublicMarketReplayCaptureService;
+import com.guidinglight.nexusquant.app.marketdata.ResearchPublicRules;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +58,12 @@ public class ResearchAccountFeeSource implements ResearchFeeSourcePort {
     private final ObjectReader snapshotReader;
     private final Clock clock = Clock.systemUTC();
     private DiscountAssetPriceService discountPrices;
+    private PublicMarketReplayCaptureService publicRules;
+
+    @Autowired
+    void bindPublicRules(ObjectProvider<PublicMarketReplayCaptureService> provider) {
+        publicRules = provider.getIfAvailable();
+    }
 
     public ResearchAccountFeeSource(
             AccountFeeModelService models,
@@ -83,6 +91,8 @@ public class ResearchAccountFeeSource implements ResearchFeeSourcePort {
     @Override
     public String prepareConfiguration(String executionSpec) {
         JsonNode parsed = read(executionSpec);
+        if (parsed.has("researchRuleSnapshotJson"))
+            throw invalid("RESEARCH_RULE_SERVER_FIELDS_FORBIDDEN");
         if (SEALED.stream().anyMatch(parsed::has))
             throw invalid("FEE_MODEL_SERVER_FIELDS_FORBIDDEN");
         if (!selected(parsed)) {
@@ -113,10 +123,22 @@ public class ResearchAccountFeeSource implements ResearchFeeSourcePort {
     public String freezeRunConfiguration(
             String configurationSnapshot, String datasetSnapshot, Instant at) {
         ObjectNode config = object(read(configurationSnapshot));
+        JsonNode researchDataset = read(datasetSnapshot);
+        if (researchDataset.has("frozenInput")) {
+            if (publicRules == null) throw invalid("RESEARCH_RULE_SOURCE_UNAVAILABLE");
+            ObjectNode execution = object(config.path("executionSpec"));
+            ObjectNode rules = publicRules.researchRules(researchDataset.path("symbol").asText());
+            execution.put("researchRuleSnapshotJson", rules.toString());
+            execution.put("rulePolicy", "CURRENTLY_OBSERVED_PUBLIC_RULES");
+            execution.put("priceTick", rules.path("rule").path("tickSize").asText());
+            execution.put("quantityStep", rules.path("rule").path("lotSize").asText());
+            execution.put("minimumQuantity", rules.path("rule").path("minimumSize").asText());
+            config.set("executionSpec", execution);
+        }
         JsonNode parsed = config.path("executionSpec");
         if (!selected(parsed)) {
             rejectUnexpectedSource(parsed);
-            return configurationSnapshot;
+            return config.toString();
         }
         ObjectNode spec = object(parsed);
         long owner = requireOwner();
@@ -175,6 +197,7 @@ public class ResearchAccountFeeSource implements ResearchFeeSourcePort {
     @Override
     public void validateFrozenExecution(String executionSpec, String datasetSnapshot) {
         JsonNode parsed = read(executionSpec);
+        ResearchPublicRules.validate(parsed, read(datasetSnapshot), mapper);
         if (!selected(parsed)) {
             rejectUnexpectedSource(parsed);
             return;
@@ -385,7 +408,7 @@ public class ResearchAccountFeeSource implements ResearchFeeSourcePort {
     }
 
     private JsonNode read(String raw) {
-        if (raw != null && raw.length() > 32768) throw invalid("FEE_MODEL_JSON_TOO_LARGE");
+        if (raw != null && raw.length() > 2_000_000) throw invalid("FEE_MODEL_JSON_TOO_LARGE");
         try {
             return snapshotReader.readTree(raw == null || raw.isBlank() ? "{}" : raw);
         } catch (JsonProcessingException ex) {

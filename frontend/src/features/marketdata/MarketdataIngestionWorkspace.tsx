@@ -20,9 +20,11 @@ import {
     Tag,
     Typography,
 } from 'antd';
-import type {Dayjs} from 'dayjs';
+import dayjs, {type Dayjs} from 'dayjs';
+import {Link, useSearchParams} from 'react-router-dom';
+import {isPublicDemo} from '@/utils/distribution';
+import {datasetFromJobLink, isResearchJob, researchSymbols, researchWindow} from './research-dataset';
 import type {ColumnsType} from 'antd/es/table';
-import {useSearchParams} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import {formatApiError} from '@/api/errors';
 import {instrumentQueryKeys, marketdataQueryKeys} from '@/api/query-keys';
@@ -85,6 +87,7 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
     const pending = stored.kind === 'saved' ? stored.pending : null;
     const confirmed = pending?.phase === 'CONFIRMED' ? pending.result : undefined;
     const [open, setOpen] = useState(false);
+    const [researchMode, setResearchMode] = useState(false);
     const [timePopup, setTimePopup] = useState<'start' | 'end' | null>(null);
     const [form] = useLocalizedForm<Values>();
     const exchange = Form.useWatch('exchangeCode', form) ?? 'BINANCE';
@@ -231,7 +234,8 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
         (item) =>
             item.exchangeCode === exchange &&
             isActiveSpot(item) &&
-            ingestionSymbols(exchange).includes(item.internalSymbol),
+            ingestionSymbols(exchange).includes(item.internalSymbol) &&
+            (!researchMode || researchSymbols.includes(item.internalSymbol as (typeof researchSymbols)[number])),
     );
     const describe = (failure: unknown) => {
         const error = failure as AppApiError;
@@ -500,10 +504,20 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                         <Button onClick={() => void jobs.refetch()} loading={jobs.isFetching}>
                             {t('refresh')}
                         </Button>
+                        {!isPublicDemo && <Button
+                            disabled={!allowed || busy || stored.kind !== 'none'}
+                            onClick={() => {
+                                const end = new Date().toISOString().slice(0, 10);
+                                const start = new Date(Date.parse(end + 'T00:00:00Z') - 30 * 86400000).toISOString().slice(0, 10);
+                                setResearchMode(true);
+                                form.setFieldsValue({exchangeCode: 'OKX', symbol: 'BTC-USDT', interval: '1h', startTime: dayjs(start), endTime: dayjs(end)});
+                                setOpen(true);
+                            }}
+                        >{t('researchDataset.create')}</Button>}
                         <Button
                             type="primary"
                             disabled={!allowed || busy || stored.kind !== 'none'}
-                            onClick={() => setOpen(true)}
+                            onClick={() => {setResearchMode(false); form.resetFields(); setOpen(true);}}
                         >
                             {t('ingestion.create')}
                         </Button>
@@ -755,6 +769,12 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                             {result.status === 'SUCCEEDED' && result.fetchedBars === 0 && (
                                 <Alert type="info" showIcon message={t('ingestion.emptyCapture')} />
                             )}
+                            {selected && !isPublicDemo && isResearchJob(selected) && (
+                                <Space direction="vertical" style={{marginBlock: 12}}>
+                                    <Typography.Text type="secondary">{t('researchDataset.afterIngestion')}</Typography.Text>
+                                    <Link to={datasetFromJobLink(selected)}>{t('researchDataset.createDataset')}</Link>
+                                </Space>
+                            )}
                             <Collapse
                                 ghost
                                 size="small"
@@ -819,7 +839,7 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                 </Card>
             )}
             <Drawer
-                title={t('ingestion.create')}
+                title={t(researchMode ? 'researchDataset.create' : 'ingestion.create')}
                 open={open}
                 // 日期弹层先消费Esc，避免同一次按键关闭外层抽屉；弹层关闭后恢复抽屉键盘关闭。
                 keyboard={timePopup === null}
@@ -836,7 +856,7 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                             type="primary"
                             loading={create.isPending}
                             disabled={
-                                !allowed || busy || stored.kind !== 'none' || !catalog.isSuccess
+                                !allowed || busy || stored.kind !== 'none' || (!researchMode && !catalog.isSuccess)
                             }
                             onClick={() => form.submit()}
                         >
@@ -845,7 +865,7 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                     </Space>
                 }
             >
-                {catalog.error && retryAlert(catalog.error, () => void catalog.refetch())}
+                {!researchMode && catalog.error && retryAlert(catalog.error, () => void catalog.refetch())}
                 <Form
                     form={form}
                     layout="vertical"
@@ -853,7 +873,7 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                     disabled={busy || stored.kind !== 'none' || !allowed}
                     initialValues={{exchangeCode: 'BINANCE', interval: '1m'}}
                     onFinish={(values) =>
-                        create.mutate({
+                        create.mutate(researchMode ? researchWindow(values.symbol, values.startTime.format('YYYY-MM-DD'), values.endTime.format('YYYY-MM-DD')) : {
                             exchangeCode: values.exchangeCode,
                             marketType: 'SPOT',
                             symbol: values.symbol,
@@ -871,7 +891,8 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                                 rules={[{required: true}]}
                             >
                                 <Select
-                                    options={EXCHANGE_OPTIONS}
+                                    options={researchMode ? [{value: 'OKX', label: 'OKX'}] : EXCHANGE_OPTIONS}
+                                    disabled={researchMode}
                                     onChange={() => form.setFieldValue('symbol', undefined)}
                                 />
                             </Form.Item>
@@ -891,9 +912,9 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                                     {
                                         validator: async (_, value) => {
                                             if (
-                                                !symbols.some(
-                                                    (item) => item.internalSymbol === value,
-                                                )
+                                                !(researchMode
+                                                    ? researchSymbols.includes(value)
+                                                    : symbols.some((item) => item.internalSymbol === value))
                                             )
                                                 throw new Error(t('ingestion.chooseSupported'));
                                         },
@@ -902,8 +923,8 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                             >
                                 <Select
                                     showSearch
-                                    loading={catalog.isFetching}
-                                    options={symbols.map((item) => ({
+                                    loading={!researchMode && catalog.isFetching}
+                                    options={researchMode ? researchSymbols.map((value) => ({value, label: value})) : symbols.map((item) => ({
                                         value: item.internalSymbol,
                                         label: item.internalSymbol,
                                     }))}
@@ -917,13 +938,13 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                                 label={t('interval')}
                                 rules={[{required: true}]}
                             >
-                                <Select options={INTERVAL_OPTIONS} />
+                                <Select disabled={researchMode} options={researchMode ? [{value: '1h', label: '1h'}] : INTERVAL_OPTIONS} />
                             </Form.Item>
                         </Col>
                         <Col xs={24} sm={12}>
                             <Form.Item
                                 name="startTime"
-                                label={t('startTime')}
+                                label={t(researchMode ? 'researchDataset.start' : 'startTime')}
                                 rules={[{required: true, message: t('selectAStartTime')}]}
                             >
                                 <DatePicker
@@ -936,8 +957,8 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                                                   : current,
                                         )
                                     }
-                                    showTime={{format: 'HH:mm:ss'}}
-                                    format="YYYY-MM-DD HH:mm:ss"
+                                    showTime={researchMode ? false : {format: 'HH:mm:ss'}}
+                                    format={researchMode ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss'}
                                     onKeyDown={confirmTimeWithoutSubmittingForm}
                                     style={{width: '100%'}}
                                 />
@@ -946,11 +967,16 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                         <Col xs={24} sm={12}>
                             <Form.Item
                                 name="endTime"
-                                label={t('endTime')}
+                                label={t(researchMode ? 'researchDataset.end' : 'endTime')}
                                 dependencies={['startTime']}
                                 rules={[
                                     {required: true, message: t('selectAnEndTime')},
                                     endAfterStartRule('startTime'),
+                                    {validator: async (_, value) => {
+                                        if (!researchMode || !value || !form.getFieldValue('startTime')) return;
+                                        try {researchWindow(form.getFieldValue('symbol'), form.getFieldValue('startTime').format('YYYY-MM-DD'), value.format('YYYY-MM-DD'));}
+                                        catch {throw new Error(t('researchDataset.windowInvalid'));}
+                                    }},
                                 ]}
                             >
                                 <DatePicker
@@ -959,8 +985,8 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                                             visible ? 'end' : current === 'end' ? null : current,
                                         )
                                     }
-                                    showTime={{format: 'HH:mm:ss'}}
-                                    format="YYYY-MM-DD HH:mm:ss"
+                                    showTime={researchMode ? false : {format: 'HH:mm:ss'}}
+                                    format={researchMode ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss'}
                                     onKeyDown={confirmTimeWithoutSubmittingForm}
                                     style={{width: '100%'}}
                                 />
@@ -968,7 +994,7 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                         </Col>
                     </Row>
                     <Typography.Paragraph type="secondary">
-                        {t('ingestion.createHelp')}
+                        {t(researchMode ? 'researchDataset.help' : 'ingestion.createHelp')}
                     </Typography.Paragraph>
                 </Form>
                 {create.error && <Alert type="error" showIcon message={describe(create.error)} />}

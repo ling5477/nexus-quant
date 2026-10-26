@@ -115,6 +115,15 @@ public final class PublicMarketReplayCaptureService {
         return prepared.view();
     }
 
+    /** 只读来源复用同一外联开关、超时与重试；标的必须由被冻结数据集确定。 */
+    public ObjectNode researchRules(String symbol) {
+        requirePublicRead();
+        // 运行创建事务上限为10秒，当前规则读取总预算不超过6.5秒，不能复用整段捕获的重试预算。
+        byte[] response = fetch(ResearchPublicRules.path(symbol), 2, Duration.ofSeconds(3));
+        return ResearchPublicRules.snapshot(symbol, new String(response, StandardCharsets.UTF_8),
+                Instant.now(clock).truncatedTo(ChronoUnit.MICROS), mapper);
+    }
+
     /** 先完整读取并校验来源；此阶段不写数据集，稳定操作服务可以单独记录来源失败。 */
     PreparedCapture prepare(UUID datasetId, Instant start, Instant end) {
         requirePublicRead();
@@ -268,16 +277,20 @@ public final class PublicMarketReplayCaptureService {
     }
 
     private byte[] fetch(String path) {
+        return fetch(path, 3, Duration.ofSeconds(8));
+    }
+
+    private byte[] fetch(String path, int attempts, Duration timeout) {
         HttpRequest request =
                 HttpRequest.newBuilder(origin.resolve(path))
-                        .timeout(Duration.ofSeconds(8))
+                        .timeout(timeout)
                         .GET()
                         .build();
-        for (int attempt = 0; attempt < 3; attempt++) {
+        for (int attempt = 0; attempt < attempts; attempt++) {
             requirePublicRead();
             try {
                 var response =
-                        PublicCaptureResponseReader.read(http, request, Duration.ofSeconds(8));
+                        PublicCaptureResponseReader.read(http, request, timeout);
                 if (response.statusCode() == 200
                         && response.body().length > 0
                         && response.body().length <= 256_000) return response.body();
@@ -292,10 +305,10 @@ public final class PublicMarketReplayCaptureService {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException("PUBLIC_MARKET_INTERRUPTED", ex);
             } catch (IOException ex) {
-                if (attempt == 2)
+                if (attempt == attempts - 1)
                     throw new IllegalStateException("PUBLIC_MARKET_TRANSPORT_FAILURE", ex);
             }
-            if (attempt == 2) break;
+            if (attempt == attempts - 1) break;
             try {
                 Thread.sleep(500L * (attempt + 1));
             } catch (InterruptedException ex) {

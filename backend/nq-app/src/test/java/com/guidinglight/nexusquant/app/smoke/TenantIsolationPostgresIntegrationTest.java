@@ -12,6 +12,44 @@ import static org.junit.jupiter.api.Assertions.*;
 /** 使用真实非 owner 角色及单连接池证明 SQL 防线，不用 mock 或管理员连接代替隔离证据。 */
 @EnabledIfSystemProperty(named="nq.tenant.pg.required",matches="true")
 class TenantIsolationPostgresIntegrationTest {
+    @Test void researchDatasetsAndLocalIngestionRemainIsolatedForDemoTenants() throws Exception {
+        try (var db = TenantIsolationTestDatabase.create(null)) {
+            var a = db.demo("RESEARCH_A", "research-a");
+            var b = db.demo("RESEARCH_B", "research-b");
+            var local = db.local("research-local");
+            var id = java.util.UUID.randomUUID();
+            var job = java.util.UUID.randomUUID();
+            db.as(b, () -> db.jdbc.update("""
+                    INSERT INTO marketdata_datasets(dataset_id,dataset_name,exchange_code,market_type,symbol,"interval",
+                      start_time,end_time,status,quality_status,bar_count,gap_count,source,created_by)
+                    VALUES(?,'private ETH research','OKX','SPOT','ETH-USDT','1h',
+                      '2026-09-01T00:00:00Z','2026-09-01T23:59:59.999Z','READY','OK',24,0,'marketdata_bars','research-b')
+                    """, id));
+            long sourceAccount = account(db, b, "research-source");
+            db.as(b, () -> { strategy(db, "research-strategy", "RESEARCH", sourceAccount); return null; });
+            db.as(b, () -> db.jdbc.update("INSERT INTO research_configs(research_config_id,source_strategy_id,name,strategy_snapshot) VALUES('private-research','research-strategy','private','{}')"));
+            db.as(local, () -> db.jdbc.update("""
+                    INSERT INTO marketdata_ingestion_jobs(job_id,exchange_code,market_type,symbol,"interval",start_time,end_time,status,source,created_by)
+                    VALUES(?,'OKX','SPOT','ETH-USDT','1h','2026-09-01','2026-09-02','CREATED','EXCHANGE_HISTORICAL','research-local')
+                    """, job));
+            var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            var repository = new com.guidinglight.nexusquant.marketdata.infra.jdbc.JdbcMarketdataDatasetRepository(db.jdbc, mapper,
+                    new com.guidinglight.nexusquant.strategy.infra.jdbc.JdbcAdmissionMutationCoordinator(db.jdbc, db.manager, 256));
+            var datasets = new com.guidinglight.nexusquant.marketdata.application.service.MarketdataDatasetService(repository, mapper,
+                    new com.guidinglight.nexusquant.marketdata.infra.jdbc.JdbcHistoricalMarketDataPort(db.jdbc));
+            var access = new com.guidinglight.nexusquant.research.infra.JdbcTenantResearchDatasetAccess(datasets, mapper);
+            String request = "{\"datasetId\":\"" + id + "\"}";
+            assertThrows(IllegalArgumentException.class, () -> db.as(a, () -> access.canonicalSnapshot(request)));
+            assertEquals(0, db.as(a, () -> db.jdbc.queryForObject("SELECT count(*) FROM research_configs WHERE research_config_id='private-research'", Integer.class)));
+            assertEquals(0, db.as(a, () -> db.jdbc.queryForObject("SELECT count(*) FROM marketdata_ingestion_jobs WHERE job_id=?", Integer.class, job)));
+            assertEquals(0, db.as(a, () -> db.jdbc.update("UPDATE marketdata_datasets SET dataset_name='forbidden' WHERE dataset_id=?", id)));
+            // Demo仍不获得新冻结公开来源入口；本人目录可读，跨租户输入不可借用。
+            String own = db.as(b, () -> access.canonicalSnapshot(request));
+            assertFalse(mapper.readTree(own).has("frozenInput"));
+            assertEquals(1, db.as(b, () -> db.jdbc.queryForObject("SELECT count(*) FROM research_configs WHERE research_config_id='private-research'", Integer.class)));
+        }
+    }
+
     @Test void isolatesRootsAndReusesOneConnectionAcrossTenantsAndEmptyContext() throws Exception {
         try (var db = TenantIsolationTestDatabase.create(null)) {
             var a=db.demo("TENANT_A","tenant-a"); var b=db.demo("TENANT_B","tenant-b");

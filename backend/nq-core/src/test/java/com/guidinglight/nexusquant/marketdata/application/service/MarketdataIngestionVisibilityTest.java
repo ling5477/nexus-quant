@@ -36,7 +36,7 @@ class MarketdataIngestionVisibilityTest {
                         "BTC-USDT",
                         BarInterval.ONE_HOUR,
                         open,
-                        open.plusSeconds(3599),
+                        open.plusSeconds(3600).minusMillis(1),
                         BigDecimal.TEN,
                         BigDecimal.TEN,
                         BigDecimal.TEN,
@@ -50,7 +50,7 @@ class MarketdataIngestionVisibilityTest {
                         "BTC-USDT",
                         BarInterval.ONE_HOUR,
                         open,
-                        open.plusSeconds(3599),
+                        open.plusSeconds(3600).minusMillis(1),
                         MarketdataIngestionStatus.CREATED,
                         "EXCHANGE_HISTORICAL",
                         "test",
@@ -100,7 +100,10 @@ class MarketdataIngestionVisibilityTest {
         }
     }
 
-    private record Jobs(MarketdataIngestionJob job) implements MarketdataIngestionJobRepository {
+    private static final class Jobs implements MarketdataIngestionJobRepository {
+        private final MarketdataIngestionJob job;
+        private final java.util.Map<UUID, MarketdataIngestionRun> runs = new java.util.HashMap<>();
+        Jobs(MarketdataIngestionJob job) { this.job = job; }
         @Override
         public MarketdataIngestionJob createJob(MarketdataIngestionJob value) {
             throw new UnsupportedOperationException();
@@ -123,7 +126,7 @@ class MarketdataIngestionVisibilityTest {
 
         @Override
         public Optional<MarketdataIngestionRun> findRun(UUID id) {
-            return Optional.empty();
+            return Optional.ofNullable(runs.get(id));
         }
 
         @Override
@@ -136,11 +139,13 @@ class MarketdataIngestionVisibilityTest {
 
         @Override
         public MarketdataIngestionRun createRun(MarketdataIngestionRun run) {
+            runs.put(run.runId(), run);
             return run;
         }
 
         @Override
         public MarketdataIngestionRun finishRun(MarketdataIngestionRun run) {
+            runs.put(run.runId(), run);
             return run;
         }
 

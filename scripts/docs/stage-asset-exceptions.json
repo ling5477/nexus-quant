@@ -67,7 +67,7 @@
     },
     {
       "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/account/ResearchAccountFeeSource.java",
-      "sha256": "a0128d6ed38448a20d5b470f5d848161a36dd6b3945246f9653f97a74ce70a2f",
+      "sha256": "85553d212b47524c464688a052fe5ff4d9f7f9e0e07d8046ca68eb2ec10fe4a9",
       "kind": "DOMAIN_VOCABULARY",
       "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
       "owner": "对应业务模块与CI合同维护者",
@@ -187,7 +187,7 @@
     },
     {
       "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/marketdata/MarketdataDatasetOperationPostgresIntegrationTest.java",
-      "sha256": "424414508480b007119543b16af881e04db8d10fc300730bc599078481172b18",
+      "sha256": "957aba6349be74d1ec92a6c34aec6c6eab310c4a79ce54fa109bb8843e9d56c6",
       "kind": "DOMAIN_VOCABULARY",
       "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
       "owner": "对应业务模块与CI合同维护者",
@@ -282,6 +282,14 @@
       "removalTrigger": "Replace fixture format or remove its covered invariant; preserve equivalent regression before retirement."
     },
     {
+      "path": "backend/nq-backtest/src/test/java/com/guidinglight/nexusquant/research/application/backtest/BacktestExecutionServiceTest.java",
+      "sha256": "3ed03fbd605d2d95e5d30f1ff91267cada61fdb18a35e86d818fe3ff9faa9e91",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示历史行情研究输入的不可变内容快照及其回归断言，不是开发阶段、可执行profile或部署身份。",
+      "owner": "研究数据与回测合同维护者",
+      "removalTrigger": "快照语义或调用范围变更时重新审查；不得用于准入新阶段资产或绕过运行权限。"
+    },
+    {
       "path": "backend/nq-contracts/src/main/java/com/guidinglight/nexusquant/contracts/model/LedgerRefType.java",
       "sha256": "f65d6b066550c164d5e5728e076efed13289b598ff417d329f418715ae866b0e",
       "kind": "DOMAIN_VOCABULARY",
@@ -304,6 +312,22 @@
       "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
       "owner": "对应业务模块与CI合同维护者",
       "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/service/MarketdataDatasetService.java",
+      "sha256": "ad6435157bb8bdd2ad4eb2d9d240f6b58d99cea9ec37a4486b1cfd20244e9386",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示历史行情研究输入的不可变内容快照及其回归断言，不是开发阶段、可执行profile或部署身份。",
+      "owner": "研究数据与回测合同维护者",
+      "removalTrigger": "快照语义或调用范围变更时重新审查；不得用于准入新阶段资产或绕过运行权限。"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/FrozenHistoricalInput.java",
+      "sha256": "a7415925df534ee68156f7b75388da901bd7a13f94139a31deea398e3847e16a",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示历史行情研究输入的不可变内容快照及其回归断言，不是开发阶段、可执行profile或部署身份。",
+      "owner": "研究数据与回测合同维护者",
+      "removalTrigger": "快照语义或调用范围变更时重新审查；不得用于准入新阶段资产或绕过运行权限。"
     },
     {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/monitoring/application/incidentreview/service/IncidentReplayReviewOverviewQueryService.java",
@@ -384,6 +408,14 @@
       "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
       "owner": "对应业务模块与CI合同维护者",
       "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
+    },
+    {
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/marketdata/domain/FrozenHistoricalInputTest.java",
+      "sha256": "77f4e3da1c0f0ce6381369c2f61116e388c3c828389c3508b7534146e11e139b",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示历史行情研究输入的不可变内容快照及其回归断言，不是开发阶段、可执行profile或部署身份。",
+      "owner": "研究数据与回测合同维护者",
+      "removalTrigger": "快照语义或调用范围变更时重新审查；不得用于准入新阶段资产或绕过运行权限。"
     },
     {
       "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/strategy/application/pyartifactbinding/service/PythonEvaluationArtifactBindingServiceTest.java",

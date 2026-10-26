@@ -92,7 +92,7 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
 
     @Override
     public Optional<MarketdataIngestionJob> lockJob(UUID jobId) {
-        // 网络读取发生在既有事务中；竞争者最多等待三秒，再保留原编号查询，不能无限占用连接。
+        // 行锁只覆盖登记或批次提交；外部读取不占用事务，竞争者最多等待三秒。
         jdbcTemplate.execute("SET LOCAL lock_timeout = '3s'");
         return jdbcTemplate
                 .query(
@@ -131,7 +131,7 @@ public class JdbcMarketdataIngestionJobRepository implements MarketdataIngestion
                         SELECT actual_end_time
                         FROM marketdata_ingestion_runs
                         WHERE job_id = ?
-                          AND status IN ('SUCCEEDED', 'PARTIAL')
+                          AND status IN ('SUCCEEDED', 'PARTIAL', 'RUNNING', 'FAILED')
                           AND actual_end_time IS NOT NULL
                         ORDER BY actual_end_time DESC
                         LIMIT 1

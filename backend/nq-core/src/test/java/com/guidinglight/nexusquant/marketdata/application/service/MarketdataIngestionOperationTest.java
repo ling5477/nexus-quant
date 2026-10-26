@@ -133,6 +133,70 @@ class MarketdataIngestionOperationTest {
         assertEquals(1, calls.get());
     }
 
+    @Test
+    void thirtyDayWindowPersists720BarsAndResumesAfterSecondBatchFailure() {
+        for (boolean interrupt : List.of(false, true)) {
+            var jobs = new Jobs();
+            var calls = new AtomicInteger();
+            var stored = new java.util.LinkedHashSet<Instant>();
+            var starts = new ArrayList<Instant>();
+            var service = new MarketdataIngestionService(jobs,
+                    (bars, source, at) -> {
+                        int inserted = 0;
+                        for (var bar : bars) if (stored.add(bar.openTime())) inserted++;
+                        return new MarketdataBarUpsertStats(inserted, bars.size() - inserted);
+                    }, (job, from, to) -> {
+                        starts.add(from);
+                        if (calls.incrementAndGet() == 2 && interrupt)
+                            throw new IllegalStateException("controlled interruption");
+                        var result = new ArrayList<HistoricalBar>();
+                        for (Instant open = from; !open.plusSeconds(3600).minusMillis(1).isAfter(to);
+                                open = open.plusSeconds(3600)) result.add(hourBar(open));
+                        java.util.Collections.reverse(result);
+                        return result;
+                    }, Clock.fixed(START.plusSeconds(31 * 86400L), ZoneOffset.UTC));
+            var job = service.createJob(new CreateMarketdataIngestionJobCommand("OKX", "SPOT",
+                    "BTC-USDT", "1h", START, START.plusSeconds(720 * 3600L).minusMillis(1), "owner"));
+            var run = service.runOnce(job.jobId());
+            if (interrupt) {
+                assertEquals(MarketdataIngestionStatus.FAILED, run.status());
+                assertEquals(300, run.insertedBars());
+                assertEquals(300, stored.size());
+                assertEquals(run, service.runOnce(job.jobId(), run.runId()));
+                run = service.runOnce(job.jobId());
+                assertEquals(START.plusSeconds(300 * 3600L), run.requestedStartTime());
+                assertEquals(420, run.insertedBars());
+            } else assertEquals(720, run.fetchedBars());
+            assertEquals(MarketdataIngestionStatus.SUCCEEDED, run.status());
+            assertEquals(720, stored.size());
+            assertEquals(interrupt ? 4 : 3, calls.get());
+            assertEquals(START.plusSeconds(720 * 3600L).minusMillis(1), run.actualEndTime());
+        }
+    }
+
+    @Test
+    void emptyDuplicateOrMissingPageNeverAdvancesPastTheContinuousPrefix() {
+        for (List<HistoricalBar> rows : List.<List<HistoricalBar>>of(List.of(),
+                List.of(hourBar(START), hourBar(START)),
+                List.of(hourBar(START), hourBar(START.plusSeconds(7200))))) {
+            var jobs = new Jobs();
+            var service = new MarketdataIngestionService(jobs,
+                    (bars, source, at) -> new MarketdataBarUpsertStats(bars.size(), 0),
+                    (job, from, to) -> rows, Clock.fixed(START.plusSeconds(86400), ZoneOffset.UTC));
+            var job = service.createJob(new CreateMarketdataIngestionJobCommand("OKX", "SPOT",
+                    "BTC-USDT", "1h", START, START.plusSeconds(10800).minusMillis(1), "owner"));
+            var run = service.runOnce(job.jobId());
+            assertEquals(MarketdataIngestionStatus.PARTIAL, run.status());
+            assertEquals(rows.isEmpty() ? null : START.plusSeconds(3600).minusMillis(1), run.actualEndTime());
+        }
+    }
+
+    private static HistoricalBar hourBar(Instant open) {
+        return new HistoricalBar("OKX", "BTC-USDT", BarInterval.ONE_HOUR, open,
+                open.plusSeconds(3600).minusMillis(1), BigDecimal.TEN, BigDecimal.TEN,
+                BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ONE);
+    }
+
     private static MarketdataIngestionService service(
             Jobs jobs, AtomicInteger calls, boolean fail) {
         return new MarketdataIngestionService(
@@ -202,7 +266,9 @@ class MarketdataIngestionOperationTest {
                     .filter(
                             r ->
                                     r.status() == MarketdataIngestionStatus.SUCCEEDED
-                                            || r.status() == MarketdataIngestionStatus.PARTIAL)
+                                            || r.status() == MarketdataIngestionStatus.PARTIAL
+                                            || r.status() == MarketdataIngestionStatus.FAILED
+                                            || r.status() == MarketdataIngestionStatus.RUNNING)
                     .map(MarketdataIngestionRun::actualEndTime)
                     .filter(v -> v != null)
                     .max(Instant::compareTo);

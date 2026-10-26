@@ -620,6 +620,9 @@ class MarketdataDatasetOperationPostgresIntegrationTest {
                 });
         context.registerBean(
                 PlatformTransactionManager.class, () -> new DataSourceTransactionManager(source));
+        context.registerBean(com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort.class,
+                () -> new com.guidinglight.nexusquant.marketdata.infra.jdbc.JdbcHistoricalMarketDataPort(
+                        context.getBean(JdbcTemplate.class)));
         context.registerBean(
                 AdmissionMutationCoordinator.class,
                 () ->

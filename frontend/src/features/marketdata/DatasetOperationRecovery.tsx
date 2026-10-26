@@ -1,3 +1,6 @@
+import {Link} from 'react-router-dom';
+import {isPublicDemo} from '@/utils/distribution';
+import {isResearchJob, researchFromDatasetLink} from './research-dataset';
 import {Alert, Button, Card, Collapse, Descriptions, Space, Tag, Typography} from 'antd';
 import {useTranslation} from 'react-i18next';
 import {formatApiError} from '@/api/errors';
@@ -290,6 +293,9 @@ export function DatasetOperationRecovery({state}: {state: DatasetOperationState}
                     {receipt && (
                         <Typography.Paragraph type="secondary">
                             {t('datasetRecovery.qualityHelp')}
+                            {!isPublicDemo && isResearchJob(receipt.dataset) && receipt.dataset.source === 'marketdata_bars' && receipt.dataset.status === 'READY' && receipt.coverage.qualityStatus === 'OK' && receipt.coverage.missingBars === 0 && (
+                                <><br /><Link to={researchFromDatasetLink(receipt.dataset.datasetId)}>{t('researchDataset.createResearch')}</Link></>
+                            )}
                         </Typography.Paragraph>
                     )}
                     <Collapse

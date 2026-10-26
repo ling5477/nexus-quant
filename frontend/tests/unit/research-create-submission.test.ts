@@ -1,6 +1,7 @@
 import {createElement, type PropsWithChildren} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {MemoryRouter} from 'react-router-dom';
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {App, type FormProps} from 'antd';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import type {ResearchConfigCreateRequest} from '@/features/research/types/research';
@@ -57,15 +58,25 @@ beforeEach(async () => {
 afterEach(() => vi.restoreAllMocks());
 
 function render() {
-    renderToStaticMarkup(
-        createElement(
-            MemoryRouter,
-            {
-                initialEntries: ['/research?create=true&sourceStrategyId=str-owned'],
-            },
-            createElement(ResearchPage),
-        ),
-    );
+    // 页面查询保持真实Hook；每次渲染独立缓存，提交幂等测试不依赖其他用例的查询状态。
+    const client = new QueryClient({defaultOptions: {queries: {retry: false}}});
+    try {
+        renderToStaticMarkup(
+            createElement(
+                QueryClientProvider,
+                {client},
+                createElement(
+                    MemoryRouter,
+                    {
+                        initialEntries: ['/research?create=true&sourceStrategyId=str-owned'],
+                    },
+                    createElement(ResearchPage),
+                ),
+            ),
+        );
+    } finally {
+        client.clear();
+    }
     expect(fixture.submit).toBeTypeOf('function');
 }
 
