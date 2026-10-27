@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useSearchParams} from 'react-router-dom';
 import {useTranslation} from 'react-i18next';
 import {Alert, Button, Card, Collapse, Descriptions, Popconfirm, Select, Space, Table, Tag, Typography} from 'antd';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
@@ -8,24 +8,35 @@ import {formatApiError} from '@/api/errors';
 import type {AppApiError} from '@/types/api';
 import {experimentQueryKeys} from '@/api/query-keys';
 import {validationApi, type ValidationResult, type ValidationView} from './validationApi';
+import {ResearchSimComparisonPanel} from './ResearchSimComparisonPanel';
 
 /** 写动作只由显式点击发起；未知提交继续沿用发送前保存的UUID。 */
 export function WalkForwardPanel({source, completed, writable}: {source: string; completed: boolean; writable: boolean}) {
     const {t} = useTranslation('pages');
     const owner = useAuthStore(s => s.currentUser?.userId);
     const cache = useQueryClient();
-    const [selected, setSelected] = useState<string | null>(null);
-    const [revealed, setRevealed] = useState(false);
+    const [params, setParams] = useSearchParams();
+    const [revealedValidation, setRevealedValidation] = useState<string | null>(null);
     const storageKey = `nq:validation-creation:v1:${owner}:${source}`;
     const [hasPending, setHasPending] = useState(() => {try {return !!localStorage.getItem(storageKey);} catch {return false;}});
     const root = experimentQueryKeys.validations(owner, source);
     const policy = useQuery({queryKey: [...root, 'policy'], queryFn: () => validationApi.policy(source)});
     const list = useQuery({queryKey: root, queryFn: () => validationApi.list(source), refetchInterval: 3000});
-    const id = selected ?? list.data?.[0]?.validationId;
+    const id = params.get('validationId') ?? list.data?.[0]?.validationId;
+    const revealed = revealedValidation === id;
+    const selectValidation = (value: string) => {
+        setParams(previous => {
+            const next = new URLSearchParams(previous);
+            next.set('validationId', value);
+            for (const key of ['selectedTrialId', 'strategyVersionId', 'publishId', 'paperRunId']) next.delete(key);
+            return next;
+        });
+        setRevealedValidation(null);
+    };
     const detail = useQuery({queryKey: experimentQueryKeys.validation(owner, id), queryFn: () => validationApi.get(id!), enabled: !!id, refetchInterval: q => q.state.data?.status === 'RUNNING' ? 2000 : false});
     const refresh = async () => {await Promise.all([cache.invalidateQueries({queryKey: root}), cache.invalidateQueries({queryKey: experimentQueryKeys.validation(owner, id)})]);};
     const created = (view: ValidationView) => {
-        setSelected(view.validationId); setRevealed(false);
+        selectValidation(view.validationId);
         cache.setQueryData(experimentQueryKeys.validation(owner, view.validationId), view);
         void cache.invalidateQueries({queryKey: root});
     };
@@ -42,9 +53,11 @@ export function WalkForwardPanel({source, completed, writable}: {source: string;
     const cancel = useMutation({mutationFn: () => validationApi.cancel(id!), onSuccess: () => void refresh()});
     const reveal = useMutation({mutationFn: () => validationApi.holdout(id!, crypto.randomUUID()), onSuccess: view => {
         if (useAuthStore.getState().currentUser?.userId !== owner) return;
-        cache.setQueryData(experimentQueryKeys.validation(owner, id), view); setRevealed(true);
+        cache.setQueryData(experimentQueryKeys.validation(owner, id), view); setRevealedValidation(id ?? null);
+        void cache.invalidateQueries({queryKey: experimentQueryKeys.comparisonsForValidation(owner, id)});
     }});
-    const view = detail.data;
+    const identityMismatch = !!detail.data && detail.data.sourceExperimentId !== source;
+    const view = identityMismatch ? undefined : detail.data;
     const error = policy.error ?? list.error ?? detail.error ?? create.error ?? cancel.error ?? reveal.error;
     const value = (v: unknown) => v == null ? 'UNAVAILABLE' : String(v);
     const shown = view?.results.filter(r => r.step < 13 || revealed) ?? [];
@@ -53,6 +66,7 @@ export function WalkForwardPanel({source, completed, writable}: {source: string;
             <Alert showIcon type="warning" message={t('walkForward.shortSample')} description={t('walkForward.exposure')}/>
             <Alert type="info" message={t('walkForward.reset')}/>
             {error && <Alert type="error" message={formatApiError(error as AppApiError)}/>}
+            {identityMismatch && <Alert type="error" message={t('researchSim.validationExperimentMismatch')}/>}
             <Typography.Paragraph>{t('walkForward.selection')}</Typography.Paragraph>
             {policy.data && <>
                 <Table size="small" rowKey={r => `${r.fold}-${r.role}`} pagination={false} scroll={{x: 560}} dataSource={policy.data.steps.filter(s => !s.role.endsWith('STRESS'))} columns={[
@@ -65,7 +79,7 @@ export function WalkForwardPanel({source, completed, writable}: {source: string;
             <Space wrap>
                 <Button type="primary" disabled={!writable || !completed || policy.isPending || list.isPending || (!hasPending && list.data?.some(v => v.status === 'RUNNING'))} loading={create.isPending} onClick={() => create.mutate()}>{hasPending ? t('experiments.recover') : t('walkForward.submit')}</Button>
                 <Button onClick={() => void refresh()}>{t('experiments.refresh')}</Button>
-                <Select aria-label={t('walkForward.history')} style={{width: 'min(360px, 70vw)'}} value={id} onChange={value => {setSelected(value); setRevealed(false);}} options={list.data?.map(v => ({value: v.validationId, label: `${v.createdAt} · ${v.status}`}))}/>
+                <Select aria-label={t('walkForward.history')} style={{width: 'min(360px, 70vw)'}} value={id} onChange={selectValidation} options={list.data?.map(v => ({value: v.validationId, label: `${v.createdAt} · ${v.status}`}))}/>
             </Space>
             {!completed && <Typography.Text type="secondary">{t('walkForward.completedRequired')}</Typography.Text>}
             {view && <>
@@ -114,6 +128,7 @@ export function WalkForwardPanel({source, completed, writable}: {source: string;
                 <Typography.Paragraph>{t('walkForward.holdoutUsage', {uses: view.datasetValidationUses, views: view.holdoutViews.length})}</Typography.Paragraph>
                 <Button disabled={!view.results.some(r => r.step === 13 && r.status === 'SUCCEEDED')} loading={reveal.isPending} onClick={() => reveal.mutate()}>{t('walkForward.reveal')}</Button>
                 {revealed && <Typography.Paragraph>{view.holdoutViews.map(v => v.viewedAt).join(' / ')}</Typography.Paragraph>}
+                <ResearchSimComparisonPanel key={view.validationId} validation={view}/>
             </>}
         </Space>
     </Card>;
