@@ -70,7 +70,7 @@ public class SchedulerDispatcher {
     @EventListener(ApplicationReadyEvent.class)
     public void bootstrap() {
         for (ScheduledJobRegistry.Job job : registry.all()) {
-            controls.materialize(job.key(), job.defaultDelayMs());
+            controls.materialize(job.key(), job.defaultDelayMs(), job.defaultEnabled());
         }
         for (ScheduledJobControl row : controls.all()) {
             try {

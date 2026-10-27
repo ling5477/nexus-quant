@@ -1,4 +1,22 @@
 {
+  "experiments": {
+    "title": "策略参数实验", "description": "冻结输入，批量回测，比较全部参数结果",
+    "boundary": "仅使用Java回测主链。每组最多16个候选，串行执行；实验结果不代表策略可发布或实盘授权。",
+    "create": "创建实验组", "template": "回测配置模板（已绑定版本和数据集）", "strategy": "策略类型",
+    "mode": "候选配置", "grid": "有限笛卡尔积", "explicit": "显式参数集合", "csv": "多个数值用英文逗号分隔，所有组合均须合法；最多16条。",
+    "parameters": "参数组合", "preview": "预览试验数量", "submit": "提交实验", "count": "共 {{count}} 条合法试验",
+    "groups": "实验组", "trials": "试验数", "status": "状态", "details": "详情", "results": "结果比较",
+    "attempt": "尝试", "netPnl": "净收益", "totalReturn": "收益率（比值）", "maxDrawdown": "最大回撤（比值）", "sharpe": "Sharpe（非年化）",
+    "tradeCount": "交易次数", "fee": "手续费", "slippage": "滑点", "relative": "相对Benchmark（比值）",
+    "backtest": "回测详情", "evaluation": "评价详情", "retry": "显式重试", "cancel": "取消未开始任务", "cancelConfirm": "阻止后续任务，正在执行的事务仍将完成？",
+    "compare": "选择试验进行对比（留空显示全部）", "comparisonNote": "同一冻结数据、资金与成本口径。标记不可比的结果不参与排名；本页不自动选优或发布。历史失败尝试始终保留。",
+    "dataset": "数据集", "range": "时间范围", "capital": "初始资金", "assumptions": "冻结成本及执行假设", "feeRate": "费率（比值）", "slippageBps": "滑点（bps）", "frozenDetails": "展开完整冻结规则与来源",
+    "refresh": "刷新", "previous": "上一页", "next": "下一页", "completed": "已结束（查看详情）",
+    "incomparable": "不可比", "metricMissing": "正式评价未提供该指标", "invalid": "参数格式无效",
+    "storageError": "无法读取原请求身份，已停止创建；请检查浏览器存储。", "scopeChanged": "登录主体已变化，请重读实验",
+    "pending": "原创建请求尚未确认，请使用相同身份恢复", "recover": "恢复原请求", "discardRejected": "放弃已明确拒绝的请求",
+    "states": {"QUEUED": "排队中", "RUNNING": "执行中", "SUCCEEDED": "全部成功", "FAILED": "失败", "PARTIAL_FAILURE": "部分失败", "CANCELLED": "已取消后续任务", "OUTCOME_UNKNOWN": "结果未知，等待核实"}
+  },
   "currencyRegistry": {
     "title": "币种定义与支持范围",
     "unavailable": "当前无法读取币种支持范围。",

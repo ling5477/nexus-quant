@@ -33,6 +33,7 @@ const BacktestDetailPage = lazy(() =>
 const BacktestsPage = lazy(() =>
     import('@/pages/backtests/BacktestsPage').then((module) => ({default: module.BacktestsPage})),
 );
+const ExperimentsPage = lazy(() => import('@/pages/experiments/ExperimentsPage').then(module => ({default: module.ExperimentsPage})));
 const DashboardPage = lazy(() =>
     import('@/pages/dashboard/DashboardPage').then((module) => ({default: module.DashboardPage})),
 );
@@ -258,6 +259,11 @@ export function createAppRouter(distribution: DistributionRoutes = {}) {
                         path: 'runs',
                         element: <RunsPage />,
                         handle: createHandle('runs'),
+                    },
+                    {
+                        path: 'experiments',
+                        element: <ExperimentsPage/>,
+                        handle: createHandle('experiments'),
                     },
                     {
                         path: 'research',
