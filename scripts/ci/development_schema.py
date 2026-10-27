@@ -90,8 +90,15 @@ def database_connection(connection, name):
     return connection + " dbname=" + name
 
 
-def assert_fresh_facts(facts, baseline):
-    expected = baseline["freshInstallFacts"]
+def assert_fresh_facts(facts, baseline, migrations=()):
+    expected = copy.deepcopy(baseline["freshInstallFacts"])
+    # V44 快照保持原样；V48 只引入一个空实验游标，不能自动吸收其他静态事实变化。
+    if any(row["version"] == "48" and row["script"] == "V48__strategy_experiments.sql"
+           for row in migrations):
+        cursors = expected["facts"]["tenant_work_scan_cursors"]
+        cursors.append({"work_kind": "EXPERIMENT", "last_work_id": ""})
+        cursors.sort(key=lambda row: json.dumps(row, sort_keys=True))
+        expected["rowCounts"]["tenant_work_scan_cursors"] += 1
     if facts["facts"] != expected["facts"] or facts["roleSequence"] != expected["roleSequence"]:
         raise ValueError("Fresh-install seed/control facts changed")
     for name, count in facts["rowCounts"].items():
@@ -127,7 +134,7 @@ def verify_database(root, connection, classpath, source, rows, base_ref):
             raise ValueError("Frozen Flyway history changed")
         model = CONTRACT.catalog(execute)
         facts = CONTRACT.seeds(execute, model, baseline["seedTables"])
-        assert_fresh_facts(facts, baseline)
+        assert_fresh_facts(facts, baseline, rows)
         manifest = copy.deepcopy(baseline)
         manifest.update(contractKind="DEVELOPMENT_REFERENCE", sourceManifest=str(source.resolve()),
                         migrations=rows, flywayVersion=rows[-1]["version"], flywayHistory=history,
