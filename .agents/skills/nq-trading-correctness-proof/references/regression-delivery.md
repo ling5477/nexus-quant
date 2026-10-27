@@ -54,6 +54,16 @@ NON_BLOCKING anomaly → preserve evidence → continue qualification：只要�
 
 commit、push、PR、merge 按用户各自授权执行，已有授权在约定范围内持续有效。inspect exact diff → 按明确文件 allowlist 暂存 → 复核 staged diff → 执行已授权的 commit/push → 核验新 exact-head CI；禁止 git add . 和 git add -A，不混入已有改动或其他任务 evidence。CI 的 workflow、head、status、conclusion 绑定同一实际 run；相关失败在 scope 内修复，无关外部基础设施失败保留并分类，未成功的必要 CI 不得报交付 PASS。发布时区分 local PASS、独立接受、exact-head CI 和生产部署，不互相替代。文档只更新实际行为所需部分，不默认产生 WORKLOG、TESTING、计划链或空回滚栏目。
 
+## PR 合并后的清理与任务关闭
+
+完整 PR Git 交付（已获 commit/push/PR/merge 授权）包括成功合并后的安全清理；仅 inspect、实施、精确暂存或仅授权创建 PR 不授予删除权限。删除前确认对象属于本任务、没有仍在使用的工作/唯一提交/未保存修改，且合并提交可从当前 `origin/dev` 追溯、对应合并后 exact-head 必要 CI 已成功。发现进行中的 PR、待验证 CI、独有工作或权限不足时跳过相应对象，记录 `PENDING_CLEANUP`，不强制清理或伪称完成。
+
+按准确清单处理已合并任务的本地与远端分支，以及确认闲置且干净的专属 Worktree；删除前检查 `git status`、`git worktree list`、分支引用和 PR 身份。原则上使用普通分支删除 `git branch -d`，仅在可追溯的合并提交可达性明确时删除远端任务分支。合并为 squash/rebase 时不能仅凭 `git branch -d` 拒绝推断未合并，也不得为省事改用 `git branch -D`；需逐项核对 PR 提交对应关系与无独有工作，不能安全删除时保留并披露。绝不使用破坏性 reset、全局 clean、强制 Worktree 删除或强制 push。
+
+构建产物只按明确路径清理不再使用的可再生结果（如隔离 Maven `target/`、前端 `dist/`、Playwright 临时输出）；在删除前检查产物归属、是否仍被运行或 CI 复现使用，范围只限本任务和明确安全的闲置目录。默认保留依赖缓存、关键测试/审查/交付证据、未合并任务资产、数据库/备份、正式包、发布身份和正在运行的服务或容器，不执行全局 `git clean -fdx`、Docker prune 或整体删除被忽略的 `artifacts/`。清理临时容器及其 Volume 必须确认所有者和单独授权边界，不能连带影响正式运行。
+
+每个 PR 合并后报告 `merge SHA`、Post-merge CI run与状态、已删/保留分支与Worktree、清理/保留产物、最终 `dev == origin/dev` 与工作区状态。完整闭环满足时用 `DELIVERED / CLEANUP_COMPLETE`；CI成功但清理未完成或尚无必要删除授权用 `DELIVERED / PENDING_CLEANUP`；未合并或CI未通过不得使用 `DELIVERED`。非阻断的保留项须写明原因，不扩大清理到其他任务。
+
 ## Subagent
 
 仅对真正独立且能并行推进的有界任务使用 subagent，例如独立代码路径检查、前后端调查、真正独立审查或无关失败定位。不得默认生成 architect/security/SQL/testing/reviewer 固定角色组；并行不能绕过只读、候选身份或授权边界。
