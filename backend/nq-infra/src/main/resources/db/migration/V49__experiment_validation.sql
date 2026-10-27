@@ -36,7 +36,7 @@ CREATE TABLE experiment_validation_steps (
  CHECK((selection IS NULL)=(selected_at IS NULL)),
  CHECK(selection IS NULL OR role='IN_SAMPLE')
 );
-COMMENT ON TABLE experiment_validation_steps IS '有界验证步骤引用原实验Trial/Attempt体系，不复制回测事实；训练选择只能冻结一次';
+COMMENT ON TABLE experiment_validation_steps IS '有界验证步骤引用原实验试验与尝试体系，不复制回测事实；训练选择只能冻结一次';
 COMMENT ON COLUMN experiment_validation_steps.selection IS '只从同折训练评价排序，绑定原Trial、版本、所有候选得分与固定tie-break';
 
 CREATE TABLE experiment_holdout_views (

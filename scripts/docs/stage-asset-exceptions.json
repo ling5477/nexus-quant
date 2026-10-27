@@ -3,7 +3,7 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "4c1f5378a270f5dacc218e4af510997a2bef16763c81a5859f6e36b85d44e8e0",
+      "sha256": "2d4968b4f6b993901d78777d659cdcc857fa802ebdfea6e908ac0b3ec39f3786",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
@@ -563,7 +563,7 @@
     },
     {
       "path": "backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/BacktestRunService.java",
-      "sha256": "63425f968e29b20dc5933f409f0193f4fc2c803027290f2113893a2d44c3586e",
+      "sha256": "d1cf9c4e9b298afbc7dcc803d5a02bbedafc8a83b39638151ba0c8aceec69b1a",
       "kind": "DOMAIN_VOCABULARY",
       "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
       "owner": "对应业务模块与CI合同维护者",
