@@ -4,6 +4,8 @@ export const experimentQueryKeys = {
     all: ['strategy-experiments'] as const,
     list: (owner: number | undefined, offset: number) => [...experimentQueryKeys.all, owner, 'list', offset] as const,
     detail: (owner: number | undefined, id: string | null) => [...experimentQueryKeys.all, owner, 'detail', id] as const,
+    validations: (owner: number | undefined, source: string) => [...experimentQueryKeys.all, owner, 'validations', source] as const,
+    validation: (owner: number | undefined, id: string | undefined) => [...experimentQueryKeys.all, owner, 'validation', id] as const,
 };
 
 export const authQueryKeys = {

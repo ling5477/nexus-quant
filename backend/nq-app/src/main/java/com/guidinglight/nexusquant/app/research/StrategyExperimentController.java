@@ -16,8 +16,10 @@ public class StrategyExperimentController {
     private final StrategyExperimentService service;
     private final GatewayAuthFacade auth;
     private final CurrentUserProfileService profiles;
-    public StrategyExperimentController(StrategyExperimentService service,GatewayAuthFacade auth,CurrentUserProfileService profiles) {
+    private final ExperimentValidationService validations;
+    public StrategyExperimentController(StrategyExperimentService service,GatewayAuthFacade auth,CurrentUserProfileService profiles,ExperimentValidationService validations) {
         this.service=service;this.auth=auth;this.profiles=profiles;
+        this.validations=validations;
     }
     private long actor(boolean write) {
         var actor=auth.currentUser().flatMap(c->profiles.findByUsername(c.username()))
@@ -36,4 +38,10 @@ public class StrategyExperimentController {
     @PostMapping("/operations/{id}") public StrategyExperimentService.View create(@PathVariable UUID id,@RequestBody StrategyExperimentService.Request request) {return service.create(id,request,actor(true));}
     @PostMapping("/{id}/cancel") public StrategyExperimentService.View cancel(@PathVariable UUID id) {return service.cancel(id,actor(true));}
     @PostMapping("/{id}/trials/{trial}/attempts/{attempt}") public StrategyExperimentService.View retry(@PathVariable UUID id,@PathVariable UUID trial,@PathVariable UUID attempt) {return service.retry(id,trial,attempt,actor(true));}
+    @GetMapping("/{id}/validation-policy") public JsonNode validationPolicy(@PathVariable UUID id) {return validations.preview(id,actor(false));}
+    @GetMapping("/{id}/validations") public List<ExperimentValidationService.Summary> validations(@PathVariable UUID id) {return validations.list(id,actor(false));}
+    @PostMapping("/{id}/validations/operations/{operation}") public ExperimentValidationService.View validate(@PathVariable UUID id,@PathVariable UUID operation) {return validations.create(id,operation,actor(true));}
+    @GetMapping("/validations/{id}") public ExperimentValidationService.View validation(@PathVariable UUID id) {return validations.get(id,actor(false));}
+    @PostMapping("/validations/{id}/cancel") public ExperimentValidationService.View cancelValidation(@PathVariable UUID id) {return validations.cancel(id,actor(true));}
+    @PostMapping("/validations/{id}/holdout-views/{view}") public ExperimentValidationService.View viewHoldout(@PathVariable UUID id,@PathVariable UUID view) {return validations.revealHoldout(id,view,actor(false));}
 }

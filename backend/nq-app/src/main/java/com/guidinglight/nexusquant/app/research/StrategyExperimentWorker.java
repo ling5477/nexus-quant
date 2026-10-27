@@ -23,11 +23,14 @@ public class StrategyExperimentWorker implements ScheduledJobContributor {
     private final BacktestExecutionService execution;
     private final BacktestEvaluationService evaluations;
     private final TransactionTemplate transaction;
+    private final ExperimentValidationService validations;
 
     public StrategyExperimentWorker(JdbcTemplate jdbc,TenantWorkAccess tenants,BacktestRunService runs,
-            BacktestExecutionService execution,BacktestEvaluationService evaluations,PlatformTransactionManager manager) {
+            BacktestExecutionService execution,BacktestEvaluationService evaluations,PlatformTransactionManager manager,
+            ExperimentValidationService validations) {
         this.jdbc=jdbc;this.tenants=tenants;this.runs=runs;this.execution=execution;this.evaluations=evaluations;
         transaction=new TransactionTemplate(manager);transaction.setTimeout(40);
+        this.validations=validations;
     }
 
     @Override public ScheduledJobRegistry.Job job() {
@@ -43,8 +46,11 @@ public class StrategyExperimentWorker implements ScheduledJobContributor {
     }
 
     public boolean advance(UUID experiment) {
+        if(validations.advanceForSource(experiment)) return true;
         Claim claim=transaction.execute(s->{
             limits();
+            // 领取与执行保持全局锁→父实验→Attempt顺序；避免并发领取持父锁等待正在提交的Attempt。
+            if(!Boolean.TRUE.equals(jdbc.queryForObject("SELECT pg_try_advisory_xact_lock(hashtextextended('strategy-experiment-execution',0))",Boolean.class))) return null;
             // 与取消/重试共享父锁；取消提交后不得再领取后续任务。
             var flags=jdbc.queryForList("SELECT cancel_requested FROM strategy_experiments WHERE experiment_id=? AND active FOR UPDATE",Boolean.class,experiment);
             if(flags.isEmpty()) return null;
@@ -101,7 +107,7 @@ public class StrategyExperimentWorker implements ScheduledJobContributor {
     }
 
     private void finish(UUID experiment) {
-        jdbc.update("UPDATE strategy_experiments e SET active=EXISTS(SELECT 1 FROM strategy_experiment_trials t JOIN strategy_experiment_attempts a USING(trial_id) WHERE t.experiment_id=e.experiment_id AND a.status IN ('QUEUED','RUNNING')) WHERE experiment_id=?",experiment);
+        jdbc.update("UPDATE strategy_experiments e SET active=(EXISTS(SELECT 1 FROM strategy_experiment_trials t JOIN strategy_experiment_attempts a USING(trial_id) WHERE t.experiment_id=e.experiment_id AND a.status IN ('QUEUED','RUNNING')) OR EXISTS(SELECT 1 FROM experiment_validations v WHERE v.source_experiment_id=e.experiment_id AND v.status='RUNNING')) WHERE experiment_id=?",experiment);
     }
     private void limits() {jdbc.execute("SET LOCAL lock_timeout='3s'");jdbc.execute("SET LOCAL statement_timeout='35s'");}
     private record Claim(UUID id,String run) {}

@@ -149,6 +149,17 @@ public class BacktestConfigService {
         return persistConfiguration(request);
     }
 
+    /** 正式验证编排从原配置派生，不刷新已冻结的规则及费用观察。 */
+    @Transactional(isolation = Isolation.REPEATABLE_READ, timeout = 10)
+    public BacktestConfig copyForValidation(String templateConfigId, String name, String executionSpec) {
+        BacktestConfig original = getByBacktestConfigId(templateConfigId);
+        if (!original.isActive()) throw new IllegalArgumentException("active validation template required");
+        var request = new BacktestConfigCreateRequest(original.researchConfigId(), name, null,
+                original.startTime(), original.endTime(), original.initialCapital(), executionSpec, original.evaluationSpec());
+        validateCreateRequest(request);
+        return persistConfiguration(request);
+    }
+
     private BacktestConfig persistConfiguration(BacktestConfigCreateRequest request) {
         ResearchConfig researchConfig =
                 researchConfigService.getByResearchConfigId(request.researchConfigId());
