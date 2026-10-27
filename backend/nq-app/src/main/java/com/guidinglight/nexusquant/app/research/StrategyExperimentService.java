@@ -129,7 +129,7 @@ public class StrategyExperimentService {
         return new AttemptSeed(config.backtestConfigId(),run.backtestRunId());
     }
     private void saveAttempt(UUID trial,int attempt,UUID attemptId,AttemptSeed seed) {
-        jdbc.update("INSERT INTO strategy_experiment_attempts(attempt_id,trial_id,attempt,backtest_config_id,backtest_run_id) VALUES(?,?,?,?,?)",
+        jdbc.update("INSERT INTO strategy_experiment_attempts(attempt_id,trial_id,attempt_number,backtest_config_id,backtest_run_id) VALUES(?,?,?,?,?)",
                 attemptId,trial,attempt,seed.config(),seed.run());
     }
 
@@ -146,7 +146,7 @@ public class StrategyExperimentService {
         // 有界连接一次返回至多48个attempt；不以页面逐条查询复制Evaluation事实。
         var trials=jdbc.query("""
             SELECT t.trial_id,t.ordinal,t.parameter_identity,t.parameters::text,t.strategy_version_id,
-              a.attempt_id,a.attempt,a.backtest_config_id,a.backtest_run_id,a.status,a.failure_reason,
+              a.attempt_id,a.attempt_number AS attempt,a.backtest_config_id,a.backtest_run_id,a.status,a.failure_reason,
               r.status AS run_status,r.failure_code,e.eval_report_id,e.evaluation_status,
               jsonb_build_object('netPnl',e.net_pnl::text,'totalReturn',e.total_return::text,
                 'maxDrawdown',e.max_drawdown_rate::text,'sharpe',e.sharpe_ratio::text,
@@ -158,7 +158,7 @@ public class StrategyExperimentService {
             JOIN backtest_runs r ON r.backtest_run_id=a.backtest_run_id
             LEFT JOIN LATERAL (SELECT report.* FROM backtest_eval_reports report WHERE report.backtest_run_id=r.backtest_run_id
                 ORDER BY report.evaluated_at DESC,report.eval_report_id DESC LIMIT 1) e ON true
-            WHERE t.experiment_id=? ORDER BY t.ordinal,a.attempt LIMIT 48
+            WHERE t.experiment_id=? ORDER BY t.ordinal,a.attempt_number LIMIT 48
             """,(r,n)-> new Trial(r.getObject("trial_id",UUID.class),r.getInt("ordinal"),r.getString("parameter_identity"),
                 read(r.getString("parameters")),r.getString("strategy_version_id"),r.getObject("attempt_id",UUID.class),r.getInt("attempt"),
                 r.getString("backtest_config_id"),r.getString("backtest_run_id"),r.getString("status"),r.getString("failure_reason"),

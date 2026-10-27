@@ -52,7 +52,7 @@ public class StrategyExperimentWorker implements ScheduledJobContributor {
             var rows=jdbc.query("""
                 SELECT a.attempt_id,a.backtest_run_id FROM strategy_experiment_attempts a
                 JOIN strategy_experiment_trials t USING(trial_id) WHERE t.experiment_id=?
-                AND a.status IN ('RUNNING','QUEUED') ORDER BY a.status DESC,t.ordinal,a.attempt LIMIT 1 FOR UPDATE OF a
+                AND a.status IN ('RUNNING','QUEUED') ORDER BY a.status DESC,t.ordinal,a.attempt_number LIMIT 1 FOR UPDATE OF a
                 """,(r,n)->new Claim(r.getObject(1,UUID.class),r.getString(2)),experiment);
             if(rows.isEmpty()) {finish(experiment);return null;}
             Claim value=rows.getFirst();

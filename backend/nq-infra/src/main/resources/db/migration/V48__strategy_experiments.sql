@@ -40,13 +40,13 @@ COMMENT ON TABLE strategy_experiment_trials IS '稳定试验和不可变参数/�
 CREATE TABLE strategy_experiment_attempts (
  attempt_id uuid PRIMARY KEY,
  trial_id uuid NOT NULL REFERENCES strategy_experiment_trials(trial_id),
- attempt integer NOT NULL CHECK(attempt BETWEEN 1 AND 3),
+ attempt_number integer NOT NULL CHECK(attempt_number BETWEEN 1 AND 3),
  backtest_config_id varchar(64) NOT NULL UNIQUE REFERENCES backtest_configs(backtest_config_id),
  backtest_run_id varchar(64) NOT NULL UNIQUE REFERENCES backtest_runs(backtest_run_id),
  status varchar(24) NOT NULL DEFAULT 'QUEUED' CHECK(status IN ('QUEUED','RUNNING','SUCCEEDED','FAILED','CANCELLED','OUTCOME_UNKNOWN')),
  failure_reason varchar(128),
  created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
- UNIQUE(trial_id,attempt)
+ UNIQUE(trial_id,attempt_number)
 );
 CREATE INDEX idx_strategy_attempts_pending ON strategy_experiment_attempts(status,created_at,attempt_id)
  WHERE status IN ('QUEUED','RUNNING');
