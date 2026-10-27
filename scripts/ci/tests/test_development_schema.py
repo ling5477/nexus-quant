@@ -103,6 +103,46 @@ class DevelopmentSchemaTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'seed/control'):
             DYNAMIC.assert_fresh_facts(facts, baseline)
 
+    def test_experiment_cursor_must_be_present_empty_and_unique(self):
+        baseline = json.loads((ROOT / 'scripts/ci/development-schema-manifest.json').read_bytes())
+        original = copy.deepcopy(baseline)
+        expected = copy.deepcopy(baseline['freshInstallFacts'])
+        migrations = [{'version': '48', 'script': 'V48__strategy_experiments.sql'}]
+        cursor = {'work_kind': 'EXPERIMENT', 'last_work_id': ''}
+        expected['facts']['tenant_work_scan_cursors'].append(cursor)
+        expected['facts']['tenant_work_scan_cursors'].sort(key=lambda row: json.dumps(row, sort_keys=True))
+        expected['rowCounts']['tenant_work_scan_cursors'] += 1
+        DYNAMIC.assert_fresh_facts(copy.deepcopy(expected), baseline, migrations)
+        self.assertEqual(original, baseline)
+        with self.assertRaisesRegex(ValueError, 'seed/control'):
+            DYNAMIC.assert_fresh_facts(expected, baseline)
+        for mutation in ('missing', 'advanced', 'duplicate'):
+            with self.subTest(mutation=mutation):
+                facts = copy.deepcopy(expected)
+                cursors = facts['facts']['tenant_work_scan_cursors']
+                if mutation == 'missing':
+                    cursors.remove(cursor)
+                    facts['rowCounts']['tenant_work_scan_cursors'] -= 1
+                elif mutation == 'advanced':
+                    next(row for row in cursors if row['work_kind'] == 'EXPERIMENT')['last_work_id'] = 'unexpected'
+                else:
+                    cursors.append(cursor)
+                    facts['rowCounts']['tenant_work_scan_cursors'] += 1
+                with self.assertRaisesRegex(ValueError, 'seed/control'):
+                    DYNAMIC.assert_fresh_facts(facts, baseline, migrations)
+        for mutation in ('extra_cursor', 'enabled_scheduler', 'business_rows'):
+            with self.subTest(mutation=mutation):
+                facts = copy.deepcopy(expected)
+                if mutation == 'extra_cursor':
+                    facts['facts']['tenant_work_scan_cursors'].append({'work_kind': 'OTHER', 'last_work_id': ''})
+                    facts['rowCounts']['tenant_work_scan_cursors'] += 1
+                elif mutation == 'enabled_scheduler':
+                    facts['facts']['scheduled_job_controls'][0]['enabled'] = True
+                else:
+                    facts['rowCounts']['strategy_experiments'] = 1
+                with self.assertRaises(ValueError):
+                    DYNAMIC.assert_fresh_facts(facts, baseline, migrations)
+
     def test_failed_reference_migration_drops_only_its_own_database(self):
         with patch.dict(DYNAMIC.os.environ, {'NQ_FLYWAY_DB_URL': 'jdbc:postgresql://localhost/actual'}), \
                 patch.object(DYNAMIC, 'psql') as sql, \

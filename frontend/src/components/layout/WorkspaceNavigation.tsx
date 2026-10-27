@@ -4,7 +4,7 @@ import {useTranslation} from 'react-i18next';
 const groups = {
     research: [
         ['/strategies', 'strategies'], ['/research', 'research'], ['/backtests', 'backtests'],
-        ['/evaluations', 'evaluations'], ['/publishes', 'publishes'],
+        ['/experiments', 'pages:experiments.title'], ['/evaluations', 'evaluations'], ['/publishes', 'publishes'],
         ['/paper-trading/runs', 'sim'],
     ],
     market: [['/marketdata', 'market'], ['/instruments', 'instruments']],

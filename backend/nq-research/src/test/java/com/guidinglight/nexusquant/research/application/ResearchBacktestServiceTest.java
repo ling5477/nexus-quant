@@ -40,6 +40,27 @@ class ResearchBacktestServiceTest {
     private final Clock fixedClock = Clock.fixed(Instant.parse("2026-03-24T10:15:30Z"), ZoneOffset.UTC);
 
     @Test
+    void trustedParameterCopyPreservesServerFeeFieldsWhileClientCreationStillRejectsThem() throws Exception {
+        var repository = new InMemoryBacktestConfigRepository();
+        var parent = org.mockito.Mockito.mock(ResearchConfigService.class);
+        var research = org.mockito.Mockito.mock(ResearchConfig.class);
+        org.mockito.Mockito.when(research.isActive()).thenReturn(true);
+        org.mockito.Mockito.when(parent.getByResearchConfigId("research")).thenReturn(research);
+        var original = (com.fasterxml.jackson.databind.node.ObjectNode) objectMapper.valueToTree(
+                backtestConfig("source", "research", "ACTIVE", null));
+        String fees = "{\"costSource\":\"CURRENT_ACCOUNT_OBSERVATION\",\"feeSourceOwnerUserId\":\"41\",\"feeObservationId\":\"frozen-source\"}";
+        original.put("executionSpec", fees);
+        original.remove(List.of("active", "archived"));
+        repository.insert(objectMapper.treeToValue(original, BacktestConfig.class));
+        var service = new BacktestConfigService(repository, parent, objectMapper, fixedClock);
+        var copied = service.copyForParameterTrial("source", "Parameter trial");
+        assertEquals(objectMapper.readTree(fees), objectMapper.readTree(copied.executionSpec()));
+        assertThrows(IllegalArgumentException.class, () -> service.create(new BacktestConfigCreateRequest(
+                "research", "Untrusted client", null, copied.startTime(), copied.endTime(),
+                copied.initialCapital(), fees, "{}")));
+    }
+
+    @Test
     void shouldCreateResearchBacktestConfigAndRunWithSnapshots() {
         InMemoryResearchConfigRepository researchConfigRepository = new InMemoryResearchConfigRepository();
         InMemoryBacktestConfigRepository backtestConfigRepository = new InMemoryBacktestConfigRepository();
@@ -97,6 +118,16 @@ class ResearchBacktestServiceTest {
         assertNotNull(backtestRun.strategySnapshot());
         assertNotNull(backtestRun.backtestConfigSnapshot());
         assertEquals(1, backtestRunService.list(researchConfig.researchConfigId(), null).size());
+        var clone = backtestConfigService.copyForParameterTrial(backtestConfig.backtestConfigId(), "Same assumptions");
+        var repeated = backtestRunService.createWithFrozenAssumptions(
+                new BacktestRunStartRequest(clone.backtestConfigId()), backtestRun.backtestRunId());
+        assertEquals(backtestRun.configSnapshotJson(), repeated.configSnapshotJson());
+        assertFalse(backtestRun.backtestRunId().equals(repeated.backtestRunId()));
+        var different = backtestConfigService.create(new BacktestConfigCreateRequest(
+                researchConfig.researchConfigId(), "Different capital", null, clone.startTime(), clone.endTime(),
+                new BigDecimal("200000"), clone.executionSpec(), clone.evaluationSpec()));
+        assertThrows(IllegalArgumentException.class, () -> backtestRunService.createWithFrozenAssumptions(
+                new BacktestRunStartRequest(different.backtestConfigId()), backtestRun.backtestRunId()));
     }
 
     @Test

@@ -71,13 +71,20 @@ public class ScheduledJobControlRepository {
     }
 
     public void materialize(String key, long delayMs) {
+        materialize(key, delayMs, false);
+    }
+
+    public void materialize(String key, long delayMs, boolean enabled) {
         jdbc.update(
                 """
-                INSERT INTO scheduled_job_controls(job_key, fixed_delay_ms)
-                VALUES (?, ?) ON CONFLICT (job_key) DO NOTHING
+                INSERT INTO scheduled_job_controls(job_key, fixed_delay_ms, enabled, next_run_at)
+                VALUES (?, ?, ?, CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE NULL END)
+                ON CONFLICT (job_key) DO NOTHING
                 """,
                 key,
-                delayMs);
+                delayMs,
+                enabled,
+                enabled);
     }
 
     public boolean patch(

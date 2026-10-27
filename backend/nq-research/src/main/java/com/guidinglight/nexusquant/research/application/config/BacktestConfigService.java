@@ -134,6 +134,22 @@ public class BacktestConfigService {
                         request.initialCapital(),
                         feeSource.prepareConfiguration(request.executionSpec()),
                         request.evaluationSpec());
+        return persistConfiguration(request);
+    }
+
+    /** 可信持久配置派生保留服务端费用来源，不把来源所有者伪装成新的客户端输入。 */
+    @Transactional(isolation = Isolation.REPEATABLE_READ, timeout = 10)
+    public BacktestConfig copyForParameterTrial(String templateConfigId, String name) {
+        BacktestConfig original = getByBacktestConfigId(templateConfigId);
+        if (!original.isActive()) throw new IllegalArgumentException("active experiment template required");
+        var request = new BacktestConfigCreateRequest(original.researchConfigId(), name, null,
+                original.startTime(), original.endTime(), original.initialCapital(),
+                original.executionSpec(), original.evaluationSpec());
+        validateCreateRequest(request);
+        return persistConfiguration(request);
+    }
+
+    private BacktestConfig persistConfiguration(BacktestConfigCreateRequest request) {
         ResearchConfig researchConfig =
                 researchConfigService.getByResearchConfigId(request.researchConfigId());
         ensureActiveResearchConfig(researchConfig);

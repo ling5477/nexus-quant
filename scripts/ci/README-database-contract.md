@@ -11,6 +11,7 @@
 - PR 使用真正的 base SHA；push 使用事件的 before SHA，完整获取该历史。不能只检查最后一个提交的父节点，否则一次 push 中较早提交的历史改写可能漏检。手动 workflow_dispatch 默认检查第一父节点；本地可显式传 `--base-ref`。
 - PostgreSQL CI 创建随机参考数据库，使用同一候选 SQL 实际执行 Flyway migrate、validate 和重复 migrate=0，生成当前参考 Schema/history。被测数据库仅只读比较，不能直接用被测库现状生成自己的预期。
 - 比较完整 Schema（含约束、函数、索引、trigger、RLS/ACL）、Flyway history 和初始事实；既有控制事实必须保持，新业务表默认零行。修改默认控制、初始角色或新增非空静态事实需要显式调整相应业务合同，不能自动接受。
+- V48 的实验编排显式新增一个 `EXPERIMENT` 空扫描游标；开发验证仅在迁移清单包含该版本时扩展此精确预期，V44 快照保持原样。缺失、重复、非空游标及其他事实漂移仍按失败处理。
 - 参考库在成功和失败路径均清理；不对被测库执行 clean、repair 或 reset。连接参数和凭证不进入日志。
 
 ## 使用

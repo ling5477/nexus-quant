@@ -1,4 +1,22 @@
 {
+  "experiments": {
+    "title": "Strategy experiments", "description": "Freeze inputs, run parameter batches, compare every result",
+    "boundary": "Uses the Java backtest pipeline. Up to 16 candidates, executed serially. Results grant no publishing or live trading authority.",
+    "create": "Create experiment", "template": "Backtest template (version and dataset bound)", "strategy": "Strategy type",
+    "mode": "Candidate configuration", "grid": "Bounded Cartesian product", "explicit": "Explicit candidates", "csv": "Separate values with commas. Every combination must be valid; maximum 16 trials.",
+    "parameters": "Parameters", "preview": "Preview trial count", "submit": "Submit experiment", "count": "{{count}} valid trials",
+    "groups": "Experiments", "trials": "Trials", "status": "Status", "details": "Details", "results": "Result comparison",
+    "attempt": "Attempt", "netPnl": "Net PnL", "totalReturn": "Return (ratio)", "maxDrawdown": "Max drawdown (ratio)", "sharpe": "Sharpe (not annualized)",
+    "tradeCount": "Trades", "fee": "Fees", "slippage": "Slippage", "relative": "Vs benchmark (ratio)",
+    "backtest": "Backtest details", "evaluation": "Evaluation details", "retry": "Explicit retry", "cancel": "Cancel pending tasks", "cancelConfirm": "Stop subsequent tasks and let the current transaction complete?",
+    "compare": "Select trials to compare (empty shows all)", "comparisonNote": "Identical frozen data, capital and costs. Incomparable results are excluded from ranking. No automatic selection or publishing. Failed attempts remain visible.",
+    "dataset": "Dataset", "range": "Time range", "capital": "Initial capital", "assumptions": "Frozen cost and execution assumptions", "feeRate": "Fee rate (ratio)", "slippageBps": "Slippage (bps)", "frozenDetails": "Expand frozen rules and source",
+    "refresh": "Refresh", "previous": "Previous", "next": "Next", "completed": "Finished (open details)",
+    "incomparable": "Incomparable", "metricMissing": "Metric not supplied by the formal evaluation", "invalid": "Invalid parameter format",
+    "storageError": "Cannot read the original request identity. Creation stopped; check browser storage.", "scopeChanged": "Signed-in user changed; reload the experiment",
+    "pending": "Original creation is unconfirmed. Recover using the same identity.", "recover": "Recover original request", "discardRejected": "Discard rejected request",
+    "states": {"QUEUED": "Queued", "RUNNING": "Running", "SUCCEEDED": "All succeeded", "FAILED": "Failed", "PARTIAL_FAILURE": "Partial failure", "CANCELLED": "Pending tasks cancelled", "OUTCOME_UNKNOWN": "Outcome unknown; reconciliation required"}
+  },
   "currencyRegistry": {
     "title": "Currencies and supported capabilities",
     "unavailable": "Currency capabilities are currently unavailable.",

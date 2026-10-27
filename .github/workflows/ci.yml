@@ -685,6 +685,18 @@ jobs:
             -Dnq.app.context.smoke.user="${NQ_FLYWAY_DB_USER}" \
             -Dnq.app.context.smoke.password="${NQ_FLYWAY_DB_PASSWORD}"
 
+      - name: Verify strategy experiment orchestration on isolated PostgreSQL 16
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -f backend/pom.xml -pl nq-app -am test \
+            -Dtest=ExperimentParametersTest,StrategyExperimentPostgresIntegrationTest \
+            -Dsurefire.failIfNoSpecifiedTests=false \
+            -Dnq.tenant.pg.required=true \
+            -Dnq.tenant.pg.url="${NQ_FLYWAY_DB_URL}" \
+            -Dnq.tenant.pg.user="${NQ_FLYWAY_DB_USER}" \
+            -Dnq.tenant.pg.password="${NQ_FLYWAY_DB_PASSWORD}"
+
       - name: Verify account snapshot semantics on PostgreSQL
         shell: bash
         run: |

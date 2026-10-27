@@ -13,6 +13,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /** 固定代码任务目录；数据库只能引用这些身份，不能提供可执行代码。 */
@@ -54,7 +55,12 @@ public class ScheduledJobRegistry {
                                 "VALIDATION_EVIDENCE_" + result.result().name());
                     };
                 }));
-        jobs = Map.copyOf(definitions);
+        jobs = definitions;
+    }
+
+    @Autowired
+    void contribute(List<ScheduledJobContributor> contributors) {
+        for (ScheduledJobContributor contributor : contributors) register(jobs, contributor.job());
     }
 
     public List<Job> all() {
@@ -86,7 +92,11 @@ public class ScheduledJobRegistry {
     }
 
     public record Job(String key, long defaultDelayMs, long minDelayMs, long maxDelayMs,
-            BooleanSupplier eligible, Supplier<JobResult> runOnce) {
+            BooleanSupplier eligible, Supplier<JobResult> runOnce, boolean defaultEnabled) {
+        public Job(String key, long defaultDelayMs, long minDelayMs, long maxDelayMs,
+                BooleanSupplier eligible, Supplier<JobResult> runOnce) {
+            this(key,defaultDelayMs,minDelayMs,maxDelayMs,eligible,runOnce,false);
+        }
         public Job {
             Objects.requireNonNull(key);
             Objects.requireNonNull(eligible);

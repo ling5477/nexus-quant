@@ -1,5 +1,11 @@
 import type {StrategyVersionPageRequest} from '@/features/strategies/types/strategies';
 
+export const experimentQueryKeys = {
+    all: ['strategy-experiments'] as const,
+    list: (owner: number | undefined, offset: number) => [...experimentQueryKeys.all, owner, 'list', offset] as const,
+    detail: (owner: number | undefined, id: string | null) => [...experimentQueryKeys.all, owner, 'detail', id] as const,
+};
+
 export const authQueryKeys = {
     all: ['auth'] as const,
     currentUser: (accessToken?: string | null) =>

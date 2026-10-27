@@ -659,7 +659,9 @@ class StrategySimPostgresIntegrationTest {
 
     @Test
     void schedulerControlsEnforceRegistryDelayVersionAndStaticCapability() throws Exception {
-        assertEquals(8, scheduledJobs.list().size());
+        assertEquals(9, scheduledJobs.list().size());
+        assertEquals(2_000L, scheduledJobs.detail("STRATEGY_EXPERIMENTS").fixedDelayMs());
+        assertNotNull(scheduledJobs.detail("STRATEGY_EXPERIMENTS").nextRunAt());
         assertThrows(IllegalArgumentException.class, () -> scheduledJobs.detail("UNKNOWN_JOB"));
         assertThrows(IllegalStateException.class, () -> scheduledJobs.runOnce(
                 "OKX_RECOVERY", "scheduler-test", "scheduler-test"));

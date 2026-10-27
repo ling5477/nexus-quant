@@ -82,6 +82,16 @@ public class BacktestRunService {
      */
     @Transactional(isolation = Isolation.REPEATABLE_READ, timeout = 10)
     public BacktestRun create(BacktestRunStartRequest request) {
+        return createInternal(request, null);
+    }
+
+    /** 同一实验沿用原Run的冻结成本与规则；只能引用可访问且父配置、数据完全一致的正式Run。 */
+    @Transactional(isolation = Isolation.REPEATABLE_READ, timeout = 10)
+    public BacktestRun createWithFrozenAssumptions(BacktestRunStartRequest request, String referenceRunId) {
+        return createInternal(request, getByBacktestRunId(referenceRunId));
+    }
+
+    private BacktestRun createInternal(BacktestRunStartRequest request, BacktestRun reference) {
         Objects.requireNonNull(request, "request must not be null");
         BacktestConfig backtestConfig =
                 backtestConfigService.getByBacktestConfigId(
@@ -91,11 +101,28 @@ public class BacktestRunService {
         ensureActiveConfig(backtestConfig, researchConfig);
         Instant now = Instant.now(clock);
         // 新运行再次检查来源有效期；完整快照只冻结一次，后续执行和发布不得改用最新费率。
-        String frozenConfiguration =
-                feeSource.freezeRunConfiguration(
+        String frozenConfiguration;
+        if (reference == null) {
+            frozenConfiguration = feeSource.freezeRunConfiguration(
                         backtestConfig.configSnapshotJson(),
                         backtestConfig.datasetSnapshotJson(),
                         now);
+        } else {
+            var original = backtestConfigService.getByBacktestConfigId(reference.backtestConfigId());
+            try {
+                var reader = new com.fasterxml.jackson.databind.ObjectMapper().reader()
+                        .with(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
+                if (!reference.researchConfigId().equals(researchConfig.researchConfigId())
+                        || !reader.readTree(original.configSnapshotJson()).equals(reader.readTree(backtestConfig.configSnapshotJson()))
+                        || !reader.readTree(reference.datasetSnapshotJson()).equals(reader.readTree(backtestConfig.datasetSnapshotJson())))
+                    throw new IllegalArgumentException("FROZEN_RUN_ASSUMPTIONS_MISMATCH");
+                frozenConfiguration = reference.configSnapshotJson();
+                feeSource.validateFrozenExecution(reader.readTree(frozenConfiguration).path("executionSpec").toString(),
+                        reference.datasetSnapshotJson());
+            } catch (java.io.IOException failure) {
+                throw new IllegalArgumentException("invalid frozen reference run", failure);
+            }
+        }
         BacktestRun backtestRun =
                 new BacktestRun(
                         "brn-" + UUID.randomUUID(),

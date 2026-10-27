@@ -3,7 +3,7 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "cfaa261218d00b0efd13e0d4e6fe057068d40536d3e3dfca9153f31f792e06ec",
+      "sha256": "4c1f5378a270f5dacc218e4af510997a2bef16763c81a5859f6e36b85d44e8e0",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
@@ -563,7 +563,7 @@
     },
     {
       "path": "backend/nq-research/src/main/java/com/guidinglight/nexusquant/research/application/BacktestRunService.java",
-      "sha256": "dd8a04e10ea9892f31c21f192642b272f4430b9547bf8fb34d6292b3697820ef",
+      "sha256": "63425f968e29b20dc5933f409f0193f4fc2c803027290f2113893a2d44c3586e",
       "kind": "DOMAIN_VOCABULARY",
       "reason": "freeze表示费用、折扣资产价格或研究运行配置的不可变业务快照；保持现有方法及事实合同，不是开发阶段或可执行profile。",
       "owner": "对应业务模块与CI合同维护者",
@@ -579,7 +579,7 @@
     },
     {
       "path": "backend/nq-research/src/test/java/com/guidinglight/nexusquant/research/application/ResearchBacktestServiceTest.java",
-      "sha256": "e5dcac17621a43c1ec3a3cfff1105d73ab0bbdd5eccef3375a39f5d5af07b107",
+      "sha256": "e1e4537f2a545372a6effa7311eac8a7dc196b54e85eb477b91907964f689cf2",
       "kind": "FIXTURE_IDENTITY",
       "reason": "Existing offline regression literals; no deployed profile, installed unit or executable stage launcher. Safety-denial and fixed fixture assertions remain active.",
       "owner": "Capability test owner",

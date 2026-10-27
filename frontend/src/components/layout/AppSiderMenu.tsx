@@ -40,6 +40,7 @@ export function AppSiderMenu({collapsed, onNavigate}: AppSiderMenuProps) {
                 'strategies',
                 'research',
                 'backtests',
+                'experiments',
                 'evaluations',
                 'publishes',
                 'strategy-validation',
