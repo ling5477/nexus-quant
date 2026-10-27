@@ -154,6 +154,13 @@
       "category": "RUNTIME_COMPATIBILITY_IDENTIFIER",
       "reason": "B0 is the existing canonical JSON boolean-false encoding used by persisted directional fee snapshot digests; changing it would change stable business identity.",
       "lineSha256": "2d69743072286f84f10d9416a04577a0510bb46f041c2931804df583694522ba"
+    },
+    {
+      "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/research/ExperimentValidationService.java",
+      "token": "FREEZE",
+      "category": "BUSINESS_DOMAIN_TERM",
+      "reason": "FREEZE names immutable training-only parameter selection before independent evaluation; it is a research business policy, not a development stage or runtime profile.",
+      "lineSha256": "d3631ec44e836c9d238abd2f14ab79753542b8374ff83112af41359a626efbec"
     }
   ],
   "historyRegions": [

@@ -9,6 +9,7 @@ import {formatApiError} from '@/api/errors';
 import type {AppApiError} from '@/types/api';
 import {useAuthStore} from '@/store/auth-store';
 import {useExperiments} from '@/features/experiments/useExperiments';
+import {WalkForwardPanel} from '@/features/experiments/WalkForwardPanel';
 import {experimentsApi, type ExperimentRequest, type ExperimentTrial} from '@/features/experiments/experimentsApi';
 import {useBacktestsListQuery} from '@/features/backtests/useBacktestsListQuery';
 import {applyNqCssVars, nqTableClassName} from '@/nq-design-system';
@@ -146,5 +147,6 @@ export function ExperimentsPage() {
             <Table className={nqTableClassName()} rowKey="attemptId" dataSource={shown} columns={columns} pagination={false} scroll={{x: 2300}}/>
             <Select mode="multiple" style={{width: '100%', marginTop: 12}} aria-label={t('experiments.compare')} placeholder={t('experiments.compare')} value={selected} onChange={setSelected} options={rows.map(r => ({value: r.attemptId, label: `${r.ordinal} / ${r.attempt} · ${r.parameterIdentity}`}))}/>
         </Card>}
+        {view && <WalkForwardPanel key={view.experimentId} source={view.experimentId} completed={view.status === 'SUCCEEDED'} writable={writable}/>}
     </Space>;
 }

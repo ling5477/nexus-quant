@@ -91,7 +91,17 @@ public class BacktestRunService {
         return createInternal(request, getByBacktestRunId(referenceRunId));
     }
 
+    /** 派生窗口保留完整Dataset及资本，只允许已声明的窗口和向上成本压力变化。 */
+    @Transactional(isolation = Isolation.REPEATABLE_READ, timeout = 10)
+    public BacktestRun createForValidation(BacktestRunStartRequest request, String referenceRunId) {
+        return createInternal(request, getByBacktestRunId(referenceRunId), true);
+    }
+
     private BacktestRun createInternal(BacktestRunStartRequest request, BacktestRun reference) {
+        return createInternal(request, reference, false);
+    }
+
+    private BacktestRun createInternal(BacktestRunStartRequest request, BacktestRun reference, boolean validation) {
         Objects.requireNonNull(request, "request must not be null");
         BacktestConfig backtestConfig =
                 backtestConfigService.getByBacktestConfigId(
@@ -112,11 +122,17 @@ public class BacktestRunService {
             try {
                 var reader = new com.fasterxml.jackson.databind.ObjectMapper().reader()
                         .with(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
+                var expected = reader.readTree(original.configSnapshotJson());
+                var actual = reader.readTree(backtestConfig.configSnapshotJson());
+                if (validation) {
+                    expected = reader.readTree(reference.configSnapshotJson());
+                    validateWindowDerivation(expected, actual, reader.readTree(reference.datasetSnapshotJson()));
+                }
                 if (!reference.researchConfigId().equals(researchConfig.researchConfigId())
-                        || !reader.readTree(original.configSnapshotJson()).equals(reader.readTree(backtestConfig.configSnapshotJson()))
+                        || (!validation && !expected.equals(actual))
                         || !reader.readTree(reference.datasetSnapshotJson()).equals(reader.readTree(backtestConfig.datasetSnapshotJson())))
                     throw new IllegalArgumentException("FROZEN_RUN_ASSUMPTIONS_MISMATCH");
-                frozenConfiguration = reference.configSnapshotJson();
+                frozenConfiguration = validation ? backtestConfig.configSnapshotJson() : reference.configSnapshotJson();
                 feeSource.validateFrozenExecution(reader.readTree(frozenConfiguration).path("executionSpec").toString(),
                         reference.datasetSnapshotJson());
             } catch (java.io.IOException failure) {
@@ -147,6 +163,33 @@ public class BacktestRunService {
                         now);
         backtestRunRepository.insert(backtestRun);
         return backtestRun;
+    }
+
+    private static void validateWindowDerivation(com.fasterxml.jackson.databind.JsonNode expected,
+            com.fasterxml.jackson.databind.JsonNode actual, com.fasterxml.jackson.databind.JsonNode dataset) {
+        var left = expected.deepCopy();
+        var right = actual.deepCopy();
+        var base = (com.fasterxml.jackson.databind.node.ObjectNode) left.path("executionSpec");
+        var derived = (com.fasterxml.jackson.databind.node.ObjectNode) right.path("executionSpec");
+        if (base.has("windowExecution") || !derived.has("windowExecution") || !dataset.has("frozenInput"))
+            throw new IllegalArgumentException("VALIDATION_REFERENCE_INVALID");
+        com.guidinglight.nexusquant.research.domain.BacktestWindow.read(derived, dataset.path("barCount").asInt());
+        derived.remove("windowExecution");
+        if (derived.has("costStress")) {
+            var stress = derived.path("costStress");
+            String field = stress.path("field").asText();
+            if (!java.util.Set.of("feeRate", "slippageBps").contains(field)
+                    || base.has("feeSource") || base.has("feeSourceSnapshotJson")
+                    || !"RESEARCH_HYPOTHESIS_V1".equals(stress.path("source").asText())
+                    || !(field.equals("feeRate") ? "FRACTION" : "BPS").equals(stress.path("unit").asText())
+                    || !base.path(field).asText().equals(stress.path("baseline").asText())
+                    || !derived.path(field).asText().equals(stress.path("value").asText())
+                    || new java.math.BigDecimal(derived.path(field).asText()).compareTo(new java.math.BigDecimal(base.path(field).asText())) <= 0)
+                throw new IllegalArgumentException("COST_STRESS_UNAVAILABLE");
+            derived.set(field, base.path(field));
+            derived.remove("costStress");
+        }
+        if (!left.equals(right)) throw new IllegalArgumentException("FROZEN_RUN_ASSUMPTIONS_MISMATCH");
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ, timeout = 10)

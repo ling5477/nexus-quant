@@ -215,6 +215,7 @@ public class BacktestExecutionService {
         BacktestExecutionRequest executionRequest = null;
         BacktestExecutionContext executionContext = null;
         List<HistoricalBar> bars = List.of();
+        com.guidinglight.nexusquant.research.domain.BacktestWindow window = null;
         List<SimOrder> simulatedOrders = new ArrayList<>();
         List<SimTrade> simulatedTrades = new ArrayList<>();
         Map<String, SimPosition> simulatedPositions = new LinkedHashMap<>();
@@ -288,11 +289,16 @@ public class BacktestExecutionService {
             if (bars.isEmpty()) {
                 throw new IllegalStateException("no historical bars found for requested window");
             }
+            window = com.guidinglight.nexusquant.research.domain.BacktestWindow.read(
+                    readJson(executionRequest.executionSpecJson()), bars.size());
+            if (readJson(executionRequest.executionSpecJson()).has("windowExecution")
+                    && (!frozenVersion || !datasetSnapshot.has("frozenInput")))
+                throw new IllegalStateException("WINDOW_REQUIRES_COMPLETE_FROZEN_INPUT");
             initializeDiscountCapital(
-                    executionRequest, executionContext, bars.getFirst().openTime());
+                    executionRequest, executionContext, bars.get(window.startBar()).openTime());
 
             if (frozenVersion) {
-                inputIdentity = SpotBarIdentity.capture(bars, objectMapper);
+                inputIdentity = SpotBarIdentity.capture(bars.subList(0, window.endBar()), objectMapper);
                 if ("public-capture".equals(executionRequest.datasetSpec().provider())
                         && !inputIdentity
                                 .sha256()
@@ -308,6 +314,7 @@ public class BacktestExecutionService {
                         executionRequest,
                         executionContext,
                         bars,
+                        window,
                         simulatedOrders,
                         simulatedTrades,
                         simulatedPositions,
@@ -324,6 +331,9 @@ public class BacktestExecutionService {
                         simulatedPositions,
                         simulatedPnlSnapshots);
             }
+
+            // 汇总、Benchmark和评价只使用正式区间；预热没有权益或成交事实。
+            bars = List.copyOf(bars.subList(window.startBar(), window.endBar()));
 
             Instant executionFinishedAt = Instant.now(clock);
             String summaryJson =
@@ -538,6 +548,7 @@ public class BacktestExecutionService {
             BacktestExecutionRequest request,
             BacktestExecutionContext context,
             List<HistoricalBar> bars,
+            com.guidinglight.nexusquant.research.domain.BacktestWindow window,
             List<SimOrder> orders,
             List<SimTrade> trades,
             Map<String, SimPosition> positions,
@@ -553,7 +564,7 @@ public class BacktestExecutionService {
         ExecutionRules rules = frozenRules(request.executionSpecJson());
         List<SpotTargetStrategy.Decision> pendingSignals = new ArrayList<>();
         SpotTargetStrategy.PositionState strategyState = SpotTargetStrategy.PositionState.FLAT;
-        for (int index = 0; index < bars.size(); index++) {
+        for (int index = window.startBar(); index < window.endBar(); index++) {
             HistoricalBar bar = bars.get(index);
             // 延迟可见的信号保留到首次严格晚于可见时间的开盘，不能被新 bar 覆盖。
             for (int pendingIndex = 0; pendingIndex < pendingSignals.size(); ) {
@@ -1174,6 +1185,12 @@ public class BacktestExecutionService {
             }
             summary.put("barContentSha256", inputIdentity.sha256());
             summary.set("consumedBars", readJson(inputIdentity.canonicalJson()));
+            if (readJson(executionRequest.executionSpecJson()).has("windowExecution")) {
+                summary.set("windowExecution", readJson(executionRequest.executionSpecJson()).path("windowExecution"));
+                summary.put("warmupBarCount", readJson(executionRequest.executionSpecJson()).path("windowExecution").path("startBar").asInt());
+                summary.put("initialPosition", "FLAT");
+                summary.put("initialCapital", executionRequest.initialCapital().toPlainString());
+            }
             summary.put("firstBarOpenTime", bars.getFirst().openTime().toString());
             summary.put("lastBarCloseTime", bars.getLast().closeTime().toString());
             summary.set("decisionReasons", objectMapper.valueToTree(decisionReasons));

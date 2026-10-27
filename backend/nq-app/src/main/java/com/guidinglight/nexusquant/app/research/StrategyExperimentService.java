@@ -133,9 +133,34 @@ public class StrategyExperimentService {
                 attemptId,trial,attempt,seed.config(),seed.run());
     }
 
+    /** 验证窗口只派生编排组，复用源Trial冻结版本以及原Attempt/Run执行事实。调用方持有事务。 */
+    UUID createValidationExperiment(View source, List<Trial> candidates, JsonNode executionSpec, UUID validation) {
+        ObjectNode frozen=source.frozenInput().deepCopy();
+        frozen.set("executionSpec",executionSpec);
+        frozen.set("requestedExecutionSpec",executionSpec);
+        frozen.put("validationId",validation.toString());
+        frozen.set("parameterCandidates",mapper.valueToTree(candidates.stream().map(Trial::parameters).toList()));
+        UUID id=UUID.randomUUID();
+        long owner=jdbc.queryForObject("SELECT owner_user_id FROM strategy_experiments WHERE experiment_id=?",Long.class,source.experimentId());
+        jdbc.update("INSERT INTO strategy_experiments(experiment_id,owner_user_id,strategy_type,frozen_input,trial_count) VALUES(?,?,?,?::jsonb,?)",
+                id,owner,source.strategyType(),frozen.toString(),candidates.size());
+        int ordinal=0;
+        for (Trial candidate:candidates) {
+            UUID trial=UUID.randomUUID();
+            var config=configs.copyForValidation(frozen.path("templateConfigId").asText(),"Validation "+validation+" / "+id,executionSpec.toString());
+            configs.bindStrategyVersion(config.backtestConfigId(),candidate.strategyVersionId());
+            configs.bindDataset(config.backtestConfigId(),frozen.path("datasetSnapshot").path("datasetId").asText(),frozen.path("datasetSnapshot").toString());
+            var run=runs.createForValidation(new BacktestRunStartRequest(config.backtestConfigId()),source.frozenInput().path("referenceRunId").asText());
+            jdbc.update("INSERT INTO strategy_experiment_trials(trial_id,experiment_id,ordinal,parameter_identity,parameters,strategy_version_id) VALUES(?,?,?,?,?::jsonb,?)",
+                    trial,id,++ordinal,candidate.parameterIdentity(),candidate.parameters().toString(),candidate.strategyVersionId());
+            saveAttempt(trial,1,UUID.randomUUID(),new AttemptSeed(config.backtestConfigId(),run.backtestRunId()));
+        }
+        return id;
+    }
+
     public List<Summary> list(long owner, int limit, int offset) {
         if(limit<1 || limit>50 || offset<0 || offset>10000) throw new IllegalArgumentException("invalid experiment page");
-        return jdbc.query("SELECT experiment_id,strategy_type,trial_count,cancel_requested,active,created_at FROM strategy_experiments WHERE owner_user_id=? ORDER BY created_at DESC,experiment_id DESC LIMIT ? OFFSET ?",
+        return jdbc.query("SELECT experiment_id,strategy_type,trial_count,cancel_requested,active,created_at FROM strategy_experiments WHERE owner_user_id=? AND NOT jsonb_exists(frozen_input,'validationId') ORDER BY created_at DESC,experiment_id DESC LIMIT ? OFFSET ?",
                 (r,n)->new Summary(r.getObject(1,UUID.class),r.getString(2),r.getInt(3),r.getBoolean(4),r.getBoolean(5),r.getTimestamp(6).toInstant()),owner,limit,offset);
     }
 
@@ -169,7 +194,10 @@ public class StrategyExperimentService {
     }
 
     public View cancel(UUID id,long owner) {
-        transaction.executeWithoutResult(s->{get(id,owner); jdbc.update("UPDATE strategy_experiments SET cancel_requested=true WHERE experiment_id=?",id);
+        transaction.executeWithoutResult(s->{var owned=get(id,owner); rejectManaged(owned);
+            if(Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM experiment_validations WHERE source_experiment_id=? AND status='RUNNING')",Boolean.class,id)))
+                throw new ResponseStatusException(HttpStatus.CONFLICT,"cancel the active validation run explicitly");
+            jdbc.update("UPDATE strategy_experiments SET cancel_requested=true WHERE experiment_id=?",id);
             jdbc.update("UPDATE strategy_experiment_attempts a SET status='CANCELLED' FROM strategy_experiment_trials t WHERE t.trial_id=a.trial_id AND t.experiment_id=? AND a.status='QUEUED'",id);});
         return get(id,owner);
     }
@@ -179,6 +207,7 @@ public class StrategyExperimentService {
             var owned=jdbc.queryForList("SELECT experiment_id FROM strategy_experiments WHERE experiment_id=? AND owner_user_id=? FOR UPDATE",UUID.class,id,owner);
             if(owned.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"experiment not found");
             View view=get(id,owner);
+            rejectManaged(view);
             if(view.cancelRequested()) throw new ResponseStatusException(HttpStatus.CONFLICT,"experiment cancelled");
             var existing=jdbc.queryForList("SELECT trial_id FROM strategy_experiment_attempts WHERE attempt_id=?",UUID.class,attemptId);
             if(!existing.isEmpty()) {
@@ -193,6 +222,10 @@ public class StrategyExperimentService {
             jdbc.update("UPDATE strategy_experiments SET active=true WHERE experiment_id=?",id);
         });
         return get(id,owner);
+    }
+
+    private void rejectManaged(View view) {
+        if(view.frozenInput().has("validationId")) throw new ResponseStatusException(HttpStatus.CONFLICT,"validation experiment is managed by its validation run");
     }
 
     static String status(List<Trial> trials,boolean cancelled) {

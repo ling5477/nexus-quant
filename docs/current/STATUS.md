@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-V102-01-RESEARCH-DATASET-PRODUCTIZATION
+accepted_batch=NQ-V102-03-STRATEGY-EXPERIMENT-ORCHESTRATION
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=0b386759da43edf67cc45f507f7a8a612e3ebfb6
-accepted_batch_acceptance_head=89eed70162fdebf87cccd15c54130847d527ca93
-accepted_batch_ci_run=40296744230
-work_batch=NQ-V102-02-STRATEGY-EXECUTION-EXPANSION
+accepted_batch_implementation_commit=146fc68264898deda60e2e8dff8206ecaf78dd03
+accepted_batch_acceptance_head=91ddeb8162297254ff5af19a6ed4e9bc4974f80e
+accepted_batch_ci_run=40445368734
+work_batch=NQ-V102-04-WALK-FORWARD-AND-ROBUSTNESS
 work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-V102-02-STRATEGY-EXECUTION-EXPANSION-COMMIT
+next_action=NQ-V102-04-WALK-FORWARD-AND-ROBUSTNESS-COMMIT-AWAITING-USER-AUTHORIZATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,11 +31,13 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
-## 当前 v1.0.2 策略执行扩展
+## 当前 v1.0.2 Walk-Forward 与稳健性分析
 
 v1.0.1 已发布。研究数据集产品化已通过[PR #83](https://github.com/ling5477/nexus-quant/pull/83)正常合并至 `89eed70162fdebf87cccd15c54130847d527ca93`：候选CI `40294468193`与合并后CI `40296744230`均9/9成功。PG16补测7项零跳过；旧Demo401为原基线已有夹具缺口，未放宽权限。原实施及交付记录保留。
 
-当前 `NQ-V102-02-STRATEGY-EXECUTION-EXPANSION` 已完成本地实现、定向验证及限定独立审查：新增仅做多/1h/收盘确认的 `SPOT_CHANNEL_BREAKOUT_V1`（20/10可配置），最小共享指标，回测与SIM共用决策合同，HOLD不交易，持久化目标方向恢复。正式BTC/ETH各720根重复回测结果一致；Continuous SIM标的/provider边界不扩展。具体来源、测试与限制见[实施报告](evidence/NQ_V102_02_STRATEGY_EXECUTION_EXPANSION.md)。本阶段尚未Commit/Push/PR，远端CI未运行；前项Git授权与CI不冒充本阶段交付或真实交易权限。
+策略实验编排已由[PR #85](https://github.com/ling5477/nexus-quant/pull/85)正常合并：候选 `146fc68264898deda60e2e8dff8206ecaf78dd03` 的 CI `40444305427` 与合并提交 `91ddeb8162297254ff5af19a6ed4e9bc4974f80e` 的 CI `40445368734` 均为9/9成功；数据库基线 V48。该项为 `ACCEPTED / CI_GREEN`，原[实验编排实施报告](evidence/NQ_V102_03_STRATEGY_EXPERIMENT_ORCHESTRATION.md)的本地完成记录保留。
+
+当前 `NQ-V102-04-WALK-FORWARD-AND-ROBUSTNESS` 已完成原实验、回测与调度器内的时间顺序训练选择、独立 FLAT Test、最终留出和成本压力重算；本地定向验证通过、限定独立审查无未关闭 finding。真实 BTC 720 根数据上的 SMA 与通道突破均完成三折、最终留出及正式执行器成本重算；结果允许亏损。完整范围、证据和短样本/已观察留出限制见[实施报告](evidence/NQ_V102_04_WALK_FORWARD_AND_ROBUSTNESS.md)。本轮精确暂存后停止，不 Commit、Push、PR、Merge 或 Release；机器区块的 READY_TO_COMMIT 仅表达本地准备状态，下一动作仍需用户授权。前项 CI 不作为本候选远程 CI，LIVE保持关闭。
 
 以下发布准备文字为2026-10-20历史记录，不重新触发发布审计，也不覆盖当前迭代。历史 Gate、C4 原审查与例外决定不变，LIVE保持关闭。
 
