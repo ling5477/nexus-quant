@@ -30,3 +30,5 @@
 
 ## 9. Git
 分别注明 commit、push、PR、merge 授权与目标；已有授权不重复索取，未授权的动作不执行。按统一合同核对 exact diff、只暂存明确文件 allowlist，禁止 git add . / git add -A，不混入其他任务 evidence；需要交付 CI 时注明新 exact-head 的预期检查与成功条件。
+
+PR 合并后还需执行统一合同规定的安全清理与关闭检查：核验合并后必要 CI、已合并任务分支与干净 Worktree、可再生构建产物、保留资源以及最终工作区；清理/删除动作遵守原任务Git授权边界。结束时准确报告 `DELIVERED / CLEANUP_COMPLETE` 或 `DELIVERED / PENDING_CLEANUP`，不要把合并即视为清理完成。
