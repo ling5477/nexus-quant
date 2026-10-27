@@ -7,7 +7,7 @@ export interface ValidationWindow {fold: number; role: string; startBar: number;
 export interface ValidationPolicy {
     version: string; selectionPolicy: string; finalSelectionPolicy: string; barCount: number;
     initialCapital: string; datasetSha256: string; steps: ValidationWindow[];
-    candidates: {ordinal: number; strategyVersionId: string; parameters: Record<string, string | number>}[];
+    candidates: {ordinal: number; sourceTrialId?: string; strategyVersionId: string; parameters: Record<string, string | number>}[];
     costHypotheses: Record<string, {source: string; field: string; unit: string; baseline: string; value: string} | 'UNAVAILABLE'>;
 }
 export interface ValidationStep extends ValidationWindow {

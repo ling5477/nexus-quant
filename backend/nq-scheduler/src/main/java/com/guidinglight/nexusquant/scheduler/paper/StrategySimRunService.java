@@ -191,24 +191,12 @@ public class StrategySimRunService {
                 || budget.compareTo(new BigDecimal("100000")) > 0) {
             throw new IllegalArgumentException("INVALID_SIM_BUDGET");
         }
-        BacktestPublishRecord publish =
-                publishes
-                        .findByPublishRecordId(publishId)
-                        .orElseThrow(() -> new IllegalArgumentException("PUBLISH_NOT_FOUND"));
-        BacktestRun backtest = boundBacktest(publish);
+        PublishedInput input = publishedInput(publishId);
+        BacktestPublishRecord publish = input.publish();
+        BacktestRun backtest = input.backtest();
+        List<HistoricalBar> bars = input.bars();
+        SpotTargetStrategy strategy = input.strategy();
         JsonNode summary = read(backtest.summaryJson());
-        List<HistoricalBar> bars = validatedBars(backtest, summary);
-        SpotTargetStrategy strategy =
-                SpotTargetStrategy.fromSnapshot(backtest.strategyVersionSnapshotJson(), mapper);
-        // 在资金入账前验证整个冻结输入，避免运行中途才发现缺 bar 或迟到数据。
-        strategy.validate(bars);
-        if (!strategy.strategyVersionId().equals(publish.strategyVersionId())
-                || !sameFrozenStrategy(
-                        strategy,
-                        SpotTargetStrategy.fromSnapshot(publish.versionSnapshotJson(), mapper))
-                || !strategy.checksum().matches("[0-9a-f]{64}")) {
-            throw new IllegalStateException("PUBLISH_VERSION_SNAPSHOT_MISMATCH");
-        }
         JsonNode executionSpec = read(backtest.configSnapshotJson()).path("executionSpec");
         SpotFeeModel directionalFee = SpotFeeExecutionSpec.directional(executionSpec, mapper);
         if (demo && ("CURRENT_ACCOUNT_OBSERVATION".equals(executionSpec.path("costSource").asText())
@@ -1358,6 +1346,31 @@ public class StrategySimRunService {
                 prices.snapshotId().toString(),
                 prices.sourceSha256());
     }
+
+    /** 对照沿用创建前的冻结输入校验；此读取不分配账户、注资或启动执行。 */
+    @Transactional(readOnly = true, timeout = 10)
+    public BacktestRun readPublishedInput(String publishId) {
+        return publishedInput(publishId).backtest();
+    }
+
+    private PublishedInput publishedInput(String publishId) {
+        BacktestPublishRecord publish = publishes.findByPublishRecordId(publishId)
+                .orElseThrow(() -> new IllegalArgumentException("PUBLISH_NOT_FOUND"));
+        BacktestRun backtest = boundBacktest(publish);
+        List<HistoricalBar> bars = validatedBars(backtest, read(backtest.summaryJson()));
+        SpotTargetStrategy strategy = SpotTargetStrategy.fromSnapshot(backtest.strategyVersionSnapshotJson(), mapper);
+        // 在资金入账前验证整个冻结输入，避免运行中途才发现缺bar或迟到数据。
+        strategy.validate(bars);
+        if (!strategy.strategyVersionId().equals(publish.strategyVersionId())
+                || !sameFrozenStrategy(strategy, SpotTargetStrategy.fromSnapshot(publish.versionSnapshotJson(), mapper))
+                || !strategy.checksum().matches("[0-9a-f]{64}")) {
+            throw new IllegalStateException("PUBLISH_VERSION_SNAPSHOT_MISMATCH");
+        }
+        return new PublishedInput(publish, backtest, bars, strategy);
+    }
+
+    private record PublishedInput(BacktestPublishRecord publish, BacktestRun backtest,
+            List<HistoricalBar> bars, SpotTargetStrategy strategy) {}
 
     private BacktestRun boundBacktest(BacktestPublishRecord publish) {
         BacktestRun backtest = backtests.findByBacktestRunId(publish.backtestRunId()).orElseThrow();
