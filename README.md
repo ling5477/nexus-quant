@@ -4,9 +4,11 @@ NexusQuant 是面向 OKX Spot 的研究与模拟交易工作台。Java Control P
 
 ## 发行状态
 
-[v1.0.0](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.0) 与 [v1.0.1](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.1) 已发布；当前开发进入 v1.0.2 的研究数据集与策略执行扩展。在 Self-Hosted 正式行情页面，可选择 OKX Spot BTC/ETH、1h、最多30个完整UTC日，接入并检查质量后绑定现有策略版本回测。研究输入保存完整冻结序列与摘要，公开规则使用当前观察值，历史可见性、费用及滑点均明确标注假设。当前任务不授予新版发布或真实交易权限。
+[v1.0.0](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.0) 与 [v1.0.1](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.1) 已发布。当前源码准备 **v1.0.2 候选 / Schema V49**，尚未发布，未取得新安装、实际包更新或包级恢复资格。
 
-现货策略包括原单均线目标敞口与收盘确认型通道突破。通道突破默认20/10根1h bar，排除当前bar，只在严格突破/退出时产生交易意图，HOLD不再平衡；默认参数仅为研究基准，收益和最优性未证明。
+研究链覆盖 Dataset → Strategy Version → Backtest → Experiment → Walk-Forward → Evaluation → Publish → Continuous SIM → Comparison。历史输入有界接入并冻结；SMA与现货通道突破沿用正式执行器。实验保存尝试与失败历史，Walk-Forward按时间训练选择并独立FLAT测试，最终留出及成本敏感性披露短样本和已观察限制。Comparison只读关联原研究、发布和SIM事实，不自动发布或创建交易。
+
+候选范围为 **NQ_SELF_HOSTED / Windows 11 amd64 / Docker Desktop Linux Containers / PostgreSQL 16**。普通v1.0.1更新路径须在准确候选包上另行验证；v1.0.0直接更新不在本候选支持范围。Public Demo公网、其他OS、ARM64和真实交易不在本候选资格范围。
 
 已发布 Tag、Snapshot、包及签名证据保持不变；既有升级验证结论保持原记录。
 

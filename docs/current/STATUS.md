@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-V102-03-STRATEGY-EXPERIMENT-ORCHESTRATION
+accepted_batch=NQ-V102-05-BACKTEST-SIM-COMPARISON
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=146fc68264898deda60e2e8dff8206ecaf78dd03
-accepted_batch_acceptance_head=91ddeb8162297254ff5af19a6ed4e9bc4974f80e
-accepted_batch_ci_run=40445368734
-work_batch=NQ-V102-04-WALK-FORWARD-AND-ROBUSTNESS
+accepted_batch_implementation_commit=775abacd3e1d4268e2b881b2223b73ac246f0fd3
+accepted_batch_acceptance_head=73604dd0543bee0c536bd5a6065b8646afa4e346
+accepted_batch_ci_run=40529901477
+work_batch=NQ-V102-RELEASE-READINESS
 work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-V102-04-WALK-FORWARD-AND-ROBUSTNESS-COMMIT-AWAITING-USER-AUTHORIZATION
+next_action=NQ-V102-READINESS-COMMIT-AWAITING-USER-AUTHORIZATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,13 +31,15 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
-## 当前 v1.0.2 Walk-Forward 与稳健性分析
+## 当前 v1.0.2 发行候选准备
 
-v1.0.1 已发布。研究数据集产品化已通过[PR #83](https://github.com/ling5477/nexus-quant/pull/83)正常合并至 `89eed70162fdebf87cccd15c54130847d527ca93`：候选CI `40294468193`与合并后CI `40296744230`均9/9成功。PG16补测7项零跳过；旧Demo401为原基线已有夹具缺口，未放宽权限。原实施及交付记录保留。
+v1.0.1已于2026-10-25正式发布，Self-Hosted / Windows 11 amd64 / Docker Desktop Linux Containers / PG16.15 / V47。Tag/Snapshot、包SOURCE_SHA和签名工作流分别记录，历史资格以正式Release和原证据为准，不转移给新候选。
 
-策略实验编排已由[PR #85](https://github.com/ling5477/nexus-quant/pull/85)正常合并：候选 `146fc68264898deda60e2e8dff8206ecaf78dd03` 的 CI `40444305427` 与合并提交 `91ddeb8162297254ff5af19a6ed4e9bc4974f80e` 的 CI `40445368734` 均为9/9成功；数据库基线 V48。该项为 `ACCEPTED / CI_GREEN`，原[实验编排实施报告](evidence/NQ_V102_03_STRATEGY_EXPERIMENT_ORCHESTRATION.md)的本地完成记录保留。
+五阶段已集成：研究数据集产品化、现货策略执行扩展、持久化实验编排、Walk-Forward与稳健性分析、回测与Continuous SIM只读比较。最近[PR #89](https://github.com/ling5477/nexus-quant/pull/89)合并至`73604dd0543bee0c536bd5a6065b8646afa4e346`，合并后[CI 40529901477](https://github.com/ling5477/nexus-quant/actions/runs/40529901477)为该准确HEAD的9/9成功；仅属于集成基线。原各阶段实施报告保留各自执行时点结论。
 
-当前 `NQ-V102-04-WALK-FORWARD-AND-ROBUSTNESS` 已完成原实验、回测与调度器内的时间顺序训练选择、独立 FLAT Test、最终留出和成本压力重算；本地定向验证通过、限定独立审查无未关闭 finding。真实 BTC 720 根数据上的 SMA 与通道突破均完成三折、最终留出及正式执行器成本重算；结果允许亏损。完整范围、证据和短样本/已观察留出限制见[实施报告](evidence/NQ_V102_04_WALK_FORWARD_AND_ROBUSTNESS.md)。本轮精确暂存后停止，不 Commit、Push、PR、Merge 或 Release；机器区块的 READY_TO_COMMIT 仅表达本地准备状态，下一动作仍需用户授权。前项 CI 不作为本候选远程 CI，LIVE保持关闭。
+当前准备源码v1.0.2 / V49，补齐正式逐文件白名单并保留v1.0.0历史support matrix。非空V47→V48→V49及受限权限、逻辑备份恢复通过本地隔离验证。普通更新构建须显式复用v1.0.1可信原包的不可变PG镜像及config digest；当前浮动PG标签与原包不同，不能用于推定兼容。详见[本轮报告](evidence/NQ_V102_RELEASE_READINESS.md)。本候选尚未Commit、不可变导出或构建正式包，新安装、实际包升级、包级备份恢复及回滚均NOT_RUN；不重跑历史全量审计或72小时。独立审查与最终源码准备结论以本轮报告为准。
+
+本轮停在精确暂存；后续Git交付以及准确候选包资格均需另行明确授权。Canonical Order/Trade/Ledger保持既有事实源；LIVE、真实交易所写入及自动策略发布关闭。Public Demo公网、Linux/macOS、ARM64和v1.0.0直接升级不在本轮范围。
 
 以下发布准备文字为2026-10-20历史记录，不重新触发发布审计，也不覆盖当前迭代。历史 Gate、C4 原审查与例外决定不变，LIVE保持关闭。
 

@@ -4,7 +4,27 @@
 
 ## 当前资格范围
 
-[v1.0.0](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.0) 已于 2026-10-20（UTC）正式发布。本地 Windows 11 amd64、Docker Desktop 已运行的 V1.0.0 正式包已通过隔离全新安装、PG16.15/V34、备份恢复及恢复后重启。安装验证结论限 `QUALIFIED_LOCAL_SCOPED`；正式发布不追认完整长时运行观察接受或跨版本升级验证。v1.0.1 候选尚未发布，真实跨版本升级资格仍为 `UPGRADE_NOT_VERIFIED`；更新仍使用 Web 请求/回执人工交接。用户已决定 `OWNER_DECISION=ACCEPT_WITH_EVIDENCE_EXCEPTION`、`LONG_RUN_RERUN=WAIVED`；此决定保留历史UI缺口，原审查不改判；历史UI缺口按 `ADMITTED_WITH_DOCUMENTED_EXCEPTION` 准入，当前运行差异另由定向验证覆盖。该状态不替代准确候选身份的CI及公开发布授权。以下最终运行资格要求继续有效。
+v1.0.0与[v1.0.1](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.1)已发布，各自资格独立保留。v1.0.1为Self-Hosted / Windows 11 amd64 / Docker Desktop Linux Containers / PG16.15 / V47；原包来源与资格以该正式Release为准。`release/support-matrix.json`只记录v1.0.0历史合同，不更新为新候选PASS。
+
+当前源码为 **v1.0.2候选 / V49**。本候选支持边界仍为NQ_SELF_HOSTED、Windows 11 amd64、Docker Desktop已安装并运行Linux Containers、PostgreSQL 16。新候选全新安装、实际包升级、包级备份恢复和回滚均为 **NOT_RUN**。本地源码及隔离数据库证明不能替代正式包资格。
+
+### v1.0.1普通更新到候选的前提
+
+更新合同允许版本递增、Schema V47→V49且PostgreSQL config digest不变的可信目标包；现有角色协议为受限`nq_runtime` / NOLOGIN `nq_schema_owner`。必须先完成已提交源码→验证过的不可变导出→不可变镜像→可信Manifest→安装包，再在独立测试安装上验证。PG标签相同不足以证明digest兼容；若重新拉取的PG16镜像config不同，应拒绝普通更新，不能放宽校验。
+
+维护者准备普通更新包时，须先校验 v1.0.1 原包（Manifest SHA256 `f0beba4f37481c85ff1677e8c546f10deaeba57fb5144f69f5d7edcd839ef5db`，镜像TAR SHA256 `7248a47823571fb112ea91f317e092cb6c47108b934d90ef52c299adb7c9e006`），将其镜像载入构建机，再从已验证的不可变源码导出运行：
+
+```powershell
+.\release\build-package.ps1 -OutputDirectory <new-package-directory> -Architectures amd64 `
+  -PostgresImage sha256:9e2cf6287f25c3151f4c9421ccce2b17f3e60061c111a29165e0d2cdd9ff0a97 `
+  -ExpectedPostgresConfigDigest sha256:066167ff39c2a612402ce99b734ea1cff92a9d1f2ac52f697a5f0384f0d88d6b
+```
+
+该输入来自已发布的原包，保留其既有安全更新；不从当前浮动PG标签重新推定相容性。构建器验证单一架构、immutable镜像、归档绑定和预期config。错误输入或摘要不符即拒绝，不产生合格Manifest；默认浮动标签模式仅保留既有构建能力，不作为本次普通更新的构建方案。包级安装、升级和恢复仍须另行验证。
+
+沿用正式安装器`check-update` / `update`：从独立可信渠道取得目标Manifest SHA256并显式确认；加载验证资产后停止frontend/backend写入，完成并验证完整更新前备份，写入事务journal，maintenance正向迁移并重授运行权限，最后验证Schema/运行身份及health才提交成功receipt。数据库可能已变更的失败必须恢复绑定备份和旧资产；journal未收敛时保持fail-closed。不得把旧应用直接启动到V49数据库。备份仅恢复到停写时点，后续新增事实不能通过简单回滚保留。
+
+v1.0.0直接升级到v1.0.2不在本候选支持范围；历史Bridge只属于原来精确授权的v1.0.0→v1.0.1协议，不构成新升级资格。LIVE、真实交易所写入与自动策略发布关闭。历史长时运行观察原审查NOT_ACCEPTED / EVIDENCE_GAPS及所有者例外、72小时重跑豁免保留。
 
 ## 系统要求与发行包
 

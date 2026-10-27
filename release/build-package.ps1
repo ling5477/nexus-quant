@@ -2,7 +2,9 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$OutputDirectory,
-    [ValidateSet('amd64','arm64')][string[]]$Architectures = @('amd64','arm64')
+    [ValidateSet('amd64','arm64')][string[]]$Architectures = @('amd64','arm64'),
+    [string]$PostgresImage,
+    [string]$ExpectedPostgresConfigDigest
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
@@ -10,6 +12,10 @@ $output = [IO.Path]::GetFullPath($OutputDirectory)
 if (Test-Path -LiteralPath $output) { throw 'Output directory must not exist' }
 if ($output.StartsWith($root + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Package output must be outside the exported source' }
 if (@($Architectures | Select-Object -Unique).Count -ne $Architectures.Count) { throw 'Duplicate architecture' }
+# 普通更新必须保留原包的 PG config；显式复用已核验镜像时禁止拉取浮动标签替代它。
+if ($PostgresImage -or $ExpectedPostgresConfigDigest) {
+    if ($PostgresImage -cnotmatch '^sha256:[a-f0-9]{64}$' -or $ExpectedPostgresConfigDigest -cnotmatch '^sha256:[a-f0-9]{64}$' -or $Architectures.Count -ne 1) { throw 'Postgres reuse requires an immutable image ID, expected config digest and one architecture' }
+}
 $version = (Get-Content -LiteralPath (Join-Path $root 'VERSION') -Raw).Trim()
 if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid VERSION' }
 
@@ -151,12 +157,22 @@ foreach ($arch in $Architectures) {
         [void](Invoke-PackageDocker @('buildx','build','--platform',"linux/$arch",'--load','-f',(Join-Path $PSScriptRoot "docker/$component.Dockerfile"),'-t',"nexusquant/${component}:$version",$root))
         $refs[$component] = Image-Identity "nexusquant/${component}:$version" $arch
     }
-    [void](Invoke-PackageDocker @('pull','--platform',"linux/$arch",'postgres:16.15') 600)
-    $refs.postgres = Image-Identity 'postgres:16.15' $arch
+    $postgresRef = $PostgresImage
+    if (-not $postgresRef) {
+        $postgresRef = 'postgres:16.15'
+        [void](Invoke-PackageDocker @('pull','--platform',"linux/$arch",$postgresRef) 600)
+    } else {
+        # Docker 兼容归档以 RepoTags 关联组件；局部别名只指向明确的不可变输入，不覆盖公共 PG 标签。
+        $postgresExportTag = "nexusquant/postgres:$version-$arch"
+        [void](Invoke-PackageDocker @('tag',$postgresRef,$postgresExportTag) 30)
+        $postgresRef = $postgresExportTag
+    }
+    $refs.postgres = Image-Identity $postgresRef $arch
     $archiveName = "images-$arch.tar"
     $archive = Join-Path $output $archiveName
-    [void](Invoke-PackageDocker @('save','-o',$archive,"nexusquant/backend:$version","nexusquant/frontend:$version",'postgres:16.15') 600)
+    [void](Invoke-PackageDocker @('save','-o',$archive,"nexusquant/backend:$version","nexusquant/frontend:$version",$postgresRef) 600)
     Archive-ImageIdentities $archive $refs $arch
+    if ($ExpectedPostgresConfigDigest -and $refs.postgres.configDigest -cne $ExpectedPostgresConfigDigest) { throw 'Postgres configuration differs from trusted upgrade baseline' }
     $archiveHash = Hash $archive
     Write-Lf ($archive + '.sha256') ($archiveHash + "`n")
     $manifest = [ordered]@{
