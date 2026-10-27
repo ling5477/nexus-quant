@@ -16,7 +16,11 @@ describe('版本说明与安装身份', () => {
         expect(published.status).toBe('RELEASED');
         expect(published.releaseDate).toBe('2026-10-20');
         expect(published.releaseUrl).toBe('https://github.com/ling5477/nexus-quant/releases/tag/v1.0.0');
-        const candidate = installedRelease(runtime)!;
+        const previous = installedRelease(runtime)!;
+        expect(previous.status).toBe('RELEASED');
+        expect(previous.releaseDate).toBe('2026-10-25');
+        expect(previous.releaseUrl).toBe('https://github.com/ling5477/nexus-quant/releases/tag/v1.0.1');
+        const candidate = installedRelease({...runtime, installedPackageVersion: '1.0.2', packagedSchemaVersion: '49'})!;
         expect(candidate.status).toBe('CANDIDATE');
         expect(candidate.releaseUrl).toBeNull();
         expect(candidate.releaseDate).toBeNull();

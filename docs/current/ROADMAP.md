@@ -4,9 +4,11 @@
 
 ## 当前 v1.0.2 范围
 
-v1.0.1 已发布。`NQ-V102-01-RESEARCH-DATASET-PRODUCTIZATION`已由PR #83合并，PR与合并后CI均9/9成功。当前 `NQ-V102-02-STRATEGY-EXECUTION-EXPANSION` 完成现货收盘确认型通道突破（20/10可配置）、最小共享指标和回测/SIM共用决策语义；包括HOLD不交易、目标方向持久化及重启恢复。以[实施报告](evidence/NQ_V102_02_STRATEGY_EXECUTION_EXPANSION.md)记录的本地验证与未交付边界为准，本阶段Commit/Push/PR及远端CI尚未执行。
+五个业务阶段已集成，当前工作为`NQ-V102-RELEASE-READINESS`：准备v1.0.2源码候选、精确发行白名单、V49及v1.0.1普通更新合同。准确接受身份与下一动作见[STATUS](STATUS.md)，本轮证据见[准备报告](evidence/NQ_V102_RELEASE_READINESS.md)。
 
-继续保持当前BTC-only Continuous SIM、Demo策略权限和canonical交易事实源。不提前实施批量实验、Walk-Forward、完整Factor Library、ATR止损或金字塔加仓；20/10只是研究基准，不代表参数最优或盈利已证明。
+后续需在明确Git交付授权后取得准确提交与验证过的不可变导出，再构建不可变镜像、可信Manifest及安装包；以新候选身份验证Windows 11 amd64 Self-Hosted全新安装、非空v1.0.1普通更新、备份恢复和失败回滚。既有CI和历史资格不自动转移。PG输入须保留原包的准确config digest，不能采用浮动标签推定兼容。
+
+不增加交易功能、不重跑历史72小时；Canonical Order/Trade/Ledger、LIVE禁用、真实交易所写入关闭与人工发布边界保持。Public Demo公网、其他OS、ARM64和v1.0.0直接更新不进入本轮支持范围。
 
 下文为2026-10-20发布准备历史，保留原始身份与结论，不作为本轮待办。
 

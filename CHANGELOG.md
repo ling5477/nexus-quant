@@ -1,4 +1,4 @@
-# 1.0.1 — 候选 / Candidate (unreleased)
+# 1.0.2 — 候选 / Candidate (unreleased)
 
 Release Date: 尚未发布 / Not released
 
@@ -6,28 +6,40 @@ Release URL: 无（尚未创建 Release） / None (no Release created)
 
 ## Features
 
-- Self-Hosted / Public Demo 双发行物；Demo 注册、邮箱验证、Tenant 初始化及幂等 10,000 USDT 模拟资金。
-- Platform Admin 只读租户绩效、用户启停、Session 撤销与禁用后执行阻断；管理员无需普通 Tenant Membership。
-
-## Improvements
-
-- Tenant 隔离、注册限流与任务资源配额；本地双发行物容器资格见当前资格报告。
-
-## Bug Fixes
-
-- Canonical SIM 旧日报拒绝返回虚假零值，沿用既有 canonical 分析。
-- Demo 管理员读取策略、权益快照和 Docker 运行集成修复。
+- Dataset：OKX Spot BTC/ETH 1h 历史接入、最多30个完整UTC日的有界续传、质量检查与内容冻结，正式回测消费同一输入身份。
+- Strategy Version：保留单均线目标敞口，增加收盘确认的现货通道突破；默认20/10根，排除当前bar，HOLD不再平衡。
+- Experiment：沿用正式版本、回测、评价和调度器，持久保存有界参数候选、尝试历史、失败、显式重试、取消及只读比较。
+- Walk-Forward：时间顺序训练选优、三折独立FLAT测试、最终留出、正式执行器成本压力重算和参数稳定性说明；已观察样本及短窗口限制明确披露。
+- Comparison：只读关联训练/OOS/留出、正式发布和真实Continuous SIM；沿用原绩效与Canonical事实，权限、冻结身份和不可比原因由服务端核验。
 
 ## Breaking Changes
 
-- 数据库正向迁移；回退旧应用必须沿用更新事务及对应备份恢复，不能只替换镜像。
+- Schema V47→V48→V49 仅正向迁移。恢复旧应用必须恢复更新前完整数据库及绑定资产，不能让旧应用直接接管V49。
 
 ## Known Issues
 
-- Self-Hosted v1.0.0 → v1.0.1 正式包升级待候选资格验证。
-- 版本历史、What's New 与目标更新说明已合并，尚未发布；正式包更新体验仍待资格验证。
-- Public Demo 未公网正式上线：真实邮件、HTTPS/TLS、容量与公共行情再展示许可仍待资格证据。本地 SMTP 不代表真实投递资格。
-- LIVE 禁用；普通账户权益、真实手续费、OHLC 事件时点与旧 Paper 未知币种权益限制保留。
+- 仅准备 NQ_SELF_HOSTED / Windows 11 amd64 / Docker Desktop Linux Containers / PostgreSQL 16；新候选安装、正式包升级及包级恢复尚未执行。
+- 普通v1.0.1更新要求可信目标Manifest、版本递增、Schema单调及同一PG16 config digest；实际包仍待准确提交与不可变导出后验证。
+- 不支持声明v1.0.0直接升级；Public Demo公网、Linux/macOS、ARM64、真实交易和自动策略发布均不在本候选范围。
+- LIVE关闭；研究收益不代表盈利或长期稳健性。缺失的经济事实保持UNAVAILABLE，不补造零值。
+
+# 1.0.1 — 已发布 / Released
+
+Release Date: 2026-10-25 (UTC)
+
+Release URL: https://github.com/ling5477/nexus-quant/releases/tag/v1.0.1
+
+正式发行物为 Self-Hosted，Windows 11 amd64 / Docker Desktop Linux Containers / PostgreSQL 16.15 / V47。原始资格、不可变来源与 Bridge 限制以该 Release Notes 为准；Public Demo 未包含在发行中。v1.0.0→v1.0.1 需要独立可信实例授权的 Legacy Upgrade Bridge，不能直接普通更新。历史资格不自动赋予 v1.0.2。
+
+## Features
+
+- 多租户隔离、受限数据库运行角色、Canonical SIM 事实保护与版本/更新说明。
+- Demo 注册、邮箱验证、租户初始化及平台管理属于独立开发能力，尚未取得公网部署资格。
+
+## Known Issues
+
+- LIVE 禁用；真实权益、手续费、OHLC 事件时点及旧 Paper 未知币种权益限制保留。
+- 历史长时运行观察原审查为 NOT_ACCEPTED / EVIDENCE_GAPS，所有者例外和72小时重跑豁免独立保留。
 
 # 1.0.0 — 已发布 / Released
 

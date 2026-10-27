@@ -1,6 +1,6 @@
 # V1 发布源码边界
 
-`source-manifest.json` 使用逐文件精确列表，当前候选目标版本为 `1.0.1`，必须与同一提交内的 `VERSION` 一致。清单与源码必须来自同一个完整 40 位 Git commit；没有工作区复制、通配符发现或导出时重写文件。新增文件默认 `REVIEW_REQUIRED`，后续安装器与文档必须经过审查后显式加入清单。Java 主源码/正式资源与 frontend/src 的新增文件若未纳入，覆盖门禁拒绝导出；已审查的开发配置、开发页和未使用素材继续排除。发现范围不会自动将文件加入发行包，也不能通过改标 EXCLUDE_TEST 隐藏正式源码。
+`source-manifest.json` 使用逐文件精确列表，当前候选目标版本为 `1.0.2`，必须与同一提交内的 `VERSION` 一致。清单与源码必须来自同一个完整 40 位 Git commit；没有工作区复制、通配符发现或导出时重写文件。新增文件默认 `REVIEW_REQUIRED`，后续安装器与文档必须经过审查后显式加入清单。Java 主源码/正式资源与 frontend/src 的新增文件若未纳入，覆盖门禁拒绝导出；已审查的开发配置、开发页和未使用素材继续排除。发现范围不会自动将文件加入发行包，也不能通过改标 EXCLUDE_TEST 隐藏正式源码。
 
 ```powershell
 python scripts/release/release_source.py export --repo E:/Project/nexus-quant --commit <40-hex> --output E:/release-export --audit E:/release-audit.json
@@ -70,3 +70,9 @@ Python research 没有 Java subprocess、运行部署或安装消费方。Java a
 ## 独立Release Snapshot来源映射
 
 正式包SOURCE_SHA始终绑定原导出器读取policy与业务Git Blob的完整开发提交。release/1.0.0可采用无父独立Snapshot历史，只含原INCLUDE文件与唯一生成的.release-source.json；其commit message记录完整开发SHA、原dev集成基线、清单及release-source摘要。Snapshot是精确投影身份，不冒充开发提交，不改写metadata sourceCommit，不额外塞入开发导出器或source-manifest以扩大白名单。Snapshot不能单独作为policy导出仓库；重建由声明的完整开发提交导出，构建输入全集必须与Snapshot tree逐字节一致。新SHA远端CI与本地验证分别记录。
+
+## 当前候选资格边界
+
+v1.0.2 候选目标为 NQ_SELF_HOSTED、Windows 11 amd64、Docker Desktop Linux Containers、PostgreSQL 16、Schema V49。`support-matrix.json` 保留 v1.0.0 历史资格，不作为本候选 PASS。候选记录由当前 VERSION、本逐文件清单、产品安装说明及 `docs/current/evidence/NQ_V102_RELEASE_READINESS.md` 共同表达；未提交的准备结果不能生成正式来源身份。必须依次取得已提交源码、验证过的不可变导出、不可变镜像、可信 Package Manifest 和安装包，再执行新安装、v1.0.1 普通更新及恢复资格。历史 Tag、Snapshot、包和证明保持不变。
+
+普通v1.0.1→v1.0.2更新包按INSTALL的准确PG输入构建：使用`-Architectures amd64 -PostgresImage <原包immutable-ID> -ExpectedPostgresConfigDigest <原包config-digest>`。两参数必须成对且单架构；显式复用不拉取公共标签，归档校验不符拒绝Manifest。镜像来源必须先对照可信v1.0.1 Manifest和TAR核实；此检查不替代新候选包资格。
