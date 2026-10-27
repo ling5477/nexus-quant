@@ -6,6 +6,7 @@ const SECOND_CASE_ID = '22222222-2222-4222-8222-222222222222';
 interface ReviewStubOptions {
     roles?: string[];
     listMode?: 'data' | 'empty' | 'error' | 'forbidden' | 'delayed';
+    listResponse?: Promise<void>;
     detailNotFound?: boolean;
     actionStatus?: number;
     actionDelayMs?: number;
@@ -146,7 +147,10 @@ async function seedReviewWorkbench(page: Page, options: ReviewStubOptions = {}) 
         const suffix = segments[3];
 
         if (request.method() === 'GET' && segments.length === 2) {
-            if (options.listMode === 'delayed') await new Promise((resolve) => setTimeout(resolve, 350));
+            if (options.listMode === 'delayed') {
+                // 受控响应保证加载态可观察，不依赖页面加载和固定延迟的竞速。
+                await (options.listResponse ?? new Promise((resolve) => setTimeout(resolve, 350)));
+            }
             if (options.listMode === 'forbidden') return route.fulfill({status: 403, json: {code: 'REVIEW_ACTION_FORBIDDEN'}});
             if (options.listMode === 'error') return route.fulfill({status: 500, json: {code: 'SERVER_ERROR'}});
             if (options.listMode === 'empty') return route.fulfill({status: 200, json: []});
@@ -343,10 +347,18 @@ test.describe('GateV-4 validation review workbench', () => {
     });
 
     test('OPERATOR loading 状态保持 owner 筛选隐藏', async ({page}) => {
-        const loadingAudit = await seedReviewWorkbench(page, {roles: ['OPERATOR'], listMode: 'delayed'});
-        await page.goto('/strategies/validation');
-        await expect(page.getByTestId('validation-review-queue').locator('.ant-spin-spinning')).toBeVisible();
-        await expect(page.getByLabel('所有者 ID')).toHaveCount(0);
+        let completeList!: () => void;
+        const listResponse = new Promise<void>((resolve) => { completeList = resolve; });
+        const loadingAudit = await seedReviewWorkbench(page, {roles: ['OPERATOR'], listMode: 'delayed', listResponse});
+        try {
+            await page.goto('/strategies/validation');
+            await expect(page.getByTestId('validation-review-queue').locator('.ant-spin-spinning')).toBeVisible();
+            await expect(page.getByLabel('所有者 ID')).toHaveCount(0);
+        } finally {
+            // 断言失败也释放响应，避免遗留挂起请求影响页面清理。
+            completeList();
+        }
+        await expect(page.getByTestId('validation-review-queue').locator('.ant-spin-spinning')).not.toBeVisible();
         expectOnlyAllowedReviewRequests(loadingAudit.requests);
         expectNoUnexpectedRuntimeErrors(loadingAudit);
     });
