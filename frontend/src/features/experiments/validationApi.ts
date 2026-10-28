@@ -21,6 +21,12 @@ export interface ValidationResult {
     researchValidity: ResearchValidity | null; summary: Record<string, unknown>; executionSpec: Record<string, unknown>;
 }
 export interface ValidationSummary {validationId: string; status: string; failureReason: string | null; createdAt: string}
+export interface SelectedStrategyVersion {
+    validationId: string; selectedTrialId: string; strategyVersionId: string; strategyCode: string;
+    version: number; status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED'; checksum: string;
+    parameters: Record<string, string | number>; backtestConfigId: string; backtestRunId: string;
+    eligible: boolean; updatedAt: string;
+}
 export interface ValidationView extends ValidationSummary {
     sourceExperimentId: string; frozenPolicy: ValidationPolicy; steps: ValidationStep[]; results: ValidationResult[];
     parameterStability: {
@@ -36,6 +42,8 @@ const exact = {transformResponse: [(raw: string) => parseExactJson(raw, new Set(
     'totalReturn', 'maxDrawdown', 'initialCapital', 'benchmarkReturn', 'strategyVsBenchmarkDifference',
 ]))]};
 export const validationApi = {
+    async selectedVersion(id: string) {return (await apiClient.get<SelectedStrategyVersion>(`${base}/validations/${id}/selected-version`, exact)).data;},
+    async activateSelectedVersion(id: string) {return (await apiClient.post<SelectedStrategyVersion>(`${base}/validations/${id}/selected-version/activate`, undefined, exact)).data;},
     async policy(source: string) {return (await apiClient.get<ValidationPolicy>(`${base}/${source}/validation-policy`, exact)).data;},
     async list(source: string) {return (await apiClient.get<ValidationSummary[]>(`${base}/${source}/validations`)).data;},
     async get(id: string) {return (await apiClient.get<ValidationView>(`${base}/validations/${id}`, exact)).data;},

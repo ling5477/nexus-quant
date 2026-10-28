@@ -20,12 +20,15 @@ import com.guidinglight.nexusquant.strategy.domain.port.StrategyVersionRepositor
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
@@ -40,6 +43,37 @@ import java.util.UUID;
  */
 @Service
 public class StrategyVersionService {
+
+    /** 调用方先验证冻结研究血缘；必须与成功审计共享外层事务。 */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public ActivationResult activateSelectedVersion(StrategyVersion expected) {
+        Objects.requireNonNull(expected, "validated strategy version required");
+        StrategyVersion current = findById(expected.strategyVersionId());
+        requireSameIdentity(expected, current);
+        if (current.status() == StrategyVersionStatus.ACTIVE) return new ActivationResult(current, false);
+        if (current.status() != StrategyVersionStatus.DRAFT)
+            throw new IllegalStateException("only a selected DRAFT strategy version may be activated");
+        boolean changed = strategyVersionRepository.activateDraft(expected,
+                Instant.now(clock).truncatedTo(ChronoUnit.MICROS));
+        StrategyVersion persisted = findById(expected.strategyVersionId());
+        requireSameIdentity(expected, persisted);
+        if (persisted.status() != StrategyVersionStatus.ACTIVE)
+            throw new IllegalStateException("strategy version activation conflict");
+        return new ActivationResult(persisted, changed);
+    }
+
+    private static void requireSameIdentity(StrategyVersion expected, StrategyVersion actual) {
+        if (!expected.strategyVersionId().equals(actual.strategyVersionId())
+                || !expected.strategyCode().equals(actual.strategyCode()) || expected.version() != actual.version()
+                || !expected.versionName().equals(actual.versionName()) || !expected.checksum().equals(actual.checksum())
+                || !expected.paramSnapshotJson().equals(actual.paramSnapshotJson())
+                || !expected.configSnapshotJson().equals(actual.configSnapshotJson())
+                || !expected.sourceSnapshotJson().equals(actual.sourceSnapshotJson())
+                || !expected.createdBy().equals(actual.createdBy()) || !expected.createdAt().equals(actual.createdAt()))
+            throw new IllegalStateException("strategy version identity changed during activation");
+    }
+
+    public record ActivationResult(StrategyVersion version, boolean changed) {}
 
     private final StrategyDefinitionRepository strategyDefinitionRepository;
     private final StrategyVersionRepository strategyVersionRepository;

@@ -6,6 +6,7 @@ export const experimentQueryKeys = {
     detail: (owner: number | undefined, id: string | null) => [...experimentQueryKeys.all, owner, 'detail', id] as const,
     validations: (owner: number | undefined, source: string) => [...experimentQueryKeys.all, owner, 'validations', source] as const,
     validation: (owner: number | undefined, id: string | undefined) => [...experimentQueryKeys.all, owner, 'validation', id] as const,
+    selectedVersion: (owner: number | undefined, validation: string) => [...experimentQueryKeys.all, owner, 'selected-version', validation] as const,
     comparisonsForValidation: (owner: number | undefined, validation: string | undefined) =>
         [...experimentQueryKeys.all, owner, 'sim-comparison', validation] as const,
     comparison: (owner: number | undefined, validation: string, trial: string, version: string, publication: string, sim: string) =>

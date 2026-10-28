@@ -9,6 +9,7 @@ import type {AppApiError} from '@/types/api';
 import {experimentQueryKeys} from '@/api/query-keys';
 import {validationApi, type ValidationResult, type ValidationView} from './validationApi';
 import {ResearchSimComparisonPanel} from './ResearchSimComparisonPanel';
+import {SelectedVersionActivation} from './SelectedVersionActivation';
 
 /** 写动作只由显式点击发起；未知提交继续沿用发送前保存的UUID。 */
 export function WalkForwardPanel({source, completed, writable}: {source: string; completed: boolean; writable: boolean}) {
@@ -83,6 +84,8 @@ export function WalkForwardPanel({source, completed, writable}: {source: string;
             </Space>
             {!completed && <Typography.Text type="secondary">{t('walkForward.completedRequired')}</Typography.Text>}
             {view && <>
+                <SelectedVersionActivation key={`${owner}:${view.validationId}`} validationId={view.validationId}
+                    succeeded={view.status === 'SUCCEEDED'} writable={writable}/>
                 <Space wrap><Tag>{view.status}</Tag><Typography.Text style={{overflowWrap: 'anywhere'}}>{view.validationId}</Typography.Text>
                     {view.status === 'RUNNING' && writable && <Popconfirm title={t('experiments.cancelConfirm')} onConfirm={() => cancel.mutateAsync()}><Button danger loading={cancel.isPending}>{t('walkForward.cancel')}</Button></Popconfirm>}
                 </Space>

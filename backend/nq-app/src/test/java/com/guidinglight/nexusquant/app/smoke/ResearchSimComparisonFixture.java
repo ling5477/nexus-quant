@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.app.NexusQuantApplication;
 import com.guidinglight.nexusquant.app.marketdata.PublicMarketReplayCaptureService;
 import com.guidinglight.nexusquant.app.research.ExperimentValidationService;
 import com.guidinglight.nexusquant.app.research.StrategyExperimentService;
+import com.guidinglight.nexusquant.app.research.SelectedStrategyVersionService;
 import com.guidinglight.nexusquant.common.tenant.TenantIdentity;
 import com.guidinglight.nexusquant.common.tenant.TenantWorkAccess;
 import com.guidinglight.nexusquant.marketdata.application.service.MarketdataDatasetService;
@@ -100,8 +101,8 @@ final class ResearchSimComparisonFixture {
         JsonNode selected = completed.steps().stream().filter(s -> s.number() == 12).findFirst().orElseThrow().selection().path("selected");
         UUID trial = UUID.fromString(selected.path("trialId").asText());
         String version = selected.path("versionId").asText();
-        // 产品当前没有草稿激活命令；夹具只设定显式发布前提，不改已冻结Run或评价经济事实。
-        db.admin.update("UPDATE strategy_versions SET status='ACTIVE' WHERE strategy_version_id=?", version);
+        db.as(owner, () -> app.getBean(SelectedStrategyVersionService.class)
+                .activate(validation.validationId(), owner.userId()));
         String publication = db.as(owner, () -> publish(app, source, version));
         var server = app.getBean(MarketServer.class);
         var driver = new ContinuousSimRunService(app.getBean(ContinuousSimRepository.class),

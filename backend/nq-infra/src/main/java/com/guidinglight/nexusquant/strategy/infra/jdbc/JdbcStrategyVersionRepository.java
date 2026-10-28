@@ -18,6 +18,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.time.Instant;
 
 /**
  * 策略版本的 JDBC 适配器；领域不依赖持久化技术，SQL、JSONB 转换与稳定排序统一留在基础设施层。
@@ -43,6 +44,20 @@ public class JdbcStrategyVersionRepository
 
     public JdbcStrategyVersionRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Override
+    public boolean activateDraft(StrategyVersion expected, Instant updatedAt) {
+        return jdbcTemplate.update("""
+                UPDATE strategy_versions SET status='ACTIVE', updated_at=?
+                WHERE tenant_id=nq_current_tenant_id() AND strategy_version_id=? AND status='DRAFT'
+                  AND strategy_code=? AND version=? AND version_name=? AND checksum=?
+                  AND param_snapshot_json=CAST(? AS jsonb) AND config_snapshot_json=CAST(? AS jsonb)
+                  AND source_snapshot_json=CAST(? AS jsonb) AND created_by=? AND created_at=?
+                """, Timestamp.from(updatedAt), expected.strategyVersionId(), expected.strategyCode(),
+                expected.version(), expected.versionName(), expected.checksum(), expected.paramSnapshotJson(),
+                expected.configSnapshotJson(), expected.sourceSnapshotJson(), expected.createdBy(),
+                Timestamp.from(expected.createdAt())) == 1;
     }
 
     /**
