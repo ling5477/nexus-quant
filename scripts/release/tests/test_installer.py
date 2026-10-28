@@ -112,7 +112,7 @@ case "$1" in
 info)
     [ ! -f "$NQ_FIX_STATE/daemon-stopped" ] || exit 1
     case "$*" in *ServerVersion*) echo "$NQ_FIX_DOCKER_VERSION";; *Architecture*) echo x86_64;;
-    *NCPU*) echo "$NQ_FIX_CPU";; *MemTotal*) echo "$NQ_FIX_RAM";; *OSType*) echo linux;; esac;;
+    *NCPU*) echo "${NQ_FIX_DOCKER_CPU-$NQ_FIX_CPU}";; *MemTotal*) echo "${NQ_FIX_DOCKER_RAM-$NQ_FIX_RAM}";; *OSType*) echo linux;; esac;;
 context) echo unix:///fixture.sock;;
 load) [ "$NQ_FIX_FAIL" != LOAD ] || exit 1;;
 image)
@@ -310,6 +310,13 @@ class PosixInstallerTest(unittest.TestCase):
                 f.manifest.write_bytes(raw); f.clear_calls(); f.run('install', success=False)
                 self.assertEqual('', f.calls()); self.assertFalse((f.home / 'config/runtime.env').exists())
         f.manifest.write_bytes(original)
+        for name in ('nexusquant.sh', 'nexusquant.ps1'):
+            asset = f.package / 'installers' / name
+            original_asset = asset.read_bytes()
+            asset.write_bytes(original_asset + b'\nTAMPERED\n')
+            f.clear_calls(); f.run('install', success=False)
+            self.assertEqual('', f.calls()); self.assertFalse((f.home / 'config/runtime.env').exists())
+            asset.write_bytes(original_asset)
 
     def test_check_update_verified_read_only_and_no_trust_autoaccept(self):
         f = self.fixture; f.run('install'); before = f.tree(); f.clear_calls()
@@ -325,19 +332,62 @@ class PosixInstallerTest(unittest.TestCase):
 
     def test_profiles_boundary_and_insufficient_capacity(self):
         f = self.fixture
-        for index, (cpu, ram, expected) in enumerate((('2', '4294967296', 'LIGHT'),
+        for index, (cpu, ram, expected) in enumerate((('2', '1691451392', 'LIGHT'),
+            ('8', '1', 'LIGHT'), ('2', '4294967296', 'LIGHT'),
             ('4', '8589934592', 'STANDARD'), ('8', '17179869184', 'PERFORMANCE'),
             ('8', '8589934591', 'LIGHT'), ('7', '17179869184', 'STANDARD'))):
             with self.subTest(cpu=cpu, ram=ram):
                 home = f.root / f'home-{index}'
-                f.run('install', NQ_INSTALL_ROOT=shell_path(home), NQ_FIX_CPU=cpu, NQ_FIX_RAM=ram)
+                result = f.run('install', NQ_INSTALL_ROOT=shell_path(home), NQ_FIX_CPU=cpu, NQ_FIX_RAM=ram)
                 config = metadata(home / 'config/runtime.env')
                 self.assertEqual(expected, config['RUNTIME_PROFILE']); self.assertEqual('OFF', config['AUTO_UPDATE'])
-        for index, values in enumerate(({'NQ_FIX_CPU': '1'}, {'NQ_FIX_RAM': '4294967295'},
-                                        {'NQ_FIX_DISK': '10485759'})):
+                self.assertEqual(int(ram) < 4294967296, 'LOW_MEMORY_WARNING' in result.stderr)
+                if expected == 'LIGHT':
+                    self.assertEqual(('768m', '512m', '128m'), tuple(config[key] for key in
+                                     ('BACKEND_MEMORY', 'POSTGRES_MEMORY', 'FRONTEND_MEMORY')))
+        for index, values in enumerate(({'NQ_FIX_CPU': '1'}, {'NQ_FIX_DOCKER_CPU': '1'},
+            {'NQ_FIX_RAM': ''}, {'NQ_FIX_RAM': '0'}, {'NQ_FIX_RAM': '-1'},
+            {'NQ_FIX_DOCKER_RAM': ''}, {'NQ_FIX_DOCKER_RAM': '0'},
+            {'NQ_FIX_DOCKER_RAM': 'UNKNOWN'}, {'NQ_FIX_DISK': '10485759'})):
             home = f.root / f'refused-{index}'
             f.run('install', success=False, NQ_INSTALL_ROOT=shell_path(home), **values)
             self.assertFalse((home / 'config/runtime.env').exists())
+
+    def test_host_and_docker_memory_are_separate_and_select_the_smaller_capacity(self):
+        f = self.fixture
+        for index, (host, docker) in enumerate((('17179869184', '1691451392'),
+                                               ('1691451392', '17179869184'))):
+            with self.subTest(host=host, docker=docker):
+                home = f.root / f'memory-{index}'
+                result = f.run('install', NQ_INSTALL_ROOT=shell_path(home),
+                               NQ_FIX_RAM=host, NQ_FIX_DOCKER_RAM=docker)
+                self.assertIn('LOW_MEMORY_WARNING', result.stderr)
+                self.assertIn('OOM, startup failure or degraded performance', result.stderr)
+                self.assertIn(f'HOST_RAM_BYTES={host} DOCKER_CPU=8 DOCKER_RAM_BYTES={docker}', result.stdout)
+                self.assertIn('RAM_BYTES=1691451392 ', result.stdout)
+                self.assertEqual('LIGHT', metadata(home / 'config/runtime.env')['RUNTIME_PROFILE'])
+
+    def test_linux_preflight_low_memory_uses_actual_measurement_branch(self):
+        f = self.fixture
+        source = (f.package / 'installers/nexusquant.sh').read_text(encoding='utf-8')
+        runner = f.root / 'linux-preflight.sh'
+        runner.write_text(source.split('\nhost_identity\n')[0] +
+                          '\nhost_os=Linux; host_version=24.04; host_arch=amd64\n'
+                          'docker_version=29.8.0; compose_version=2.39.4\npreflight\n',
+                          encoding='utf-8', newline='\n')
+        f.script('getconf', 'echo "$NQ_FIX_CPU"\n')
+        f.script('awk', '''case "$*" in *MemTotal*) printf '%s' "$NQ_FIX_RAM";;
+*) exec /usr/bin/awk "$@";; esac
+''')
+        f.script('grep', '''case "$*" in */proc/cpuinfo*) exit 0;;
+*) exec /usr/bin/grep "$@";; esac
+''')
+        result = subprocess.run([self.shell, shell_path(runner), 'install'],
+                                env=f.env | {'NQ_FIX_RAM': '1691451392'},
+                                capture_output=True, text=True, timeout=30)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn('OS=Linux', result.stdout); self.assertIn('PROFILE=LIGHT', result.stdout)
+        self.assertIn('LOW_MEMORY_WARNING', result.stderr)
 
     def test_old_docker_compose_daemon_and_port_conflict(self):
         f = self.fixture
@@ -776,6 +826,160 @@ class PosixHandoffTest(unittest.TestCase):
         path,request=self.request();raw=path.read_bytes();path.write_bytes(raw.replace(b'"format":',b'"duplicate":'))
         f.run('check-update',*f.target_args(),'--handoff-request',shell_path(path),success=False)
         self.assertFalse(self.receipt(request).exists());self.assertEqual('',f.calls())
+
+
+class WindowsInstallerResourceTest(unittest.TestCase):
+    """在 Windows PowerShell 中执行正式函数；模拟检测边界，不连接 Docker 或安装宿主软件。"""
+    def setUp(self):
+        if os.name != 'nt':
+            self.skipTest('Windows host required for Windows installer resource regression')
+        self.powershell = os.environ.get('NQ_TEST_POWERSHELL') or shutil.which('powershell')
+        if not self.powershell:
+            self.skipTest('Windows PowerShell required')
+        self.temp = tempfile.TemporaryDirectory(prefix='nq-windows-resource-simulated-')
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+
+    def run_functions(self, body):
+        # 只载入 AST 中的函数定义，防止测试误执行安装器顶层的宿主变更。
+        preamble = r'''
+$ErrorActionPreference='Stop'
+$source=[IO.File]::ReadAllText($env:NQ_TEST_INSTALLER,[Text.Encoding]::UTF8)
+$tokens=$null; $parseErrors=$null
+$ast=[Management.Automation.Language.Parser]::ParseInput($source,[ref]$tokens,[ref]$parseErrors)
+if ($parseErrors.Count) { throw 'Installer syntax invalid' }
+foreach ($function in $ast.FindAll({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst]},$false)) {
+    . ([ScriptBlock]::Create($function.Extent.Text))
+}
+function Assert-Test($Condition, [string]$Message) { if (-not $Condition) { throw $Message } }
+function Expect-Refusal([scriptblock]$Body) {
+    $refused=$false
+    try { & $Body | Out-Null } catch { $refused=$true }
+    Assert-Test $refused 'Expected refusal'
+}
+$InstallRoot=$env:NQ_TEST_ROOT
+'''
+        runner = self.root / 'test-functions.ps1'
+        runner.write_text(preamble + body, encoding='utf-8-sig', newline='\n')
+        child_env = os.environ | {'NQ_TEST_ROOT': str(self.root),
+                                 'NQ_TEST_INSTALLER': str(REPO / 'release/installers/nexusquant.ps1'),
+                                 'DOCKER_HOST': '', 'DOCKER_CONTEXT': ''}
+        # PowerShell 7 的模块路径不能替代 Windows PowerShell 5 的系统模块发现路径。
+        if Path(self.powershell).name.lower() == 'powershell.exe':
+            child_env['PSModulePath'] = str(Path(os.environ['WINDIR']) /
+                                            'System32/WindowsPowerShell/v1.0/Modules')
+        result = subprocess.run([self.powershell, '-NoProfile', '-NonInteractive',
+                                 '-ExecutionPolicy', 'Bypass', '-File', str(runner)],
+                                env=child_env,
+                                capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=60)
+        self.assertEqual(0, result.returncode, result.stdout[-1500:] + result.stderr[-1500:])
+        return result
+
+    def test_profiles_warnings_and_other_resource_rejections(self):
+        self.run_functions(r'''
+foreach ($case in @(@(8,1.58,'LIGHT',$true),@(8,0.5,'LIGHT',$true),@(2,4,'LIGHT',$false),@(8,4,'LIGHT',$false),
+    @(4,8,'STANDARD',$false),@(8,8,'STANDARD',$false),@(8,16,'PERFORMANCE',$false))) {
+    $items=@(Select-Profile $case[0] $case[1] 10 3>&1)
+    $profile=@($items | Where-Object { $_ -is [hashtable] })[0]
+    $warnings=@($items | Where-Object { $_ -is [Management.Automation.WarningRecord] })
+    Assert-Test ($profile.RUNTIME_PROFILE -ceq $case[2]) 'Wrong runtime profile'
+    Assert-Test (($warnings.Count -gt 0) -eq $case[3]) 'Wrong memory warning policy'
+    if ($case[3]) {
+        Assert-Test ($warnings[0].Message.Contains('LOW_MEMORY_WARNING')) 'Missing warning identity'
+        Assert-Test ($warnings[0].Message.Contains('OOM, startup failure or degraded performance')) 'Missing memory risks'
+        Assert-Test ($profile.BACKEND_MEMORY -ceq '768m' -and $profile.POSTGRES_MEMORY -ceq '512m' -and $profile.FRONTEND_MEMORY -ceq '128m') 'LIGHT allocation changed'
+    }
+}
+foreach ($ram in @($null,0,-1,[double]::NaN,[double]::PositiveInfinity)) {
+    Expect-Refusal { Select-Profile 8 $ram 10 }
+}
+Expect-Refusal { Select-Profile 1 8 10 }
+Expect-Refusal { Select-Profile 8 8 9.99 }
+Expect-Refusal { Select-Profile ([double]::NaN) 8 10 }
+''')
+
+    def test_preflight_host_docker_measurements_and_bootstrap(self):
+        result = self.run_functions(r'''
+function Get-CimInstance($ClassName, $OperationTimeoutSec) {
+    switch ($ClassName) {
+        Win32_OperatingSystem { return @{Version='10.0.22631';Caption='SIMULATED Windows 11'} }
+        Win32_ComputerSystem { return @{NumberOfLogicalProcessors=8;TotalPhysicalMemory=$script:HostRam;HypervisorPresent=$true} }
+        Win32_Processor { return @{VirtualizationFirmwareEnabled=$true} }
+    }
+}
+function Invoke-Docker($DockerArgs, $TimeoutSeconds) {
+    if ($DockerArgs[-1] -eq '{{.NCPU}}') { return '8' }
+    if ($DockerArgs[-1] -eq '{{.MemTotal}}') { return $script:DockerRam }
+    throw 'Unexpected Docker access'
+}
+foreach ($case in @(@(16GB,1691451392),@(1691451392,16GB))) {
+    $script:HostRam=$case[0]; $script:DockerRam=$case[1]
+    Assert-HostBootstrap
+    $profile=Host-Preflight
+    Assert-Test ($profile.RUNTIME_PROFILE -ceq 'LIGHT') 'Effective capacity must use smaller measurement'
+}
+foreach ($case in @(@($null,16GB),@(16GB,''),@(0,16GB),@(16GB,'UNKNOWN'),
+    @([double]::PositiveInfinity,16GB),@(16GB,[double]::PositiveInfinity),@(16GB,[double]::NaN))) {
+    $script:HostRam=$case[0]; $script:DockerRam=$case[1]
+    Expect-Refusal { Host-Preflight }
+}
+''')
+        self.assertIn('LOW_MEMORY_WARNING', result.stdout)
+        self.assertIn('HOST_RAM_GIB', result.stdout); self.assertIn('DOCKER_RAM_GIB', result.stdout)
+
+    def test_generated_config_and_manifest_bind_both_installers(self):
+        make_package(self.root / 'package', '1.0.2', '49')
+        self.run_functions(r'''
+$package=Read-Package (Join-Path $InstallRoot 'package') '' 'amd64'
+$package.ResolvedImages=@{}
+foreach ($key in @('BACKEND_IMAGE','FRONTEND_IMAGE','POSTGRES_IMAGE')) { $package.ResolvedImages[$key]=$package.Manifest[$key] }
+$config=Select-Profile 2 1.58 10
+$config.DB_PASSWORD=New-Secret
+Set-PackageConfig $config $package
+$path=Join-Path $InstallRoot 'generated.env'
+Write-Metadata $path $config
+$actual=Read-Env $path
+Assert-Test ($actual.RUNTIME_PROFILE -ceq 'LIGHT' -and $actual.BACKEND_MEMORY -ceq '768m' -and $actual.POSTGRES_MEMORY -ceq '512m' -and $actual.FRONTEND_MEMORY -ceq '128m') 'Generated allocation mismatch'
+Assert-Test ($actual.AUTO_UPDATE -ceq 'OFF' -and $actual.SCHEMA_VERSION -ceq '49' -and $actual.DB_ROLE_FORMAT -ceq '2') 'Configuration safety changed'
+Assert-DatabaseRoleConfig $actual
+foreach ($name in @('nexusquant.ps1','nexusquant.sh')) {
+    $asset=Join-Path $package.Root ('installers/'+$name)
+    $original=[IO.File]::ReadAllBytes($asset)
+    [IO.File]::AppendAllText($asset,"`nTAMPERED`n")
+    Expect-Refusal { Read-Package $package.Root '' 'amd64' }
+    [IO.File]::WriteAllBytes($asset,$original)
+}
+[void](Read-Package $package.Root $package.Hash 'amd64')
+Expect-Refusal { Read-Package $package.Root ('0'*64) 'amd64' }
+Expect-Refusal { Read-Package $package.Root '' 'arm64' }
+''')
+
+    def test_port_and_docker_guards_still_reject(self):
+        self.run_functions(r'''
+Expect-Refusal { Assert-Ports 1023 18888 }
+Expect-Refusal { Assert-Ports 18080 18080 }
+$listener=New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback,0)
+try {
+    $listener.Start(); $port=$listener.LocalEndpoint.Port
+    Expect-Refusal { Assert-Ports $port 18888 }
+} finally { $listener.Stop() }
+function Get-Command { return @{Source=$env:ComSpec} }
+function Invoke-Docker($DockerArgs, $TimeoutSeconds) {
+    switch ($DockerArgs[-1]) {
+        '{{.Endpoints.docker.Host}}' { return 'npipe:////./pipe/docker_engine' }
+        '{{.ServerVersion}}' { return $script:EngineVersion }
+        '--short' { return $script:ComposeVersion }
+        '{{.Architecture}}' { return $script:Architecture }
+        '{{.OSType}}' { return 'linux' }
+    }
+    throw 'Unexpected Docker access'
+}
+$script:EngineVersion='29.5.0'; $script:ComposeVersion='2.39.4'; $script:Architecture='amd64'
+Ensure-Docker $false
+$script:EngineVersion='23.0.6'; Expect-Refusal { Ensure-Docker $false }
+$script:EngineVersion='29.5.0'; $script:ComposeVersion='2.19.9'; Expect-Refusal { Ensure-Docker $false }
+$script:ComposeVersion='2.39.4'; $script:Architecture='arm64'; Expect-Refusal { Ensure-Docker $false }
+''')
 
 
 if __name__ == '__main__':
