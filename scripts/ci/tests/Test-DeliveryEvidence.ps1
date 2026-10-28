@@ -18,15 +18,33 @@ function Write-Json([string] $Path, [object] $Value) {
     [IO.File]::WriteAllText($Path, $json, (New-Object Text.UTF8Encoding($false)))
 }
 
-function Assert-Rejected([string] $Name, [scriptblock] $Command) {
+function Assert-Rejected([string] $Name, [scriptblock] $Command, [string] $ExpectedMessage = '') {
     $rejected = $false
     try { & $Command }
-    catch { $rejected = $true }
+    catch {
+        if ($ExpectedMessage -and $_.Exception.Message -cne $ExpectedMessage) { throw }
+        $rejected = $true
+    }
     Assert-Condition $rejected "Negative provenance case unexpectedly passed: $Name"
     Write-Output "PROVENANCE_NEGATIVE_REJECTED=$Name"
 }
 
 try {
+    # 使用供应商 API 的完整 LTS 构建身份；发行 tag 的简写在冷缓存 runner 上不能精确匹配。
+    $workflow = [IO.File]::ReadAllText((Join-Path $repo '.github/workflows/ci.yml'))
+    $setupPattern = '(?m)^        uses: actions/setup-java@(?<commit>[a-f0-9]{40})[^\r\n]*\r?\n        with:\r?\n(?<settings>(?:          [^\r\n]*\r?\n)+)'
+    $javaSetups = [regex]::Matches($workflow, $setupPattern)
+    $javaLock = (Get-Content (Join-Path $scripts 'delivery-supply-chain-lock.json') -Raw | ConvertFrom-Json).actions | Where-Object repository -eq 'actions/setup-java'
+    Assert-Condition ($javaSetups.Count -eq 6 -and [regex]::Matches($workflow, 'uses: actions/setup-java@').Count -eq 6) 'All six Java setup blocks must be inspected'
+    Assert-Condition ($javaLock.commit -ceq 'cf277c60eb25467037889841efdb72551f06f6c3' -and $javaLock.expectedOccurrences -eq 6) 'Java action lock changed'
+    foreach ($setup in $javaSetups) {
+        Assert-Condition ($setup.Groups['commit'].Value -ceq $javaLock.commit) 'Java action is outside the supply-chain lock'
+        $settings = $setup.Groups['settings'].Value
+        Assert-Condition ($settings -cmatch '(?m)^          distribution: temurin\r?$') 'Java supplier must remain Temurin'
+        Assert-Condition ($settings -cmatch '(?m)^          java-version: "21\.0\.13\+9\.0\.LTS"\r?$') 'Java setup must use the exact approved canonical LTS patch and build'
+    }
+    Write-Output 'DELIVERY_JAVA_SETUP_IDENTITY=PASS version=21.0.13+9.0.LTS count=6'
+
     $backendRoot = Join-Path $runRoot 'backend'
     $frontendRoot = Join-Path $runRoot 'frontend'
     New-Item -ItemType Directory -Path (Join-Path $backendRoot 'artifacts') -Force | Out-Null
@@ -81,7 +99,7 @@ try {
         WorkflowPath = '.github/workflows/ci.yml'
         WorkflowFilePath = $workflowFixture
         SupplyChainLockPath = $supplyChainFixture
-        JavaVersion = '21'
+        JavaVersion = 'openjdk version 21.0.13 2026-10-20 LTS'
         NodeVersion = '22'
         NpmVersion = '11'
         BackendEvidenceRoot = $backendRoot
@@ -128,6 +146,27 @@ try {
         $wrong = $validatorArguments.Clone()
         $wrong.ExpectedCiRunId = '99999'
         & $provenanceValidator @wrong -ProvenancePath $provenanceOne | Out-Null
+    }
+    Assert-Rejected 'wrong-java-patch-identity' -ExpectedMessage 'Java identity mismatch' -Command {
+        $wrong = $validatorArguments.Clone()
+        $wrong.ExpectedJavaVersion = 'openjdk version 21.0.12.1 2026-08-18 LTS'
+        & $provenanceValidator @wrong -ProvenancePath $provenanceOne | Out-Null
+    }
+    Assert-Rejected 'wrong-run-attempt' -ExpectedMessage 'Provenance runAttempt mismatch' -Command {
+        $wrong = $validatorArguments.Clone()
+        $wrong.ExpectedCiRunAttempt = '2'
+        & $provenanceValidator @wrong -ProvenancePath $provenanceOne | Out-Null
+    }
+    foreach ($binding in @(@{Name='workflow'; Path=$workflowFixture}, @{Name='supply-chain-lock'; Path=$supplyChainFixture})) {
+        $originalBinding = [IO.File]::ReadAllBytes($binding.Path)
+        try {
+            [IO.File]::AppendAllText($binding.Path, "`n")
+            Assert-Rejected ('tampered-' + $binding.Name + '-binding') -ExpectedMessage ('Provenance material digest mismatch: ' + $binding.Name) -Command {
+                & $provenanceValidator @validatorArguments -ProvenancePath $provenanceOne | Out-Null
+            }
+        } finally {
+            [IO.File]::WriteAllBytes($binding.Path, $originalBinding)
+        }
     }
     Assert-Rejected 'missing-provenance' {
         & $provenanceValidator @validatorArguments -ProvenancePath (Join-Path $runRoot 'missing-provenance.json') | Out-Null

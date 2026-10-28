@@ -3,7 +3,7 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "2d4968b4f6b993901d78777d659cdcc857fa802ebdfea6e908ac0b3ec39f3786",
+      "sha256": "04b0928e4914ec0731c8986b05d7d811d00ea3f84714bbe3caf629e7e2497837",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
@@ -619,7 +619,7 @@
     },
     {
       "path": "scripts/ci/tests/Test-DeliveryEvidence.ps1",
-      "sha256": "b614b40f368e05bfd6017d03b9ab379611712bd148979b552d0a873b65ede19e",
+      "sha256": "f35d1d40b930b1faf0bfba9402a541344b3f7fcc7840fdf557b41c0d3ad79941",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",

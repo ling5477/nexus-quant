@@ -42,7 +42,17 @@ V1.0.0 唯一 REQUIRED / CLAIMED host platform 为 **Windows 11 amd64，Docker D
 
 Docker bootstrap、daemon recovery 和 Linux/macOS 安装器保留为 `AVAILABLE_BUT_UNQUALIFIED`。其他平台 **not officially qualified for v1.0.0**；这仅表示本版本未完成正式资格验证。模拟环境、POSIX fixture 和 multiarch image build 不构成真实宿主资格；arm64 镜像即使可构建也仅为 `BUILD_AVAILABLE`。发布源码中的 `release/support-matrix.json` 绑定相同机器可读合同，发行包中的本表提供完整合同。
 
-最低 2 logical CPU、4 GiB RAM、10 GiB 可用空间（镜像及备份另计）；建议至少 4 CPU、8 GiB RAM。Docker Engine 最低 24.0.0、Compose 最低 2.20.0。Windows/macOS 使用 Docker Desktop Linux containers；Ubuntu 使用 Docker Engine + Compose plugin。macOS/Linux 需要系统 shell、curl 和标准文件工具。
+当前候选安装策略：最低 2 logical CPU、10 GiB 可用空间（镜像及备份另计）；建议至少 4 CPU。内存建议如下，按主机内存与 Docker 可用内存上限的较小值判断：
+
+| 内存建议 | 配置与行为 |
+| --- | --- |
+| Recommended Memory | 4 GiB |
+| Preferred Memory | 8 GiB |
+| Below Recommended | Installation Allowed / Runtime Stability Not Guaranteed；警告并为全新安装选择 LIGHT |
+
+低于 4 GiB 属于资源受限运行场景，可能发生 OOM、启动失败或性能下降；安装器不设置新的最低内存门槛，也不自动启用 Swap 或修改系统内存配置。主机与 Docker 内存分别实际检测，无法取得有效内存信息时明确拒绝，不将未知值当作低内存继续。约 1.58 GiB Ubuntu 的真实安装与稳定性尚未验证，不能据此声明正式最低配置或 Linux 完整发行资格。以上调整不追溯改变已发布版本的资格记录。
+
+Docker Engine 最低 24.0.0、Compose 最低 2.20.0。Windows/macOS 使用 Docker Desktop Linux containers；Ubuntu 使用 Docker Engine + Compose plugin。macOS/Linux 需要系统 shell、curl 和标准文件工具。
 
 全新安装与常规运维无需宿主 Java、Maven、Node、PostgreSQL 或 Python；v1.0.0 一次性升级桥接另需 Python 3.12 或更新版本，见下文。安装器不编译源码。正式支持范围要求 Docker 已安装并运行，安装器直接复用。已安装但停止时的启动恢复、缺失时的官方渠道安装及 UAC / sudo 提权能力尚未取得本版本正式资格。Docker 版本过低时报告显式升级路径，不静默替换现有版本。安装失败按阶段报告，保留数据，不改变用户 Docker 代理或全局资源配置。
 
@@ -90,7 +100,7 @@ macOS/Linux 数据目录 `~/.nexusquant`。安装会检查 Docker/daemon、加�
 
 | Profile | 资源条件 | Backend / PostgreSQL / Frontend memory | CPU limits |
 | --- | --- | --- | --- |
-| LIGHT | 低于 4 CPU 或 8 GiB，且满足最低要求 | 768m / 512m / 128m | 1 / 0.5 / 0.25 |
+| LIGHT | 低于 4 CPU 或 8 GiB，且满足 CPU / 磁盘要求；低于 4 GiB 警告后允许安装 | 768m / 512m / 128m | 1 / 0.5 / 0.25 |
 | STANDARD | 满足 LIGHT 上界，但低于 8 CPU 或 16 GiB | 2048m / 1024m / 256m | 2 / 1 / 0.5 |
 | PERFORMANCE | 至少 8 CPU 与 16 GiB | 4096m / 2048m / 256m | 4 / 2 / 0.5 |
 

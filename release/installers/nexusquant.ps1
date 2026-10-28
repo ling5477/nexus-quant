@@ -257,7 +257,9 @@ function Ensure-Docker([bool]$AllowBootstrap) {
 }
 function Select-Profile([double]$Cpu, [double]$RamGiB, [double]$DiskGiB) {
     foreach ($value in @($Cpu,$RamGiB,$DiskGiB)) { if ([double]::IsNaN($value) -or [double]::IsInfinity($value)) { throw 'Unknown capacity cannot select a runtime profile' } }
-    if ($Cpu -lt 2 -or $RamGiB -lt 4 -or $DiskGiB -lt 10) { throw 'Requires at least 2 logical CPUs, 4 GiB Docker/host RAM and 10 GiB free disk' }
+    if ($RamGiB -le 0) { throw 'Host/Docker memory capacity unavailable' }
+    if ($Cpu -lt 2 -or $DiskGiB -lt 10) { throw 'Requires at least 2 logical CPUs and 10 GiB free disk' }
+    if ($RamGiB -lt 4) { Write-Warning 'LOW_MEMORY_WARNING: effective host/Docker RAM below recommended 4 GiB; selecting LIGHT for new installations. OOM, startup failure or degraded performance may occur; runtime stability is not guaranteed. Swap and system memory settings are unchanged.' }
     if ($Cpu -lt 4 -or $RamGiB -lt 8) { return @{RUNTIME_PROFILE='LIGHT'; BACKEND_MEMORY='768m'; BACKEND_CPUS='1'; POSTGRES_MEMORY='512m'; POSTGRES_CPUS='0.5'; FRONTEND_MEMORY='128m'; FRONTEND_CPUS='0.25'} }
     if ($Cpu -lt 8 -or $RamGiB -lt 16) { return @{RUNTIME_PROFILE='STANDARD'; BACKEND_MEMORY='2048m'; BACKEND_CPUS='2'; POSTGRES_MEMORY='1024m'; POSTGRES_CPUS='1'; FRONTEND_MEMORY='256m'; FRONTEND_CPUS='0.5'} }
     return @{RUNTIME_PROFILE='PERFORMANCE'; BACKEND_MEMORY='4096m'; BACKEND_CPUS='4'; POSTGRES_MEMORY='2048m'; POSTGRES_CPUS='2'; FRONTEND_MEMORY='256m'; FRONTEND_CPUS='0.5'}
@@ -279,8 +281,12 @@ function Host-Preflight {
     $disk = $drive.AvailableFreeSpace / 1GB
     $dockerCpu = [int](Invoke-Docker @('info','--format','{{.NCPU}}') 15)
     $dockerRam = [double](Invoke-Docker @('info','--format','{{.MemTotal}}') 15) / 1GB
+    $hostRam = [double]$system.TotalPhysicalMemory / 1GB
+    foreach ($memory in @($hostRam,$dockerRam)) {
+        if ($memory -le 0 -or [double]::IsNaN($memory) -or [double]::IsInfinity($memory)) { throw 'Host/Docker memory capacity unavailable' }
+    }
     $cpu = [Math]::Min([double]$system.NumberOfLogicalProcessors, $dockerCpu)
-    $ram = [Math]::Min([double]$system.TotalPhysicalMemory / 1GB, $dockerRam)
+    $ram = [Math]::Min($hostRam, $dockerRam)
     $virtualization = 'UNKNOWN'
     try { $processors = @(Get-CimInstance Win32_Processor -OperationTimeoutSec 10); if ($processors.VirtualizationFirmwareEnabled -contains $true -or $system.HypervisorPresent) { $virtualization='AVAILABLE' } else { $virtualization='UNAVAILABLE' } } catch {}
     if ($virtualization -eq 'UNAVAILABLE') { throw 'Hardware virtualization unavailable; enable supported Windows virtualization before Docker installation' }

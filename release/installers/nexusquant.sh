@@ -278,13 +278,16 @@ preflight() {
     esac
     docker_cpu=$(docker_cmd info --format '{{.NCPU}}' 2>/dev/null)
     docker_ram=$(docker_cmd info --format '{{.MemTotal}}' 2>/dev/null)
-    for number in "$host_cpu" "$host_ram" "$docker_cpu" "$docker_ram"; do printf '%s' "$number" | grep -Eq '^[0-9]+$' || fail 'Host/Docker capacity unavailable'; done
+    for number in "$host_cpu" "$host_ram" "$docker_cpu" "$docker_ram"; do printf '%s' "$number" | grep -Eq '^[1-9][0-9]*$' || fail 'Host/Docker capacity unavailable'; done
     effective_cpu=$host_cpu; [ "$docker_cpu" -ge "$host_cpu" ] || effective_cpu=$docker_cpu
     effective_ram=$host_ram; [ "$docker_ram" -ge "$host_ram" ] || effective_ram=$docker_ram
     disk_parent=$install_root; while [ ! -d "$disk_parent" ]; do disk_parent=$(dirname "$disk_parent"); done
     disk_kb=$(df -Pk "$disk_parent" | awk 'END{print $4}')
     printf '%s' "$disk_kb" | grep -Eq '^[0-9]+$' || fail 'Free disk measurement unavailable'
-    [ "$effective_cpu" -ge 2 ] && [ "$effective_ram" -ge 4294967296 ] && [ "$disk_kb" -ge 10485760 ] || fail 'Insufficient capacity: require effective 2 CPU / 4 GiB RAM / 10 GiB free disk; adjust Docker resources explicitly'
+    [ "$effective_cpu" -ge 2 ] && [ "$disk_kb" -ge 10485760 ] || fail 'Insufficient capacity: require effective 2 CPU / 10 GiB free disk; adjust Docker resources explicitly'
+    if [ "$effective_ram" -lt 4294967296 ]; then
+        printf '%s\n' 'LOW_MEMORY_WARNING: effective host/Docker RAM below recommended 4 GiB; selecting LIGHT for new installations. OOM, startup failure or degraded performance may occur; runtime stability is not guaranteed. Swap and system memory settings are unchanged.' >&2
+    fi
     if [ "$effective_cpu" -lt 4 ] || [ "$effective_ram" -lt 8589934592 ]; then
         runtime_profile=LIGHT; backend_memory=768m; backend_cpus=1; postgres_memory=512m; postgres_cpus=0.5; frontend_memory=128m; frontend_cpus=0.25
     elif [ "$effective_cpu" -lt 8 ] || [ "$effective_ram" -lt 17179869184 ]; then
@@ -297,7 +300,7 @@ preflight() {
         Darwin) if bounded 10 scutil --proxy 2>/dev/null | grep -Eq '(HTTPEnable|HTTPSEnable|ProxyAutoConfigEnable) : 1'; then system_proxy=PRESENT; else system_proxy=ABSENT; fi;;
         Linux) if [ -f /etc/environment ]; then system_proxy=ABSENT; grep -Eqi '^[[:space:]]*(http_proxy|https_proxy|no_proxy)=' /etc/environment && system_proxy=PRESENT; fi;;
     esac
-    printf 'OS=%s VERSION=%s ARCH=%s CPU=%s RAM_BYTES=%s DISK_KIB=%s VIRTUALIZATION=%s DOCKER=%s COMPOSE=%s PROXY=%s SYSTEM_PROXY=%s PROFILE=%s\n' "$host_os" "$host_version" "$host_arch" "$effective_cpu" "$effective_ram" "$disk_kb" "$virtualization" "$docker_version" "$compose_version" "$proxy" "$system_proxy" "$runtime_profile"
+    printf 'OS=%s VERSION=%s ARCH=%s CPU=%s RAM_BYTES=%s HOST_CPU=%s HOST_RAM_BYTES=%s DOCKER_CPU=%s DOCKER_RAM_BYTES=%s DISK_KIB=%s VIRTUALIZATION=%s DOCKER=%s COMPOSE=%s PROXY=%s SYSTEM_PROXY=%s PROFILE=%s\n' "$host_os" "$host_version" "$host_arch" "$effective_cpu" "$effective_ram" "$host_cpu" "$host_ram" "$docker_cpu" "$docker_ram" "$disk_kb" "$virtualization" "$docker_version" "$compose_version" "$proxy" "$system_proxy" "$runtime_profile"
 }
 port_check() {
     for port in "$frontend_port" "$backend_port"; do
