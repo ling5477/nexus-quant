@@ -30,7 +30,7 @@ jobs:
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
-          java-version: "21.0.13+9"
+          java-version: "21.0.13+9.0.LTS"
           cache: maven
 
       - name: Install pinned Java certificate policy
@@ -147,7 +147,7 @@ jobs:
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
-          java-version: "21.0.13+9"
+          java-version: "21.0.13+9.0.LTS"
           cache: maven
 
       - name: Install pinned Java certificate policy
@@ -304,7 +304,7 @@ jobs:
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
-          java-version: "21.0.13+9"
+          java-version: "21.0.13+9.0.LTS"
           cache: maven
 
       - name: Install pinned Java certificate policy
@@ -394,7 +394,7 @@ jobs:
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
-          java-version: "21.0.13+9"
+          java-version: "21.0.13+9.0.LTS"
           cache: maven
 
       - name: Install pinned Java certificate policy
@@ -790,7 +790,7 @@ jobs:
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
-          java-version: "21.0.13+9"
+          java-version: "21.0.13+9.0.LTS"
           cache: maven
 
       - name: Install pinned Java certificate policy
@@ -1080,7 +1080,7 @@ jobs:
         uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
         with:
           distribution: temurin
-          java-version: "21.0.13+9"
+          java-version: "21.0.13+9.0.LTS"
 
       - name: Install pinned Java certificate policy
         shell: bash

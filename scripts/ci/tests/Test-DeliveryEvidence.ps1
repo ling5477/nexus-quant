@@ -30,7 +30,7 @@ function Assert-Rejected([string] $Name, [scriptblock] $Command, [string] $Expec
 }
 
 try {
-    # 构建与回读必须选择同一供应商及精确版本，防止不同 runner 的缓存补丁版本漂移。
+    # 使用供应商 API 的完整 LTS 构建身份；发行 tag 的简写在冷缓存 runner 上不能精确匹配。
     $workflow = [IO.File]::ReadAllText((Join-Path $repo '.github/workflows/ci.yml'))
     $setupPattern = '(?m)^        uses: actions/setup-java@(?<commit>[a-f0-9]{40})[^\r\n]*\r?\n        with:\r?\n(?<settings>(?:          [^\r\n]*\r?\n)+)'
     $javaSetups = [regex]::Matches($workflow, $setupPattern)
@@ -41,9 +41,9 @@ try {
         Assert-Condition ($setup.Groups['commit'].Value -ceq $javaLock.commit) 'Java action is outside the supply-chain lock'
         $settings = $setup.Groups['settings'].Value
         Assert-Condition ($settings -cmatch '(?m)^          distribution: temurin\r?$') 'Java supplier must remain Temurin'
-        Assert-Condition ($settings -cmatch '(?m)^          java-version: "21\.0\.13\+9"\r?$') 'Java setup must use the exact approved patch and build'
+        Assert-Condition ($settings -cmatch '(?m)^          java-version: "21\.0\.13\+9\.0\.LTS"\r?$') 'Java setup must use the exact approved canonical LTS patch and build'
     }
-    Write-Output 'DELIVERY_JAVA_SETUP_IDENTITY=PASS version=21.0.13+9 count=6'
+    Write-Output 'DELIVERY_JAVA_SETUP_IDENTITY=PASS version=21.0.13+9.0.LTS count=6'
 
     $backendRoot = Join-Path $runRoot 'backend'
     $frontendRoot = Join-Path $runRoot 'frontend'
