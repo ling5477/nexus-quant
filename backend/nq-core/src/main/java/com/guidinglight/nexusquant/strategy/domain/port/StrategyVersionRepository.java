@@ -4,6 +4,7 @@ import com.guidinglight.nexusquant.strategy.domain.StrategyVersion;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.Instant;
 
 /**
  * StrategyVersionRepository 定义策略版本持久化端口。
@@ -19,6 +20,9 @@ public interface StrategyVersionRepository {
      * @param strategyVersion 已归一化并通过业务校验的策略版本
      */
     void insert(StrategyVersion strategyVersion);
+
+    /** 只在原经济身份和DRAFT状态仍匹配时激活，不修改快照或创建第二个版本。 */
+    boolean activateDraft(StrategyVersion expected, Instant updatedAt);
 
     /**
      * 按策略编码查询版本列表。

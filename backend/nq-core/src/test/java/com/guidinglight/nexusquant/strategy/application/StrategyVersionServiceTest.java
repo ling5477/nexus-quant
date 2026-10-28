@@ -32,6 +32,32 @@ class StrategyVersionServiceTest {
             Clock.fixed(Instant.parse("2026-05-18T01:00:00Z"), ZoneOffset.UTC);
 
     @Test
+    void selectedActivationPreservesIdentityAndIsIdempotent() {
+        var definitions = new InMemoryStrategyDefinitionRepository();
+        var repository = new InMemoryStrategyVersionRepository();
+        definitions.insert(defaultDefinition());
+        var service = new StrategyVersionService(definitions, repository, new ObjectMapper(), fixedClock);
+        var draft = service.create(new StrategyVersionCreateRequest("demo-strategy", "Selected", "DRAFT",
+                "{\"window\":4}", "{}", "{}", "owner"));
+        var activated = service.activateSelectedVersion(draft);
+        assertTrue(activated.changed());
+        assertEquals(StrategyVersionStatus.ACTIVE, activated.version().status());
+        assertEquals(new StrategyVersion(draft.strategyVersionId(), draft.strategyCode(), draft.version(),
+                draft.versionName(), StrategyVersionStatus.ACTIVE, draft.paramSnapshotJson(), draft.configSnapshotJson(),
+                draft.sourceSnapshotJson(), draft.checksum(), draft.createdBy(), draft.createdAt(), draft.updatedAt()), activated.version());
+        var repeated = service.activateSelectedVersion(draft);
+        assertFalse(repeated.changed());
+        assertEquals(activated.version(), repeated.version());
+        var archived = service.create(new StrategyVersionCreateRequest("demo-strategy", "Old", "ARCHIVED", "{}", "{}", "{}", "owner"));
+        assertThrows(IllegalStateException.class, () -> service.activateSelectedVersion(archived));
+        assertEquals(archived, repository.findById(archived.strategyVersionId()).orElseThrow());
+        var forged = new StrategyVersion(draft.strategyVersionId(), draft.strategyCode(), draft.version(), draft.versionName(),
+                draft.status(), "{\"window\":8}", draft.configSnapshotJson(), draft.sourceSnapshotJson(),
+                draft.checksum(), draft.createdBy(), draft.createdAt(), draft.updatedAt());
+        assertThrows(IllegalStateException.class, () -> service.activateSelectedVersion(forged));
+    }
+
+    @Test
     void shouldCreateVersionFromExistingStrategyAndNormalizeSnapshots() {
         InMemoryStrategyDefinitionRepository definitionRepository =
                 new InMemoryStrategyDefinitionRepository();
@@ -225,6 +251,17 @@ class StrategyVersionServiceTest {
         @Override
         public void insert(StrategyVersion strategyVersion) {
             byId.put(strategyVersion.strategyVersionId(), strategyVersion);
+        }
+
+        @Override
+        public boolean activateDraft(StrategyVersion expected, Instant updatedAt) {
+            StrategyVersion current = byId.get(expected.strategyVersionId());
+            if (current == null || current.status() != StrategyVersionStatus.DRAFT) return false;
+            byId.put(current.strategyVersionId(), new StrategyVersion(current.strategyVersionId(),
+                    current.strategyCode(), current.version(), current.versionName(), StrategyVersionStatus.ACTIVE,
+                    current.paramSnapshotJson(), current.configSnapshotJson(), current.sourceSnapshotJson(),
+                    current.checksum(), current.createdBy(), current.createdAt(), updatedAt));
+            return true;
         }
 
         @Override

@@ -4558,5 +4558,19 @@
     "maxDrawdownChange": "最大回撤变化",
     "tradeCountChange": "交易次数变化",
     "benchmarkRelative": "压力场景相对 Benchmark"
+  },
+  "selectedVersion": {
+    "title": "最终选中版本激活",
+    "boundary": "激活仅允许原版本用于后续显式发布；不会发布、创建或启动 SIM，也不授予实盘权限。短样本和已观察留出限制仍然适用。",
+    "validationRequired": "仅成功完成 Walk-Forward 并冻结最终选择后才可激活。",
+    "writeRequired": "需要研究写入权限才能激活。",
+    "confirm": "确认激活同一最终选中版本？参数与 Checksum 将保持不变。",
+    "activate": "激活选中版本",
+    "cancel": "取消",
+    "active": "已激活",
+    "refresh": "查询当前版本状态",
+    "publishLink": "进入原回测的正式发布流程",
+    "confirmed": "已确认原选中版本为 ACTIVE；发布仍需另行显式操作。",
+    "recover": "提交结果未知时仅查询当前版本状态；页面刷新、登录和切换不会自动激活。"
   }
 }

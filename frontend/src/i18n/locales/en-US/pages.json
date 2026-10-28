@@ -4558,5 +4558,19 @@
     "maxDrawdownChange": "Drawdown change",
     "tradeCountChange": "Trade count change",
     "benchmarkRelative": "Stress vs Benchmark"
+  },
+  "selectedVersion": {
+    "title": "Activate final selected version",
+    "boundary": "Activation only permits this version to enter an explicit publish action. It does not publish, create or start SIM, or grant LIVE authority. Short-sample and observed-holdout limitations still apply.",
+    "validationRequired": "Activation requires a successful Walk-Forward validation with a frozen final selection.",
+    "writeRequired": "Research write permission is required to activate.",
+    "confirm": "Activate the same final selected version? Parameters and checksum will remain unchanged.",
+    "activate": "Activate selected version",
+    "cancel": "Cancel",
+    "active": "Activated",
+    "refresh": "Query current version status",
+    "publishLink": "Open the original backtest publish workflow",
+    "confirmed": "The original selected version is confirmed ACTIVE. Publishing still requires a separate explicit action.",
+    "recover": "If the submission outcome is unknown, query the current version status. Refreshing, signing in and navigation never activate automatically."
   }
 }
