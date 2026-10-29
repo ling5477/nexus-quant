@@ -20080,3 +20080,26 @@ Starting dev fd2ef8a9d3a7307f127bea8b55e2149c2407a590 was clean and matched orig
 ## 2026-09-29 — GateZ annotated tag and current authority sync candidate
 
 PR #57 merged to dev as d106775b6c8a9e17cddb6b99e96c9420fa46df63. Its push CI 36540779142 completed/success 9/9. Annotated nq-gatez-freeze was pushed with object 05f3f31975394aa787745adf5414ad8467b8c17b and remote peeled commit d106775b6c8a9e17cddb6b99e96c9420fa46df63; release/archive checks passed. Current STATUS now records GateZ FROZEN|ACCEPTED|TAGGED and NQ-V1-CLOSURE-PLAN as the next action. This separate docs sync still awaits its own PR merge and exact-head CI. No business code, migration, production operation or exchange call occurred.
+
+## 2026-10-29 — v1.0.2 正式发行后事实归档
+
+本条只追加已经完成的资格与发布事实；旧 NOT_RUN、失败尝试及历史例外保留。发行 source=`e4eca0b23c769602999043b3b95b8777a33bd285` / tree=`cfab9f904dbefdca4dbe6eefd1bc88d568646451`，source [CI 40720379547](https://github.com/ling5477/nexus-quant/actions/runs/40720379547) exact-head 9/9 SUCCESS。无父 snapshot=`6b5ddcfac9f9ac02e343975ffe2d061df9785318` / tree=`67c74aed5613c3769ed6621a404fe186c488e873` / 2211 文件；annotated v1.0.2 object=`f078dad1e4122eba55179c5bb426a1134df60924`。业务 accepted batch V102-05 保留原实施/接受 pair；本次开发文档提交及 CI 不替换 source CI，Snapshot CI=NOT_RUN。
+
+证据文件均为维护者本地只读原件，不将 E 盘路径当公开链接。下列 SHA256 绑定报告原字节：
+
+| 结果 | 实际证据与范围 |
+| --- | --- |
+| RELEASE_SOURCE_VERIFIED / RC3_PACKAGE_QUALIFIED | `E:/nq-v102-official-release-delivery-20261029-e4eca0b2/NQ_V102_OFFICIAL_GITHUB_RELEASE_DELIVERY.md` 及该目录 SHA256SUMS；原 RC3 ZIP SHA256=`158b7ccc42fb333f4031ceae12fc756ea1f340603ca9aef2f92a63946c67c048`，Manifest=`74406593acccdc452004067a5877a080d7dff596d9417f0af60e54aceb200d5f` |
+| WINDOWS_INSTALL_PASS / WINDOWS_UPGRADE_PASS / BACKUP_RESTORE_PASS / ACTUAL_ROLLBACK_PASS | `E:/nq-v102-rc3-windows-qualification-20261029-e4eca0b2/NQ_V102_RC3_WINDOWS_QUALIFICATION.md`，SHA256=`8d27a8d81cb6de067dc0cfbeb519c29d0989f8fd3f845959f75487e9f16eb157`；Windows 11 amd64 / Docker Desktop Linux Containers / PG16.15，真实 v1.0.1 V47→V49，32 业务表精确 MATCH，122 旧表原行 missing0/changed0 |
+| FAILED_UPDATE_RECOVERY_PASS | `E:/nq-v102-rc3-failed-recovery-20261029-e4eca0b2/NQ_V102_RC3_FAILED_UPDATE_RECOVERY_QUALIFICATION.md`，SHA256=`1a294114b8d8b7080171190d9de17bcd40aaf768c2c1fadd178ebfd0704cbb43`；事务 `20261029T045911342Z-25db7899`，实际 V49 后故障，原 RC3 自动恢复 V47/原资产，update exit1，ROLLED_BACK/SUCCESS，pending 清除，健康/登录 PASS；恢复检查点 122 表401行及32业务表精确 MATCH，登录后仅新增一认证会话、原经济事实不变 |
+| LINUX_LOW_MEMORY_SCOPED_PASS | `E:/nq-v102-rc3-low-memory-20261029-e4eca0b2/linux-execution-20261029/NQ_V102_RC3_LINUX_LOW_MEMORY_QUALIFICATION.md`，SHA256=`c5f14e0cb1c21d2637c3d492227c58165b300f43f4c974e507927ae6178c4a08`；Ubuntu24.04.4 amd64 / 约1.5753 GiB，真实安装、一次重启、600秒；正式 Linux NOT_QUALIFIED，长期 NOT_VERIFIED，OKX DNS 限制保留 |
+| RELEASE_ADMISSION_ACCEPTED | `E:/nq-v102-final-admission-closeout-20261029-e4eca0b2/NQ_V102_RELEASE_FINAL_ADMISSION_CLOSEOUT.md`，SHA256=`157569fbc7a6da7e7de7145f7377393b9a5a2e88f098d1f7cbf447849463269b`；原自动恢复阻断由专项实际证据关闭，既存低内存断言定性为有证据的非阻断旧预期，未改测试或 skip |
+| GITHUB_RELEASE_PUBLISHED | [Release 427705563](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.2)，2026-10-29T10:15:34Z，draft=false/prerelease=false；四资产 ID、大小及完整 server SHA256 与正式交付记录一致，来源映射为 UNSIGNED_RELEASE_SOURCE_MAPPING |
+
+四项资产 SHA256：Windows ZIP=`158b7ccc42fb333f4031ceae12fc756ea1f340603ca9aef2f92a63946c67c048`；ZIP sidecar=`ee9ce388909bee19f0161d6a6bf4443fb9d93f1a1448a75e94b5084b3e865c1a`；provenance=`db553e1c025f6aff60fe938f848d3194a6068c58c575119bab909480ad4a52c8`；provenance sidecar=`165b8827333be9106a0b591a75519298c5558d445f4538b7719b9c2f9fd07969`。未重新下载全部镜像或修改资产。
+
+低内存合同为 RAM<4 GiB 警告→LIGHT→继续，768m/512m/128m；无效内存拒绝。旧 `test_lifecycle.PowerShellLifecycleTest.test_all_profiles_boundaries_and_resources` 对3.99 GiB硬拒绝的失败保留，独立 PS5.1/7 原RC3函数实测及真实Linux行为支持非阻断归因；未来可定向改测试预期，本轮不改。历史 C4 原审查仍 NOT_ACCEPTED / EVIDENCE_GAPS，owner ACCEPT_WITH_EVIDENCE_EXCEPTION / 72小时 WAIVED 保留，catalog 原文本 DIFFERENT 与限定语义等价不混写为字节 MATCH。不重新开展全量/安全审查、安装/升级资格或72小时测试。
+
+正式范围仅 Windows 11 amd64 Self-Hosted、Docker Desktop Linux Containers、PG16.15/V49及v1.0.1普通升级；v1.0.0直接普通升级不支持。Public Demo排除，LIVE=DISABLED、KILL_SWITCH=ENGAGED，不开放真实资金自动交易。本次仅五份 current 文档同步；原RC3、正式资产、白名单导出、资格/故障证据、PG备份、publication.git、历史发行均保留，无 Docker/SSH/生产数据库操作。下一阶段 NQ-V103-PLAN / NOT_STARTED，不制定或实施功能。
+
+本次 docs-only 本地检查、实际文档 Commit、PR、PR CI、Merge、合并后 exact-head CI 及清理终态记录于仓库外 `E:/nq-v102-post-release-closeout-20261029-e4eca0b2/NQ_V102_POST_RELEASE_CLOSEOUT.md`；本条在交付前不声称未来 CI 或合并成功。

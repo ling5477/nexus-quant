@@ -2,13 +2,15 @@
 
 当前阶段和安全状态由 [STATUS.md](STATUS.md) 的机器区块唯一拥有。本文件解释当前迭代及历史发布动作，不授予提交、公开发行或部署权限。
 
-## 当前 v1.0.2 范围
+## 已发布 v1.0.2 与下一阶段
 
-五个业务阶段已集成，当前工作为`NQ-V102-RELEASE-READINESS`：准备v1.0.2源码候选、精确发行白名单、V49及v1.0.1普通更新合同。准确接受身份与下一动作见[STATUS](STATUS.md)，本轮证据见[准备报告](evidence/NQ_V102_RELEASE_READINESS.md)。
+v1.0.0、v1.0.1、v1.0.2 均已发布。v1.0.2 的 V102-01～05（数据集、现货策略、实验编排、Walk-Forward、Backtest/Continuous SIM 比较）已完成；固定 RC3 正式资格及最终准入已接受，[GitHub Release 427705563](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.2) 于 2026-10-29T10:15:34Z 公开。
 
-后续需在明确Git交付授权后取得准确提交与验证过的不可变导出，再构建不可变镜像、可信Manifest及安装包；以新候选身份验证Windows 11 amd64 Self-Hosted全新安装、非空v1.0.1普通更新、备份恢复和失败回滚。既有CI和历史资格不自动转移。PG输入须保留原包的准确config digest，不能采用浮动标签推定兼容。
+发行 Source 为 `e4eca0b23c769602999043b3b95b8777a33bd285`，无父 Snapshot 为 `6b5ddcfac9f9ac02e343975ffe2d061df9785318`，Tag 为 `v1.0.2`，schema V49。完整固定身份以 [STATUS](STATUS.md) 为准；[TESTING](TESTING.md) 和 [WORKLOG](WORKLOG.md) 追加最终资格及发布证据，原[构包前准备报告](evidence/NQ_V102_RELEASE_READINESS.md) 保持历史时点。
 
-不增加交易功能、不重跑历史72小时；Canonical Order/Trade/Ledger、LIVE禁用、真实交易所写入关闭与人工发布边界保持。Public Demo公网、其他OS、ARM64和v1.0.0直接更新不进入本轮支持范围。
+Windows 11 amd64 Self-Hosted 新安装、v1.0.1 普通更新、历史数据保留、包级备份恢复、主动回滚与失败更新自动恢复均通过。本轮只同步发行事实，不重跑资格，不重构 RC3。Linux 仅低内存安装与 600 秒短时运行 SCOPED_PASS；正式 Linux 支持和长期稳定性仍未验证。既存低内存断言差异是有证据的非阻断残留，原失败保留，未来版本可定向调整预期。
+
+下一阶段为 v1.0.3 规划：`NQ-V103-PLANNING / NOT_STARTED`，唯一下一动作 `NQ-V103-PLAN`。本任务不制定或实施 v1.0.3 功能。保留 canonical Order/Trade/Ledger、LIVE=DISABLED、Kill Switch=ENGAGED、历史 C4 NOT_ACCEPTED / EVIDENCE_GAPS 与用户例外；不重跑 72 小时。Public Demo、其他正式平台及 v1.0.0 直接普通升级不属于本次发行。
 
 下文为2026-10-20发布准备历史，保留原始身份与结论，不作为本轮待办。
 
