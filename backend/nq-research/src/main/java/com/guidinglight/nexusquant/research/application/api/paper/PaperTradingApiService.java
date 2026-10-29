@@ -1,0 +1,488 @@
+package com.guidinglight.nexusquant.research.application.api.paper;
+
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunAlertCreateCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunDailyReportGenerateCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunRecoverCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunRetryFailedStepCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunScheduleCreateCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperRunStabilityCheckGenerateCommand;
+import com.guidinglight.nexusquant.research.application.paper.command.PaperTradingRunCreateCommand;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperAutoReview;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperExecutionDiagnostics;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperPortfolioSummary;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperRunSummary;
+import com.guidinglight.nexusquant.research.application.paper.model.PaperStrategyEvaluation;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperAutoReviewService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperExecutionDiagnosticsService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperPortfolioService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperRunMonitorRunService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperRunMonitorService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperRunRecoveryService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperRunScheduleService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperRunStabilityCheckService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperRunSummaryService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperStrategyEvaluationService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperTradingMonitorService;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperTradingRunService;
+import com.guidinglight.nexusquant.research.domain.paper.EmergencyStopEvent;
+import com.guidinglight.nexusquant.research.domain.paper.EquityCurveSnapshot;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRiskCheckResult;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunAlert;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunDailyReport;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunHeartbeat;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunRecoveryEvent;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunSchedule;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunScheduleFire;
+import com.guidinglight.nexusquant.research.domain.paper.PaperRunStabilityCheck;
+import com.guidinglight.nexusquant.research.domain.paper.PaperTradingOrder;
+import com.guidinglight.nexusquant.research.domain.paper.PaperTradingPosition;
+import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRun;
+import com.guidinglight.nexusquant.research.domain.paper.PaperTradingTrade;
+import com.guidinglight.nexusquant.research.domain.paper.PositionCurveSnapshot;
+import com.guidinglight.nexusquant.research.domain.paper.TradeReplayRecord;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.Objects;
+
+@Service
+public class PaperTradingApiService {
+
+    private final PaperTradingRunService runService;
+    private final PaperTradingMonitorService monitorService;
+    private final PaperRunScheduleService scheduleService;
+    private final PaperRunMonitorService paperRunMonitorService;
+    private final PaperRunRecoveryService recoveryService;
+    private final PaperRunStabilityCheckService stabilityCheckService;
+    private final PaperRunMonitorRunService monitorRunService;
+    private final PaperRunSummaryService summaryService;
+    private final PaperPortfolioService portfolioService;
+    private final PaperExecutionDiagnosticsService executionDiagnosticsService;
+    private final PaperStrategyEvaluationService strategyEvaluationService;
+    private final PaperAutoReviewService autoReviewService;
+
+    public PaperTradingApiService(
+            PaperTradingRunService runService,
+            PaperTradingMonitorService monitorService,
+            PaperRunScheduleService scheduleService,
+            PaperRunMonitorService paperRunMonitorService,
+            PaperRunRecoveryService recoveryService,
+            PaperRunStabilityCheckService stabilityCheckService,
+            PaperRunMonitorRunService monitorRunService,
+            PaperRunSummaryService summaryService,
+            PaperPortfolioService portfolioService,
+            PaperExecutionDiagnosticsService executionDiagnosticsService,
+            PaperStrategyEvaluationService strategyEvaluationService,
+            PaperAutoReviewService autoReviewService) {
+        this.runService = Objects.requireNonNull(runService, "runService must not be null");
+        this.monitorService =
+                Objects.requireNonNull(monitorService, "monitorService must not be null");
+        this.scheduleService =
+                Objects.requireNonNull(scheduleService, "scheduleService must not be null");
+        this.paperRunMonitorService =
+                Objects.requireNonNull(
+                        paperRunMonitorService, "paperRunMonitorService must not be null");
+        this.recoveryService =
+                Objects.requireNonNull(recoveryService, "recoveryService must not be null");
+        this.stabilityCheckService =
+                Objects.requireNonNull(
+                        stabilityCheckService, "stabilityCheckService must not be null");
+        this.monitorRunService =
+                Objects.requireNonNull(monitorRunService, "monitorRunService must not be null");
+        this.summaryService =
+                Objects.requireNonNull(summaryService, "summaryService must not be null");
+        this.portfolioService =
+                Objects.requireNonNull(portfolioService, "portfolioService must not be null");
+        this.executionDiagnosticsService =
+                Objects.requireNonNull(
+                        executionDiagnosticsService,
+                        "executionDiagnosticsService must not be null");
+        this.strategyEvaluationService =
+                Objects.requireNonNull(
+                        strategyEvaluationService, "strategyEvaluationService must not be null");
+        this.autoReviewService =
+                Objects.requireNonNull(autoReviewService, "autoReviewService must not be null");
+    }
+
+    public PaperTradingRun create(PaperTradingRunCreateCommand command) {
+        try {
+            return runService.create(command);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperTradingRun start(String paperRunId) {
+        try {
+            return runService.start(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperTradingRun stop(String paperRunId) {
+        try {
+            return runService.stop(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperTradingRun getById(String paperRunId) {
+        try {
+            return runService.getById(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperTradingRun> list(String publishId, String status) {
+        return runService.list(publishId, status);
+    }
+
+    public PaperRunSummary summary(String paperRunId) {
+        try {
+            return summaryService.summarize(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Paper 组合看板只读聚合：跨多个 Paper run 汇总总览、策略/发布排行、Run 排行与数据质量。
+     * 只读，无 run 时返回稳定空结构，不触发任何状态机或外部调用。
+     */
+    public PaperPortfolioSummary portfolioSummary() {
+        return portfolioService.summarize();
+    }
+
+    /**
+     * Paper 执行诊断只读聚合：对 bounded Paper run 做规则化归因（无订单 / 有订单无成交 / 成交亏损 /
+     * 风控拦截 / 数据不足 / 高回撤 / 异常终态），并按 strategyVersionId / publishId 聚合定位问题集中点。
+     * 只读，无 run 时返回稳定空结构，不触发任何状态机或外部调用；仅 Paper-only，不构成真实投资建议。
+     */
+    public PaperExecutionDiagnostics executionDiagnostics() {
+        return executionDiagnosticsService.diagnose();
+    }
+
+    /**
+     * Paper 策略评估只读聚合：从 strategyVersionId / publishId 维度评估 Paper 模拟表现、Paper vs Backtest 偏差、
+     * 样本充足性与风险调整评分（Paper 内部启发式分，非真实投资评级）。
+     * 只读，无 run 时返回稳定空结构，不触发任何状态机或外部调用；不构成真实投资建议。
+     */
+    public PaperStrategyEvaluation strategyEvaluations() {
+        return strategyEvaluationService.evaluate();
+    }
+
+    /**
+     * Paper 规则化自动复盘只读聚合：复用 K1 执行诊断与 K3 策略评估，规则化归纳组合 / 重点 run / 策略 / 发布复盘与问题聚类。
+     * 只读，无 run / 无策略时返回稳定空结构，不触发任何状态机或外部调用；不接 AI / DH runtime，不构成真实投资建议。
+     */
+    public PaperAutoReview autoReviews() {
+        return autoReviewService.review();
+    }
+
+    public List<PaperTradingOrder> listOrders(String paperRunId) {
+        getById(paperRunId);
+        return runService.listOrders(paperRunId);
+    }
+
+    public List<PaperTradingTrade> listTrades(String paperRunId) {
+        getById(paperRunId);
+        return runService.listTrades(paperRunId);
+    }
+
+    public List<PaperTradingPosition> listPositions(String paperRunId) {
+        getById(paperRunId);
+        return runService.listPositions(paperRunId);
+    }
+
+    public PaperRiskCheckResult runRiskCheckOnce(String paperRunId) {
+        try {
+            return monitorService.runRiskCheckOnce(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperRiskCheckResult> listRiskResults(String paperRunId) {
+        try {
+            return monitorService.listRiskResults(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<EquityCurveSnapshot> listEquityCurve(String paperRunId) {
+        try {
+            return monitorService.listEquityCurve(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PositionCurveSnapshot> listPositionCurve(String paperRunId) {
+        try {
+            return monitorService.listPositionCurve(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<TradeReplayRecord> listReplayRecords(String paperRunId) {
+        try {
+            return monitorService.listReplayRecords(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public EmergencyStopEvent triggerEmergencyStop(
+            String paperRunId, String triggerType, String reason, String triggeredBy) {
+        try {
+            return monitorService.triggerEmergencyStop(
+                    paperRunId, triggerType, reason, triggeredBy);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<EmergencyStopEvent> listEmergencyStops(String paperRunId) {
+        try {
+            return monitorService.listEmergencyStops(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunSchedule createSchedule(PaperRunScheduleCreateCommand command) {
+        try {
+            return scheduleService.createSchedule(command);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunSchedule getScheduleById(String scheduleId) {
+        try {
+            return scheduleService.getScheduleById(scheduleId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperRunSchedule> listSchedules(String paperRunId, String status) {
+        return scheduleService.listSchedules(paperRunId, status);
+    }
+
+    public PaperRunSchedule updateScheduleStatus(String scheduleId, String status) {
+        try {
+            return scheduleService.updateScheduleStatus(scheduleId, status);
+        } catch (IllegalArgumentException ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            HttpStatus httpStatus =
+                    msg.startsWith("invalid schedule status")
+                            ? HttpStatus.BAD_REQUEST
+                            : HttpStatus.NOT_FOUND;
+            throw new ResponseStatusException(httpStatus, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunScheduleFire runScheduleOnce(String scheduleId) {
+        try {
+            return scheduleService.runScheduleOnce(scheduleId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperRunScheduleFire> listFires(String scheduleId) {
+        try {
+            return scheduleService.listFires(scheduleId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunHeartbeat runHeartbeatOnce(String paperRunId) {
+        try {
+            return scheduleService.runHeartbeatOnce(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperRunHeartbeat> listHeartbeats(String paperRunId) {
+        try {
+            return scheduleService.listHeartbeats(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunDailyReport generateDailyReport(PaperRunDailyReportGenerateCommand command) {
+        try {
+            return paperRunMonitorService.generateDailyReport(command);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunDailyReport getDailyReportById(String reportId) {
+        return getDailyReportById(null, reportId);
+    }
+
+    /** 把HTTP父路径带到业务校验层，状态变更前验证实际归属，不在返回结果后补验。 */
+    public PaperRunDailyReport getDailyReportById(String paperRunId, String reportId) {
+        try {
+            return paperRunMonitorService.getDailyReportById(paperRunId, reportId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperRunDailyReport> listDailyReports(String paperRunId) {
+        try {
+            return paperRunMonitorService.listDailyReports(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunAlert createAlert(PaperRunAlertCreateCommand command) {
+        try {
+            return paperRunMonitorService.createAlert(command);
+        } catch (IllegalArgumentException ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            HttpStatus httpStatus =
+                    msg.startsWith("invalid alert severity")
+                            ? HttpStatus.BAD_REQUEST
+                            : HttpStatus.NOT_FOUND;
+            throw new ResponseStatusException(httpStatus, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperRunAlert> listAlerts(String paperRunId, String status, String severity) {
+        try {
+            return paperRunMonitorService.listAlerts(paperRunId, status, severity);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunAlert ackAlert(String alertId, String acknowledgedBy) {
+        return ackAlert(null, alertId, acknowledgedBy);
+    }
+
+    /** 把HTTP父路径带到业务校验层，状态变更前验证实际归属，不在返回结果后补验。 */
+    public PaperRunAlert ackAlert(String paperRunId, String alertId, String acknowledgedBy) {
+        try {
+            return paperRunMonitorService.ackAlert(paperRunId, alertId, acknowledgedBy);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunAlert resolveAlert(String alertId, String resolvedBy) {
+        return resolveAlert(null, alertId, resolvedBy);
+    }
+
+    /** 把HTTP父路径带到业务校验层，状态变更前验证实际归属，不在返回结果后补验。 */
+    public PaperRunAlert resolveAlert(String paperRunId, String alertId, String resolvedBy) {
+        try {
+            return paperRunMonitorService.resolveAlert(paperRunId, alertId, resolvedBy);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunRecoveryEvent recover(PaperRunRecoverCommand command) {
+        try {
+            return recoveryService.recover(command);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunRecoveryEvent retryFailedStep(PaperRunRetryFailedStepCommand command) {
+        try {
+            return recoveryService.retryFailedStep(command);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperRunRecoveryEvent> listRecoveryEvents(
+            String paperRunId, String recoveryType, String status) {
+        try {
+            return recoveryService.listRecoveryEvents(paperRunId, recoveryType, status);
+        } catch (IllegalArgumentException ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            HttpStatus httpStatus =
+                    (msg.startsWith("invalid recovery"))
+                            ? HttpStatus.BAD_REQUEST
+                            : HttpStatus.NOT_FOUND;
+            throw new ResponseStatusException(httpStatus, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunStabilityCheck generateStabilityCheck(
+            PaperRunStabilityCheckGenerateCommand command) {
+        try {
+            return stabilityCheckService.generate(command);
+        } catch (IllegalArgumentException ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            HttpStatus httpStatus =
+                    (msg.startsWith("invalid stability") || msg.startsWith("checkWindow"))
+                            ? HttpStatus.BAD_REQUEST
+                            : HttpStatus.NOT_FOUND;
+            throw new ResponseStatusException(httpStatus, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunStabilityCheck getStabilityCheckById(String stabilityCheckId) {
+        return getStabilityCheckById(null, stabilityCheckId);
+    }
+
+    /** 把HTTP父路径带到业务校验层，状态变更前验证实际归属，不在返回结果后补验。 */
+    public PaperRunStabilityCheck getStabilityCheckById(
+            String paperRunId, String stabilityCheckId) {
+        try {
+            return stabilityCheckService.getById(paperRunId, stabilityCheckId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+
+    public List<PaperRunStabilityCheck> listStabilityChecks(String paperRunId, String status) {
+        try {
+            return stabilityCheckService.list(paperRunId, status);
+        } catch (IllegalArgumentException ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "";
+            HttpStatus httpStatus =
+                    msg.startsWith("invalid stability")
+                            ? HttpStatus.BAD_REQUEST
+                            : HttpStatus.NOT_FOUND;
+            throw new ResponseStatusException(httpStatus, ex.getMessage(), ex);
+        }
+    }
+
+    public PaperRunMonitorRunService.MonitorRunOnceResult runMonitorOnce(String paperRunId) {
+        try {
+            return monitorRunService.runOnce(paperRunId);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage(), ex);
+        }
+    }
+}

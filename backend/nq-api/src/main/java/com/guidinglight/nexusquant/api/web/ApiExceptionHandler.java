@@ -1,0 +1,615 @@
+package com.guidinglight.nexusquant.api.web;
+
+import com.guidinglight.nexusquant.account.application.exception.AccountCommandIdentityConflictException;
+import com.guidinglight.nexusquant.account.application.exception.CredentialOperationIdentityException;
+import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountCredentialNotFoundException;
+import com.guidinglight.nexusquant.account.application.exception.ExchangeAccountNotFoundException;
+import com.guidinglight.nexusquant.account.domain.AccountTradeEnvironmentException;
+import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
+import com.guidinglight.nexusquant.api.web.dto.ApiFieldError;
+import com.guidinglight.nexusquant.api.web.model.ApiErrorIdentity;
+import com.guidinglight.nexusquant.auth.application.exception.AdminNotInitializedException;
+import com.guidinglight.nexusquant.common.trace.TraceIdContext;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
+import com.guidinglight.nexusquant.marketdata.application.exception.PriceEventSourceConflictException;
+import com.guidinglight.nexusquant.scheduler.control.ScheduledJobOperationConflictException;
+import com.guidinglight.nexusquant.strategy.application.exception.StrategyRunReadNotFoundException;
+import com.guidinglight.nexusquant.strategy.application.exception.StrategyScheduleCreationConflictException;
+import com.guidinglight.nexusquant.strategy.application.shadowrun.exception.ShadowRunReadOnlyNotFoundException;
+import com.guidinglight.nexusquant.strategy.domain.shadowrun.ShadowRunIdempotencyConflictException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.exception.AdmissionGuardUninitializedException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.exception.AdmissionStaleException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.exception.ShadowRunCreationEvidenceException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.exception.ShadowRunMaterializationAuthorizationException;
+import com.guidinglight.nexusquant.strategy.strategyrelease.application.exception.ShadowRunMaterializationRejectedException;
+import com.guidinglight.nexusquant.trading.application.exception.OrderVersionConflictException;
+import com.guidinglight.nexusquant.validationreview.domain.ValidationReviewException;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Locale;
+
+/**
+ * ApiExceptionHandler 统一处理 `nq-api` 的对外异常映射。
+ * <p>
+ * Why:
+ * Step 2 要把参数错误、业务拒绝、状态冲突与系统错误统一输出成稳定结构，
+ * 避免各个 Controller 自己拼装 `ResponseEntity` 或散落的异常格式。
+ */
+@RestControllerAdvice
+public class ApiExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
+
+    /** 数据库只给出稳定拒绝类别；不把 SQL、约束名或其他租户的对象细节返回客户端。 */
+    @ExceptionHandler(org.springframework.dao.DataAccessException.class)
+    public ResponseEntity<ApiErrorResponse> handleDatabaseBoundary(
+            org.springframework.dao.DataAccessException failure, HttpServletRequest request) {
+        String detail=String.valueOf(failure.getMostSpecificCause().getMessage());
+        String code=null;
+        for (String candidate : List.of("REGISTRATION_ID_CONFLICT","CAPACITY_LIMIT","TENANT_SUSPENDED","TENANT_EXECUTION_EPOCH_STALE","TENANT_ACCESS_DENIED","RUN_NOT_FOUND")) {
+            if(detail.contains(candidate)) {code=candidate;break;}
+        }
+        if(code==null) return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(handleException(failure,request));
+        HttpStatus status=code.equals("RUN_NOT_FOUND")?HttpStatus.NOT_FOUND:
+                code.equals("TENANT_ACCESS_DENIED")?HttpStatus.FORBIDDEN:HttpStatus.CONFLICT;
+        return ResponseEntity.status(status).body(build(status,code,code,request,List.of()));
+    }
+
+    /** 必填操作编号缺失属于请求错误；不能误报500并诱导客户端按未知结果重复创建。 */
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrorResponse handleMissingRequestHeader(
+            MissingRequestHeaderException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.BAD_REQUEST,
+                "MISSING_REQUEST_HEADER",
+                "required request header is missing",
+                request,
+                List.of(new ApiFieldError(ex.getHeaderName(), null, "required header is missing")));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrorResponse handleParameterTypeMismatch(
+            MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.BAD_REQUEST,
+                "INVALID_PARAMETER",
+                "request parameter has an invalid type",
+                request,
+                List.of(new ApiFieldError(ex.getName(), null, "invalid parameter type")));
+    }
+
+    @ExceptionHandler(AccountCommandIdentityConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleAccountCommandIdentityConflict(
+            Exception ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.CONFLICT,
+                "ACCOUNT_COMMAND_IDENTITY_CONFLICT",
+                "account command identity was already used for different input",
+                request,
+                List.of());
+    }
+
+    /**
+     * 请求方法不受支持属于客户端错误；保留允许方法，避免被通用捕获误报为500。
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiErrorResponse> handleMethodNotSupported(
+            HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        var supported = ex.getSupportedHttpMethods();
+        var response = ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED);
+        if (supported != null) response.allow(supported.toArray(HttpMethod[]::new));
+        return response.body(
+                build(
+                        HttpStatus.METHOD_NOT_ALLOWED,
+                        "METHOD_NOT_ALLOWED",
+                        "request method is not supported",
+                        request,
+                        List.of()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrorResponse handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
+        List<ApiFieldError> fieldErrors =
+                ex.getBindingResult().getFieldErrors().stream().map(this::toFieldError).toList();
+        return build(
+                HttpStatus.BAD_REQUEST,
+                "VALIDATION_ERROR",
+                "request validation failed",
+                request,
+                fieldErrors);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrorResponse handleConstraintViolation(
+            ConstraintViolationException ex, HttpServletRequest request) {
+        List<ApiFieldError> fieldErrors =
+                ex.getConstraintViolations().stream()
+                        .map(
+                                violation ->
+                                        new ApiFieldError(
+                                                extractLeafNode(
+                                                        violation.getPropertyPath() == null
+                                                                ? null
+                                                                : violation
+                                                                        .getPropertyPath()
+                                                                        .toString()),
+                                                sensitiveField(
+                                                                violation.getPropertyPath() == null
+                                                                        ? null
+                                                                        : violation
+                                                                                .getPropertyPath()
+                                                                                .toString())
+                                                        ? null
+                                                        : safeRejectedValue(
+                                                                violation.getInvalidValue()),
+                                                violation.getMessage()))
+                        .toList();
+        return build(
+                HttpStatus.BAD_REQUEST,
+                "VALIDATION_ERROR",
+                "request validation failed",
+                request,
+                fieldErrors);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrorResponse handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.BAD_REQUEST,
+                "MALFORMED_REQUEST",
+                "request body is missing or malformed",
+                request,
+                List.of());
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrorResponse handleMissingServletRequestParameter(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.BAD_REQUEST,
+                "MISSING_PARAMETER",
+                ex.getParameterName() + " parameter is required",
+                request,
+                List.of(new ApiFieldError(ex.getParameterName(), null, "parameter is required")));
+    }
+
+    @ExceptionHandler(AccountTradeEnvironmentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrorResponse handleAccountTradeEnvironment(
+            AccountTradeEnvironmentException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ex.code(), ex.getMessage(), request, List.of());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiErrorResponse handleIllegalArgumentException(
+            IllegalArgumentException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, "BAD_REQUEST", ex.getMessage(), request, List.of());
+    }
+
+    /**
+     * 来源重放不兼容时返回明确冲突，不覆盖已记录事实，也不改写行情版本。
+     */
+    @ExceptionHandler(PriceEventSourceConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handlePriceEventSourceConflict(
+            PriceEventSourceConflictException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.CONFLICT,
+                "PRICE_EVENT_SOURCE_CONFLICT",
+                ex.getMessage(),
+                request,
+                List.of());
+    }
+
+    /**
+     * 精确识别订单准备的代际冲突，不依据异常文本匹配，也不向 API 泄露订单内部信息。
+     */
+    @ExceptionHandler(OrderVersionConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleOrderVersionConflict(
+            OrderVersionConflictException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.CONFLICT,
+                "STATE_CONFLICT",
+                "order changed concurrently; refresh the latest state before trying again",
+                request,
+                List.of(),
+                ApiErrorIdentity.ORDER_VERSION_CONFLICT);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleIllegalStateException(
+            IllegalStateException ex, HttpServletRequest request) {
+        return build(HttpStatus.CONFLICT, "STATE_CONFLICT", ex.getMessage(), request, List.of());
+    }
+
+    /** 同编号冲突和事务内未完成保留原身份，响应不暴露他人的创建输入。 */
+    @ExceptionHandler(StrategyScheduleCreationConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleStrategyScheduleCreationConflict(
+            StrategyScheduleCreationConflictException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.CONFLICT,
+                ex.code(),
+                "schedule creation conflicts with original identity or is still in progress",
+                request,
+                List.of());
+    }
+
+    /** 原调度身份冲突保留专用代码，客户端必须继续查询原请求而不能丢弃UUID。 */
+    @ExceptionHandler(ScheduledJobOperationConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleScheduledOperationConflict(
+            ScheduledJobOperationConflictException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.CONFLICT,
+                ex.code(),
+                "scheduler operation conflicts with original identity or pending execution",
+                request,
+                List.of());
+    }
+
+    @ExceptionHandler(CredentialOperationIdentityException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleCredentialOperationIdentity(
+            CredentialOperationIdentityException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.CONFLICT,
+                "CREDENTIAL_OPERATION_IDENTITY_CONFLICT",
+                ex.getMessage(),
+                request,
+                List.of());
+    }
+
+    /**
+     * 将人工复核 domain failures 映射到既有 ApiErrorResponse，不创建第二套 error envelope。
+     */
+    @ExceptionHandler(ValidationReviewException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidationReviewException(
+            ValidationReviewException ex, HttpServletRequest request) {
+        HttpStatus status =
+                switch (ex.errorCode()) {
+                    case "REVIEW_CASE_NOT_FOUND" -> HttpStatus.NOT_FOUND;
+                    case "REVIEW_ACTION_FORBIDDEN" -> HttpStatus.FORBIDDEN;
+                    case "REVIEW_CASE_VERSION_CONFLICT",
+                                    "REVIEW_STATE_TRANSITION_INVALID",
+                                    "REVIEW_CASE_TERMINAL_STATE_LOCKED",
+                                    "IDEMPOTENCY_KEY_REUSED" ->
+                            HttpStatus.CONFLICT;
+                    default -> HttpStatus.BAD_REQUEST;
+                };
+        return ResponseEntity.status(status)
+                .body(build(status, ex.errorCode(), ex.getMessage(), request, List.of()));
+    }
+
+    /**
+     * Shadow materialization 写权限缺失时返回稳定 403，不暴露 actor 或 role payload。
+     */
+    @ExceptionHandler(ShadowRunMaterializationAuthorizationException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiErrorResponse handleShadowMaterializationAuthorization(
+            ShadowRunMaterializationAuthorizationException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.FORBIDDEN,
+                "SHADOW_MATERIALIZATION_FORBIDDEN",
+                "write permission required",
+                request,
+                List.of());
+    }
+
+    /** 原创建审计不可核实时保留结果未知，不回显持久化内容或诱导调用方另起创建。 */
+    @ExceptionHandler(ShadowRunCreationEvidenceException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ApiErrorResponse handleShadowCreationEvidence(
+            ShadowRunCreationEvidenceException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "SHADOW_CREATION_RESULT_UNAVAILABLE",
+                "Shadow creation result evidence is unavailable",
+                request,
+                List.of());
+    }
+
+    /**
+     * Admission 非 ELIGIBLE 时拒绝写入并返回稳定 422。
+     */
+    @ExceptionHandler(ShadowRunMaterializationRejectedException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ApiErrorResponse handleShadowMaterializationRejected(
+            ShadowRunMaterializationRejectedException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.UNPROCESSABLE_ENTITY,
+                "ADMISSION_BLOCKED",
+                "release is not eligible for Shadow materialization",
+                request,
+                List.of());
+    }
+
+    /**
+     * LIVE control-plane 拒绝使用稳定错误码，避免 JDBC/认证/凭证细节泄露为 500。
+     */
+    @ExceptionHandler(LiveControlException.class)
+    public ResponseEntity<ApiErrorResponse> handleLiveControlException(
+            LiveControlException ex, HttpServletRequest request) {
+        HttpStatus status =
+                switch (ex.code()) {
+                    case "LIVE_SESSION_NOT_FOUND", "EXECUTION_SCOPE_NOT_FOUND" ->
+                            HttpStatus.NOT_FOUND;
+                    case "TRUSTED_PREREQUISITE_OBSERVATION_UNAVAILABLE" ->
+                            HttpStatus.SERVICE_UNAVAILABLE;
+                    case "RISK_LIMIT_SET_OPERATOR_ROLE_REQUIRED",
+                                    "LIVE_SESSION_OPERATOR_ROLE_REQUIRED",
+                                    "LIVE_APPROVER_ROLE_REQUIRED",
+                                    "EXECUTION_APPROVAL_FORBIDDEN",
+                                    "EXECUTION_PREFLIGHT_OPERATOR_ROLE_REQUIRED" ->
+                            HttpStatus.FORBIDDEN;
+                    case "EXECUTION_MATERIALIZATION_IDEMPOTENCY_CONFLICT",
+                                    "EXECUTION_SCOPE_MATERIALIZATION_CONFLICT",
+                                    "PREREQUISITE_OBSERVATION_IDENTITY_CONFLICT",
+                                    "APPROVAL_ID_REUSED" ->
+                            HttpStatus.CONFLICT;
+                    default -> HttpStatus.UNPROCESSABLE_ENTITY;
+                };
+        return ResponseEntity.status(status)
+                .body(build(status, ex.code(), ex.getMessage(), request, List.of()));
+    }
+
+    /**
+     * facts generation 变化时返回稳定 409；不暴露 revision、fingerprint 或 SQL。
+     */
+    @ExceptionHandler(AdmissionStaleException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleAdmissionStale(
+            AdmissionStaleException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.CONFLICT,
+                "ADMISSION_STALE",
+                "admission facts changed",
+                request,
+                List.of());
+    }
+
+    /**
+     * verified identity 尚未完成 first-binding 时 fail-closed。
+     */
+    @ExceptionHandler(AdmissionGuardUninitializedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleAdmissionGuardUninitialized(
+            AdmissionGuardUninitializedException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.CONFLICT,
+                "ADMISSION_GUARD_UNINITIALIZED",
+                "release admission guard is not initialized",
+                request,
+                List.of());
+    }
+
+    /**
+     * 相同 command identity 绑定到不同 immutable provenance 时 fail-closed。
+     */
+    @ExceptionHandler(ShadowRunIdempotencyConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleShadowRunIdempotencyConflict(
+            ShadowRunIdempotencyConflictException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.CONFLICT,
+                ex.reasonCode(),
+                "idempotency identity conflict",
+                request,
+                List.of());
+    }
+
+    @ExceptionHandler(AdminNotInitializedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleAdminNotInitializedException(
+            AdminNotInitializedException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.CONFLICT, "ADMIN_NOT_INITIALIZED", ex.getMessage(), request, List.of());
+    }
+
+    @ExceptionHandler({
+        ExchangeAccountNotFoundException.class,
+        ExchangeAccountCredentialNotFoundException.class,
+        ShadowRunReadOnlyNotFoundException.class,
+        StrategyRunReadNotFoundException.class
+    })
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiErrorResponse handleResourceNotFound(
+            RuntimeException ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", ex.getMessage(), request, List.of());
+    }
+
+    @ExceptionHandler({
+        BadCredentialsException.class,
+        AuthenticationCredentialsNotFoundException.class
+    })
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiErrorResponse handleAuthenticationException(
+            Exception ex, HttpServletRequest request) {
+        return build(
+                HttpStatus.UNAUTHORIZED,
+                "UNAUTHORIZED",
+                "authentication required",
+                request,
+                List.of());
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiErrorResponse handleDisabledException(
+            DisabledException ex, HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, "FORBIDDEN", "account is disabled", request, List.of());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiErrorResponse handleAccessDeniedException(
+            AccessDeniedException ex, HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, "FORBIDDEN", "access denied", request, List.of());
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiErrorResponse> handleResponseStatusException(
+            ResponseStatusException ex, HttpServletRequest request) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        return ResponseEntity.status(status)
+                .body(build(status, mapCode(status), ex.getReason(), request, List.of()));
+    }
+
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiErrorResponse handleException(Exception ex, HttpServletRequest request) {
+        log.error(
+                "api_unhandled_exception path={} trace_id={}",
+                request.getRequestURI(),
+                resolveTraceId(request),
+                ex);
+        return build(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "INTERNAL_ERROR",
+                "internal server error",
+                request,
+                List.of());
+    }
+
+    private ApiFieldError toFieldError(FieldError fieldError) {
+        return new ApiFieldError(
+                fieldError.getField(),
+                sensitiveField(fieldError.getField())
+                        ? null
+                        : safeRejectedValue(fieldError.getRejectedValue()),
+                fieldError.getDefaultMessage());
+    }
+
+    private ApiErrorResponse build(
+            HttpStatus status,
+            String code,
+            String message,
+            HttpServletRequest request,
+            List<ApiFieldError> fieldErrors) {
+        return build(status, code, message, request, fieldErrors, null);
+    }
+
+    /**
+     * 仅已明确识别的异常附加身份，避免通用状态冲突被错误归类为订单冲突。
+     */
+    private ApiErrorResponse build(
+            HttpStatus status,
+            String code,
+            String message,
+            HttpServletRequest request,
+            List<ApiFieldError> fieldErrors,
+            ApiErrorIdentity identity) {
+        return new ApiErrorResponse(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                code,
+                message == null || message.isBlank() ? status.getReasonPhrase() : message,
+                request.getRequestURI(),
+                resolveTraceId(request),
+                fieldErrors,
+                identity == null ? null : identity.errorId(),
+                identity == null ? null : identity.errorKey());
+    }
+
+    private String mapCode(HttpStatus status) {
+        return switch (status) {
+            case BAD_REQUEST -> "BAD_REQUEST";
+            case NOT_FOUND -> "RESOURCE_NOT_FOUND";
+            case CONFLICT -> "STATE_CONFLICT";
+            case UNPROCESSABLE_ENTITY -> "BUSINESS_REJECTED";
+            default -> status.is5xxServerError() ? "INTERNAL_ERROR" : "API_ERROR";
+        };
+    }
+
+    private String extractLeafNode(String propertyPath) {
+        if (propertyPath == null || propertyPath.isBlank()) {
+            return "request";
+        }
+        int dotIndex = propertyPath.lastIndexOf('.');
+        int bracketIndex = propertyPath.lastIndexOf(']');
+        int separatorIndex = Math.max(dotIndex, bracketIndex);
+        if (separatorIndex < 0 || separatorIndex + 1 >= propertyPath.length()) {
+            return propertyPath;
+        }
+        String candidate = propertyPath.substring(separatorIndex + 1);
+        return candidate.startsWith(".") ? candidate.substring(1) : candidate;
+    }
+
+    private Object safeRejectedValue(Object rejectedValue) {
+        if (rejectedValue == null) {
+            return null;
+        }
+        if (rejectedValue instanceof Number || rejectedValue instanceof Boolean) {
+            return rejectedValue;
+        }
+        String text = String.valueOf(rejectedValue);
+        return text.length() <= 128 ? text : text.substring(0, 125) + "...";
+    }
+
+    /**
+     * 校验错误也不能把敏感输入回传；按字段语义判定，覆盖嵌套表单路径。
+     */
+    private boolean sensitiveField(String field) {
+        if (field == null) return false;
+        String leaf = field.substring(field.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT);
+        return leaf.contains("password")
+                || leaf.contains("secret")
+                || leaf.contains("token")
+                || leaf.equals("apikey")
+                || leaf.equals("passphrase")
+                || leaf.equals("privatekeypem");
+    }
+
+    private String resolveTraceId(HttpServletRequest request) {
+        Object requestTraceId = request.getAttribute(TraceIdContext.TRACE_ID_REQUEST_ATTRIBUTE);
+        if (requestTraceId instanceof String requestTrace && !requestTrace.isBlank()) {
+            return requestTrace;
+        }
+        String traceId = TraceIdContext.get();
+        if (traceId != null && !traceId.isBlank()) {
+            return traceId;
+        }
+        String mdcTraceId = MDC.get(TraceIdContext.TRACE_ID_KEY);
+        return (mdcTraceId == null || mdcTraceId.isBlank()) ? null : mdcTraceId;
+    }
+}

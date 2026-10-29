@@ -1,0 +1,31 @@
+export interface LoginRequest {
+    username: string;
+    password: string;
+}
+
+export interface LoginResponse {
+    sessionId?: string;
+    idleExpiresAt?: string;
+    sessionExpiresAt?: string;
+    serverTime?: string;
+    serverTimeOffsetMs?: number;
+    accessToken: string;
+    tokenType: string;
+    expiresIn: number;
+    expiresAt: string;
+    username: string;
+    roles: string[];
+    mustChangePassword: boolean;
+}
+
+export interface CurrentUser {
+    userId: number;
+    username: string;
+    roles: string[];
+    mustChangePassword: boolean;
+    authenticated: boolean;
+    defaultExchangeAccountId: number | null;
+    defaultExchangeCode: string | null;
+    defaultTradeEnv: string | null;
+    defaultAccountAlias: string | null;
+}
