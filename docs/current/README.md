@@ -7,7 +7,7 @@
 <!-- nq-current-summary:start -->
 - 最近冻结的业务阶段已接受并打 tag；固定身份及 CI 以 [STATUS.md](STATUS.md) 为准，13-role [strict archive](../gates/gate-z/README.md) 保留冻结前历史快照。
 - v1.0.0、v1.0.1、v1.0.2 已正式发布；固定 RC3 / V49 对应 [v1.0.2 Release](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.2)（427705563）。Windows 正式资格、v1.0.1 普通升级及自动失败恢复已通过；Linux 仅低内存 600 秒短时资格，正式支持与长期稳定性未验证。
-- v1.0.2 发行身份及保留限制见 [STATUS.md](STATUS.md)；下一阶段为尚未启动的 v1.0.3 规划 `NQ-V103-PLAN`，不授予功能实施权限，产品顺序见 [ROADMAP.md](ROADMAP.md)。
+- v1.0.2 发行身份及保留限制见 [STATUS.md](STATUS.md)；下一动作为尚未启动的 v1.0.3 规划 `NQ-V103-PLAN`，不授予功能实施权限，产品顺序见 [ROADMAP.md](ROADMAP.md)。
 - accepted batch、work batch 与唯一 next action 从 [STATUS.md](STATUS.md) 的机器区块读取；[ROADMAP.md](ROADMAP.md) 解释后续工作。
 - 历史范围与设计输入见 [归档计划](../gates/gate-z/GATEZ_PLAN.md)；下一动作由本 STATUS 的 `next_action` 决定。
 - GateY pilot 的验收事实见 [STATUS.md](STATUS.md)；该历史验收不授予再次执行权。
