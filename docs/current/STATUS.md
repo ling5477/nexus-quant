@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=775abacd3e1d4268e2b881b2223b73ac246f0fd3
 accepted_batch_acceptance_head=73604dd0543bee0c536bd5a6065b8646afa4e346
 accepted_batch_ci_run=40529901477
-work_batch=NQ-V102-RELEASE-READINESS
-work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
+work_batch=NQ-V103-PLANNING
+work_batch_status=NOT_STARTED
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-V102-READINESS-COMMIT-AWAITING-USER-AUTHORIZATION
+next_action=NQ-V103-PLAN
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,15 +31,28 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
-## 当前 v1.0.2 发行候选准备
+## 当前正式发行与下一阶段
 
-v1.0.1已于2026-10-25正式发布，Self-Hosted / Windows 11 amd64 / Docker Desktop Linux Containers / PG16.15 / V47。Tag/Snapshot、包SOURCE_SHA和签名工作流分别记录，历史资格以正式Release和原证据为准，不转移给新候选。
+NQ v1.0.0、v1.0.1、v1.0.2 均为 RELEASED。v1.0.2 已于 2026-10-29T10:15:34Z 正式发布：[NexusQuant v1.0.2](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.2)，Release ID=`427705563`，draft=false、prerelease=false。本次发行后文档同步不改变任何已发布身份。
 
-五阶段已集成：研究数据集产品化、现货策略执行扩展、持久化实验编排、Walk-Forward与稳健性分析、回测与Continuous SIM只读比较。最近[PR #89](https://github.com/ling5477/nexus-quant/pull/89)合并至`73604dd0543bee0c536bd5a6065b8646afa4e346`，合并后[CI 40529901477](https://github.com/ling5477/nexus-quant/actions/runs/40529901477)为该准确HEAD的9/9成功；仅属于集成基线。原各阶段实施报告保留各自执行时点结论。
+| 身份 | 固定值 |
+| --- | --- |
+| v1.0.2 Source Commit / 包 SOURCE_SHA | `e4eca0b23c769602999043b3b95b8777a33bd285` |
+| Source Tree | `cfab9f904dbefdca4dbe6eefd1bc88d568646451` |
+| Source CI | [40720379547](https://github.com/ling5477/nexus-quant/actions/runs/40720379547) / exact source head / 9 of 9 SUCCESS |
+| 无父 Release Snapshot / Tree | `6b5ddcfac9f9ac02e343975ffe2d061df9785318` / `67c74aed5613c3769ed6621a404fe186c488e873`（2211 文件） |
+| Annotated Tag / Tag Object | `v1.0.2` / `f078dad1e4122eba55179c5bb426a1134df60924`，peeled target 为上述 Snapshot |
+| 发行分支 / schema | `release/1.0.2` / V49 |
+| RC3 ZIP SHA256 | `158b7ccc42fb333f4031ceae12fc756ea1f340603ca9aef2f92a63946c67c048` |
+| Package Manifest SHA256 | `74406593acccdc452004067a5877a080d7dff596d9417f0af60e54aceb200d5f` |
 
-当前准备源码v1.0.2 / V49，补齐正式逐文件白名单并保留v1.0.0历史support matrix。非空V47→V48→V49及受限权限、逻辑备份恢复通过本地隔离验证。普通更新构建须显式复用v1.0.1可信原包的不可变PG镜像及config digest；当前浮动PG标签与原包不同，不能用于推定兼容。详见[本轮报告](evidence/NQ_V102_RELEASE_READINESS.md)。本候选尚未Commit、不可变导出或构建正式包，新安装、实际包升级、包级备份恢复及回滚均NOT_RUN；不重跑历史全量审计或72小时。独立审查与最终源码准备结论以本轮报告为准。
+V102-01～05 已完成；顶部 accepted_batch 仍保留 V102-05 的业务实施与接受 CI 身份，不替换成发行 Snapshot 或本次文档提交。固定 RC3 已取得正式准入：Windows 新安装、v1.0.1/V47→v1.0.2/V49 普通升级、历史数据保留、包级备份恢复、主动回滚、真实失败更新自动恢复均 PASS。原 update 失败返回 exit1，原安装器自动恢复 V47 及原资产，122 张旧表/32 张业务表恢复检查点一致，pending 清除、成功回执、健康和登录通过；不是用主动 rollback 替代自动恢复。证据索引及适用范围见 [TESTING](TESTING.md) 的 2026-10-29 发行收尾追加记录。
 
-本轮停在精确暂存；后续Git交付以及准确候选包资格均需另行明确授权。Canonical Order/Trade/Ledger保持既有事实源；LIVE、真实交易所写入及自动策略发布关闭。Public Demo公网、Linux/macOS、ARM64和v1.0.0直接升级不在本轮范围。
+正式范围仅 Self-Hosted / Windows 11 amd64 / Docker Desktop Linux Containers / PostgreSQL 16（本包 16.15）/ V49；支持 v1.0.1 普通更新，不支持 v1.0.0 直接普通更新到 v1.0.2。四项公开资产大小及完整 SHA256 已复核；provenance 为 UNSIGNED_RELEASE_SOURCE_MAPPING，不是独立数字签名。Snapshot CI=NOT_RUN；上述 9/9 是 Source CI，本次开发文档 CI 另行绑定实际提交。
+
+保留限制：Linux 低内存实际安装、一次重启和 600 秒运行仅 SCOPED_PASS，正式 Linux 支持 NOT_QUALIFIED、长期稳定性 NOT_VERIFIED。低于 4 GiB 为警告→LIGHT→继续（768m/512m/128m），不保证长期稳定性；既存 3.99 GiB 硬拒绝断言为有证据的非阻断旧预期，原失败保留，后续可定向修正测试，本轮不改测试。历史 C4 原审查 NOT_ACCEPTED / EVIDENCE_GAPS、所有者例外及 72 小时重跑豁免均保留。Public Demo 不包含在本次正式发行中，LIVE=DISABLED、Kill Switch=ENGAGED，不开放真实资金自动交易。
+
+v1.0.2 开发与产品发布主线已完成；本次 docs-only Git 交付的 PR/Commit/CI 由仓库外收尾报告记录，未完成前不宣称该文档交付已合并。下一阶段仅为 `NQ-V103-PLANNING / NOT_STARTED`，唯一下一动作 `NQ-V103-PLAN`，不代表授权制定或实施 v1.0.3 功能。以下旧阶段文字只表示对应历史时点，不覆盖当前正式发行状态。
 
 以下发布准备文字为2026-10-20历史记录，不重新触发发布审计，也不覆盖当前迭代。历史 Gate、C4 原审查与例外决定不变，LIVE保持关闭。
 
