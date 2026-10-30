@@ -67,7 +67,13 @@
 
 ## PR / CI / Merge Commit / Cleanup
 
-独立审查完成，准备PR交付；远端CI尚未执行。现有stage-asset登记只刷新ci.yml旧例外摘要，已按独立核对提案SHA256 `64c4b401eada6fdf4f7c4a46c63ad2283180d261903d3fda42867f524f65ddcd` apply，guard与边界不变。必要CI必须准确head 9/9，普通合并后再次准确merge head 9/9，之后精确清理任务分支及专属临时资源。完整最终身份在仓库外 `E:/Project/NQ_V103_02_FORWARD_SIM_EVALUATION.md` 记录，避免自引用CI身份。
+- Implementation：`dff5b13b1debcaa8485970bcea7988716ed19bf9`；后续仅修复EOF空行及一处提示文案namespace，保留独立审查raw hash与差异。
+- [PR #95](https://github.com/ling5477/nexus-quant/pull/95)；功能接受head=`f8fd3a45385708e72436c4ac57c3565b8f7e627d`，[CI 41029376114](https://github.com/ling5477/nexus-quant/actions/runs/41029376114) 为exact-head / pull_request / completed / success / 9 of 9 SUCCESS。
+- 首轮 `e765be45f47e404a9fe49fc7d0b282512efdb4b4 / CI 41026599032` 因一处 `performanceStatistics.afterCoverage` 翻译namespace失败，原1/721失败保留；修正为 `common:performanceStatistics.afterCoverage` 后，本地33/33与新CI全绿，未修改断言或经济语义。
+- 现有stage-asset登记只刷新ci.yml旧例外摘要，已按独立核对提案SHA256 `64c4b401eada6fdf4f7c4a46c63ad2283180d261903d3fda42867f524f65ddcd` apply，guard与边界不变。
+- 本次文档同步后的最终PR head及merge commit仍需各自必要CI，不能用功能接受pair替代。完整最终身份在仓库外 `E:/Project/NQ_V103_02_FORWARD_SIM_EVALUATION.md` 记录，避免自引用CI身份。
+- 浏览器Spring进程及Vite已停止；关键证据与任务PG原始状态保留。Git任务分支待合并后exact-head CI成功再精确清理。
+
 
 ## Known Limitations / Rollback
 

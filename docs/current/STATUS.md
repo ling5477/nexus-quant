@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-V103-01-HISTORICAL-RESEARCH-EXPANSION
+accepted_batch=NQ-V103-02-FORWARD-SIM-EVALUATION
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=ae939aabd96b4245497650e9dda0e1a04690475d
-accepted_batch_acceptance_head=68d757748f2958fef501996a0bf0d3dac24df869
-accepted_batch_ci_run=41004482332
-work_batch=NQ-V103-02-FORWARD-SIM-EVALUATION
+accepted_batch_implementation_commit=dff5b13b1debcaa8485970bcea7988716ed19bf9
+accepted_batch_acceptance_head=f8fd3a45385708e72436c4ac57c3565b8f7e627d
+accepted_batch_ci_run=41029376114
+work_batch=NQ-V103-03-FACTOR-RESEARCH-FOUNDATION
 work_batch_status=NOT_STARTED
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-V103-02-IMPLEMENTATION
+next_action=NQ-V103-03-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -54,7 +54,9 @@ V102-01～05 已完成；顶部 accepted_batch 记录最新开发功能的实施
 
 v1.0.2 开发与产品发布主线已完成。NQ-V103-01 有界长历史研究的功能候选 `68d757748f2958fef501996a0bf0d3dac24df869` 已通过 [CI 41004482332](https://github.com/ling5477/nexus-quant/actions/runs/41004482332) 的 9/9 必要检查：OKX SPOT BTC/ETH 1h 的 1～180 UTC 日、最多4320根、V2不可变冻结引用、原正式回测/实验和90/180日预设WF。开发 schema 为 V51，正式发行仍为 V49。旧720输入与Continuous SIM边界保持，未自动激活、发布或下单；详见[实施证据](evidence/NQ_V103_01_HISTORICAL_RESEARCH_EXPANSION.md)。
 
-上述接受身份属于已验证功能候选；同一 PR #94 的最终文档 head、合并及合并后 CI 另行绑定实际身份，未完成前不宣称 Git 交付完成。下一任务 `NQ-V103-02-FORWARD-SIM-EVALUATION / NOT_STARTED`；需后续任务指令，本任务到01交付为止，不自动执行02或03。以下旧阶段文字只表示对应历史时点，不覆盖当前正式发行及开发状态。
+NQ-V103-01 已由 PR #94 交付，当前02的开发基线为 `96e011cb3b7edbba3e62dd85ad0b7fc2469a74b7`。NQ-V103-02 前向 SIM 评价与人工复盘已实现：功能接受 head=`f8fd3a45385708e72436c4ac57c3565b8f7e627d`，准确 [CI 41029376114](https://github.com/ling5477/nexus-quant/actions/runs/41029376114) 为9/9 SUCCESS。原 canonical 分析增加有界1～90日UTC/asOf观察、覆盖与逐项指标状态；V52只持久化研究目标及追加人工复盘，STOP不影响SIM执行。真实隔离PG、Chrome闭环、历史研究/SIM边界回归及一次独立定向审查均通过；合成时间推进不代表真实长期观察。开发schema为V52，正式v1.0.2/V49不变，详见[02实施证据](evidence/NQ_V103_02_FORWARD_SIM_EVALUATION.md)。
+
+上述接受pair属于已验证功能候选；同一 [PR #95](https://github.com/ling5477/nexus-quant/pull/95) 的最终文档head、合并与合并后CI另行绑定实际身份，不用旧pair替代。下一任务 `NQ-V103-03-FACTOR-RESEARCH-FOUNDATION / NOT_STARTED`，需后续指令，本任务到02交付为止，不自动执行03。以下旧阶段文字只表示对应历史时点，不覆盖当前正式发行及开发状态。
 
 以下发布准备文字为2026-10-20历史记录，不重新触发发布审计，也不覆盖当前迭代。历史 Gate、C4 原审查与例外决定不变，LIVE保持关闭。
 
