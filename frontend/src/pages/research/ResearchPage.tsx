@@ -8,6 +8,7 @@ import {configurationSchema} from '@/components/configuration/object-configurati
 import {businessColumns} from '@/components/layout/business-columns';
 import {useAuthStore} from '@/store/auth-store';
 import {CreationRecoveryPanel} from '@/features/research/components/CreationRecoveryPanel';
+import {FactorResearchPanel} from '@/features/research/components/FactorResearchPanel';
 import {MarketdataDatasetPicker} from '@/features/marketdata/components/MarketdataDatasetPicker';
 import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
@@ -217,6 +218,7 @@ export function ResearchPage() {
                     <Alert type="info" showIcon message={t('pages:researchReadOnlyRole')} />
                 )}
                 <CreationRecoveryPanel kinds={['RESEARCH']} />
+                <FactorResearchPanel />
                 <Card className="page-card" bordered={false}>
                     <NqPageHeader
                         title={t('pages:researchConfigurations')}

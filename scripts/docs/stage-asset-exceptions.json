@@ -747,7 +747,7 @@
     },
     {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/port/ResearchDatasetVersionPort.java",
-      "sha256": "861e5c6bfc1763de09f421b8e3641f7994cc4f5edbe9031e54e66f43c1dd9f67",
+      "sha256": "3ba6edfbe6503411ccd67bfd123ff178372442023a7e8580c6e7a4d07f641eaf",
       "kind": "DOMAIN_VOCABULARY",
       "reason": "freeze表示有界研究数据的不可变内容快照及其回归断言，不是开发阶段、profile或交易权限。",
       "owner": "研究数据与回测合同维护者",
@@ -771,7 +771,7 @@
     },
     {
       "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/marketdata/infra/jdbc/JdbcResearchDatasetVersionPort.java",
-      "sha256": "fae904d536c5da471895d1ff83115b0ed56eb1b118b0532c560cacece76918b2",
+      "sha256": "0305debec303bdce3b58f9db4d3af0ce83c3303e799de6d7d8f25c8418667784",
       "kind": "DOMAIN_VOCABULARY",
       "reason": "freeze表示有界研究数据的不可变内容快照及其回归断言，不是开发阶段、profile或交易权限。",
       "owner": "研究数据与回测合同维护者",

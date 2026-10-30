@@ -226,6 +226,32 @@ public class JdbcResearchDatasetVersionPort implements ResearchDatasetVersionPor
         return identity;
     }
 
+    @Override
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ, timeout = 10)
+    public JsonNode export(UUID datasetId) {
+        owner();
+        JsonNode reference = find(datasetId)
+                .orElseThrow(() -> new IllegalStateException("RESEARCH_VERSION_NOT_FOUND"));
+        UUID version = UUID.fromString(reference.path("datasetVersionId").asText());
+        String manifestJson = jdbc.queryForObject(
+                "SELECT manifest_json FROM research_dataset_versions WHERE dataset_version_id=?", String.class, version);
+        ObjectNode dataset = (ObjectNode) parse(manifestJson).path("dataset").deepCopy();
+        dataset.put("snapshotAt", reference.path("frozenAt").asText());
+        dataset.set("frozenInput", reference);
+        // 使用原读取器验证全部块与双摘要；同一快照内读取，绝不回读可变行情或创建版本。
+        read(dataset);
+        ObjectNode result = mapper.createObjectNode();
+        result.put("schemaVersion", "frozen-research-export.v1");
+        result.set("dataset", dataset);
+        result.put("manifestJson", manifestJson);
+        ArrayNode chunks = result.putArray("chunkJson");
+        jdbc.query("SELECT canonical_json FROM research_dataset_chunks WHERE dataset_version_id=? ORDER BY ordinal LIMIT ?",
+                (org.springframework.jdbc.core.RowCallbackHandler) row -> chunks.add(row.getString(1)), version, MAX_CHUNKS + 1);
+        if (bytes(result.toString()) > ResearchHistoricalInput.MAX_TOTAL_BYTES)
+            throw new IllegalStateException("RESEARCH_EXPORT_BYTE_LIMIT_EXCEEDED");
+        return result;
+    }
+
     private ObjectNode datasetIdentity(JsonNode dataset) {
         ObjectNode identity = mapper.createObjectNode();
         for (String field : List.of("datasetId", "provider", "resourcePath", "exchangeCode", "marketType",
