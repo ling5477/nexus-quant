@@ -164,7 +164,7 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
                     <NqMetricCard label={t('common:accountPerformance.drawdownRatio')} value={percent(performance.maxDrawdownRatio)}/>
                 </div>
                 <PerformanceStatisticsCards sharpe={performance.sharpe} outcomes={performance.outcomes}/>
-                {performance.tradesAfterCoverage > 0 && <Alert type="warning" message={t('performanceStatistics.afterCoverage', {count: performance.tradesAfterCoverage})}/>}
+                {performance.tradesAfterCoverage > 0 && <Alert type="warning" message={t('common:performanceStatistics.afterCoverage', {count: performance.tradesAfterCoverage})}/>}
             </>}
             {evaluation && <>
                 <div className="sim-analysis-metrics">{([
