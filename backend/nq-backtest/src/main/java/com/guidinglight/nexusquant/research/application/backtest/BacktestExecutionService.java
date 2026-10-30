@@ -20,6 +20,7 @@ import com.guidinglight.nexusquant.marketdata.domain.FrozenHistoricalInput;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalDatasetSpec;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
+import com.guidinglight.nexusquant.marketdata.domain.port.ResearchDatasetVersionPort;
 import com.guidinglight.nexusquant.research.application.BacktestRunService;
 import com.guidinglight.nexusquant.research.application.ResearchConfigService;
 import com.guidinglight.nexusquant.research.application.config.BacktestConfigService;
@@ -94,6 +95,13 @@ public class BacktestExecutionService {
     private final Clock clock;
     private ResearchFeeSourcePort feeSource = ResearchFeeSourcePort.disabled();
     private DiscountAssetPriceService discountPriceService;
+    private ResearchDatasetVersionPort researchDatasetVersions;
+
+    /** 长研究输入必须由不可变版本仓储解析；缺装配不能退回可变共享行情。 */
+    @Autowired
+    private void bindResearchDatasetVersions(ObjectProvider<ResearchDatasetVersionPort> provider) {
+        researchDatasetVersions = provider.getIfAvailable();
+    }
 
     /** 独立构造默认拒绝私有来源；正式容器才注入认证和不可变观察的解析合同。 */
     @Autowired
@@ -270,7 +278,13 @@ public class BacktestExecutionService {
                 if (!executionRequest.startTime().equals(Instant.parse(datasetSnapshot.path("startTime").asText()))
                         || !executionRequest.endTime().equals(Instant.parse(datasetSnapshot.path("endTime").asText())))
                     throw new IllegalStateException("FROZEN_INPUT_EXECUTION_WINDOW_MISMATCH");
-                bars = FrozenHistoricalInput.read(datasetSnapshot, objectMapper);
+                if ("HISTORICAL_RESEARCH_INPUT_V2".equals(datasetSnapshot.path("frozenInput").path("version").asText())) {
+                    if (researchDatasetVersions == null)
+                        throw new IllegalStateException("RESEARCH_DATASET_VERSION_SOURCE_UNAVAILABLE");
+                    bars = researchDatasetVersions.read(datasetSnapshot);
+                } else {
+                    bars = FrozenHistoricalInput.read(datasetSnapshot, objectMapper);
+                }
             } else {
                 bars = historicalMarketDataPort.loadBars(query);
                 if (frozenVersion && "db".equalsIgnoreCase(executionRequest.datasetSpec().provider())) {
@@ -298,7 +312,9 @@ public class BacktestExecutionService {
                     executionRequest, executionContext, bars.get(window.startBar()).openTime());
 
             if (frozenVersion) {
-                inputIdentity = SpotBarIdentity.capture(bars.subList(0, window.endBar()), objectMapper);
+                inputIdentity = "HISTORICAL_RESEARCH_INPUT_V2".equals(datasetSnapshot.path("frozenInput").path("version").asText())
+                        ? SpotBarIdentity.captureResearch(bars.subList(0, window.endBar()), objectMapper)
+                        : SpotBarIdentity.capture(bars.subList(0, window.endBar()), objectMapper);
                 if ("public-capture".equals(executionRequest.datasetSpec().provider())
                         && !inputIdentity
                                 .sha256()
@@ -557,6 +573,8 @@ public class BacktestExecutionService {
         JsonNode version = readJson(run.strategyVersionSnapshotJson());
         SpotTargetStrategy strategy =
                 SpotTargetStrategy.fromSnapshot(run.strategyVersionSnapshotJson(), objectMapper);
+        // 完整可见前缀只校验一次；逐步指标最多需要此前200根，长研究不重复扫描全部历史。
+        strategy.validate(bars.subList(0, window.endBar()));
         if (!run.strategyVersionId().equals(strategy.strategyVersionId())
                 || !version.path("paramSnapshotJson").equals(readJson(run.paramSnapshotJson()))) {
             throw new IllegalStateException("FROZEN_STRATEGY_SNAPSHOT_MISMATCH");
@@ -655,7 +673,7 @@ public class BacktestExecutionService {
                 }
             }
             SpotTargetStrategy.Decision latestSignal =
-                    strategy.evaluate(bars.subList(0, index + 1), strategyState);
+                    strategy.evaluate(bars.subList(Math.max(0, index - 200), index + 1), strategyState);
             strategyState = latestSignal.desiredState();
             if (strategy.stateful() && latestSignal.requestsTrade()) {
                 reasons.add(bar.availableAt() + ":" + latestSignal.reason());

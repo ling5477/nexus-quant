@@ -3,7 +3,6 @@ package com.guidinglight.nexusquant.app.research;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.guidinglight.nexusquant.marketdata.domain.FrozenHistoricalInput;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
@@ -36,23 +35,31 @@ public class ExperimentValidationService {
 
     private ObjectNode policy(StrategyExperimentService.View source) {
         ObjectNode policy=mapper.createObjectNode();
-        policy.put("version",WalkForwardPolicy.VERSION);policy.put("selectionPolicy",WalkForwardPolicy.SELECTION);
-        policy.put("finalSelectionPolicy","RETRAIN_ALL_CANDIDATES_ON_BARS_0_600_THEN_FREEZE_V1");
+        var bars=experiments.readFrozenInput(source.frozenInput().path("datasetSnapshot"));
+        int count=bars.size(),candidates=latest(source).size();
+        boolean supported=WalkForwardPolicy.supports(count) && (count<=720 || candidates<=4);
+        policy.put("version",count>720?WalkForwardPolicy.LONG_VERSION:WalkForwardPolicy.VERSION);
+        policy.put("selectionPolicy",WalkForwardPolicy.SELECTION);
+        policy.put("finalSelectionPolicy",count>720?"RETRAIN_ALL_CANDIDATES_ON_FIRST_FIVE_SIXTHS_THEN_FREEZE_V2":"RETRAIN_ALL_CANDIDATES_ON_BARS_0_600_THEN_FREEZE_V1");
         policy.put("windowVersion","FLAT_WINDOW_V1");policy.put("initialPosition","FLAT");
         policy.put("initialCapital",source.frozenInput().path("initialCapital").asText());
         policy.put("warmupPolicy","HISTORY_ONLY_RESET_STATE_AT_START");policy.put("warmupTrading","DISABLED");
         policy.put("executionTiming","NEXT_OPEN_STRICTLY_AFTER_AVAILABLE_AT");
         policy.put("oosAggregation","ARITHMETIC_MEAN_OF_INDEPENDENT_RESET_RETURNS_NOT_PORTFOLIO_RETURN");
-        policy.put("limitation","SHORT_SAMPLE_30_DAYS_NOT_LONG_TERM_ROBUSTNESS_OR_LIVE_AUTHORITY");
+        policy.put("limitation",count>720?"BOUNDED_HISTORICAL_SAMPLE_NOT_LONG_TERM_ROBUSTNESS_OR_LIVE_AUTHORITY":"SHORT_SAMPLE_30_DAYS_NOT_LONG_TERM_ROBUSTNESS_OR_LIVE_AUTHORITY");
         policy.put("holdoutExposure","SOURCE_EXPERIMENT_ALREADY_EVALUATED_FULL_DATASET_NOT_PRISTINE");
         policy.put("datasetSha256",source.frozenInput().path("datasetSnapshot").path("frozenInput").path("sha256").asText());
-        var bars=FrozenHistoricalInput.read(source.frozenInput().path("datasetSnapshot"),mapper);
         policy.put("barCount",bars.size());
+        policy.put("supported",supported);policy.put("maxTrials",count>720?4:16);
+        int validationRuns=supported?4*candidates+12:0,totalRuns=supported?validationRuns+candidates:0;
+        policy.put("estimatedValidationRuns",validationRuns);policy.put("estimatedTotalRuns",totalRuns);
+        policy.put("estimatedWindowBars",supported?count*candidates+(count/6)*(14*candidates+12):0);
+        policy.put("maxAttemptRuns",totalRuns*3);
         policy.set("candidates",mapper.valueToTree(latest(source).stream().map(t->Map.of("ordinal",t.ordinal(),
                 "sourceTrialId",t.trialId().toString(),"strategyVersionId",t.strategyVersionId(),"parameters",t.parameters())).toList()));
         var windows=policy.putArray("steps");
-        for(int step=0;step<16;step++) {
-            var window=WalkForwardPolicy.window(step);
+        for(int step=0;supported && step<16;step++) {
+            var window=WalkForwardPolicy.window(step,count);
             ObjectNode row=mapper.valueToTree(window);row.put("barCount",window.endBar()-window.startBar());
             if(window.endBar()<=bars.size()) {
                 row.put("startTime",bars.get(window.startBar()).openTime().toString());
@@ -61,10 +68,11 @@ public class ExperimentValidationService {
             windows.add(row);
         }
         var costs=policy.putObject("costHypotheses");
-        for(int n:List.of(2,3)) {
-            var spec=WalkForwardPolicy.execution(source.frozenInput().path("executionSpec"),WalkForwardPolicy.window(n),mapper);
-            if(spec==null) costs.put(WalkForwardPolicy.window(n).role(),"UNAVAILABLE");
-            else costs.set(WalkForwardPolicy.window(n).role(),spec.path("costStress"));
+        for(int n:supported?List.of(2,3):List.<Integer>of()) {
+            var costWindow=WalkForwardPolicy.window(n,count);
+            var spec=WalkForwardPolicy.execution(source.frozenInput().path("executionSpec"),costWindow,mapper);
+            if(spec==null) costs.put(costWindow.role(),"UNAVAILABLE");
+            else costs.set(costWindow.role(),spec.path("costStress"));
         }
         return policy;
     }
@@ -81,9 +89,9 @@ public class ExperimentValidationService {
                 throw new ResponseStatusException(HttpStatus.CONFLICT,"validation already running");
             ObjectNode policy=policy(experiment);
             UUID id=UUID.randomUUID();
-            boolean sufficient=policy.path("barCount").asInt()==720;
+            boolean sufficient=policy.path("supported").asBoolean();
             jdbc.update("INSERT INTO experiment_validations(validation_id,owner_user_id,source_experiment_id,frozen_policy,status,failure_reason) VALUES(?,?,?,?::jsonb,?,?)",
-                    id,owner,source,policy.toString(),sufficient?"RUNNING":"INSUFFICIENT_DATA",sufficient?null:"EXACTLY_720_COMPLETE_HOURLY_BARS_REQUIRED");
+                    id,owner,source,policy.toString(),sufficient?"RUNNING":"INSUFFICIENT_DATA",sufficient?null:"COMPLETE_720_2160_OR_4320_BAR_PRESET_REQUIRED");
             if(sufficient) {
                 seed(id,0,experiment,latest(experiment));
                 jdbc.update("UPDATE strategy_experiments SET active=true WHERE experiment_id=?",source);
@@ -99,7 +107,7 @@ public class ExperimentValidationService {
     }
 
     private void seed(UUID validation,int step,StrategyExperimentService.View source,List<StrategyExperimentService.Trial> candidates) {
-        var window=WalkForwardPolicy.window(step);
+        var window=WalkForwardPolicy.window(step,source.frozenInput().path("datasetSnapshot").path("barCount").asInt());
         var spec=WalkForwardPolicy.execution(source.frozenInput().path("executionSpec"),window,mapper);
         UUID child=spec==null?null:experiments.createValidationExperiment(source,candidates,spec,validation);
         jdbc.update("INSERT INTO experiment_validation_steps(validation_id,step_number,fold_number,role,start_bar,end_bar,experiment_id,unavailable_reason) VALUES(?,?,?,?,?,?,?,?)",

@@ -26,7 +26,13 @@ public final class FrozenHistoricalInput {
 
     public static ObjectNode freeze(JsonNode dataset, List<HistoricalBar> source,
             Instant frozenAt, ObjectMapper mapper) {
-        if (source.isEmpty() || source.size() > MAX_BARS)
+        return freezeBounded(dataset, source, frozenAt, mapper, MAX_BARS, VERSION);
+    }
+
+    /** 研究长输入复用同一校验与字节合同；公开V1和SIM入口的上限不随之改变。 */
+    static ObjectNode freezeBounded(JsonNode dataset, List<HistoricalBar> source,
+            Instant frozenAt, ObjectMapper mapper, int maximumBars, String version) {
+        if (source.isEmpty() || source.size() > maximumBars)
             throw new IllegalStateException("FROZEN_INPUT_COVERAGE_INVALID");
         List<HistoricalBar> replay = new ArrayList<>(source.size());
         var observations = mapper.createArrayNode();
@@ -40,12 +46,12 @@ public final class FrozenHistoricalInput {
                     bar.lowPrice(), bar.closePrice(), bar.volume(), bar.quoteVolume(), bar.tradeCount(),
                     bar.qualityStatus(), bar.rawPayloadJson(), bar.openTime().plus(bar.interval().duration())));
         }
-        validate(dataset, replay, frozenAt);
-        var identity = SpotBarIdentity.capture(replay, mapper);
+        validate(dataset, replay, frozenAt, maximumBars);
+        var identity = identity(replay, mapper, maximumBars);
         ObjectNode result = mapper.createObjectNode();
-        result.put("version", VERSION);
+        result.put("version", version);
         result.put("sha256", identity.sha256());
-        result.put("sourceSha256", SpotBarIdentity.capture(source, mapper).sha256());
+        result.put("sourceSha256", identity(source, mapper, maximumBars).sha256());
         result.put("frozenAt", frozenAt.toString());
         result.put("source", dataset.path("source").asText());
         result.put("replayVisibilityVersion", "CLOSED_HOURLY_BOUNDARY_V1");
@@ -57,9 +63,14 @@ public final class FrozenHistoricalInput {
     }
 
     public static List<HistoricalBar> read(JsonNode dataset, ObjectMapper mapper) {
+        return readBounded(dataset, mapper, MAX_BARS, VERSION);
+    }
+
+    static List<HistoricalBar> readBounded(JsonNode dataset, ObjectMapper mapper,
+            int maximumBars, String version) {
         JsonNode frozen = dataset.path("frozenInput");
         JsonNode rows = frozen.path("bars");
-        if (!VERSION.equals(frozen.path("version").asText()) || !rows.isArray() || rows.isEmpty() || rows.size() > MAX_BARS
+        if (!version.equals(frozen.path("version").asText()) || !rows.isArray() || rows.isEmpty() || rows.size() > maximumBars
                 || !"CLOSED_HOURLY_BOUNDARY_V1".equals(frozen.path("replayVisibilityVersion").asText())
                 || !"EXPERIMENT_ASSUMPTION".equals(frozen.path("replayVisibilitySource").asText())
                 || !dataset.path("source").asText().equals(frozen.path("source").asText())
@@ -80,7 +91,7 @@ public final class FrozenHistoricalInput {
                     Instant.parse(bar.path("availableAt").asText())));
         }
         Instant frozenAt = Instant.parse(frozen.path("frozenAt").asText());
-        validate(dataset, bars, frozenAt);
+        validate(dataset, bars, frozenAt, maximumBars);
         List<HistoricalBar> source = new ArrayList<>(bars.size());
         for (int index = 0; index < bars.size(); index++) {
             HistoricalBar bar = bars.get(index);
@@ -93,19 +104,19 @@ public final class FrozenHistoricalInput {
             validateSource(original, mapper);
             source.add(original);
         }
-        if (!SpotBarIdentity.capture(source, mapper).sha256().equals(frozen.path("sourceSha256").asText()))
+        if (!identity(source, mapper, maximumBars).sha256().equals(frozen.path("sourceSha256").asText()))
             throw new IllegalStateException("FROZEN_INPUT_SOURCE_DIGEST_MISMATCH");
-        if (!SpotBarIdentity.capture(bars, mapper).sha256().equals(frozen.path("sha256").asText()))
+        if (!identity(bars, mapper, maximumBars).sha256().equals(frozen.path("sha256").asText()))
             throw new IllegalStateException("FROZEN_INPUT_DIGEST_MISMATCH");
         return List.copyOf(bars);
     }
 
-    private static void validate(JsonNode dataset, List<HistoricalBar> bars, Instant at) {
+    private static void validate(JsonNode dataset, List<HistoricalBar> bars, Instant at, int maximumBars) {
         Instant start = Instant.parse(dataset.path("startTime").asText());
         Instant end = Instant.parse(dataset.path("endTime").asText());
         if (!supports(dataset) || !"READY".equals(dataset.path("status").asText())
                 || !"OK".equals(dataset.path("qualityStatus").asText())
-                || dataset.path("gapCount").asLong(-1) != 0 || bars.isEmpty() || bars.size() > MAX_BARS
+                || dataset.path("gapCount").asLong(-1) != 0 || bars.isEmpty() || bars.size() > maximumBars
                 || bars.size() != dataset.path("barCount").asLong(-1)
                 || !start.equals(start.truncatedTo(java.time.temporal.ChronoUnit.HOURS))
                 || !end.equals(start.plusSeconds(3600L * bars.size()).minusMillis(1)) || start.plusSeconds(3600L * bars.size()).isAfter(at))
@@ -144,4 +155,10 @@ public final class FrozenHistoricalInput {
     }
 
     private static BigDecimal decimal(JsonNode bar, String field) { return new BigDecimal(bar.path(field).asText()); }
+
+    private static SpotBarIdentity.Snapshot identity(List<HistoricalBar> bars, ObjectMapper mapper,
+            int maximumBars) {
+        return maximumBars == MAX_BARS ? SpotBarIdentity.capture(bars, mapper)
+                : SpotBarIdentity.captureResearch(bars, mapper);
+    }
 }

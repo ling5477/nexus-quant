@@ -94,6 +94,35 @@ class SpotTargetStrategyTest {
         }
     }
 
+    @Test
+    void boundedResearchWindowMatchesEveryFullPrefixWithoutExpandingDefaultIdentity() {
+        var bars=history(4320);
+        for(int index=0;index<bars.size();index++) {
+            int close=100+index%31;
+            bars.set(index,bar(index,Integer.toString(close),Integer.toString(close+2),
+                    Integer.toString(close-2),Integer.toString(close)));
+        }
+        var sma=SpotTargetStrategy.fromSnapshot(snapshot("200","10","0.5")
+                .replace("SPOT_CHANNEL_BREAKOUT_V1","SPOT_SMA_TARGET_V1")
+                .replace("\"entryLookbackBars\":200","\"window\":200"),mapper);
+        for(var candidate:List.of(channel("200","10","0.5"),sma)) {
+            var fullState=FLAT;var boundedState=FLAT;
+            candidate.validate(bars);
+            for(int end=1;end<=bars.size();end++) {
+                var full=candidate.evaluate(bars.subList(0,end),fullState);
+                var bounded=candidate.evaluate(bars.subList(Math.max(0,end-201),end),boundedState);
+                assertEquals(full,bounded,"研究窗口必须保留原逐前缀语义");
+                fullState=full.desiredState();boundedState=bounded.desiredState();
+            }
+        }
+        assertEquals(SpotBarIdentity.capture(bars.subList(0,720),mapper),
+                SpotBarIdentity.captureResearch(bars.subList(0,720),mapper));
+        assertThrows(IllegalArgumentException.class,()->SpotBarIdentity.capture(bars.subList(0,721),mapper));
+        assertDoesNotThrow(()->SpotBarIdentity.captureResearch(bars,mapper));
+        var oversized=new ArrayList<>(bars);oversized.add(bars.getLast());
+        assertThrows(IllegalArgumentException.class,()->SpotBarIdentity.captureResearch(oversized,mapper));
+    }
+
     private SpotTargetStrategy channel(String entry, String exit, String exposure) {
         return SpotTargetStrategy.fromSnapshot(snapshot(entry, exit, exposure), mapper);
     }

@@ -6,9 +6,18 @@ export interface ValidationScore {ordinal: number; trialId: string; versionId: s
 export interface ValidationWindow {fold: number; role: string; startBar: number; endBar: number; startTime?: string; endTimeExclusive?: string; barCount?: number}
 export interface ValidationPolicy {
     version: string; selectionPolicy: string; finalSelectionPolicy: string; barCount: number;
+    supported?: boolean; maxTrials?: number; estimatedValidationRuns?: number; estimatedTotalRuns?: number;
+    estimatedWindowBars?: number; maxAttemptRuns?: number;
     initialCapital: string; datasetSha256: string; steps: ValidationWindow[];
     candidates: {ordinal: number; sourceTrialId?: string; strategyVersionId: string; parameters: Record<string, string | number>}[];
     costHypotheses: Record<string, {source: string; field: string; unit: string; baseline: string; value: string} | 'UNAVAILABLE'>;
+}
+
+/** 服务端明确不支持时保持禁用；兼容旧720政策响应，不由前端生成另一套窗口。 */
+export function supportsValidationPolicy(policy: ValidationPolicy) {
+    return policy.supported !== false && policy.steps.length === 16
+        && ((policy.version === 'EXPANDING_WALK_FORWARD_V1' && policy.barCount === 720)
+            || (policy.version === 'EXPANDING_WALK_FORWARD_V2' && [2160, 4320].includes(policy.barCount)));
 }
 export interface ValidationStep extends ValidationWindow {
     number: number; experimentId: string | null; unavailableReason: string | null; selectedAt: string | null;

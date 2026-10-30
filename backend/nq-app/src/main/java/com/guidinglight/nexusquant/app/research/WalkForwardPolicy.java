@@ -11,6 +11,7 @@ import java.util.List;
 /** 先固定选择口径再看训练结果；此接口不接受Test或Holdout得分。 */
 public final class WalkForwardPolicy {
     public static final String VERSION="EXPANDING_WALK_FORWARD_V1";
+    public static final String LONG_VERSION="EXPANDING_WALK_FORWARD_V2";
     public static final String SELECTION="AFTER_COST_RETURN_DESC_DRAWDOWN_ASC_ORDINAL_ASC_V1";
     private WalkForwardPolicy() {}
     public record Window(int fold, String role, int startBar, int endBar) {}
@@ -18,13 +19,24 @@ public final class WalkForwardPolicy {
                         String evaluationId, BigDecimal totalReturn, BigDecimal maxDrawdown) {}
 
     public static Window window(int step) {
+        return window(step,720);
+    }
+
+    public static boolean supports(int barCount) {
+        return barCount==720 || barCount==2160 || barCount==4320;
+    }
+
+    /** 长窗口仅接受固定预设；不按任意输入长度裁切或扩大旧政策身份。 */
+    public static Window window(int step, int barCount) {
         if(step<0 || step>=16) throw new IllegalArgumentException("validation step out of bounds");
-        int fold=step/4+1, end=240+120*(fold-1);
+        if(!supports(barCount)) throw new IllegalArgumentException("UNSUPPORTED_WALK_FORWARD_PRESET");
+        int width=barCount/6;
+        int fold=step/4+1, end=width*(fold+1);
         return switch(step%4) {
             case 0 -> new Window(fold,"IN_SAMPLE",0,end);
-            case 1 -> new Window(fold,fold==4?"FINAL_HOLDOUT":"OUT_OF_SAMPLE",end,end+120);
-            case 2 -> new Window(fold,"FEE_STRESS",end,end+120);
-            default -> new Window(fold,"SLIPPAGE_STRESS",end,end+120);
+            case 1 -> new Window(fold,fold==4?"FINAL_HOLDOUT":"OUT_OF_SAMPLE",end,end+width);
+            case 2 -> new Window(fold,"FEE_STRESS",end,end+width);
+            default -> new Window(fold,"SLIPPAGE_STRESS",end,end+width);
         };
     }
 

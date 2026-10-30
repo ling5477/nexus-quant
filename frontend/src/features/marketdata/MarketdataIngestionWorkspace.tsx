@@ -23,7 +23,7 @@ import {
 import dayjs, {type Dayjs} from 'dayjs';
 import {Link, useSearchParams} from 'react-router-dom';
 import {isPublicDemo} from '@/utils/distribution';
-import {datasetFromJobLink, isResearchJob, researchSymbols, researchWindow} from './research-dataset';
+import {datasetFromJobLink, isResearchJob, researchSymbols, researchWindow, researchPreset, researchPresetDays, researchWindowBudget} from './research-dataset';
 import type {ColumnsType} from 'antd/es/table';
 import {useTranslation} from 'react-i18next';
 import {formatApiError} from '@/api/errors';
@@ -91,6 +91,14 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
     const [timePopup, setTimePopup] = useState<'start' | 'end' | null>(null);
     const [form] = useLocalizedForm<Values>();
     const exchange = Form.useWatch('exchangeCode', form) ?? 'BINANCE';
+    const researchSymbol = Form.useWatch('symbol', form);
+    const researchStart = Form.useWatch('startTime', form);
+    const researchEnd = Form.useWatch('endTime', form);
+    let researchBudget = null;
+    try {
+        if (researchMode && researchSymbol && researchStart && researchEnd)
+            researchBudget = researchWindowBudget(researchWindow(researchSymbol, researchStart.format('YYYY-MM-DD'), researchEnd.format('YYYY-MM-DD')));
+    } catch { /* 未通过日期校验时不展示预计覆盖，表单仍给出具体错误。 */ }
     const [params, setParams] = useSearchParams();
     const jobId = params.get('ingestionJobId');
     const runId = params.get('ingestionRunId');
@@ -507,8 +515,7 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                         {!isPublicDemo && <Button
                             disabled={!allowed || busy || stored.kind !== 'none'}
                             onClick={() => {
-                                const end = new Date().toISOString().slice(0, 10);
-                                const start = new Date(Date.parse(end + 'T00:00:00Z') - 30 * 86400000).toISOString().slice(0, 10);
+                                const {startDate: start, endDate: end} = researchPreset(30);
                                 setResearchMode(true);
                                 form.setFieldsValue({exchangeCode: 'OKX', symbol: 'BTC-USDT', interval: '1h', startTime: dayjs(start), endTime: dayjs(end)});
                                 setOpen(true);
@@ -883,6 +890,12 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                         })
                     }
                 >
+                    {researchMode && <Space wrap style={{marginBottom: 16}}>
+                        {researchPresetDays.map(days => <Button key={days} onClick={() => {
+                            const preset = researchPreset(days);
+                            form.setFieldsValue({startTime: dayjs(preset.startDate), endTime: dayjs(preset.endDate)});
+                        }}>{t('researchDataset.preset', {days})}</Button>)}
+                    </Space>}
                     <Row gutter={16}>
                         <Col xs={24} sm={12}>
                             <Form.Item
@@ -996,6 +1009,9 @@ export function MarketdataIngestionWorkspace({active}: {active: boolean}) {
                     <Typography.Paragraph type="secondary">
                         {t(researchMode ? 'researchDataset.help' : 'ingestion.createHelp')}
                     </Typography.Paragraph>
+                    {researchMode && researchBudget && <Alert type="info" showIcon
+                        message={t('researchDataset.budget', researchBudget)}
+                        description={t('researchDataset.boundedContinue')}/>}
                 </Form>
                 {create.error && <Alert type="error" showIcon message={describe(create.error)} />}
             </Drawer>

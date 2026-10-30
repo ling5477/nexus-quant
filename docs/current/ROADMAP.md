@@ -10,7 +10,9 @@ v1.0.0、v1.0.1、v1.0.2 均已发布。v1.0.2 的 V102-01～05（数据集、�
 
 Windows 11 amd64 Self-Hosted 新安装、v1.0.1 普通更新、历史数据保留、包级备份恢复、主动回滚与失败更新自动恢复均通过。本轮只同步发行事实，不重跑资格，不重构 RC3。Linux 仅低内存安装与 600 秒短时运行 SCOPED_PASS；正式 Linux 支持和长期稳定性仍未验证。既存低内存断言差异是有证据的非阻断残留，原失败保留，未来版本可定向调整预期。
 
-下一阶段为 v1.0.3 规划：`NQ-V103-PLANNING / NOT_STARTED`，唯一下一动作 `NQ-V103-PLAN`。本任务不制定或实施 v1.0.3 功能。保留 canonical Order/Trade/Ledger、LIVE=DISABLED、Kill Switch=ENGAGED、历史 C4 NOT_ACCEPTED / EVIDENCE_GAPS 与用户例外；不重跑 72 小时。Public Demo、其他正式平台及 v1.0.0 直接普通升级不属于本次发行。
+v1.0.3 第一项功能 NQ-V103-01 有界长历史研究已完成实现和功能候选验证，准确接受 pair 由 [STATUS](STATUS.md) 拥有。原研究页面支持 OKX SPOT BTC/ETH 1h、1～180完整UTC日、最多4320根；分页接入保留每次3000根预算与显式续传；长输入使用不可变V2版本/分块，旧V1继续兼容；原回测/参数实验与90/180日预设Walk-Forward消费同一冻结版本。长实验最多4候选，不扩大Continuous SIM边界。[实施证据](evidence/NQ_V103_01_HISTORICAL_RESEARCH_EXPANSION.md)记录本地真实PG/浏览器、资源及PR交付适用范围。开发V51不改变正式v1.0.2/V49发行。
+
+下一任务为 NQ-V103-02 前向 SIM 观察与复盘，NOT_STARTED，等待后续实施指令；随后才是最小离线因子研究03。本任务不自动执行02/03。保留 canonical Order/Trade/Ledger、LIVE=DISABLED、Kill Switch=ENGAGED、历史 C4 NOT_ACCEPTED / EVIDENCE_GAPS 与用户例外；不重跑72小时。Public Demo、其他正式平台及v1.0.0直接普通升级不属于本次发行。
 
 下文为2026-10-20发布准备历史，保留原始身份与结论，不作为本轮待办。
 

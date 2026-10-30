@@ -160,7 +160,14 @@
       "token": "FREEZE",
       "category": "BUSINESS_DOMAIN_TERM",
       "reason": "FREEZE names immutable training-only parameter selection before independent evaluation; it is a research business policy, not a development stage or runtime profile.",
-      "lineSha256": "d3631ec44e836c9d238abd2f14ab79753542b8374ff83112af41359a626efbec"
+      "lineSha256": "10a8a58618e8563ad8bef1fe29711049bf47e99a37a4ae232cfe8c2750811cb8"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/marketdata/infra/jdbc/JdbcResearchDatasetVersionPort.java",
+      "token": "FREEZE",
+      "category": "BUSINESS_DOMAIN_TERM",
+      "reason": "FREEZE identifies immutable research input capture and its required repeatable-read transaction; this business integrity error is not a development stage or runtime profile.",
+      "lineSha256": "79f2128dc4a485979fb63b940bd3265df20b6a4517697e714c46054f5eead4cd"
     }
   ],
   "historyRegions": [

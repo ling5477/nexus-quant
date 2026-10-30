@@ -1,6 +1,7 @@
 package com.guidinglight.nexusquant.marketdata.application.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.guidinglight.nexusquant.common.tenant.TenantKind;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,7 +12,10 @@ import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.FrozenHistoricalInput;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalDatasetSpec;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
+import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
+import com.guidinglight.nexusquant.marketdata.domain.ResearchHistoricalInput;
 import com.guidinglight.nexusquant.marketdata.domain.port.HistoricalMarketDataPort;
+import com.guidinglight.nexusquant.marketdata.domain.port.ResearchDatasetVersionPort;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataDataset;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataDatasetCoverage;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataDatasetStatus;
@@ -21,11 +25,13 @@ import com.guidinglight.nexusquant.marketdata.domain.port.MarketdataDatasetRepos
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Isolation;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -52,6 +58,13 @@ public class MarketdataDatasetService {
     private final ObjectMapper objectMapper;
     private final Clock clock;
     private final HistoricalMarketDataPort historicalData;
+    private ResearchDatasetVersionPort researchVersions;
+
+    /** 旧测试构造器和V1无需新存储；正式V2缺少装配时明确失败，不能回读共享行情。 */
+    @Autowired(required = false)
+    public void bindResearchDatasetVersions(ResearchDatasetVersionPort versions) {
+        this.researchVersions = Objects.requireNonNull(versions);
+    }
 
     @Autowired
     public MarketdataDatasetService(MarketdataDatasetRepository repository, ObjectMapper mapper,
@@ -252,6 +265,7 @@ public class MarketdataDatasetService {
      * @param datasetId 数据集 ID
      * @return 数据集 JSON 快照
      */
+    @Transactional(isolation = Isolation.REPEATABLE_READ, timeout = 30)
     public String buildDatasetSnapshot(UUID datasetId) {
         MarketdataDataset dataset = getDataset(datasetId);
         try {
@@ -282,25 +296,56 @@ public class MarketdataDatasetService {
                         && TenantContext.current().filter(identity -> identity.kind() == TenantKind.DEMO).isEmpty()
                         && dataset.status() == MarketdataDatasetStatus.READY
                         && dataset.qualityStatus() == MarketdataQualityStatus.OK && dataset.gapCount() == 0
-                        && dataset.barCount() > 0 && dataset.barCount() <= FrozenHistoricalInput.MAX_BARS
+                        && dataset.barCount() > 0
                         && dataset.startTime().equals(dataset.startTime().truncatedTo(ChronoUnit.HOURS))
                         && dataset.endTime().plusMillis(1).equals(dataset.startTime().plus(
                                 dataset.interval().duration().multipliedBy(dataset.barCount())))) {
                     var spec = new HistoricalDatasetSpec("db", datasetId.toString(),
                             dataset.exchangeCode(), dataset.symbol(), dataset.interval(), SOURCE);
-                    // 单次有界SQL快照读取，额外一根用于识别目录统计过期，不能默默截断实际输入。
-                    var bars = historicalData.loadBars(new HistoricalMarketDataQuery(spec,
-                            dataset.exchangeCode(), dataset.marketType(), dataset.symbol(), dataset.interval(),
-                            dataset.startTime(), dataset.endTime(), 0, FrozenHistoricalInput.MAX_BARS + 1));
-                    Instant frozenAt = Instant.now(clock);
-                    snapshot.put("snapshotAt", frozenAt.toString());
-                    snapshot.set("frozenInput", FrozenHistoricalInput.freeze(snapshot, bars, frozenAt, objectMapper));
+                    if (dataset.barCount() <= FrozenHistoricalInput.MAX_BARS) {
+                        // V1的读取和序列化字节不变，已发布快照不重新计算身份。
+                        var bars = historicalData.loadBars(new HistoricalMarketDataQuery(spec,
+                                dataset.exchangeCode(), dataset.marketType(), dataset.symbol(), dataset.interval(),
+                                dataset.startTime(), dataset.endTime(), 0, FrozenHistoricalInput.MAX_BARS + 1));
+                        Instant frozenAt = Instant.now(clock);
+                        snapshot.put("snapshotAt", frozenAt.toString());
+                        snapshot.set("frozenInput", FrozenHistoricalInput.freeze(snapshot, bars, frozenAt, objectMapper));
+                    } else {
+                        if (dataset.barCount() > ResearchHistoricalInput.MAX_BARS)
+                            throw new IllegalStateException("RESEARCH_INPUT_LIMIT_EXCEEDED");
+                        if (researchVersions == null)
+                            throw new IllegalStateException("RESEARCH_VERSION_STORAGE_UNAVAILABLE");
+                        // 一个Dataset的首次冻结版本固定；目录刷新或共享行情修订不能替换其研究内容。
+                        JsonNode frozen = researchVersions.find(datasetId).orElseGet(() -> {
+                            List<HistoricalBar> bars = new ArrayList<>();
+                            for (int page = 0; page <= ResearchHistoricalInput.MAX_BARS / ResearchHistoricalInput.CHUNK_BARS; page++) {
+                                var rows = historicalData.loadBars(new HistoricalMarketDataQuery(spec,
+                                        dataset.exchangeCode(), dataset.marketType(), dataset.symbol(), dataset.interval(),
+                                        dataset.startTime(), dataset.endTime(), page, ResearchHistoricalInput.CHUNK_BARS));
+                                if (rows.size() > ResearchHistoricalInput.CHUNK_BARS
+                                        || bars.size() + rows.size() > ResearchHistoricalInput.MAX_BARS)
+                                    throw new IllegalStateException("RESEARCH_INPUT_LIMIT_EXCEEDED");
+                                bars.addAll(rows);
+                                if (rows.size() < ResearchHistoricalInput.CHUNK_BARS) break;
+                            }
+                            return researchVersions.freeze(snapshot, bars, Instant.now(clock));
+                        });
+                        snapshot.put("snapshotAt", frozen.path("frozenAt").asText());
+                        snapshot.set("frozenInput", frozen);
+                    }
                 }
             }
             return objectMapper.writeValueAsString(snapshot);
         } catch (JsonProcessingException ex) {
             throw new IllegalStateException("failed to build dataset snapshot", ex);
         }
+    }
+
+    /** 研究执行只通过版本化读取器解析长引用；未知版本不能降级为可变行情。 */
+    public List<HistoricalBar> readFrozenInput(JsonNode dataset) {
+        if (!ResearchHistoricalInput.referenced(dataset)) return FrozenHistoricalInput.read(dataset, objectMapper);
+        if (researchVersions == null) throw new IllegalStateException("RESEARCH_VERSION_STORAGE_UNAVAILABLE");
+        return researchVersions.read(dataset);
     }
 
     private String buildRequestJson(

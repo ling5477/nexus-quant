@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.guidinglight.nexusquant.marketdata.application.service.MarketdataDatasetService;
-import com.guidinglight.nexusquant.marketdata.domain.FrozenHistoricalInput;
+import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.research.application.BacktestRunService;
 import com.guidinglight.nexusquant.research.application.ResearchConfigService;
 import com.guidinglight.nexusquant.research.application.backtest.command.BacktestConfigCreateRequest;
@@ -48,8 +48,10 @@ public class StrategyExperimentService {
         var base=configs.getByBacktestConfigId(request.templateConfigId());
         var version=versions.findById(base.strategyVersionId());
         JsonNode source=read(version.sourceSnapshotJson());
-        return ExperimentParameters.expand(source.path("executable").asText(), source,
+        var expanded=ExperimentParameters.expand(source.path("executable").asText(), source,
                 request.candidates(), request.grid(), mapper);
+        requireCandidateBudget(read(base.datasetSnapshotJson()),expanded.size());
+        return expanded;
     }
 
     public View create(UUID operationId, Request request, long owner) {
@@ -65,8 +67,10 @@ public class StrategyExperimentService {
             List<JsonNode> parameters=ExperimentParameters.expand(type,source,request.candidates(),request.grid(),mapper);
             if (!base.isActive() || !parent.isActive() || base.datasetId()==null)
                 throw new IllegalArgumentException("active bound configuration required");
-            JsonNode dataset=read(datasets.buildDatasetSnapshot(UUID.fromString(base.datasetId())));
-            FrozenHistoricalInput.read(dataset,mapper);
+            // 参数实验继承模板已经绑定的冻结版本，不能因后来共享行情变化重新捕获输入。
+            JsonNode dataset=read(base.datasetSnapshotJson());
+            datasets.readFrozenInput(dataset);
+            requireCandidateBudget(dataset,parameters.size());
             if (!base.startTime().equals(Instant.parse(dataset.path("startTime").asText()))
                     || !base.endTime().equals(Instant.parse(dataset.path("endTime").asText())))
                 throw new IllegalArgumentException("experiment must use complete frozen dataset window");
@@ -84,7 +88,8 @@ public class StrategyExperimentService {
             frozen.set("sourceSnapshot",source);
             frozen.set("configSnapshot",read(version.configSnapshotJson()));
             frozen.set("parameterCandidates",mapper.valueToTree(parameters));
-            frozen.put("maxTrials",16); frozen.put("maxConcurrentRuns",1); frozen.put("maxAttempts",3);
+            frozen.put("maxTrials",dataset.path("barCount").asInt()>720?4:16);
+            frozen.put("maxConcurrentRuns",1); frozen.put("maxAttempts",3);
             UUID id=UUID.randomUUID();
             jdbc.queryForObject("SELECT pg_advisory_xact_lock(hashtextextended(?,0))",Object.class,"experiment-version:"+version.strategyCode());
             int ordinal=0;
@@ -243,6 +248,15 @@ public class StrategyExperimentService {
     JsonNode read(String json) {
         try { return mapper.reader().with(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS).readTree(json); }
         catch(java.io.IOException e) {throw new IllegalArgumentException("invalid experiment JSON",e);}
+    }
+
+    List<HistoricalBar> readFrozenInput(JsonNode dataset) {
+        return datasets.readFrozenInput(dataset);
+    }
+
+    private static void requireCandidateBudget(JsonNode dataset,int count) {
+        if(dataset.path("barCount").asInt()>720 && count>4)
+            throw new IllegalArgumentException("LONG_RESEARCH_MAXIMUM_FOUR_CANDIDATES");
     }
     public record Request(String templateConfigId,JsonNode candidates,JsonNode grid) {}
     private record AttemptSeed(String config,String run) {}
