@@ -1,5 +1,11 @@
 # Current API
 
+## 离线 Python 因子研究
+
+`GET /api/marketdata/datasets/{datasetId}/factor-research/input` 仅对当前认证本地owner读取已冻结V2；返回 `frozen-research-export.v1` 的原Dataset引用、Manifest与全部有序分块规范字符串。支持OKX SPOT BTC/ETH 1h、721～4320根，最多8MiB；未冻结、越权或损坏返回404，不创建版本、不查询可变行情。实际sourceObservedAt与回放availableAt/EXPERIMENT_ASSUMPTION分别保留。
+
+`POST .../factor-research/preview` 继承既有ADMIN/OPERATOR写方法角色门禁，但业务行为只读；只接收最多16MiB的 `python-factor-research-artifact.v1` JSON，不接收服务器路径。核对当前owner的原V2、Content/Source/Manifest、Artifact摘要与3因子格式/时间/数量/统计窗口。非法或摘要/身份不一致400、超字节413、不可读取冻结输入404。无持久化、无Python进程、无策略或交易授权；Java不重新计算本地Python统计，界面披露该信任边界。完整字段、规范编码、因子与统计定义见 [Python README](../../research/py/README.md) 和[实施证据](evidence/NQ_V103_03_PYTHON_FACTOR_RESEARCH.md)。旧评价Artifact与正式交易绩效接口不变。
+
 ## Tenant 基础身份
 
 `GET /api/auth/tenant` 只返回当前认证用户经数据库验证的 `tenantId`、`tenantCode`、`tenantKind` 和 `userId`；不接收租户选择。无认证返回 401，失效/缺失/歧义的成员关系不能建立认证身份；传入 `X-Tenant-ID` 或 tenantId/tenant_id 查询参数返回 403。PLATFORM_ADMIN 无业务 Tenant，此接口返回 403。

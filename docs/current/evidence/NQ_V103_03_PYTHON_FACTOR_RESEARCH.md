@@ -38,7 +38,7 @@ Artifact包含Dataset/Version与Content/Source/Manifest SHA、3因子及全点�
 
 正式共用样本 `research/py/fixtures/java-frozen-v2.json` 由隔离PG中的Java原冻结器及新增导出器实际生成，721根合成受控输入，实际观察2026-10-29、回放从2026-04-01开始。不是独立Python合成CSV。`java-factor-artifact.json`由同输入经真实CLI生成，Java单测验证全部规范checksum及artifactId；Python验证原Manifest/分块/双内容摘要。浏览器另使用本轮新生成的BTC4320及ETH2160身份，并独立重建全部产物一致。
 
-`python -m pytest -q`：53/53 PASS，含3因子独立oracle、未来扰动、坏输入/原V2摘要拒绝、purge、样本不足、Bootstrap重复、完整Artifact/CLI重复及旧CLI测试。mypy src --no-sqlite-cache、ruff check . --no-cache PASS。本机Python3.14.2，声明支持>=3.11，NumPy固定2.3.5；准确PR CI将另行验证Python3.11。旧pytest缓存目录权限警告不影响测试结果，原日志保留。
+`python -m pytest -q`：53/53 PASS，含3因子独立oracle、未来扰动、坏输入/原V2摘要拒绝、purge、样本不足、Bootstrap重复、完整Artifact/CLI重复及旧CLI测试。mypy src --no-sqlite-cache、ruff check . --no-cache PASS。本机Python3.14.2，声明支持>=3.11，NumPy固定2.3.5；准确功能接受CI 41048377808已在Python3.11验证pytest/mypy/ruff通过。CLI显式使用LF，Windows完整输出0个CR/1个末尾LF，与共享fixture完整字节一致。旧pytest缓存目录权限警告不影响测试结果，原日志保留。
 
 ## PostgreSQL Tests / Browser E2E
 
@@ -54,7 +54,7 @@ Artifact包含Dataset/Version与Content/Source/Manifest SHA、3因子及全点�
 
 ## Resource Measurements
 
-721/2160/4320导出字节分别324899/969086/1935891，单次导出58.6/63.6/79.0ms。浏览器真实CLI（200次Bootstrap）BTC4320耗时913ms、Artifact2598295字节；ETH2160耗时536ms、Artifact1300562字节。Windows额外4320测量含tracemalloc开销2.37秒、Python分配峰值23603101字节、进程peak working set75395072字节。Java浏览器JVM `-Xmx512m`，无OOM；不宣称整套低内存安装或长期稳定性资格。JSON及原资源文件均保留。
+721/2160/4320导出字节分别324899/969086/1935891，单次导出58.6/63.6/79.0ms。浏览器真实CLI（200次Bootstrap）BTC4320耗时913ms、Artifact2598295字节；ETH2160耗时536ms、Artifact1300562字节。浏览器后仅将CLI末尾CRLF固定为LF，最终同输入Artifact分别减少1字节，统计/身份不变且有定向完整字节证明，原浏览器证据仍有效。最终Windows4320测量含tracemalloc开销2.37秒、Python分配峰值23602154字节、进程peak working set75218944字节、Artifact2598294字节。Java浏览器JVM `-Xmx512m`，无OOM；不宣称整套低内存安装或长期稳定性资格。JSON及原资源文件均保留。
 
 ## Independent Review
 
@@ -64,7 +64,12 @@ Artifact包含Dataset/Version与Content/Source/Manifest SHA、3因子及全点�
 
 变更仅限原ResearchDatasetVersionPort及JDBC导出、app因子只读服务/控制器和目标测试、research/py新数据读取/3因子/统计/Artifact/CLI/依赖/样本/文档/测试、原research页面及新只读Panel/API/双语/浏览器配置与测试。既有stage注册只刷新两条DOMAIN_VOCABULARY摘要，未改guard或增加例外。准确文件allowlist在 `artifacts/nq-v103-factor/staged-allowlist.json`。
 
-本地功能已实现并验证。PR、准确head的9/9必要CI、merge SHA、post-merge9/9及安全清理尚待授权流程实际执行，未执行前不得标记DELIVERED或ACCEPTED。外部最终报告在完成时补足这些身份，避免自引用提交/CI。没有构建或发布v1.0.3，完成后停止，下一任务仅NQ-V103-FUNCTIONAL-CLOSEOUT。
+- Implementation / 功能接受head：`fe206edffd937c871323278891532b694a47f3ab`；Tree=`db85f4ac7481256d784311a2974e8ff85940e523`，29个文件精确暂存，工作区无既有改动。
+- [PR #96](https://github.com/ling5477/nexus-quant/pull/96)；[CI 41048377808](https://github.com/ling5477/nexus-quant/actions/runs/41048377808)，event=pull_request、head=上述功能接受head、completed/success、9/9 SUCCESS。Python3.11、Backend、前端全部单测/关键E2E、PG/Flyway/备份恢复、安全、架构、秘密扫描及交付证据门禁通过。
+- 本次仅文档更新后的最终PR head仍须其准确CI；合并SHA、post-merge9/9和清理必须实际完成，不用旧功能pair替代。外部最终报告在完成时补足这些身份，避免自引用提交/CI。
+- 本地浏览器Spring/Vite均已停止，54表初末完全一致；关键测试/审查证据和任务PG保留，不影响既有服务。合并后按准确任务分支及可再生产物清理。
+
+功能实现与本地验证COMPLETE、功能候选CI GREEN；最终Git交付尚待最终head/合并后CI与清理。没有构建或发布v1.0.3，完成后停止，下一任务仅NQ-V103-FUNCTIONAL-CLOSEOUT。
 
 ## Limitations
 
