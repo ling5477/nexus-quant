@@ -3,7 +3,7 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "04b0928e4914ec0731c8986b05d7d811d00ea3f84714bbe3caf629e7e2497837",
+      "sha256": "b8afa8d70d53b83a03d54cdd60bf14ea453dedaa3b390d261cd05969a47dedac",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",
@@ -315,7 +315,7 @@
     },
     {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/application/service/MarketdataDatasetService.java",
-      "sha256": "ad6435157bb8bdd2ad4eb2d9d240f6b58d99cea9ec37a4486b1cfd20244e9386",
+      "sha256": "22e03acf09e37dd905f16c4a2e5d96f331d176c49f4ec2e9f940e628730532a0",
       "kind": "DOMAIN_VOCABULARY",
       "reason": "freeze表示历史行情研究输入的不可变内容快照及其回归断言，不是开发阶段、可执行profile或部署身份。",
       "owner": "研究数据与回测合同维护者",
@@ -323,7 +323,7 @@
     },
     {
       "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/FrozenHistoricalInput.java",
-      "sha256": "a7415925df534ee68156f7b75388da901bd7a13f94139a31deea398e3847e16a",
+      "sha256": "e2710e384c460adbc6ed7c3f8c8d1c0e68256682d83cd4e93310723defef094f",
       "kind": "DOMAIN_VOCABULARY",
       "reason": "freeze表示历史行情研究输入的不可变内容快照及其回归断言，不是开发阶段、可执行profile或部署身份。",
       "owner": "研究数据与回测合同维护者",
@@ -728,6 +728,54 @@
       "reason": "发行导出器的反例夹具包含Phase 99/FREEZE及历史目录；用于证明正式边界拒绝阶段残留，不是运行配置。",
       "owner": "对应业务模块与CI合同维护者",
       "removalTrigger": "源语义或调用范围变更需重新独立审查；不自动接受新profile、生产调用方或阶段资产。"
+    },
+    {
+      "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/smoke/LongHistoricalResearchPostgresIntegrationTest.java",
+      "sha256": "0f1afb0ce585c9f495e1b1acc7ee5fa778eb53387f389ba90f69b08385d182a5",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示有界研究数据的不可变内容快照及其回归断言，不是开发阶段、profile或交易权限。",
+      "owner": "研究数据与回测合同维护者",
+      "removalTrigger": "冻结合同或调用边界变更时复核；不允许据此新增阶段运行入口或绕过SIM限制。"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/ResearchHistoricalInput.java",
+      "sha256": "e2cbbcb77f5c1b111c2e2112b2ffc2e10a2c9eb569727129cc41ef0ba1484054",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示有界研究数据的不可变内容快照及其回归断言，不是开发阶段、profile或交易权限。",
+      "owner": "研究数据与回测合同维护者",
+      "removalTrigger": "冻结合同或调用边界变更时复核；不允许据此新增阶段运行入口或绕过SIM限制。"
+    },
+    {
+      "path": "backend/nq-core/src/main/java/com/guidinglight/nexusquant/marketdata/domain/port/ResearchDatasetVersionPort.java",
+      "sha256": "861e5c6bfc1763de09f421b8e3641f7994cc4f5edbe9031e54e66f43c1dd9f67",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示有界研究数据的不可变内容快照及其回归断言，不是开发阶段、profile或交易权限。",
+      "owner": "研究数据与回测合同维护者",
+      "removalTrigger": "冻结合同或调用边界变更时复核；不允许据此新增阶段运行入口或绕过SIM限制。"
+    },
+    {
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/marketdata/application/service/LongResearchSnapshotTest.java",
+      "sha256": "3fd53171d3a91aed01365a9643b45c380fa0f16af6427063cc5233ee60167b10",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示有界研究数据的不可变内容快照及其回归断言，不是开发阶段、profile或交易权限。",
+      "owner": "研究数据与回测合同维护者",
+      "removalTrigger": "冻结合同或调用边界变更时复核；不允许据此新增阶段运行入口或绕过SIM限制。"
+    },
+    {
+      "path": "backend/nq-core/src/test/java/com/guidinglight/nexusquant/marketdata/domain/ResearchHistoricalInputTest.java",
+      "sha256": "565f6c9ecf3ebadc4056812c806058e56b5d2ad652f55b902e257da5b1227a74",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示有界研究数据的不可变内容快照及其回归断言，不是开发阶段、profile或交易权限。",
+      "owner": "研究数据与回测合同维护者",
+      "removalTrigger": "冻结合同或调用边界变更时复核；不允许据此新增阶段运行入口或绕过SIM限制。"
+    },
+    {
+      "path": "backend/nq-infra/src/main/java/com/guidinglight/nexusquant/marketdata/infra/jdbc/JdbcResearchDatasetVersionPort.java",
+      "sha256": "fae904d536c5da471895d1ff83115b0ed56eb1b118b0532c560cacece76918b2",
+      "kind": "DOMAIN_VOCABULARY",
+      "reason": "freeze表示有界研究数据的不可变内容快照及其回归断言，不是开发阶段、profile或交易权限。",
+      "owner": "研究数据与回测合同维护者",
+      "removalTrigger": "冻结合同或调用边界变更时复核；不允许据此新增阶段运行入口或绕过SIM限制。"
     }
   ],
   "retiredPaths": [

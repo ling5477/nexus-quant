@@ -50,4 +50,25 @@ class WalkForwardPolicyTest {
         assertNull(WalkForwardPolicy.execution(privateCost,WalkForwardPolicy.window(2),mapper));
         assertEquals("0.001",base.path("feeRate").asText());
     }
+
+    @Test void longerPresetsKeepFourSelectionsAndDisjointCausalWindows() {
+        for(int count:List.of(2160,4320)) {
+            assertTrue(WalkForwardPolicy.supports(count));
+            int width=count/6;
+            for(int fold=0;fold<4;fold++) {
+                var train=WalkForwardPolicy.window(fold*4,count);
+                var test=WalkForwardPolicy.window(fold*4+1,count);
+                assertEquals(0,train.startBar());
+                assertEquals((fold+2)*width,train.endBar());
+                assertEquals(train.endBar(),test.startBar());
+                assertEquals(width,test.endBar()-test.startBar());
+                assertEquals(test.endBar(),WalkForwardPolicy.window(fold*4+2,count).endBar());
+            }
+            assertEquals(count,WalkForwardPolicy.window(13,count).endBar());
+        }
+        for(int count:List.of(0,32,719,721,2161,4321)) {
+            assertFalse(WalkForwardPolicy.supports(count));
+            assertThrows(IllegalArgumentException.class,()->WalkForwardPolicy.window(0,count));
+        }
+    }
 }

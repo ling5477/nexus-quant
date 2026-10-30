@@ -690,7 +690,7 @@ jobs:
         run: |
           set -euo pipefail
           mvn -f backend/pom.xml -pl nq-app -am test \
-            -Dtest=ExperimentParametersTest,StrategyExperimentPostgresIntegrationTest,WalkForwardPolicyTest,WalkForwardPostgresIntegrationTest \
+            -Dtest=ExperimentParametersTest,StrategyExperimentPostgresIntegrationTest,WalkForwardPolicyTest,WalkForwardPostgresIntegrationTest,LongHistoricalResearchPostgresIntegrationTest \
             -Dsurefire.failIfNoSpecifiedTests=false \
             -Dnq.tenant.pg.required=true \
             -Dnq.tenant.pg.url="${NQ_FLYWAY_DB_URL}" \

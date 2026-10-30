@@ -72,7 +72,12 @@ public class SelectedStrategyVersionService {
                 && !source.cancelRequested(), "VALIDATION_NOT_ELIGIBLE_FOR_ACTIVATION");
         var training = validation.steps().stream().filter(s -> s.number() == 12).findFirst()
                 .orElseThrow(() -> conflict("FINAL_SELECTION_UNAVAILABLE"));
-        require("IN_SAMPLE".equals(training.role()) && training.startBar() == 0 && training.endBar() == 600
+        int count=validation.frozenPolicy().path("barCount").asInt();
+        require(WalkForwardPolicy.supports(count)
+                && (count==720?WalkForwardPolicy.VERSION:WalkForwardPolicy.LONG_VERSION)
+                    .equals(validation.frozenPolicy().path("version").asText()),"VALIDATION_POLICY_UNSUPPORTED");
+        require("IN_SAMPLE".equals(training.role()) && training.startBar() == 0
+                && training.endBar() == WalkForwardPolicy.window(12,count).endBar()
                 && training.experimentId() != null && training.selectedAt() != null && training.selection() != null,
                 "FINAL_SELECTION_NOT_FROZEN");
         JsonNode selected = training.selection().path("selected");

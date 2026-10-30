@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {researchWindow, isResearchJob, datasetFromJobLink, researchFromDatasetLink} from '../../src/features/marketdata/research-dataset';
+import {researchWindow, isResearchJob, datasetFromJobLink, researchFromDatasetLink, researchPreset, researchWindowBudget} from '../../src/features/marketdata/research-dataset';
 import {frozenResearchInput} from '../../src/features/backtests/FrozenResearchInputSummary';
 import type {MarketdataIngestionJob} from '../../src/types/marketdata';
 import zh from '../../src/i18n/locales/zh-CN/pages.json';
@@ -15,13 +15,25 @@ describe('bounded research dataset entry', () => {
     });
     it.each([
         ['SOL-USDT', '2026-09-26', '2026-10-26'],
-        ['BTC-USDT', '2026-09-25', '2026-10-26'],
+        ['BTC-USDT', '2026-04-28', '2026-10-26'],
         ['BTC-USDT', '2026-10-26', '2026-10-27'],
         ['BTC-USDT', '2026-10-26', '2026-10-26'],
         ['BTC-USDT', '2026-02-30', '2026-03-01'],
         ['BTC-USDT', '2026-10-25T08:00:00+08:00', '2026-10-26'],
     ])('rejects unsupported or non-complete UTC window %s %s %s', (symbol, start, end) => {
         expect(() => researchWindow(symbol, start, end, now)).toThrow('RESEARCH_WINDOW_INVALID');
+    });
+    it.each([[90, 2160, 8, 1], [180, 4320, 15, 2]] as const)('keeps the full %d-day preset and exposes finite continuation', (days, bars, batches, runs) => {
+        const {startDate, endDate} = researchPreset(days, now);
+        const window = researchWindow('BTC-USDT', startDate, endDate, now);
+        expect(researchWindowBudget(window)).toEqual({days, bars, batches, runs});
+        expect(endDate).toBe('2026-10-26');
+        expect(isResearchJob(window)).toBe(true);
+    });
+    it('defines presets at the UTC date boundary and never includes the current partial day', () => {
+        expect(researchPreset(90, Date.parse('2026-10-26T00:00:00+08:00')).endDate).toBe('2026-10-25');
+        expect(() => researchWindowBudget({startTime: '2026-04-01T00:00:00Z', endTime: '2026-10-01T23:59:59.999Z'})).toThrow();
+        expect(() => researchWindowBudget({startTime: '2026-10-01T00:00:00Z', endTime: '2026-10-01T23:00:00Z'})).toThrow();
     });
     it('recognizes original compatible job scope without narrowing the generic ingestion API', () => {
         const job = {...researchWindow('ETH-USDT', '2026-09-26', '2026-10-26', now), jobId: '123'} as MarketdataIngestionJob;
@@ -39,6 +51,20 @@ describe('bounded research dataset entry', () => {
         expect(frozenResearchInput('{}')).toBeNull();
         expect(frozenResearchInput('{')).toEqual({invalid: true});
         expect(frozenResearchInput(JSON.stringify({frozenInput: {...input, sha256: ''}}))).toEqual({invalid: true});
+    });
+    it('reads a compact long-history identity without requiring inline bars and rejects contradictory metadata', () => {
+        const input = {version: 'HISTORICAL_RESEARCH_INPUT_V2', datasetVersionId: '6e3736ef-c62c-4893-a802-2482917f1406',
+            sha256: 'a'.repeat(64), sourceSha256: 'b'.repeat(64), manifestSha256: 'c'.repeat(64),
+            frozenAt: '2026-10-26T01:00:00Z', source: 'marketdata_bars', barCount: 4320,
+            replayVisibilityVersion: 'CLOSED_HOURLY_BOUNDARY_V1', replayVisibilitySource: 'EXPERIMENT_ASSUMPTION'};
+        const parse = (frozen = input, count = 4320) => frozenResearchInput(JSON.stringify({barCount: count, frozenInput: frozen}));
+        expect(parse()).toMatchObject({invalid: false, count: 4320, datasetVersionId: input.datasetVersionId, manifestSha256: input.manifestSha256});
+        expect(parse(input, 2160)).toEqual({invalid: true});
+        expect(parse({...input, barCount: 4321}, 4321)).toEqual({invalid: true});
+        expect(parse({...input, manifestSha256: ''})).toEqual({invalid: true});
+        expect(parse({...input, sourceSha256: ''})).toEqual({invalid: true});
+        expect(parse({...input, datasetVersionId: 'unknown'})).toEqual({invalid: true});
+        expect(parse({...input, version: 'HISTORICAL_RESEARCH_INPUT_V3'})).toEqual({invalid: true});
     });
     it('has matching Chinese and English product messages', () => {
         expect(Object.keys(zh.researchDataset).sort()).toEqual(Object.keys(en.researchDataset).sort());

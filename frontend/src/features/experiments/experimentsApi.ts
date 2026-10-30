@@ -45,7 +45,7 @@ export interface ExperimentView {
     createdAt: string;
     frozenInput: {
         initialCapital: string; startTime: string; endTime: string;
-        datasetSnapshot: {symbol: string; interval: string; frozenInput: {sha256: string}};
+        datasetSnapshot: {symbol: string; interval: string; barCount?: number; frozenInput: {sha256: string; version?: string; datasetVersionId?: string; barCount?: number; manifestSha256?: string}};
         executionSpec: Record<string, unknown>; maxConcurrentRuns: number; maxTrials: number;
     };
     trials: ExperimentTrial[];

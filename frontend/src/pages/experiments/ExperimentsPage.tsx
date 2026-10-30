@@ -32,6 +32,7 @@ export function ExperimentsPage() {
     const [form] = Form.useForm<Draft>();
     const mode = Form.useWatch('mode', form) ?? 'grid';
     const type = Form.useWatch('type', form) ?? 'SPOT_SMA_TARGET_V1';
+    const templateConfigId = Form.useWatch('templateConfigId', form);
     const [preview, setPreview] = useState<Record<string, number | string>[] | null>(null);
     const [pending, setPending] = useState<Pending | null>(null);
     const [storageError, setStorageError] = useState(false);
@@ -39,6 +40,9 @@ export function ExperimentsPage() {
     const storageKey = `nq:experiment-creation:${user?.userId}`;
     const exactTemplateId = /^bcf-[a-f0-9-]{36}$/i.test(templateSearch);
     const templates = useBacktestsListQuery({limit: 50, offset: 0, researchConfigId: '', backtestConfigId: exactTemplateId ? templateSearch : '', name: exactTemplateId ? '' : templateSearch}, writable ? 1 : 0);
+    const template = templates.data?.items.find(config => config.backtestConfigId === templateConfigId);
+    const templateBars = template ? (Date.parse(template.endTime) + 1 - Date.parse(template.startTime)) / 3_600_000 : null;
+    const candidateLimit = templateBars != null && Number.isFinite(templateBars) && templateBars > 720 ? 4 : 16;
     useEffect(() => {applyNqCssVars();}, []);
     useEffect(() => {
         try {
@@ -65,7 +69,11 @@ export function ExperimentsPage() {
             ? {window: integers(values.windows), investedExposure: exposures}
             : {entryLookbackBars: integers(values.windows), exitLookbackBars: integers(values.exits), investedExposure: exposures}};
     };
-    const previewAction = useMutation({mutationFn: async () => experimentsApi.preview(await request()), onSuccess: setPreview, onError: error});
+    const previewAction = useMutation({mutationFn: async () => {
+        const candidates = await experimentsApi.preview(await request());
+        if (candidates.length > candidateLimit) throw new Error(t('experiments.candidateLimit', {count: candidateLimit}));
+        return candidates;
+    }, onSuccess: setPreview, onError: error});
     const create = useMutation({mutationFn: async (original?: Pending) => {
         const owner = user?.userId;
         if (!original && localStorage.getItem(storageKey)) throw new Error(t('experiments.pending'));
@@ -108,6 +116,7 @@ export function ExperimentsPage() {
             <Col xs={24} xl={10}><Card title={t('experiments.create')}>
                 <Form form={form} layout="vertical" disabled={!writable || !!pending || storageError || create.isPending} onValuesChange={() => setPreview(null)} initialValues={{type: 'SPOT_SMA_TARGET_V1', mode: 'grid', windows: '4,8', exits: '2', exposures: '0.5,1', explicit: '[{"window":4,"investedExposure":"0.5"},{"window":8,"investedExposure":"1"}]'}}>
                     <Form.Item name="templateConfigId" label={t('experiments.template')} rules={[{required: true}]}><Select showSearch filterOption={false} onSearch={setTemplateSearch} loading={templates.isLoading} options={templates.data?.items.filter(c => c.strategyVersionId && c.datasetId).map(c => ({value: c.backtestConfigId, label: `${c.name} · ${c.backtestConfigId}`}))}/></Form.Item>
+                    <Typography.Paragraph type="secondary">{t('experiments.historyBudget', {count: candidateLimit, bars: templateBars != null && Number.isInteger(templateBars) ? templateBars : '—'})}</Typography.Paragraph>
                     {templates.error && <Alert type="error" message={formatApiError(templates.error as AppApiError)}/>}
                     <Form.Item name="type" label={t('experiments.strategy')}><Select options={['SPOT_SMA_TARGET_V1', 'SPOT_CHANNEL_BREAKOUT_V1'].map(value => ({value, label: value}))}/></Form.Item>
                     <Form.Item name="mode" label={t('experiments.mode')}><Radio.Group options={[{value: 'grid', label: t('experiments.grid')}, {value: 'explicit', label: t('experiments.explicit')}]}/></Form.Item>
@@ -140,6 +149,9 @@ export function ExperimentsPage() {
                 {key: 'window', label: t('experiments.range'), children: `${view.frozenInput.startTime} → ${view.frozenInput.endTime}`},
                 {key: 'capital', label: t('experiments.capital'), children: view.frozenInput.initialCapital},
                 {key: 'hash', label: 'SHA-256', children: <Typography.Text style={{overflowWrap: 'anywhere'}}>{view.frozenInput.datasetSnapshot.frozenInput.sha256}</Typography.Text>},
+                {key: 'count', label: t('barCount'), children: view.frozenInput.datasetSnapshot.barCount ?? 'UNAVAILABLE'},
+                {key: 'version', label: t('researchDataset.frozenVersion'), children: view.frozenInput.datasetSnapshot.frozenInput.version ?? 'UNAVAILABLE'},
+                ...(view.frozenInput.datasetSnapshot.frozenInput.datasetVersionId ? [{key: 'datasetVersion', label: t('researchDataset.datasetVersion'), children: <Typography.Text style={{overflowWrap: 'anywhere'}}>{view.frozenInput.datasetSnapshot.frozenInput.datasetVersionId}</Typography.Text>}] : []),
                 {key: 'cost', label: t('experiments.assumptions'), children: <Space wrap><span>{t('experiments.feeRate')}: {String(view.frozenInput.executionSpec.feeRate ?? 'UNAVAILABLE')}</span><span>{t('experiments.slippageBps')}: {String(view.frozenInput.executionSpec.slippageBps ?? 'UNAVAILABLE')}</span></Space>},
             ]}/>
             <Collapse size="small" style={{margin: '12px 0'}} items={[{key: 'frozen', label: t('experiments.frozenDetails'), children: <pre style={{maxHeight: 280, overflow: 'auto', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', margin: 0}}>{JSON.stringify(view.frozenInput.executionSpec, null, 2)}</pre>}]}/>

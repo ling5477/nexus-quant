@@ -18,10 +18,19 @@ public final class SpotBarIdentity {
     private SpotBarIdentity() { }
 
     public static Snapshot capture(List<HistoricalBar> bars, ObjectMapper mapper) {
+        return captureBounded(bars, mapper, 720);
+    }
+
+    /** 研究长输入单独使用此预算；默认身份入口仍限制SIM及公开捕获的原有窗口。 */
+    public static Snapshot captureResearch(List<HistoricalBar> bars, ObjectMapper mapper) {
+        return captureBounded(bars, mapper, 4320);
+    }
+
+    private static Snapshot captureBounded(List<HistoricalBar> bars, ObjectMapper mapper, int maximum) {
         Objects.requireNonNull(bars, "bars");
         Objects.requireNonNull(mapper, "mapper");
-        if (bars.isEmpty() || bars.size() > 720) {
-            throw new IllegalArgumentException("bar snapshot must contain 1 to 720 bars");
+        if (bars.isEmpty() || bars.size() > maximum) {
+            throw new IllegalArgumentException("bar snapshot must contain 1 to " + maximum + " bars");
         }
         ArrayNode snapshot = mapper.createArrayNode();
         for (HistoricalBar bar : bars) {

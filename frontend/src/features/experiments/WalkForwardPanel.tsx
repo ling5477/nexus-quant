@@ -7,7 +7,7 @@ import {useAuthStore} from '@/store/auth-store';
 import {formatApiError} from '@/api/errors';
 import type {AppApiError} from '@/types/api';
 import {experimentQueryKeys} from '@/api/query-keys';
-import {validationApi, type ValidationResult, type ValidationView} from './validationApi';
+import {validationApi, supportsValidationPolicy, type ValidationResult, type ValidationView} from './validationApi';
 import {ResearchSimComparisonPanel} from './ResearchSimComparisonPanel';
 import {SelectedVersionActivation} from './SelectedVersionActivation';
 
@@ -62,6 +62,7 @@ export function WalkForwardPanel({source, completed, writable}: {source: string;
     const error = policy.error ?? list.error ?? detail.error ?? create.error ?? cancel.error ?? reveal.error;
     const value = (v: unknown) => v == null ? 'UNAVAILABLE' : String(v);
     const shown = view?.results.filter(r => r.step < 13 || revealed) ?? [];
+    const policySupported = !!policy.data && supportsValidationPolicy(policy.data);
     return <Card title={t('walkForward.title')}>
         <Space direction="vertical" size={16} style={{width: '100%'}}>
             <Alert showIcon type="warning" message={t('walkForward.shortSample')} description={t('walkForward.exposure')}/>
@@ -74,11 +75,20 @@ export function WalkForwardPanel({source, completed, writable}: {source: string;
                     {title: 'Fold', dataIndex: 'fold'}, {title: t('walkForward.role'), dataIndex: 'role', render: role => <Tag>{role}</Tag>},
                     {title: t('walkForward.range'), render: (_, r) => <Space direction="vertical"><span>[{r.startBar}, {r.endBar}) · {r.endBar - r.startBar} bars</span><Typography.Text type="secondary">{r.startTime ?? 'INSUFFICIENT_DATA'} → {r.endTimeExclusive ?? 'UNAVAILABLE'} (UTC)</Typography.Text></Space>},
                 ]}/>
-                {policy.data.barCount !== 720 && <Alert type="warning" message={`INSUFFICIENT_DATA · ${policy.data.barCount}/720`}/>}
+                {!policySupported && <Alert type="warning" message={t('walkForward.unsupportedWindow', {count: policy.data.barCount})}/>}
+                {policySupported && <Descriptions size="small" column={{xs: 1, sm: 2}} items={[
+                    {key: 'policy', label: t('researchDataset.frozenVersion'), children: policy.data.version},
+                    {key: 'bars', label: t('barCount'), children: policy.data.barCount},
+                    {key: 'candidates', label: t('experiments.trials'), children: `${policy.data.candidates.length} / ${policy.data.maxTrials ?? (policy.data.barCount > 720 ? 4 : 16)}`},
+                    {key: 'runs', label: t('walkForward.validationRunBudget'), children: policy.data.estimatedValidationRuns ?? 'UNAVAILABLE'},
+                    {key: 'totalRuns', label: t('walkForward.totalRunBudget'), children: policy.data.estimatedTotalRuns ?? 'UNAVAILABLE'},
+                    {key: 'windowBars', label: t('walkForward.windowBarBudget'), children: policy.data.estimatedWindowBars ?? 'UNAVAILABLE'},
+                    {key: 'attemptRuns', label: t('walkForward.attemptRunBudget'), children: policy.data.maxAttemptRuns ?? 'UNAVAILABLE'},
+                ]}/>}
                 <Collapse items={[{key: 'policy', label: t('walkForward.frozenPolicy'), children: <pre style={{maxHeight: 300, overflow: 'auto', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere'}}>{JSON.stringify(view?.frozenPolicy ?? policy.data, null, 2)}</pre>}]}/>
             </>}
             <Space wrap>
-                <Button type="primary" disabled={!writable || !completed || policy.isPending || list.isPending || (!hasPending && list.data?.some(v => v.status === 'RUNNING'))} loading={create.isPending} onClick={() => create.mutate()}>{hasPending ? t('experiments.recover') : t('walkForward.submit')}</Button>
+                <Button type="primary" disabled={!writable || !completed || policy.isPending || list.isPending || (!hasPending && (!policySupported || list.data?.some(v => v.status === 'RUNNING')))} loading={create.isPending} onClick={() => create.mutate()}>{hasPending ? t('experiments.recover') : t('walkForward.submit')}</Button>
                 <Button onClick={() => void refresh()}>{t('experiments.refresh')}</Button>
                 <Select aria-label={t('walkForward.history')} style={{width: 'min(360px, 70vw)'}} value={id} onChange={selectValidation} options={list.data?.map(v => ({value: v.validationId, label: `${v.createdAt} · ${v.status}`}))}/>
             </Space>
