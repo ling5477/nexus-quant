@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-V103-02-FORWARD-SIM-EVALUATION
+accepted_batch=NQ-V103-03-FACTOR-RESEARCH-FOUNDATION
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=dff5b13b1debcaa8485970bcea7988716ed19bf9
-accepted_batch_acceptance_head=f8fd3a45385708e72436c4ac57c3565b8f7e627d
-accepted_batch_ci_run=41029376114
+accepted_batch_implementation_commit=fe206edffd937c871323278891532b694a47f3ab
+accepted_batch_acceptance_head=fe206edffd937c871323278891532b694a47f3ab
+accepted_batch_ci_run=41048377808
 work_batch=NQ-V103-03-FACTOR-RESEARCH-FOUNDATION
-work_batch_status=NOT_STARTED
-work_batch_commit=NONE
-work_batch_ci_run=NOT_RUN
-next_action=NQ-V103-03-IMPLEMENTATION
+work_batch_status=ACCEPTED|CI_GREEN
+work_batch_commit=fe206edffd937c871323278891532b694a47f3ab
+work_batch_ci_run=41048377808
+next_action=NQ-V103-FUNCTIONAL-CLOSEOUT-PLAN
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -56,7 +56,7 @@ v1.0.2 开发与产品发布主线已完成。NQ-V103-01 有界长历史研究�
 
 NQ-V103-01 已由 PR #94 交付，当前02的开发基线为 `96e011cb3b7edbba3e62dd85ad0b7fc2469a74b7`。NQ-V103-02 前向 SIM 评价与人工复盘已实现：功能接受 head=`f8fd3a45385708e72436c4ac57c3565b8f7e627d`，准确 [CI 41029376114](https://github.com/ling5477/nexus-quant/actions/runs/41029376114) 为9/9 SUCCESS。原 canonical 分析增加有界1～90日UTC/asOf观察、覆盖与逐项指标状态；V52只持久化研究目标及追加人工复盘，STOP不影响SIM执行。真实隔离PG、Chrome闭环、历史研究/SIM边界回归及一次独立定向审查均通过；合成时间推进不代表真实长期观察。开发schema为V52，正式v1.0.2/V49不变，详见[02实施证据](evidence/NQ_V103_02_FORWARD_SIM_EVALUATION.md)。
 
-上述接受pair属于已验证功能候选；同一 [PR #95](https://github.com/ling5477/nexus-quant/pull/95) 的最终文档head、合并与合并后CI另行绑定实际身份，不用旧pair替代。下一任务 `NQ-V103-03-FACTOR-RESEARCH-FOUNDATION / NOT_STARTED`，需后续指令，本任务到02交付为止，不自动执行03。以下旧阶段文字只表示对应历史时点，不覆盖当前正式发行及开发状态。
+02已由PR #95合并，03起始dev基线为 `df2d8057afc0e6ce7f742ccbacfe30ac2a99db46`。NQ-V103-03离线Python因子研究已完成：功能接受head=`fe206edffd937c871323278891532b694a47f3ab`，[准确CI 41048377808](https://github.com/ling5477/nexus-quant/actions/runs/41048377808)为9/9 SUCCESS，Python3.11质量门禁通过。原V2冻结只读导出、三个因子、purged时间切分/块Bootstrap、独立诊断Artifact及原研究页只读预览形成闭环；真实隔离PG/Chrome BTC4320和ETH2160往返、54表零差异及一次独立审查PASS。没有新表或交易事实，开发schema仍V52，正式v1.0.2/V49不变，见[实施证据](evidence/NQ_V103_03_PYTHON_FACTOR_RESEARCH.md)。同一[PR #96](https://github.com/ling5477/nexus-quant/pull/96)的最终文档head、merge与post-merge CI另行绑定，不能用功能接受pair替代。下一任务仅 `NQ-V103-FUNCTIONAL-CLOSEOUT`，机器next_action的PLAN后缀表达待后续指令，不自动执行closeout、构包或发布v1.0.3。以下旧阶段文字只表示对应历史时点，不覆盖当前正式发行及开发状态。
 
 以下发布准备文字为2026-10-20历史记录，不重新触发发布审计，也不覆盖当前迭代。历史 Gate、C4 原审查与例外决定不变，LIVE保持关闭。
 

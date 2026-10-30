@@ -12,4 +12,8 @@ public interface ResearchDatasetVersionPort {
     Optional<JsonNode> find(UUID datasetId);
     JsonNode freeze(JsonNode dataset, List<HistoricalBar> source, Instant frozenAt);
     List<HistoricalBar> read(JsonNode dataset);
+    /** 导出原规范字节，保留观察时间与回放时间的独立摘要。 */
+    default JsonNode export(UUID datasetId) {
+        throw new UnsupportedOperationException("RESEARCH_EXPORT_UNAVAILABLE");
+    }
 }

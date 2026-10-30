@@ -46,7 +46,32 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--git-commit", default=None, help="Optional git commit recorded in experiment metadata.")
     parser.add_argument("--created-at", default=None, help="Optional UTC timestamp used for reproducible tests.")
     parser.add_argument("--notes", action="append", default=[], help="Repeatable note stored in manifest and metadata.")
+    parser.add_argument("--frozen-input", type=Path, help="Authenticated Java frozen-research-export.v1 JSON.")
+    parser.add_argument("--factor-output", type=Path, help="Local factor artifact output file.")
+    parser.add_argument("--factor-window", type=int, default=24)
+    parser.add_argument("--horizon-bars", type=int, default=6)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--bootstrap-repetitions", type=int, default=200)
     args = parser.parse_args(argv)
+
+    if args.frozen_input is not None:
+        from nq_research.dataset.frozen import compact, load_frozen
+        from nq_research.factors.artifact import build_artifact
+
+        try:
+            if args.bars_csv is not None or args.factor_output is None:
+                raise ValueError("Use --frozen-input with --factor-output, without --bars-csv")
+            if args.frozen_input.resolve() == args.factor_output.resolve():
+                raise ValueError("Output must not overwrite frozen input")
+            artifact = build_artifact(load_frozen(args.frozen_input), generated_at=args.created_at or utc_now_text(),
+                                      window=args.factor_window, horizon=args.horizon_bars, seed=args.seed,
+                                      repetitions=args.bootstrap_repetitions)
+            args.factor_output.write_text(compact(artifact, sort=True) + "\n", encoding="utf-8", newline="\n")
+            print(json.dumps({"artifactId": artifact["artifactId"], "checksum": artifact["checksum"]}))
+            return 0
+        except (OSError, ValueError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
 
     if args.bars_csv is None:
         parser.print_help()
