@@ -4,6 +4,7 @@ import com.guidinglight.nexusquant.auth.application.service.CurrentUserProfileSe
 import com.guidinglight.nexusquant.gateway.application.GatewayAuthFacade;
 import com.guidinglight.nexusquant.scheduler.paper.StrategySimAnalysisQuery;
 import com.guidinglight.nexusquant.scheduler.paper.StrategySimPerformanceQuery;
+import com.guidinglight.nexusquant.scheduler.paper.StrategySimForwardEvaluationQuery;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -83,5 +84,16 @@ public class StrategySimAnalysisController {
                         () ->
                                 new ResponseStatusException(
                                         HttpStatus.NOT_FOUND, "SIM_RUN_NOT_FOUND"));
+    }
+
+    /** 观察区间是左闭右开；仅组织已有事实，不推进SIM、采样或生成评价写记录。 */
+    @GetMapping("/{paperRunId}/forward-evaluation")
+    public StrategySimForwardEvaluationQuery.Evaluation forwardEvaluation(
+            @PathVariable @NotBlank @Size(max = 128) String paperRunId,
+            @RequestParam Instant from,
+            @RequestParam Instant to,
+            @RequestParam(required = false) Instant asOf) {
+        return query.readForwardEvaluation(owner(), paperRunId, from, to, asOf)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "SIM_RUN_NOT_FOUND"));
     }
 }

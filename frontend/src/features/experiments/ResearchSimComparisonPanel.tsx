@@ -69,6 +69,9 @@ export function ResearchSimComparisonPanel({validation}: {validation: Validation
         {row.evaluationId && <Link to={`/evaluations?evaluationId=${encodeURIComponent(row.evaluationId)}`}>{t('experiments.evaluation')}</Link>}
         {row.phase === 'CONTINUOUS_SIM_FORWARD' && view?.paperRunId && <Link to={`/paper-trading/runs?paperRunId=${encodeURIComponent(view.paperRunId)}`}>{t('researchSim.simDetail')}</Link>}
     </Space>;
+    const forwardPath = view?.paperRunId ? '/paper-trading/reviews?' + new URLSearchParams({analysisSource: 'sim',
+        paperRunId: view.paperRunId, experimentId: validation.sourceExperimentId, validationId: validation.validationId,
+        selectedTrialId: trialId, strategyVersionId: versionId, publishId: view.publishId ?? publishId}).toString() : null;
     const refresh = () => {void Promise.all([publications.refetch(), ...(publishId ? [sims.refetch()] : []), comparison.refetch()]);};
     return <Card size="small" title={t('researchSim.title')} data-testid="research-sim-comparison">
         <Space direction="vertical" size={16} style={{width: '100%', minWidth: 0}}>
@@ -118,6 +121,7 @@ export function ResearchSimComparisonPanel({validation}: {validation: Validation
                         <Link to={`/experiments?experimentId=${encodeURIComponent(validation.sourceExperimentId)}&validationId=${encodeURIComponent(validation.validationId)}`}>{t('researchSim.validationDetail')}</Link>
                         <Link to={`/backtests/${encodeURIComponent(view.backtestConfigId)}?backtestRunId=${encodeURIComponent(view.backtestRunId)}`}>{t('researchSim.fullBacktest')}</Link>
                         {view.paperRunId && <Link to={`/paper-trading/runs?paperRunId=${encodeURIComponent(view.paperRunId)}`}>{t('researchSim.simDetail')}</Link>}
+                        {forwardPath && <Link to={forwardPath}>{t('forwardObservation.openReview')}</Link>}
                     </Space>
                     <Alert type="warning" message={`${view.status} · ${t('researchSim.metricBases')}`}/>
                     {view.performance.some(row => row.reason === 'HOLDOUT_NOT_EXPLICITLY_VIEWED') && <Alert type="info" message={t('researchSim.holdoutHidden')}/>}

@@ -27,6 +27,12 @@ describe('SIM analysis navigation context', () => {
     it('does not invent an instance or interval for empty navigation', () => {
         expect(simAnalysisNavigationSearch('?tab=orders')).toBe('');
     });
+    it('preserves fixed observation cutoff, frozen review and research lineage without page-local state', () => {
+        const result = new URLSearchParams(simAnalysisNavigationSearch('?paperRunId=run-1&simFrom=2026-10-01T00:00:00Z&simTo=2026-10-02T00:00:00Z&simAsOf=2026-10-03T00:00:00Z&observationId=observation&reviewId=review&validationId=validation&experimentId=experiment&selectedTrialId=trial&strategyVersionId=version&publishId=publication&orderId=other&tab=risk'));
+        expect(Object.fromEntries(result)).toEqual({paperRunId: 'run-1', simFrom: '2026-10-01T00:00:00Z', simTo: '2026-10-02T00:00:00Z',
+            simAsOf: '2026-10-03T00:00:00Z', observationId: 'observation', reviewId: 'review', validationId: 'validation', experimentId: 'experiment',
+            selectedTrialId: 'trial', strategyVersionId: 'version', publishId: 'publication'});
+    });
     it('keeps explicit legacy source and view but drops page-local filters and grouping', () => {
         expect(
             simAnalysisNavigationSearch(

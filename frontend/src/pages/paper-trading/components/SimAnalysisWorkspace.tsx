@@ -26,6 +26,7 @@ import {simAnalysisApi, type SimAnalysis} from '@/features/paper-trading/api/ana
 import {CanonicalFactTable} from '@/features/paper-trading/components/CanonicalSimFacts';
 import {CanonicalSimOrderDetails} from '@/features/paper-trading/components/CanonicalSimOrderDetails';
 import {SimPerformancePanel} from '@/features/paper-trading/components/SimPerformancePanel';
+import {ForwardSimObservationPanel} from '@/features/paper-trading/components/ForwardSimObservationPanel';
 import {
     SimExecutionCode,
     SimExecutionDiagnostics,
@@ -71,6 +72,7 @@ export function SimAnalysisWorkspace({kind}: {kind: 'portfolio' | 'reviews' | 'd
         next.set('paperRunId', id);
         next.delete('orderId');
         next.delete('tab');
+        for (const key of ['simFrom', 'simTo', 'simAsOf', 'observationId', 'reviewId', 'validationId', 'selectedTrialId', 'strategyVersionId', 'publishId', 'experimentId']) next.delete(key);
         setParams(next);
     };
     const requestedTab = params.get('tab');
@@ -198,7 +200,7 @@ export function SimAnalysisWorkspace({kind}: {kind: 'portfolio' | 'reviews' | 'd
                             <ReviewSummary analysis={analysis} />
                         )}
                     </Card>
-                    {kind !== 'diagnostics' && (
+                    {kind === 'reviews' ? <ForwardSimObservationPanel key={analysis.run.paperRunId} run={analysis.run}/> : kind === 'portfolio' && (
                         <SimPerformancePanel
                             key={analysis.run.paperRunId}
                             paperRunId={analysis.run.paperRunId}

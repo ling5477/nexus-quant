@@ -16,7 +16,12 @@ public final class PerformanceStatistics {
 
     /** 采样桶必须连续且每桶仅一点；缺测、重复、非正基数及零方差不伪装成零 Sharpe。 */
     public static Sharpe sharpe(List<Point> input, long samplingSeconds) {
-        if (samplingSeconds <= 0 || input.size() > 1000)
+        return sharpe(input, samplingSeconds, 1000);
+    }
+
+    /** 长观察沿用原公式，只接受两个固定资源预算；旧调用仍限制一千点。 */
+    public static Sharpe sharpe(List<Point> input, long samplingSeconds, int maximumPoints) {
+        if ((maximumPoints != 1000 && maximumPoints != 10000) || samplingSeconds <= 0 || input.size() > maximumPoints)
             throw new IllegalArgumentException("invalid bounded statistics input");
         var points = input.stream().sorted(Comparator.comparing(Point::at)).toList();
         if (points.size() < 3) return unavailable("INSUFFICIENT_SAMPLES", samplingSeconds, 0);
