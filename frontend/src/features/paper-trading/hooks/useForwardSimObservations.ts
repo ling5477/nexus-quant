@@ -68,4 +68,3 @@ export function useForwardSimObservations(run: SimAnalysisRun, range: Evaluation
     const visibleStorage = stored.owner === owner && stored.run === run.paperRunId ? stored : {pending: null, storageError: false};
     return {rawPerformance, evaluation, list, detail, review, mutation, pending: visibleStorage.pending, storageError: visibleStorage.storageError, discardRejected};
 }
-
