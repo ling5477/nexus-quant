@@ -1,6 +1,6 @@
 # NQ-V103-01 有界长历史研究
 
-日期：2026-10-30。此报告记录开发候选与本地验证；PR、准确 head CI、合并及清理在交付完成后另行绑定，不以本地通过替代远端结果。
+日期：2026-10-30。此报告记录功能候选与已执行验证；最终 PR 文档 head、合并及清理在交付完成后另行绑定，不以功能候选 CI 替代后续准确提交的 CI。
 
 ## Baseline Commit
 
@@ -115,7 +115,7 @@ manifest 绑定 Dataset/来源身份、UTC 范围、数量、原观察时间、�
 - backtest/app：`BacktestExecutionService`、`StrategyExperimentService`、`ExperimentValidationService`、`WalkForwardPolicy`、`SelectedStrategyVersionService`；WF 单元、新长历史 PG 及浏览器 fixture。
 - frontend：原 `MarketdataIngestionWorkspace` / `research-dataset`、`FrozenResearchInputSummary`、`WalkForwardPanel` / API 类型、`ExperimentsPage`、中英资源；Dataset/WF 单元与独立长历史 Playwright 配置/测试。
 - CI/登记：原 PG job 增加新目标测试、开发源码 manifest 加 3 个 Java runtime 路径、业务 freeze 词与准确摘要登记；新迁移由现有动态 inventory 发现，旧 V44 固定清单的迁移段保持原样。没有弱化 checker、增加 job 或新增治理阶段。
-- 本报告。最终准确路径清单以该 PR diff 为准。
+- 本报告与当前 STATUS/ROADMAP 的最小能力及下一任务同步。最终准确路径清单以该 PR diff 为准。
 
 ## Known Limitations / Rollback
 
@@ -127,4 +127,6 @@ V2 缺失/损坏存储必须失败；不自动重抓旧版本。发现回归时�
 
 实现提交 `ae939aabd96b4245497650e9dda0e1a04690475d`，PR [#94](https://github.com/ling5477/nexus-quant/pull/94)。首轮 CI [41003852194](https://github.com/ling5477/nexus-quant/actions/runs/41003852194) 的 V51 空库迁移、动态完整 inventory、独立参考库指纹和空库业务事实均通过；随后旧 V44 快照的 CRLF 单元测试因源码清单误加入两条新迁移而失败。修复仅移除固定清单中的 V50/V51 登记，保留动态 V1～V51 发现和原冻结合同，未改 checker、历史清单或 migration。原始日志 `ci-first-postgres-failed.log` 保留，修复后 schema 单元另记。
 
-当前 PR CI 尚待准确修复 head 通过；Merge=NOT_RUN，Cleanup=PENDING_DELIVERY。尚不宣称 NQ_V103_01_ACCEPTED。最终交付身份与清理在完成后记录；不自动执行 NQ-V103-02。
+修复后的功能接受 head=`68d757748f2958fef501996a0bf0d3dac24df869`，tree=`484791d15067064d343d8d20778db9c3f7e892d9`；[CI 41004482332](https://github.com/ling5477/nexus-quant/actions/runs/41004482332) 为 pull_request / completed / success，9/9 必要 job 全部 SUCCESS。另有27项 schema 合同单元通过，日志 `schema-contract-tests-final.log`；固定清单的迁移段与基线完全一致，22个已独立审查生产文件无漂移。
+
+当前机器接受 pair 绑定上述已验证功能候选。同步状态、路线和本报告的文档提交只改3份文档；最终 PR head 的必要 CI、Merge、Post-merge CI 与 Cleanup 尚待后续真实结果，不提前宣称 NQ_V103_01_ACCEPTED。完整交付后在仓库外 `E:/Project/NQ_V103_01_HISTORICAL_RESEARCH_EXPANSION.md` 同名收尾报告绑定最终身份，避免自引用提交/CI循环。未进行发行、部署或02/03实施。

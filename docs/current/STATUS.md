@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-V102-05-BACKTEST-SIM-COMPARISON
+accepted_batch=NQ-V103-01-HISTORICAL-RESEARCH-EXPANSION
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=775abacd3e1d4268e2b881b2223b73ac246f0fd3
-accepted_batch_acceptance_head=73604dd0543bee0c536bd5a6065b8646afa4e346
-accepted_batch_ci_run=40529901477
-work_batch=NQ-V103-PLANNING
+accepted_batch_implementation_commit=ae939aabd96b4245497650e9dda0e1a04690475d
+accepted_batch_acceptance_head=68d757748f2958fef501996a0bf0d3dac24df869
+accepted_batch_ci_run=41004482332
+work_batch=NQ-V103-02-FORWARD-SIM-EVALUATION
 work_batch_status=NOT_STARTED
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-V103-PLAN
+next_action=NQ-V103-02-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -46,13 +46,15 @@ NQ v1.0.0、v1.0.1、v1.0.2 均为 RELEASED。v1.0.2 已于 2026-10-29T10:15:34Z
 | RC3 ZIP SHA256 | `158b7ccc42fb333f4031ceae12fc756ea1f340603ca9aef2f92a63946c67c048` |
 | Package Manifest SHA256 | `74406593acccdc452004067a5877a080d7dff596d9417f0af60e54aceb200d5f` |
 
-V102-01～05 已完成；顶部 accepted_batch 仍保留 V102-05 的业务实施与接受 CI 身份，不替换成发行 Snapshot 或本次文档提交。固定 RC3 已取得正式准入：Windows 新安装、v1.0.1/V47→v1.0.2/V49 普通升级、历史数据保留、包级备份恢复、主动回滚、真实失败更新自动恢复均 PASS。原 update 失败返回 exit1，原安装器自动恢复 V47 及原资产，122 张旧表/32 张业务表恢复检查点一致，pending 清除、成功回执、健康和登录通过；不是用主动 rollback 替代自动恢复。证据索引及适用范围见 [TESTING](TESTING.md) 的 2026-10-29 发行收尾追加记录。
+V102-01～05 已完成；顶部 accepted_batch 记录最新开发功能的实施与接受 CI，不替换上述固定发行身份。固定 RC3 已取得正式准入：Windows 新安装、v1.0.1/V47→v1.0.2/V49 普通升级、历史数据保留、包级备份恢复、主动回滚、真实失败更新自动恢复均 PASS。原 update 失败返回 exit1，原安装器自动恢复 V47 及原资产，122 张旧表/32 张业务表恢复检查点一致，pending 清除、成功回执、健康和登录通过；不是用主动 rollback 替代自动恢复。证据索引及适用范围见 [TESTING](TESTING.md) 的 2026-10-29 发行收尾追加记录。
 
 正式范围仅 Self-Hosted / Windows 11 amd64 / Docker Desktop Linux Containers / PostgreSQL 16（本包 16.15）/ V49；支持 v1.0.1 普通更新，不支持 v1.0.0 直接普通更新到 v1.0.2。四项公开资产大小及完整 SHA256 已复核；provenance 为 UNSIGNED_RELEASE_SOURCE_MAPPING，不是独立数字签名。Snapshot CI=NOT_RUN；上述 9/9 是 Source CI，本次开发文档 CI 另行绑定实际提交。
 
 保留限制：Linux 低内存实际安装、一次重启和 600 秒运行仅 SCOPED_PASS，正式 Linux 支持 NOT_QUALIFIED、长期稳定性 NOT_VERIFIED。低于 4 GiB 为警告→LIGHT→继续（768m/512m/128m），不保证长期稳定性；既存 3.99 GiB 硬拒绝断言为有证据的非阻断旧预期，原失败保留，后续可定向修正测试，本轮不改测试。历史 C4 原审查 NOT_ACCEPTED / EVIDENCE_GAPS、所有者例外及 72 小时重跑豁免均保留。Public Demo 不包含在本次正式发行中，LIVE=DISABLED、Kill Switch=ENGAGED，不开放真实资金自动交易。
 
-v1.0.2 开发与产品发布主线已完成；本次 docs-only Git 交付的 PR/Commit/CI 由仓库外收尾报告记录，未完成前不宣称该文档交付已合并。下一阶段仅为 `NQ-V103-PLANNING / NOT_STARTED`，唯一下一动作 `NQ-V103-PLAN`，不代表授权制定或实施 v1.0.3 功能。以下旧阶段文字只表示对应历史时点，不覆盖当前正式发行状态。
+v1.0.2 开发与产品发布主线已完成。NQ-V103-01 有界长历史研究的功能候选 `68d757748f2958fef501996a0bf0d3dac24df869` 已通过 [CI 41004482332](https://github.com/ling5477/nexus-quant/actions/runs/41004482332) 的 9/9 必要检查：OKX SPOT BTC/ETH 1h 的 1～180 UTC 日、最多4320根、V2不可变冻结引用、原正式回测/实验和90/180日预设WF。开发 schema 为 V51，正式发行仍为 V49。旧720输入与Continuous SIM边界保持，未自动激活、发布或下单；详见[实施证据](evidence/NQ_V103_01_HISTORICAL_RESEARCH_EXPANSION.md)。
+
+上述接受身份属于已验证功能候选；同一 PR #94 的最终文档 head、合并及合并后 CI 另行绑定实际身份，未完成前不宣称 Git 交付完成。下一任务 `NQ-V103-02-FORWARD-SIM-EVALUATION / NOT_STARTED`；需后续任务指令，本任务到01交付为止，不自动执行02或03。以下旧阶段文字只表示对应历史时点，不覆盖当前正式发行及开发状态。
 
 以下发布准备文字为2026-10-20历史记录，不重新触发发布审计，也不覆盖当前迭代。历史 Gate、C4 原审查与例外决定不变，LIVE保持关闭。
 
