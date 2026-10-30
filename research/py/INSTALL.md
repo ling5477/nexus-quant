@@ -12,7 +12,7 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip check
 ```
 
-运行依赖固定 NumPy 2.3.5，完整依赖 Wheel 与 hash 随包提供；无需全局 NumPy、包缓存、editable 源码安装或外部包索引。NumPy Wheel 自带其及所包含数值库的许可证，详见该 Wheel 的 dist-info/licenses；项目法律说明为本目录 LICENSE、DISCLAIMER.md 与 THIRD_PARTY_NOTICES.md。源码和构建工具版本保存在 source/ 与 dependencies.json，不是运行时需联网安装的内容。
+运行依赖固定 NumPy 2.3.5，完整依赖 Wheel 与 hash 随包提供；无需全局 NumPy、包缓存、editable 源码安装或外部包索引。NumPy Wheel 自带其及所包含数值库的许可证，详见该 Wheel 的 dist-info/LICENSE.txt；项目法律说明为本目录 LICENSE、DISCLAIMER.md 与 THIRD_PARTY_NOTICES.md。源码和构建工具版本保存在 source/ 与 dependencies.json，不是运行时需联网安装的内容。
 
 在 NQ 原 research 页选择自己的已冻结 V2 Dataset，下载 frozen-input.json。支持 OKX SPOT BTC/ETH 1h、721～4320根，导出最多8MiB。将文件带到离线研究目录，显式运行：
 
