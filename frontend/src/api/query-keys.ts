@@ -540,6 +540,15 @@ export const paperTradingQueryKeys = {
         from: string | null,
         to: string | null,
     ) => ['paper-trading-runs', 'performance', userId, paperRunId, from, to] as const,
+    forwardEvaluation: (userId: number | undefined, run: string, range: {from: string; to: string; asOf: string} | null) =>
+        ['paper-trading-runs', 'forward-evaluation', userId, run, range?.from, range?.to, range?.asOf] as const,
+    observationRoot: (userId: number | undefined, run: string) => ['paper-trading-runs', 'observations', userId, run] as const,
+    observations: (userId: number | undefined, run: string, offset: number) =>
+        ['paper-trading-runs', 'observations', userId, run, 'list', offset] as const,
+    observation: (userId: number | undefined, run: string, id: string | null, reviewsOffset = 0) =>
+        ['paper-trading-runs', 'observations', userId, run, 'detail', id, reviewsOffset] as const,
+    observationReview: (userId: number | undefined, run: string, id: string | null, reviewId: string | null) =>
+        ['paper-trading-runs', 'observations', userId, run, 'review', id, reviewId] as const,
     canonicalOrder: (paperRunId: string, orderId: string) =>
         ['paper-trading-runs', 'canonical-order', paperRunId, orderId] as const,
     canonicalFacts: (id: string) => ['paper-trading-runs', 'canonical-facts', id] as const,

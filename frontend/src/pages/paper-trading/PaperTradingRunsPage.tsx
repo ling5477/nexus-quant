@@ -6,6 +6,7 @@ import {useLocalizedForm} from '@/i18n/useLocalizedForm';
 import {useTranslation} from 'react-i18next';
 import {t} from '@/i18n';
 import {localizedPaperLabel, localizedPaperOptions} from './components/paperAnalysisOptions';
+import {simAnalysisNavigationSearch} from '@/features/paper-trading/analysis-navigation';
 import './PaperTradingRunsPage.css';
 import {
     Alert,
@@ -1062,6 +1063,7 @@ export function PaperTradingRunsPage() {
  */
 function ExecutionNavigationCard() {
     useTranslation('pages');
+    const [params] = useSearchParams();
     return (
         <Card className="page-section" variant="borderless" title={t('pages:analysisWorkspaces')}>
             <Row gutter={[12, 12]}>
@@ -1072,7 +1074,7 @@ function ExecutionNavigationCard() {
                                 <Typography.Text type="secondary" style={{fontSize: 12}}>
                                     {item.description}
                                 </Typography.Text>
-                                <Link to={item.to}>
+                                <Link to={item.to + simAnalysisNavigationSearch('?' + params.toString())}>
                                     <Button type="primary" ghost block>
                                         {item.action}
                                     </Button>

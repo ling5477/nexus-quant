@@ -2,6 +2,8 @@ package com.guidinglight.nexusquant.scheduler.paper;
 
 import com.guidinglight.nexusquant.research.domain.port.ResearchFeeSourcePort;
 import com.guidinglight.nexusquant.research.infra.ResearchFeeReadScope;
+import com.guidinglight.nexusquant.common.tenant.TenantContext;
+import com.guidinglight.nexusquant.common.tenant.TenantKind;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -50,6 +52,13 @@ SELECT p.paper_run_id,p.canonical_account_id,p.status,p.symbol,p.interval_code,p
   private final StrategySimRunService facts;
   private final StrategySimDecisionRepository decisions;
   private final StrategySimPerformanceQuery performance;
+  private StrategySimForwardEvaluationQuery forwardEvaluation;
+
+  /** 新期间评价仍复用原实例授权；旧独立构造器调用不取得额外写能力。 */
+  @Autowired
+  private void bindForwardEvaluation(StrategySimForwardEvaluationQuery query) {
+    forwardEvaluation = query;
+  }
 
   public StrategySimAnalysisQuery(
       JdbcTemplate jdbc,
@@ -107,6 +116,21 @@ SELECT p.paper_run_id,p.canonical_account_id,p.status,p.symbol,p.interval_code,p
   public Optional<StrategySimPerformanceQuery.View> readPerformance(
       long owner, String paperRunId, Instant from, Instant to) {
     return owned(owner, paperRunId).map(run -> performance.read(run, from, to));
+  }
+
+  /** 身份、行情、经济事实与期间计数在同一只读快照；先授权再进入事实查询。 */
+  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ, timeout = 15)
+  public Optional<StrategySimForwardEvaluationQuery.Evaluation> readForwardEvaluation(
+      long owner, String paperRunId, Instant from, Instant to, Instant asOf) {
+    var identity = TenantContext.requireCurrent();
+    if (identity.kind() != TenantKind.LOCAL)
+      throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN,
+          "FORWARD_EVALUATION_LOCAL_ONLY");
+    if (identity.userId() != owner) return Optional.empty();
+    return owned(owner, paperRunId).map(run -> {
+      if (forwardEvaluation == null) throw new IllegalStateException("FORWARD_EVALUATION_UNAVAILABLE");
+      return forwardEvaluation.read(run, from, to, asOf);
+    });
   }
 
   private Optional<Run> owned(long owner, String paperRunId) {

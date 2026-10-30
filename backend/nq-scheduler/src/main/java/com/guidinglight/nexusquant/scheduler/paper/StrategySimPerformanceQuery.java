@@ -19,6 +19,7 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -57,6 +58,23 @@ public class StrategySimPerformanceQuery {
   }
 
   private View readFacts(StrategySimAnalysisQuery.Run run, Instant from, Instant to) {
+    return readFacts(run, from, to, null);
+  }
+
+  /** 新观察沿用同一资金、费用校验与计算器；作用域只改变事实截止及有界读取预算。 */
+  ObservationData readObservation(StrategySimAnalysisQuery.Run run, Instant from, Instant to, Instant asOf) {
+    // 回放没有前向事实的asOf合同；新入口只识别类型，禁止回退到不带截止的历史绩效查询。
+    if (!isContinuous(run.paperRunId()))
+      return new ObservationData(unavailable("NOT_COMPARABLE", "REPLAY_EVENT_TIME", 3600, null)
+          .forRun(run.paperRunId()), List.of());
+    if (!from.isBefore(to)) return new ObservationData(unavailable("INSUFFICIENT_SAMPLES",
+        "ACTUAL_EVENT_TIME", 3600, null).forRun(run.paperRunId()), List.of());
+    var scope = new ObservationScope(from, to, asOf);
+    View value = readFacts(run, from, to, scope).forRun(run.paperRunId());
+    return new ObservationData(value, List.copyOf(scope.fills));
+  }
+
+  private View readFacts(StrategySimAnalysisQuery.Run run, Instant from, Instant to, ObservationScope scope) {
     if ((from == null) != (to == null)
         || (from != null
             && (!from.isBefore(to)
@@ -69,58 +87,20 @@ public class StrategySimPerformanceQuery {
                 Boolean.class,
                 run.paperRunId()));
     String clock = continuous ? "ACTUAL_EVENT_TIME" : "REPLAY_EVENT_TIME";
+    if (scope != null && !continuous)
+      return unavailable("NOT_COMPARABLE", clock, 3600, null);
     long cadence = BarInterval.fromWireValue(run.intervalCode()).duration().getSeconds();
     Timestamp latestLedger =
         jdbc.queryForObject(
-            "SELECT max(ts) FROM ledger_entries WHERE account_id=?",
+            "SELECT max(ts) FROM ledger_entries WHERE account_id=?"
+                + (scope == null ? "" : " AND ts<=? AND ts<? AND created_at<=?"),
             Timestamp.class,
-            run.canonicalAccountId());
+            scope == null ? new Object[]{run.canonicalAccountId()}
+                : new Object[]{run.canonicalAccountId(), Timestamp.from(scope.asOf), Timestamp.from(scope.to), Timestamp.from(scope.asOf)});
     Instant ledgerAsOf = latestLedger == null ? null : latestLedger.toInstant();
     DiscountContext discount = discountContext(run);
-    var marks =
-        jdbc.query(
-            """
-WITH scope AS (
-    SELECT decision_id,signal_available_at,execution_open_time,input_snapshot_json,status,order_id,canonical_account_id
-    FROM strategy_sim_decisions WHERE paper_run_id=? AND canonical_account_id=?
-), events AS (
-    SELECT decision_id,signal_available_at event_at,input_snapshot_json->'signalBars'->-1->>'closePrice' price,
-        input_snapshot_json->'signalBars'->-1->>'symbol' symbol,input_snapshot_json->'signalBars'->-1->>'availableAt' available_at,
-        input_snapshot_json->'signalBars'->-1->>'closeTime' source_at,'SIGNAL_CLOSE' mark_type,0 priority FROM scope
-    UNION ALL
-    SELECT decision_id,execution_open_time,
-        coalesce(input_snapshot_json->'executionQuote'->>'price',input_snapshot_json->'executionBar'->>'openPrice'),
-        coalesce(input_snapshot_json->'executionBar'->>'symbol',input_snapshot_json->'signalBars'->-1->>'symbol'),
-        coalesce(input_snapshot_json->'executionQuote'->>'observedAt',input_snapshot_json->'executionBar'->>'openTime'),
-        coalesce(input_snapshot_json->'executionQuote'->>'observedAt',input_snapshot_json->'executionBar'->>'openTime'),
-        'EXECUTION_QUOTE',1 FROM scope WHERE execution_open_time IS NOT NULL
-        AND status='ACCEPTED' AND EXISTS(SELECT 1 FROM trades actual
-            WHERE actual.order_id=scope.order_id AND actual.account_id=scope.canonical_account_id)
-        AND coalesce(input_snapshot_json->'executionQuote'->>'price',input_snapshot_json->'executionBar'->>'openPrice') IS NOT NULL
-)
-SELECT DISTINCT ON(event_at) decision_id,event_at,price,symbol,available_at,source_at,mark_type FROM events
-WHERE (?::timestamptz IS NULL OR event_at>=?) AND (?::timestamptz IS NULL OR event_at<=?)
-    AND (NOT ? OR event_at>=(SELECT min(ts) FROM ledger_entries WHERE account_id=? AND ref_type='SIM_FUNDING_CASH'))
-ORDER BY event_at,priority DESC,decision_id LIMIT 1001
-""",
-            (rs, n) ->
-                new Mark(
-                    rs.getString(1),
-                    rs.getTimestamp(2).toInstant(),
-                    rs.getString(3),
-                    rs.getString(4),
-                    rs.getString(5),
-                    rs.getString(6),
-                    rs.getString(7)),
-            run.paperRunId(),
-            run.canonicalAccountId(),
-            from == null ? null : Timestamp.from(from),
-            from == null ? null : Timestamp.from(from),
-            to == null ? null : Timestamp.from(to),
-            to == null ? null : Timestamp.from(to),
-            continuous,
-            run.canonicalAccountId());
-    if (marks.size() > 1000)
+    var marks = loadMarks(run, from, to, scope);
+    if (marks.size() > (scope == null ? 1000 : 10000))
       return unavailable("HISTORY_WINDOW_LIMITED", clock, cadence, ledgerAsOf);
     if (marks.isEmpty()) return unavailable("NO_DATA", clock, cadence, ledgerAsOf);
     if (marks.stream().anyMatch(mark -> !run.symbol().equals(mark.symbol())))
@@ -130,29 +110,36 @@ ORDER BY event_at,priority DESC,decision_id LIMIT 1001
     var funds =
         jdbc.query(
             "SELECT delta,ts,currency,ref_id FROM ledger_entries WHERE account_id=? AND"
-                + " ref_type='SIM_FUNDING_CASH' ORDER BY ts,currency LIMIT 3",
+                + " ref_type='SIM_FUNDING_CASH'"
+                + (scope == null ? "" : " AND ts<=? AND ts<? AND created_at<=?")
+                + " ORDER BY ts,currency LIMIT 3",
             (rs, n) ->
                 new Funding(
                     rs.getBigDecimal(1),
                     rs.getTimestamp(2).toInstant(),
                     rs.getString(3),
                     rs.getString(4)),
-            run.canonicalAccountId());
+            scope == null ? new Object[]{run.canonicalAccountId()}
+                : new Object[]{run.canonicalAccountId(), Timestamp.from(scope.asOf), Timestamp.from(scope.to), Timestamp.from(scope.asOf)});
     boolean unknownLedger =
         Boolean.TRUE.equals(
             jdbc.queryForObject(
                 """
-SELECT EXISTS(SELECT 1 FROM ledger_entries e WHERE account_id=? AND (
+SELECT EXISTS(SELECT 1 FROM ledger_entries e WHERE account_id=? %s AND (
     ref_type NOT IN ('SIM_FUNDING_CASH','SIM_FUNDING_CONTRA','TRADE')
     OR (ref_type IN ('SIM_FUNDING_CASH','SIM_FUNDING_CONTRA') AND currency NOT IN ('USDT',?))
-    OR (ref_type='TRADE' AND NOT EXISTS(SELECT 1 FROM trades t WHERE t.trade_id=e.ref_id AND t.account_id=e.account_id))))
-OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? AND ref_type IN ('SIM_FUNDING_CASH','SIM_FUNDING_CONTRA')
+    OR (ref_type='TRADE' AND NOT EXISTS(SELECT 1 FROM trades t WHERE t.trade_id=e.ref_id AND t.account_id=e.account_id %s))))
+OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? %s AND ref_type IN ('SIM_FUNDING_CASH','SIM_FUNDING_CONTRA')
     GROUP BY ref_id,currency HAVING count(*)<>2 OR sum(delta)<>0)
-""",
+""".formatted(scope == null ? "" : "AND e.ts<=? AND e.ts<? AND e.created_at<=?",
+                    scope == null ? "" : "AND t.ts<=? AND t.ts<? AND t.created_at<=?",
+                    scope == null ? "" : "AND ts<=? AND ts<? AND created_at<=?"),
                 Boolean.class,
-                run.canonicalAccountId(),
-                discount == null ? "USDT" : discount.plan().assetCurrency(),
-                run.canonicalAccountId()));
+                scope == null ? new Object[]{run.canonicalAccountId(), discount == null ? "USDT" : discount.plan().assetCurrency(), run.canonicalAccountId()}
+                    : new Object[]{run.canonicalAccountId(), Timestamp.from(scope.asOf), Timestamp.from(scope.to), Timestamp.from(scope.asOf),
+                        discount == null ? "USDT" : discount.plan().assetCurrency(),
+                        Timestamp.from(scope.asOf), Timestamp.from(scope.to), Timestamp.from(scope.asOf), run.canonicalAccountId(),
+                        Timestamp.from(scope.asOf), Timestamp.from(scope.to), Timestamp.from(scope.asOf)}));
     BigDecimal initialBudget;
     if (discount == null) {
       if (funds.size() != 1
@@ -183,52 +170,7 @@ OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? AND ref_type IN ('SIM_
     // 持续SIM的历史暖机信号早于真实注资，不能把未来预算提前放入这些时点。
     if (continuous)
       marks = marks.stream().filter(mark -> !mark.at().isBefore(funds.getFirst().at())).toList();
-    var trades =
-        jdbc.query(
-            """
-SELECT t.trade_id,t.symbol,o.side,t.qty,t.price,t.fee,t.fee_currency,t.ts,d.execution_open_time,
-    o.trade_env,o.exchange_code,t.trade_env,t.exchange_code,d.paper_run_id,d.fee_model_json::text,d.fee_charge_json::text,
-    coalesce(sum(e.delta) FILTER(WHERE e.currency='USDT' AND e.idempotency_key IN(t.trade_id||':LEDGER:1',t.trade_id||':LEDGER:FEE_1')),0) cash_delta,
-    count(e.entry_id) entries,coalesce(sum(e.delta) FILTER(WHERE e.currency='USDT'),0) balance,
-    coalesce(sum(e.delta) FILTER(WHERE e.currency=t.fee_currency),0) fee_balance,
-    coalesce(bool_and(
-        (e.currency='USDT' AND e.idempotency_key IN(t.trade_id||':LEDGER:1',t.trade_id||':LEDGER:2'))
-        OR (e.currency=t.fee_currency AND e.idempotency_key IN(t.trade_id||':LEDGER:FEE_1',t.trade_id||':LEDGER:FEE_2'))),false) known_entries
-FROM trades t LEFT JOIN orders o ON o.order_id=t.order_id AND o.account_id=t.account_id
-LEFT JOIN strategy_sim_decisions d ON d.order_id=t.order_id AND d.canonical_account_id=t.account_id
-LEFT JOIN ledger_entries e ON e.account_id=t.account_id AND e.ref_type='TRADE' AND e.ref_id=t.trade_id
-WHERE t.account_id=? GROUP BY t.trade_id,o.side,o.trade_env,o.exchange_code,d.execution_open_time,d.paper_run_id,d.fee_model_json,d.fee_charge_json
-ORDER BY t.ts,t.trade_id LIMIT 10001
-""",
-            (rs, n) ->
-                new Fill(
-                    new ClosedTradeStatistics.Trade(
-                        rs.getString(1),
-                        rs.getString(2),
-                        rs.getString(3),
-                        rs.getBigDecimal(4),
-                        rs.getBigDecimal(5),
-                        rs.getBigDecimal(6),
-                        rs.getString(7),
-                        continuous
-                            ? rs.getTimestamp(8).toInstant()
-                            : rs.getTimestamp(9) == null
-                                ? rs.getTimestamp(8).toInstant()
-                                : rs.getTimestamp(9).toInstant()),
-                    rs.getBigDecimal("cash_delta"),
-                    rs.getLong("entries"),
-                    rs.getBigDecimal("balance"),
-                    rs.getBoolean("known_entries"),
-                    "SIM".equals(rs.getString(10))
-                        && "PAPER".equals(rs.getString(11))
-                        && "SIM".equals(rs.getString(12))
-                        && "PAPER".equals(rs.getString(13))
-                        && run.paperRunId().equals(rs.getString(14))
-                        && rs.getTimestamp(9) != null,
-                    rs.getBigDecimal("fee_balance"),
-                    rs.getString("fee_model_json"),
-                    rs.getString("fee_charge_json")),
-            run.canonicalAccountId());
+    var trades = loadFills(run, continuous, scope);
     if (trades.size() > 10000)
       return unavailable("TRADE_WINDOW_LIMITED", clock, cadence, ledgerAsOf);
     if (trades.stream().anyMatch(f -> !f.scopeValid() || !run.symbol().equals(f.trade().symbol())))
@@ -290,6 +232,7 @@ ORDER BY t.ts,t.trade_id LIMIT 10001
       trades = verified;
     } else if (trades.stream().anyMatch(fill -> fill.feeChargeJson() != null))
       return unavailable("FEE_BASIS_UNAVAILABLE", clock, cadence, ledgerAsOf);
+    if (scope != null) scope.fills = List.copyOf(trades);
     return calculate(
         run.paperRunId(),
         clock,
@@ -300,7 +243,126 @@ ORDER BY t.ts,t.trade_id LIMIT 10001
         trades,
         from,
         to,
-        discount);
+        discount,
+        scope == null ? 1000 : 10000,
+        scope != null);
+  }
+
+  private List<Mark> loadMarks(StrategySimAnalysisQuery.Run run, Instant from, Instant to, ObservationScope scope) {
+    // economicEnd处的既有价格仅作期末估值锚点；成交、账务仍严格小于to，不补写价格。
+    String query = """
+        WITH scope AS (
+          SELECT decision_id,signal_available_at,execution_open_time,input_snapshot_json,status,order_id,canonical_account_id
+          FROM strategy_sim_decisions WHERE paper_run_id=? AND canonical_account_id=? %s
+        ), events AS (
+          SELECT decision_id,signal_available_at event_at,input_snapshot_json->'signalBars'->-1->>'closePrice' price,
+            input_snapshot_json->'signalBars'->-1->>'symbol' symbol,input_snapshot_json->'signalBars'->-1->>'availableAt' available_at,
+            input_snapshot_json->'signalBars'->-1->>'closeTime' source_at,'SIGNAL_CLOSE' mark_type,0 priority FROM scope
+          UNION ALL
+          SELECT decision_id,execution_open_time,
+            coalesce(input_snapshot_json->'executionQuote'->>'price',input_snapshot_json->'executionBar'->>'openPrice'),
+            coalesce(input_snapshot_json->'executionBar'->>'symbol',input_snapshot_json->'signalBars'->-1->>'symbol'),
+            coalesce(input_snapshot_json->'executionQuote'->>'observedAt',input_snapshot_json->'executionBar'->>'openTime'),
+            coalesce(input_snapshot_json->'executionQuote'->>'observedAt',input_snapshot_json->'executionBar'->>'openTime'),
+            'EXECUTION_QUOTE',1 FROM scope WHERE execution_open_time IS NOT NULL AND status='ACCEPTED'
+            AND EXISTS(SELECT 1 FROM trades actual WHERE actual.order_id=scope.order_id
+                AND actual.account_id=scope.canonical_account_id %s)
+            AND coalesce(input_snapshot_json->'executionQuote'->>'price',input_snapshot_json->'executionBar'->>'openPrice') IS NOT NULL
+        )
+        SELECT DISTINCT ON(event_at) decision_id,event_at,price,symbol,available_at,source_at,mark_type FROM events
+        WHERE (?::timestamptz IS NULL OR event_at>=?) AND (?::timestamptz IS NULL OR event_at%s?)
+          AND (NOT ? OR event_at>=(SELECT min(ts) FROM ledger_entries WHERE account_id=? AND ref_type='SIM_FUNDING_CASH' %s))
+          %s
+        ORDER BY event_at,priority DESC,decision_id LIMIT ?
+        """.formatted(scope == null ? "" : "AND created_at<=?",
+            scope == null ? "" : "AND actual.created_at<=? AND actual.ts<=? AND actual.ts<?",
+            "<=",
+            scope == null ? "" : "AND created_at<=? AND ts<=? AND ts<?",
+            scope == null ? "" : "AND event_at<=? AND (?::timestamptz IS NULL OR event_at>?)");
+    List<Mark> result = new ArrayList<>();
+    Instant last = null;
+    int maximum = scope == null ? 1001 : 10001;
+    for (int page = 0; page < (scope == null ? 1 : 21); page++) {
+      List<Object> args = new ArrayList<>(Arrays.asList(run.paperRunId(), run.canonicalAccountId()));
+      if (scope != null) args.addAll(Arrays.asList(Timestamp.from(scope.asOf), Timestamp.from(scope.asOf),
+          Timestamp.from(scope.asOf), Timestamp.from(scope.to)));
+      args.addAll(Arrays.asList(from == null ? null : Timestamp.from(from), from == null ? null : Timestamp.from(from),
+          to == null ? null : Timestamp.from(to), to == null ? null : Timestamp.from(to),
+          scope != null || isContinuous(run.paperRunId()), run.canonicalAccountId()));
+      if (scope != null) args.addAll(Arrays.asList(Timestamp.from(scope.asOf), Timestamp.from(scope.asOf),
+          Timestamp.from(scope.to), Timestamp.from(scope.asOf), last == null ? null : Timestamp.from(last),
+          last == null ? null : Timestamp.from(last)));
+      int limit = scope == null ? maximum : Math.min(500, maximum - result.size());
+      args.add(limit);
+      var rows = jdbc.query(query, (rs, index) -> new Mark(rs.getString(1), rs.getTimestamp(2).toInstant(),
+          rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7)), args.toArray());
+      result.addAll(rows);
+      if (scope == null || rows.size() < limit || result.size() == maximum) break;
+      last = rows.getLast().at();
+    }
+    return List.copyOf(result);
+  }
+
+  private boolean isContinuous(String run) {
+    return Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM continuous_sim_runs WHERE paper_run_id=?)", Boolean.class, run));
+  }
+
+  private List<Fill> loadFills(StrategySimAnalysisQuery.Run run, boolean continuous, ObservationScope scope) {
+    String selected = scope == null ? "trades t" : """
+        (SELECT * FROM trades WHERE account_id=? AND ts<=? AND ts<? AND created_at<=?
+          AND (?::timestamptz IS NULL OR (ts,trade_id)>(?::timestamptz,?::varchar))
+          ORDER BY ts,trade_id LIMIT ?) t
+        """;
+    String query = """
+        SELECT t.trade_id,t.symbol,o.side,t.qty,t.price,t.fee,t.fee_currency,t.ts,d.execution_open_time,
+          o.trade_env,o.exchange_code,t.trade_env,t.exchange_code,d.paper_run_id,d.fee_model_json::text,d.fee_charge_json::text,
+          coalesce(sum(e.delta) FILTER(WHERE e.currency='USDT' AND e.idempotency_key IN(t.trade_id||':LEDGER:1',t.trade_id||':LEDGER:FEE_1')),0) cash_delta,
+          count(e.entry_id) entries,coalesce(sum(e.delta) FILTER(WHERE e.currency='USDT'),0) balance,
+          coalesce(sum(e.delta) FILTER(WHERE e.currency=t.fee_currency),0) fee_balance,
+          coalesce(bool_and((e.currency='USDT' AND e.idempotency_key IN(t.trade_id||':LEDGER:1',t.trade_id||':LEDGER:2'))
+            OR (e.currency=t.fee_currency AND e.idempotency_key IN(t.trade_id||':LEDGER:FEE_1',t.trade_id||':LEDGER:FEE_2'))),false) known_entries
+        FROM %s LEFT JOIN orders o ON o.order_id=t.order_id AND o.account_id=t.account_id %s
+        LEFT JOIN strategy_sim_decisions d ON d.order_id=t.order_id AND d.canonical_account_id=t.account_id %s
+        LEFT JOIN ledger_entries e ON e.account_id=t.account_id AND e.ref_type='TRADE' AND e.ref_id=t.trade_id %s
+        WHERE t.account_id=?
+        GROUP BY t.trade_id,t.symbol,o.side,t.qty,t.price,t.fee,t.fee_currency,t.ts,t.trade_env,t.exchange_code,
+          o.trade_env,o.exchange_code,d.execution_open_time,d.paper_run_id,d.fee_model_json,d.fee_charge_json
+        ORDER BY t.ts,t.trade_id LIMIT ?
+        """.formatted(selected, scope == null ? "" : "AND o.created_at<=?",
+            scope == null ? "" : "AND d.created_at<=?",
+            scope == null ? "" : "AND e.created_at<=? AND e.ts<=? AND e.ts<?");
+    var result = new ArrayList<Fill>();
+    Instant lastAt = null; String lastId = null;
+    for (int page = 0; page < (scope == null ? 1 : 21); page++) {
+      int limit = scope == null ? 10001 : Math.min(500, 10001 - result.size());
+      List<Object> args = new ArrayList<>();
+      if (scope != null) args.addAll(Arrays.asList(run.canonicalAccountId(), Timestamp.from(scope.asOf),
+          Timestamp.from(scope.to), Timestamp.from(scope.asOf), lastAt == null ? null : Timestamp.from(lastAt),
+          lastAt == null ? null : Timestamp.from(lastAt), lastId, limit, Timestamp.from(scope.asOf),
+          Timestamp.from(scope.asOf), Timestamp.from(scope.asOf), Timestamp.from(scope.asOf), Timestamp.from(scope.to)));
+      args.addAll(Arrays.asList(run.canonicalAccountId(), limit));
+      var rows = jdbc.query(query, (rs, index) -> new Fill(
+          new ClosedTradeStatistics.Trade(rs.getString(1), rs.getString(2), rs.getString(3), rs.getBigDecimal(4),
+              rs.getBigDecimal(5), rs.getBigDecimal(6), rs.getString(7), continuous ? rs.getTimestamp(8).toInstant()
+                  : rs.getTimestamp(9) == null ? rs.getTimestamp(8).toInstant() : rs.getTimestamp(9).toInstant()),
+          rs.getBigDecimal("cash_delta"), rs.getLong("entries"), rs.getBigDecimal("balance"), rs.getBoolean("known_entries"),
+          "SIM".equals(rs.getString(10)) && "PAPER".equals(rs.getString(11)) && "SIM".equals(rs.getString(12))
+              && "PAPER".equals(rs.getString(13)) && run.paperRunId().equals(rs.getString(14)) && rs.getTimestamp(9) != null,
+          rs.getBigDecimal("fee_balance"), rs.getString("fee_model_json"), rs.getString("fee_charge_json")), args.toArray());
+      result.addAll(rows);
+      if (scope == null || rows.size() < limit || result.size() == 10001) break;
+      lastAt = rows.getLast().trade().at(); lastId = rows.getLast().trade().tradeId();
+    }
+    return List.copyOf(result);
+  }
+
+  record ObservationData(View performance, List<Fill> fills) {}
+
+  /** 每次调用独有的读取收集器，不缓存账户或经济事实。 */
+  private static final class ObservationScope {
+    final Instant from, to, asOf;
+    List<Fill> fills = List.of();
+    ObservationScope(Instant from, Instant to, Instant asOf) { this.from = from; this.to = to; this.asOf = asOf; }
   }
 
   /** 现金只累加正式账户分录，数量只取正式成交；回放映射模型事件，持续SIM使用实际成交时刻。 */
@@ -314,7 +376,13 @@ ORDER BY t.ts,t.trade_id LIMIT 10001
       List<Fill> fills,
       Instant from,
       Instant to) {
-    return calculate(id, clock, cadence, ledgerAsOf, funding, marks, fills, from, to, null);
+    return calculate(id, clock, cadence, ledgerAsOf, funding, marks, fills, from, to, null, 1000, false);
+  }
+
+  /** 同一计算器的长观察预算；不改变旧入口或从抽样曲线重新计算指标。 */
+  static View calculateObservation(String id, String clock, long cadence, Instant ledgerAsOf,
+      BigDecimal funding, List<Mark> marks, List<Fill> fills, Instant from, Instant to) {
+    return calculate(id, clock, cadence, ledgerAsOf, funding, marks, fills, from, to, null, 10000, true);
   }
 
   private static View calculate(
@@ -327,9 +395,12 @@ ORDER BY t.ts,t.trade_id LIMIT 10001
       List<Fill> fills,
       Instant from,
       Instant to,
-      DiscountContext discount) {
+      DiscountContext discount,
+      int maximumSamples,
+      boolean observation) {
     var ordered =
         fills.stream()
+            .filter(fill -> !observation || to == null || fill.trade().at().isBefore(to))
             .sorted(
                 Comparator.comparing((Fill f) -> f.trade().at())
                     .thenComparing(f -> f.trade().tradeId()))
@@ -354,7 +425,12 @@ ORDER BY t.ts,t.trade_id LIMIT 10001
       } catch (RuntimeException invalid) {
         return unavailable("MARK_SOURCE_UNAVAILABLE", clock, cadence, ledgerAsOf);
       }
-      while (cursor < ordered.size() && !ordered.get(cursor).trade().at().isAfter(mark.at())) {
+      // 半开观察区间的首个估值必须在from同刻成交之前，才能把该成交费用计入期间损益。
+      // 后续估值仍复用原账户累加算法；旧接口保持包含估值同刻成交的历史语义。
+      boolean openingBoundary = observation && from != null && mark.at().equals(from);
+      while (cursor < ordered.size()
+          && (openingBoundary ? ordered.get(cursor).trade().at().isBefore(mark.at())
+              : !ordered.get(cursor).trade().at().isAfter(mark.at()))) {
         var fill = ordered.get(cursor++);
         cash = cash.add(fill.cashDelta());
         // 现金只取USDT账户分录；base费用由实际成交币种改变净持仓，不能把BTC金额加进USDT现金。
@@ -407,7 +483,7 @@ ORDER BY t.ts,t.trade_id LIMIT 10001
                 Instant.parse(mark.closeTime()),
                 Instant.parse(mark.availableAt())));
     }
-    if (samples.size() > 1000)
+    if (samples.size() > maximumSamples)
       return unavailable("HISTORY_WINDOW_LIMITED", clock, cadence, ledgerAsOf);
     if (samples.isEmpty()) return unavailable("NO_DATA", clock, cadence, ledgerAsOf);
     var first = samples.getFirst();
@@ -433,15 +509,21 @@ ORDER BY t.ts,t.trade_id LIMIT 10001
         ClosedTradeStatistics.calculate(
             ordered.stream().map(Fill::trade).toList(),
             "USDT",
-            first.eventAt(),
+            // 原统计采用左开下界；仅新观察将from同刻卖出纳入，成交时钟保持原值。
+            observation && from != null && first.eventAt().equals(from) ? from.minusNanos(1) : first.eventAt(),
             last.eventAt(),
             true);
+    if (observation && from != null && first.eventAt().equals(from))
+      outcomes = new ClosedTradeStatistics.Result(outcomes.status(), outcomes.winRate(), outcomes.winningCount(),
+          outcomes.losingCount(), outcomes.flatCount(), outcomes.netProfit(), outcomes.netLoss(), outcomes.profitLossRatio(),
+          outcomes.method(), from, last.eventAt());
     var sharpe =
         PerformanceStatistics.sharpe(
             samples.stream()
                 .map(s -> new PerformanceStatistics.Point(s.eventAt(), s.equity(), funding))
                 .toList(),
-            cadence);
+            cadence,
+            maximumSamples);
     long after = ordered.stream().filter(f -> f.trade().at().isAfter(last.eventAt())).count();
     return new View(
         id,
