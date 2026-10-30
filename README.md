@@ -1,69 +1,43 @@
 # NexusQuant
 
-NexusQuant 是面向 OKX Spot 的研究与模拟交易工作台。Java Control Plane 统一管理风险、订单、成交与账务事实，正式 UI 贯通策略验证、发布、Continuous SIM 与运行监控。
+NexusQuant 是面向 OKX Spot 的研究与模拟交易工作台。Java Control Plane 是唯一 canonical Risk / Order / Trade / Ledger 权威。
 
-## 发行状态
+## 当前版本与发行范围
 
-[v1.0.0](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.0) 与 [v1.0.1](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.1) 已发布。当前源码准备 **v1.0.2 候选 / Schema V49**，尚未发布，未取得新安装、实际包更新或包级恢复资格。
+[v1.0.2](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.2) 已正式发布，Schema V49。当前源码为 **v1.0.3 发行候选 / Schema V52**；三个功能阶段均已接受，功能范围完整。候选包的安装、升级与恢复资格以绑定准确源码、包摘要的发行资格报告及最终 Release Notes 为准；本页不提前宣布新候选资格或正式发布。
 
-研究链覆盖 Dataset → Strategy Version → Backtest → Experiment → Walk-Forward → Evaluation → Publish → Continuous SIM → Comparison。历史输入有界接入并冻结；SMA与现货通道突破沿用正式执行器。实验保存尝试与失败历史，Walk-Forward按时间训练选择并独立FLAT测试，最终留出及成本敏感性披露短样本和已观察限制。Comparison只读关联原研究、发布和SIM事实，不自动发布或创建交易。
+产品由 **NexusQuant Self-Hosted + NexusQuant Python Research Companion** 两个独立资产组成。目标正式范围为 Windows 11 amd64 / 已运行的 Docker Desktop Linux Containers / PostgreSQL16；Companion 最小验证目标为 Windows amd64 / CPython3.11 x64。Linux/macOS/ARM64、Public Demo 公网及其他 Python 版本不自动获得资格。
 
-候选范围为 **NQ_SELF_HOSTED / Windows 11 amd64 / Docker Desktop Linux Containers / PostgreSQL 16**。普通v1.0.1更新路径须在准确候选包上另行验证；v1.0.0直接更新不在本候选支持范围。Public Demo公网、其他OS、ARM64和真实交易不在本候选资格范围。
+## v1.0.3 功能
 
-已发布 Tag、Snapshot、包及签名证据保持不变；既有升级验证结论保持原记录。
+- Historical Research：OKX SPOT BTC/ETH 1h，1～180完整UTC日、最多4320根；每次显式接入最多3000根，PARTIAL后手工续拉。旧V1最多720根保持兼容；长输入为不可变Dataset V2分块及引用。原正式回测、实验及90/180日Walk-Forward预设消费同一冻结版本；长实验最多4候选，不扩大SIM准入。
+- Forward SIM Evaluation：原canonical分析入口上的UTC/asOf观察窗口、覆盖/样本状态、期间绩效和风险/执行解释，追加人工复盘历史。停止观察只结束研究记录，不暂停SIM、撤单或平仓。原Order/Trade/Ledger、Legacy409和Continuous SIM执行保持。
+- Python Factor Research：V2只读导出、离线Momentum/Realized Volatility/Volume Anomaly、purged时间切分及有界块Bootstrap、独立Artifact与原研究页只读预览。Java验证身份/摘要/格式，不重新计算统计、不持久化本地文件、不授予交易权限。
 
-普通账户缺可信权益来源时不显示虚构收益；真实手续费必须有可信来源；OHLC 不能提供真实事件发生时点；旧 Paper 未知币种权益不改写。
+180日不代表多年历史或长期稳健性；回放availableAt是假设，源实验已见最终留出。Forward合成时间测试不是90日真实观察。因子相关与Bootstrap不证明长期盈利或可交易优势。
 
-## V1.0 范围
+## 安装与升级
 
-- OKX Spot 公开行情、数据集与策略研究/回测。
-- Continuous SIM、Paper matching、风险校验及 Order / Trade / Ledger / Position。
-- 策略发布、调度、运行观察与监控。
-- Runtime 资源配置、首次登录强制改密、持久化令牌失效、本地备份恢复与用户确认后的更新/回滚。
-
-不包含自动 LIVE 执行、期货/杠杆、Binance 生产支持、AI 交易或 HFT。Python research 是隔离的开发研究工具，不加入产品 runtime Compose。
-
-## 架构与技术栈
-
-浏览器 → React / Vite / Ant Design → Java 21 / Spring Boot / Maven 多模块单体 → PostgreSQL 16 / Flyway。Python 研究域不拥有交易写入权限。
-
-## Quick Start
-
-版本统一读取根目录 [VERSION](VERSION)。取得对应架构的官方预构建 release package，解压后运行：
-
-V1.0.0 唯一正式支持合同为 **Windows 11 amd64，Docker Desktop 已安装且 daemon 正在运行（Linux containers）**。本合同只声明该宿主范围；预发布技术验收仍须完成对应候选的真实经济链、重启和备份恢复证明。
+Self-Hosted取得对应版本的可信预构建包，核验后完整解压，运行：
 
 ```powershell
-# Windows 11 amd64 / 已运行的 Docker Desktop
 .\installers\install.ps1
 ```
 
-其他安装入口保留为 `AVAILABLE_BUT_UNQUALIFIED`，本版本不声明正式资格：
+普通Java安装/运维无需宿主Java、Maven、Node、PostgreSQL或Python。默认UI为 <http://127.0.0.1:18080>；首次admin/123456登录必须改密，服务默认仅绑定本机。
 
-```sh
-# macOS / Docker Desktop
-sh installers/install-macos.sh
-# Linux / Docker Engine + Compose v2
-sh installers/install-linux.sh
-```
+目标普通更新为 **v1.0.2/V49 → v1.0.3/V52**，要求可信目标Manifest、版本递增、Schema单调及同一可信PostgreSQL config digest。原正式安装器负责停写、备份、正向迁移、回执及失败恢复；不能仅换旧镜像连接新库，不使用Flyway repair。不声明v1.0.0或其他未经验证的直接升级路径。
 
-打开 <http://127.0.0.1:18080>，使用 **admin / 123456** 登录。首次登录只能查看自己的认证资料、修改密码或退出；新密码至少 8 个字符，不能使用当前密码或 `123456`。改密成功后重新登录，所有旧令牌立即失效，重启后仍失效。
+Python Companion必须另行下载独立ZIP，用户自行准备CPython3.11 x64并创建venv，按其中INSTALL与hash锁使用 `--no-index` 从附带wheelhouse离线安装。Wheel为 `nexus-quant-research==1.0.3`，NumPy固定2.3.5。用户显式运行CLI，然后在原research页选择本地Artifact。Java安装器、Compose和服务不安装、启动或执行Python。
 
-正式支持合同要求先安装并运行 Docker Desktop；安装器复用 Docker 并加载经 manifest 校验的 immutable 镜像，用户无需 Java、Maven、Node、PostgreSQL 或 Python，也不执行源码编译。Docker 缺失时的自动安装、daemon recovery 和 Linux/macOS 安装器保留为 `AVAILABLE_BUT_UNQUALIFIED`，不属于 V1.0.0 正式支持合同。更新默认关闭，`check-update` 只提示，实际更新需用户选择。冻结矩阵详见 [INSTALL.md](INSTALL.md)；公开发行状态以最终 Release qualification / current release authority 为准。
+安装、运维和可信摘要要求见 [INSTALL.md](INSTALL.md)，产品历史见 [CHANGELOG.md](CHANGELOG.md)。版本读取 [VERSION](VERSION)。已发布Tag、Snapshot、包和证据保持原字节。
 
-## 安全默认值
+## 安全与限制
 
-SIM 可用；public OKX marketdata 允许访问。LIVE、真实交易所写入、真实 provider/client、私有 OKX diagnostics、transfer/withdraw 均关闭；kill switch 初始为 ENGAGED。内部数据库密码、JWT 密钥和凭据加密密钥随机生成，服务只绑定本机地址。
+LIVE=DISABLED，Kill Switch=ENGAGED；真实资金/真实交易所写入、private diagnostics、transfer/withdraw、真实provider/client、自动LIVE、AI交易、期货/杠杆和HFT关闭。Python不持有交易或数据库凭据。缺可信收益、费用、事件时点或未知币种权益时不补造经济事实。
 
-安装、运维、数据目录、版本兼容和排障详见 [INSTALL.md](INSTALL.md)。产品变化见 [CHANGELOG.md](CHANGELOG.md)。
+历史长时运行原审查NOT_ACCEPTED/EVIDENCE_GAPS、所有者例外与72小时重跑豁免分开保留。Linux既有低内存短时SCOPED_PASS不是正式运行资格或长期稳定性。低于4GiB继续为警告/LIGHT，不新增硬最低门槛或自动Swap。
 
-## License
+## License and financial risk
 
-NexusQuant is licensed under the Apache License 2.0 (SPDX: `Apache-2.0`).
-See [LICENSE](LICENSE).
-Third-party attribution: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-## Financial Risk
-
-NexusQuant is quantitative trading software and does not provide investment advice.
-Before using any real-money functionality, read [DISCLAIMER.md](DISCLAIMER.md).
+NexusQuant is licensed under Apache-2.0. See [LICENSE](LICENSE), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [DISCLAIMER.md](DISCLAIMER.md). 研究结果不是投资建议或盈利承诺。

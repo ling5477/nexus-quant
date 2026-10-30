@@ -4,6 +4,8 @@
 
 ## 已发布 v1.0.2 与下一阶段
 
+功能收口V103_FUNCTIONAL_CLOSEOUT_ACCEPTED已完成。唯一当前后续工作为NQ-V103-RELEASE-READINESS：Self-Hosted1.0.3/V52正式来源闭包、独立Python Companion1.0.3离线资产，以及新包Windows安装、v1.0.2普通升级/恢复资格。复用三个阶段有效业务证据，不重新开发业务、不无条件重跑72小时；准确源码CI和新包资格分别取证，未创建正式发行。
+
 v1.0.0、v1.0.1、v1.0.2 均已发布。v1.0.2 的 V102-01～05（数据集、现货策略、实验编排、Walk-Forward、Backtest/Continuous SIM 比较）已完成；固定 RC3 正式资格及最终准入已接受，[GitHub Release 427705563](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.2) 于 2026-10-29T10:15:34Z 公开。
 
 发行 Source 为 `e4eca0b23c769602999043b3b95b8777a33bd285`，无父 Snapshot 为 `6b5ddcfac9f9ac02e343975ffe2d061df9785318`，Tag 为 `v1.0.2`，schema V49。完整固定身份以 [STATUS](STATUS.md) 为准；[TESTING](TESTING.md) 和 [WORKLOG](WORKLOG.md) 追加最终资格及发布证据，原[构包前准备报告](evidence/NQ_V102_RELEASE_READINESS.md) 保持历史时点。

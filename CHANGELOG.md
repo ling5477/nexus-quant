@@ -1,8 +1,27 @@
-# 1.0.2 — 候选 / Candidate (unreleased)
+# 1.0.3 — 发行候选 / Candidate (unreleased)
 
-Release Date: 尚未发布 / Not released
+三个功能阶段均已接受，功能范围完整；本版本尚未创建Tag或Release。准确包安装/升级/恢复及Companion资格以对应不可变候选报告为准。
 
-Release URL: 无（尚未创建 Release） / None (no Release created)
+## Features
+
+- Historical Research：OKX SPOT BTC/ETH 1h、1～180完整UTC日/4320根，V2不可变分块与引用，旧V1冻结兼容；长回测/最多4候选实验及90/180日WF预设，不扩大Continuous SIM720/500边界。
+- Forward SIM Evaluation：原canonical UTC/asOf观察、覆盖与逐项样本/期间指标、风险执行解释和追加人工复盘；STOP仅关闭研究记录。
+- Python Factor Research：原V2只读导出、Momentum/Realized Volatility/Volume Anomaly、purged时序验证/块Bootstrap、离线Artifact与原research页只读预览，不持久化本地产物。
+- 独立Python Research Companion1.0.3：Windows amd64/CPython3.11 x64目标，Wheel和NumPy2.3.5依赖随包，以hash锁和--no-index离线安装；不进入Java/Compose运行时。
+
+## Upgrade and limitations
+
+- Schema V49→V50→V51→V52，历史迁移不改写；目标普通升级来源仅v1.0.2，须可信原PG镜像/config不变、正式安装器与真实候选资格。回滚/失败恢复须同时恢复绑定数据库及资产。
+- LIVE=DISABLED、Kill Switch=ENGAGED；无真实交易或Python交易权限。180日不证明多年历史能力；回放时间、已暴露留出、短样本与Bootstrap假设披露；合成时间不代表长期真实观察。
+- Linux/macOS/ARM64、其他Python版本、Public Demo不因构包获得资格。历史长时运行原审查及owner例外/72小时豁免保留，v1.0.2发行历史不改写。
+
+# 1.0.2 — 已发布 / Released
+
+Release Date: 2026-10-29 (UTC)
+
+Release URL: https://github.com/ling5477/nexus-quant/releases/tag/v1.0.2
+
+以下候选准备说明保留其构包时点；最终Windows资格与限制以该版本Release Notes为准。
 
 ## Features
 

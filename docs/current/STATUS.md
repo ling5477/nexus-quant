@@ -33,6 +33,8 @@ nq-current-authority:end -->
 
 ## 当前正式发行与下一阶段
 
+NQ-V103-FUNCTIONAL-CLOSEOUT 已于2026-10-30接受，三个业务阶段功能范围COMPLETE，开发Schema V52。当前执行 NQ-V103-RELEASE-READINESS：版本/正式白名单与独立Python Companion交付准备；顶部accepted pair继续记录最近已接受业务候选，不提前绑定新的源码CI或包资格。v1.0.3未创建Tag/Release，安装/升级/恢复与离线Wheel资格以仓库外准确候选报告为准。用户明确授权本轮Git交付与隔离发行资格，不授予生产或真实交易权限。
+
 NQ v1.0.0、v1.0.1、v1.0.2 均为 RELEASED。v1.0.2 已于 2026-10-29T10:15:34Z 正式发布：[NexusQuant v1.0.2](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.2)，Release ID=`427705563`，draft=false、prerelease=false。本次发行后文档同步不改变任何已发布身份。
 
 | 身份 | 固定值 |

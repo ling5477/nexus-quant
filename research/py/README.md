@@ -1,6 +1,6 @@
 # NexusQuant Research Python
 
-本目录是 NexusQuant 的离线研究工具链子工程。
+本目录是 NexusQuant 的离线研究工具链子工程。Python组件版本为1.0.3，对应产品v1.0.3；正式用户使用独立Python Research Companion，安装见 [INSTALL.md](INSTALL.md)。其中Windows amd64 / CPython3.11离线Wheel与依赖资格由准确候选报告绑定，源码requires-python>=3.11不表示全部版本已取得发行资格。
 
 当前定位：
 

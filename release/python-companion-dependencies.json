@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "target": {
+    "os": "windows",
+    "architecture": "amd64",
+    "python": "3.11",
+    "implementation": "cpython"
+  },
+  "buildTools": {
+    "pip": "25.3",
+    "setuptools": "80.9.0",
+    "wheel": "0.45.1"
+  },
+  "runtime": [
+    {
+      "name": "numpy",
+      "version": "2.3.5",
+      "filename": "numpy-2.3.5-cp311-cp311-win_amd64.whl",
+      "sha256": "a414504bef8945eae5f2d7cb7be2d4af77c5d1cb5e20b296c2c25b61dff2900c",
+      "url": "https://files.pythonhosted.org/packages/aa/44/9fe81ae1dcc29c531843852e2874080dc441338574ccc4306b39e2ff6e59/numpy-2.3.5-cp311-cp311-win_amd64.whl"
+    }
+  ]
+}

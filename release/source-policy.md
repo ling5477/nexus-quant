@@ -1,6 +1,6 @@
 # V1 发布源码边界
 
-`source-manifest.json` 使用逐文件精确列表，当前候选目标版本为 `1.0.2`，必须与同一提交内的 `VERSION` 一致。清单与源码必须来自同一个完整 40 位 Git commit；没有工作区复制、通配符发现或导出时重写文件。新增文件默认 `REVIEW_REQUIRED`，后续安装器与文档必须经过审查后显式加入清单。Java 主源码/正式资源与 frontend/src 的新增文件若未纳入，覆盖门禁拒绝导出；已审查的开发配置、开发页和未使用素材继续排除。发现范围不会自动将文件加入发行包，也不能通过改标 EXCLUDE_TEST 隐藏正式源码。
+`source-manifest.json` 使用逐文件精确列表，当前候选目标版本为 `1.0.3`，必须与同一提交内的 `VERSION` 一致。清单与源码必须来自同一个完整 40 位 Git commit；没有工作区复制、通配符发现或导出时重写文件。新增文件默认 `REVIEW_REQUIRED`，后续安装器与文档必须经过审查后显式加入清单。Java 主源码/正式资源与 frontend/src 的新增文件若未纳入，覆盖门禁拒绝导出；已审查的开发配置、开发页和未使用素材继续排除。发现范围不会自动将文件加入发行包，也不能通过改标 EXCLUDE_TEST 隐藏正式源码。
 
 ```powershell
 python scripts/release/release_source.py export --repo E:/Project/nexus-quant --commit <40-hex> --output E:/release-export --audit E:/release-audit.json
@@ -19,7 +19,7 @@ python -m unittest discover -s scripts/release/tests -v
 
 Java/Spring 的正式源码与 Maven 模块进入发布。正式回测注册表的三份 CSV 按生产依赖例外保留，消费者为 `FixtureMarketdataRegistry` 和 `FixtureHistoricalMarketDataPort`；测试独占 fixture 全部排除。仅保留前端实际引用的品牌和交易所图片。前端测试由开发 CI 显式执行，不再作为 production build 生命周期依赖。
 
-Python research 没有 Java subprocess、运行部署或安装消费方。Java artifact preview 使用 schema ID 表达离线契约，不读取 Python 源文件。因此 Python 全部排除；Java `nq-research` 等 Maven 模块仍属于正式源码闭包。
+Python research 没有 Java subprocess、运行部署或安装消费方。Java artifact preview 使用 schema ID 表达离线契约，不读取 Python 源文件。因此Python仍从Self-Hosted投影排除；Java `nq-research`等Maven模块属于正式闭包。Python生产能力通过独立Companion资产交付，排除不再表示产品不提供离线计算工具。
 
 `application-ci.yml`、`application-test.yml`、`application-local.yml` 排除。正式运行必须显式选择 `NQ_PROFILE=prod`，该 profile 的数据库和密钥由环境注入并经过既有启动 guard。安装器仅使用正式 profile 并显式注入数据库及随机密钥；源码可构建不授予真实 provider 或部署权限。`paper`、公开行情和受限只读 profile 是明确运行能力，保留源码不代表允许启用它们。
 
@@ -76,3 +76,13 @@ Python research 没有 Java subprocess、运行部署或安装消费方。Java a
 v1.0.2 候选目标为 NQ_SELF_HOSTED、Windows 11 amd64、Docker Desktop Linux Containers、PostgreSQL 16、Schema V49。`support-matrix.json` 保留 v1.0.0 历史资格，不作为本候选 PASS。候选记录由当前 VERSION、本逐文件清单、产品安装说明及 `docs/current/evidence/NQ_V102_RELEASE_READINESS.md` 共同表达；未提交的准备结果不能生成正式来源身份。必须依次取得已提交源码、验证过的不可变导出、不可变镜像、可信 Package Manifest 和安装包，再执行新安装、v1.0.1 普通更新及恢复资格。历史 Tag、Snapshot、包和证明保持不变。
 
 普通v1.0.1→v1.0.2更新包按INSTALL的准确PG输入构建：使用`-Architectures amd64 -PostgresImage <原包immutable-ID> -ExpectedPostgresConfigDigest <原包config-digest>`。两参数必须成对且单架构；显式复用不拉取公共标签，归档校验不符拒绝Manifest。镜像来源必须先对照可信v1.0.1 Manifest和TAR核实；此检查不替代新候选包资格。
+
+## v1.0.3与独立Python Companion
+
+三阶段业务已接受；Self-Hosted目标Windows11 amd64、PG16、Schema V52，普通更新只声明经资格的v1.0.2/V49→v1.0.3/V52。前文v1.0.2候选/升级说明保留历史，不覆盖本版本；V1～V52原字节和历史发行不改。
+
+Python使用release/python-companion-source-manifest.json精确列表，通过scripts/release/python_companion.py从同一40位SOURCE_SHA读取Git Blob，生成独立.python-companion-source.json和sourceHash。所有research/py/src生产文件必须显式列入，不能自动发现并接纳；新文件遗漏即拒绝。VERSION、Wheel和Companion均1.0.3，因子/Artifact/方法合同不随产品名重写。
+
+先export/verify，再使用投影中的release/build-python-companion.ps1于干净Windows amd64/CPython3.11构建；runtime与构建工具由python-companion-dependencies.json精确锁定，NumPy2.3.5 Windows cp311 Wheel摘要/元数据必须吻合。构建器不从工作树复制业务文件，不联网解析运行依赖。最终独立ZIP包含Wheel、依赖、hash安装锁、来源/版本/摘要manifest、说明与许可证；用户显式以--no-index离线安装和运行，无Java subprocess/Compose/Python守护进程。
+
+两资产独立验证、共享开发SOURCE_SHA；Self-Hosted Snapshot不包含Python，Companion来源另有树摘要。保留未签名provenance的真实边界，不更改严格18字段Java Package Manifest、既有导出器coverage或普通升级门禁。正式候选资格/安装/恢复及最终发行授权分别记录。
