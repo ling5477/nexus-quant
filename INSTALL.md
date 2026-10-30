@@ -1,30 +1,32 @@
 # NexusQuant 安装与运维
 
-版本以包内 VERSION 为准。**V1.0.0 requires a fresh database. Pre-release development databases are not upgrade targets.** 不使用 Flyway repair，不将开发数据库迁移为正式 V1。
+版本以包内VERSION为准。v1.0.2/V49已发布；当前源码是 **v1.0.3发行候选 / V52**，三个业务阶段功能完整。准确候选安装、升级及恢复资格以绑定包SHA256的发行资格报告和最终Release Notes为准，不从源码或旧包资格推导PASS。已发布历史不改写，开发数据库不是正式升级目标，不使用Flyway repair。
 
-## 当前资格范围
+## v1.0.3目标范围与普通升级
 
-v1.0.0与[v1.0.1](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.1)已发布，各自资格独立保留。v1.0.1为Self-Hosted / Windows 11 amd64 / Docker Desktop Linux Containers / PG16.15 / V47；原包来源与资格以该正式Release为准。`release/support-matrix.json`只记录v1.0.0历史合同，不更新为新候选PASS。
+Self-Hosted目标为Windows11 amd64 / 已安装且运行的Docker Desktop Linux Containers / PostgreSQL16；Linux/macOS/ARM64与Public Demo不纳入正式声明。历史support-matrix保持其原版本合同，不改成新候选PASS。
 
-当前源码为 **v1.0.2候选 / V49**。本候选支持边界仍为NQ_SELF_HOSTED、Windows 11 amd64、Docker Desktop已安装并运行Linux Containers、PostgreSQL 16。新候选全新安装、实际包升级、包级备份恢复和回滚均为 **NOT_RUN**。本地源码及隔离数据库证明不能替代正式包资格。
+目标普通升级为 **v1.0.2/V49 → v1.0.3/V52**，由原正式安装器check-update/update执行V50、V51、V52。要求可信独立渠道取得目标Manifest SHA256、版本递增、Schema单调及相同POSTGRES_CONFIG_DIGEST。已有受限nq_runtime / NOLOGIN nq_schema_owner及RLS合同保持；不引入新的桥接。v1.0.0、v1.0.1或其他路径未经本版资格不声称直接支持。
 
-### v1.0.1普通更新到候选的前提
-
-更新合同允许版本递增、Schema V47→V49且PostgreSQL config digest不变的可信目标包；现有角色协议为受限`nq_runtime` / NOLOGIN `nq_schema_owner`。必须先完成已提交源码→验证过的不可变导出→不可变镜像→可信Manifest→安装包，再在独立测试安装上验证。PG标签相同不足以证明digest兼容；若重新拉取的PG16镜像config不同，应拒绝普通更新，不能放宽校验。
-
-维护者准备普通更新包时，须先校验 v1.0.1 原包（Manifest SHA256 `f0beba4f37481c85ff1677e8c546f10deaeba57fb5144f69f5d7edcd839ef5db`，镜像TAR SHA256 `7248a47823571fb112ea91f317e092cb6c47108b934d90ef52c299adb7c9e006`），将其镜像载入构建机，再从已验证的不可变源码导出运行：
+维护者必须从v1.0.2实际官方ZIP、Manifest与镜像TAR核验原PG身份；不能由浮动postgres:16.15或更早版本记录推定兼容。可信v1.0.2 Package Manifest SHA256为 `74406593acccdc452004067a5877a080d7dff596d9417f0af60e54aceb200d5f`，TAR SHA256为 `7177b7019c6c87409b58729f19a3b748303db57794adc8dcbcd95515f524806e`。核验原制品后从新准确提交的已验证不可变导出构包：
 
 ```powershell
-.\release\build-package.ps1 -OutputDirectory <new-package-directory> -Architectures amd64 `
+.\release\build-package.ps1 -OutputDirectory <new-directory> -Architectures amd64 `
   -PostgresImage sha256:9e2cf6287f25c3151f4c9421ccce2b17f3e60061c111a29165e0d2cdd9ff0a97 `
   -ExpectedPostgresConfigDigest sha256:066167ff39c2a612402ce99b734ea1cff92a9d1f2ac52f697a5f0384f0d88d6b
 ```
 
-该输入来自已发布的原包，保留其既有安全更新；不从当前浮动PG标签重新推定相容性。构建器验证单一架构、immutable镜像、归档绑定和预期config。错误输入或摘要不符即拒绝，不产生合格Manifest；默认浮动标签模式仅保留既有构建能力，不作为本次普通更新的构建方案。包级安装、升级和恢复仍须另行验证。
+成对参数、单架构和OCI/config摘要必须吻合，错误即拒绝，不能放宽普通更新门禁。正式安装器验证可信资产，停写、生成并验证完整备份、持久journal，在DB_MAY_CHANGE前后区分失败；V52迁移后失败应恢复原V49数据库和绑定资产。主动回滚与真实失败自动恢复分别取得证据；恢复成功不把原更新失败改判成功。不能用旧应用直接连接V52，不手工删pending掩盖未收敛事务。备份只保留停写时点。
 
-沿用正式安装器`check-update` / `update`：从独立可信渠道取得目标Manifest SHA256并显式确认；加载验证资产后停止frontend/backend写入，完成并验证完整更新前备份，写入事务journal，maintenance正向迁移并重授运行权限，最后验证Schema/运行身份及health才提交成功receipt。数据库可能已变更的失败必须恢复绑定备份和旧资产；journal未收敛时保持fail-closed。不得把旧应用直接启动到V49数据库。备份仅恢复到停写时点，后续新增事实不能通过简单回滚保留。
+## Python Research Companion
 
-v1.0.0直接升级到v1.0.2不在本候选支持范围；历史Bridge只属于原来精确授权的v1.0.0→v1.0.1协议，不构成新升级资格。LIVE、真实交易所写入与自动策略发布关闭。历史长时运行观察原审查NOT_ACCEPTED / EVIDENCE_GAPS及所有者例外、72小时重跑豁免保留。
+独立资产 `NexusQuant-Python-Research-Companion-1.0.3-windows-amd64-py311.zip` 与Self-Hosted分开取得和核验。它提供Wheel、NumPy2.3.5依赖wheelhouse、hash锁、来源/依赖manifest、INSTALL和许可证；Wheel实际版本为nexus-quant-research1.0.3。用户自行准备CPython3.11 x64，按Companion内INSTALL创建干净venv并用 `--no-index --no-cache-dir --require-hashes` 从附带文件安装。其他Python/平台只有对应依赖与真实安装运行证据后才能声明支持。
+
+Java安装和运维无需Python。Companion只读本地V2导出并显式生成离线Artifact，用户带回原research页只读预览；不接DB、不自动认证、不启动服务。三个因子与时序统计仅为研究诊断，回放时间是假设，Java摘要校验不证明统计结论。LIVE=DISABLED、Kill Switch=ENGAGED。
+
+## 历史平台入口与通用运维合同
+
+下列V1.0.0平台矩阵保留历史归属；通用安全、备份、身份、资源和运维步骤继续适用。新候选实际资格另由准确包证据表达；不将旧NOT_RUN或SCOPED_PASS追认为本版PASS。
 
 ## 系统要求与发行包
 
@@ -50,7 +52,7 @@ Docker bootstrap、daemon recovery 和 Linux/macOS 安装器保留为 `AVAILABLE
 | Preferred Memory | 8 GiB |
 | Below Recommended | Installation Allowed / Runtime Stability Not Guaranteed；警告并为全新安装选择 LIGHT |
 
-低于 4 GiB 属于资源受限运行场景，可能发生 OOM、启动失败或性能下降；安装器不设置新的最低内存门槛，也不自动启用 Swap 或修改系统内存配置。主机与 Docker 内存分别实际检测，无法取得有效内存信息时明确拒绝，不将未知值当作低内存继续。约 1.58 GiB Ubuntu 的真实安装与稳定性尚未验证，不能据此声明正式最低配置或 Linux 完整发行资格。以上调整不追溯改变已发布版本的资格记录。
+低于 4 GiB 属于资源受限运行场景，可能发生 OOM、启动失败或性能下降；安装器不设置新的最低内存门槛，也不自动启用 Swap 或修改系统内存配置。主机与 Docker 内存分别实际检测，无法取得有效内存信息时明确拒绝，不将未知值当作低内存继续。历史约 1.58 GiB Ubuntu仅有安装/重启/600秒SCOPED_PASS，正式资格与长期稳定性未验证，不能据此声明正式最低配置或 Linux 完整发行资格。以上调整不追溯改变已发布版本的资格记录。
 
 Docker Engine 最低 24.0.0、Compose 最低 2.20.0。Windows/macOS 使用 Docker Desktop Linux containers；Ubuntu 使用 Docker Engine + Compose plugin。macOS/Linux 需要系统 shell、curl 和标准文件工具。
 

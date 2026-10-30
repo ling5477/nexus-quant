@@ -78,16 +78,21 @@ release/
 /release/*
 !/release/source-manifest.json
 !/release/source-policy.md
+!/release/python-companion-source-manifest.json
+!/release/python-companion-dependencies.json
+!/release/build-python-companion.ps1
 !/scripts/release/
 /scripts/release/*
 !/scripts/release/release_source.py
 !/scripts/release/verify_release_boundary.py
 !/scripts/release/scan_release_secrets.py
 !/scripts/release/authorize_legacy_transition.py
+!/scripts/release/python_companion.py
 !/scripts/release/tests/
 /scripts/release/tests/*
 !/scripts/release/tests/test_release_source.py
 !/scripts/release/tests/test_transition_authorization.py
+!/scripts/release/tests/test_python_companion.py
 
 # 正式安装源码逐文件纳入；镜像和导出产物继续忽略。
 !/release/runtime/
