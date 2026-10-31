@@ -1,17 +1,23 @@
-# 1.0.3 — 发行候选 / Candidate (unreleased)
+# 1.0.3 — 已发布 / Released
 
-三个功能阶段均已接受，功能范围完整；本版本尚未创建Tag或Release。准确包安装/升级/恢复及Companion资格以对应不可变候选报告为准。
+Release Date: 2026-10-31 (UTC)
+
+Release URL: https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3
+
+Release ID429746750，published_at=2026-10-31T06:00:01Z，draft=false/prerelease=false。三个功能阶段及限定范围最终准入均完成；Windows11 amd64/Docker Linux Containers/PG16.15/V52 Self-Hosted与独立Windows CPython3.11/NumPy2.3.5 Companion已正式交付。
+
+正式Source=5f770f60e2b6f11b376535b865a60ef5976db3c1 / Source CI41078509409（9/9）；无父Snapshot=29677025572536bcab0ce2bf77ac46fe766cf844 / Tree294085f526528afb780d4ee152f1abc0333d732a；Annotated Tag Object=03da66b14beeda90152758d06e9d215431407696。六资产与来源映射见[正式发行说明](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3)，发行后文档CI单独记录，来源映射未签名。
 
 ## Features
 
 - Historical Research：OKX SPOT BTC/ETH 1h、1～180完整UTC日/4320根，V2不可变分块与引用，旧V1冻结兼容；长回测/最多4候选实验及90/180日WF预设，不扩大Continuous SIM720/500边界。
 - Forward SIM Evaluation：原canonical UTC/asOf观察、覆盖与逐项样本/期间指标、风险执行解释和追加人工复盘；STOP仅关闭研究记录。
 - Python Factor Research：原V2只读导出、Momentum/Realized Volatility/Volume Anomaly、purged时序验证/块Bootstrap、离线Artifact与原research页只读预览，不持久化本地产物。
-- 独立Python Research Companion1.0.3：Windows amd64/CPython3.11 x64目标，Wheel和NumPy2.3.5依赖随包，以hash锁和--no-index离线安装；不进入Java/Compose运行时。
+- 独立Python Research Companion1.0.3：已验证Windows amd64/CPython3.11 x64，Wheel和NumPy2.3.5依赖随包，以hash锁和--no-index离线安装；不进入Java/Compose运行时。
 
 ## Upgrade and limitations
 
-- Schema V49→V50→V51→V52，历史迁移不改写；目标普通升级来源仅v1.0.2，须可信原PG镜像/config不变、正式安装器与真实候选资格。回滚/失败恢复须同时恢复绑定数据库及资产。
+- 已验证正式v1.0.2/V49→V50→V51→V52普通升级、新安装、备份恢复及主动回滚；历史migration和PG immutable image/config合同不变。原整轮FAILED、原update exit1、两表raw DIFFERENT保留，后续自动恢复仅QUALIFIED_FOR_HISTORICAL_DATA_AND_STABLE_CONTROLS，不宣称全部raw MATCH；旧数据库与绑定资产一起恢复。
 - LIVE=DISABLED、Kill Switch=ENGAGED；无真实交易或Python交易权限。180日不证明多年历史能力；回放时间、已暴露留出、短样本与Bootstrap假设披露；合成时间不代表长期真实观察。
 - Linux/macOS/ARM64、其他Python版本、Public Demo不因构包获得资格。历史长时运行原审查及owner例外/72小时豁免保留，v1.0.2发行历史不改写。
 

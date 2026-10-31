@@ -2,7 +2,19 @@
 
 当前阶段和安全状态由 [STATUS.md](STATUS.md) 的机器区块唯一拥有。本文件解释当前迭代及历史发布动作，不授予提交、公开发行或部署权限。
 
-## 已发布 v1.0.2 与下一阶段
+## 已发布v1.0.3与唯一下一阶段
+
+NQ v1.0.0、v1.0.1、v1.0.2、v1.0.3均已RELEASED。[v1.0.3 / Release429746750](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3)于2026-10-31T06:00:01Z公开，Schema V52；完整Source/CI、无父Snapshot/Tag及六资产身份由[STATUS](STATUS.md)记录，发行后的文档CI单独绑定本次交付，不替换正式Source CI。
+
+V103-01长历史研究、V103-02前向SIM评价/人工复盘、V103-03离线Python因子研究均已接受并纳入两个独立交付组件：Self-Hosted及Windows CPython3.11 Companion。Windows新安装、正式v1.0.2/V49→V52普通升级、备份恢复、主动回滚及历史数据/稳定控制范围自动恢复资格已完成；原whole-run FAILED、update exit1及两表raw DIFFERENT保留，非全raw MATCH。
+
+唯一下一入口为 **NQ-V104-PLAN / NOT_STARTED**，machine work_batch=NQ-V104-PLANNING、commit=NONE、CI=NOT_RUN。这里只登记后续规划入口，不制定v1.0.4内容，不启动功能开发、资格测试或审查阶段。
+
+Windows11 amd64/Docker Linux Containers/PG16及独立Companion资格边界、Linux/macOS/ARM64/其他Python未资格、历史C4审查与owner例外、研究时间/统计假设和低内存残余保持。LIVE=DISABLED、Kill Switch=ENGAGED；Java继续是唯一交易authority，Python无交易权限。
+
+## 历史记录：v1.0.2及v1.0.3准备
+
+以下原文属于各自形成时点，不覆盖上述已发布状态或STATUS机器区块，也不作为新的执行授权。
 
 功能收口V103_FUNCTIONAL_CLOSEOUT_ACCEPTED已完成。唯一当前后续工作为NQ-V103-RELEASE-READINESS：Self-Hosted1.0.3/V52正式来源闭包、独立Python Companion1.0.3离线资产，以及新包Windows安装、v1.0.2普通升级/恢复资格。复用三个阶段有效业务证据，不重新开发业务、不无条件重跑72小时；准确源码CI和新包资格分别取证，未创建正式发行。
 
