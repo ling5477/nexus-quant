@@ -1,0 +1,404 @@
+package com.guidinglight.nexusquant.livecontrol.infra;
+
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeApprovalCommand;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotScopeAuthorityResolver;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotScopeControlPlane;
+import com.guidinglight.nexusquant.livecontrol.application.command.PilotScopeMaterializationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.model.PilotScopeMaterializationResult;
+import com.guidinglight.nexusquant.livecontrol.application.command.MinimalPilotMaterializationCommand;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotPrerequisiteObservationAuthority.TrustedOperatorPilotBootstrap;
+import com.guidinglight.nexusquant.livecontrol.application.port.LiveControlAuthorizationPort;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSession;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionEvent;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionState;
+import com.guidinglight.nexusquant.livecontrol.domain.OperatorApproval;
+import com.guidinglight.nexusquant.livecontrol.domain.OperatorPilotAuthority;
+import com.guidinglight.nexusquant.livecontrol.domain.PilotObservationSet;
+import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeBinding;
+import com.guidinglight.nexusquant.livecontrol.domain.PilotScopeFreshnessPolicy;
+import com.guidinglight.nexusquant.livecontrol.domain.PilotScopePreflightResult;
+import com.guidinglight.nexusquant.livecontrol.domain.RiskLimitSet;
+import com.guidinglight.nexusquant.livecontrol.domain.port.LiveControlRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotScopeRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionAuthorityType;
+
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
+/**
+ * 受控实盘执行 application facade。仅构造并提交受版本约束的 prerequisite facts；没有 ExecutionIntent/provider/worker 依赖。
+ */
+@Service
+public class PilotScopeControlPlaneService implements PilotScopeControlPlane {
+
+    private static final String OPERATOR_ROLE = "OPERATOR";
+    private static final String ZERO_DIGEST = "0".repeat(64);
+
+    private final PilotScopeAuthorityResolver authorityResolver;
+    private final PilotPrerequisiteObservationAuthority observationAuthority;
+    private final PilotScopeFactTransactionService transactionService;
+    private final LiveControlRepository liveControlRepository;
+    private final PilotScopeRepository pilotScopeRepository;
+    private final LiveControlAuthorizationPort authorization;
+
+    public PilotScopeControlPlaneService(
+            PilotScopeAuthorityResolver authorityResolver,
+            PilotPrerequisiteObservationAuthority observationAuthority,
+            PilotScopeFactTransactionService transactionService,
+            LiveControlRepository liveControlRepository,
+            PilotScopeRepository pilotScopeRepository,
+            LiveControlAuthorizationPort authorization
+    ) {
+        this.authorityResolver = Objects.requireNonNull(authorityResolver);
+        this.observationAuthority = Objects.requireNonNull(observationAuthority);
+        this.transactionService = Objects.requireNonNull(transactionService);
+        this.liveControlRepository = Objects.requireNonNull(liveControlRepository);
+        this.pilotScopeRepository = Objects.requireNonNull(pilotScopeRepository);
+        this.authorization = Objects.requireNonNull(authorization);
+    }
+
+    @Override
+    public PilotScopeMaterializationResult materialize(
+            AuthenticatedLiveControlActor actor,
+            PilotScopeMaterializationCommand command
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(command, "command must not be null");
+        if (!authorization.lockAndCheckRole(actor.userId(), OPERATOR_ROLE)) {
+            throw new LiveControlException("LIVE_SESSION_OPERATOR_ROLE_REQUIRED", "operator role is required");
+        }
+        PilotScopeAuthorityResolver.ResolvedAuthority authority = authorityResolver.resolve(actor, command);
+        RiskLimitSet risk = authority.riskLimitSet();
+        requireExactRisk(command.risk(), risk);
+        Instant now = liveControlRepository.currentTime();
+        LiveSession session = LiveSession.create(
+                command.sessionId(), actor.userId(), command.exchangeAccountId(), command.strategyReleaseId(),
+                command.releaseDigest(), command.releaseAdmissionRevision(), command.risk().riskLimitSetId(),
+                command.risk().riskLimitSetDigest(), command.credentialReference(), command.symbolAllowlist(),
+                command.capitalCap(), command.executionWindowStart(), command.executionWindowEnd(), actor.userId(), now
+        );
+        session.requireWithinRiskLimit(risk);
+        PilotScopeBinding scope = canonicalScope(actor, command, authority.scopeBindings(), session, now);
+        if (!constantTimeEquals(scope.pilotScopeHash(), command.expectedPilotScopeHash())) {
+            throw new LiveControlException(
+                    "EXECUTION_SCOPE_HASH_MISMATCH",
+                    "client expected pilot scope hash does not match server reconstruction"
+            );
+        }
+        PilotObservationSet observations = resolveTrustedObservationSet(session, scope, now);
+        requireTrustedObservationSet(session, scope, observations, now);
+        LiveSessionEvent createdEvent = new LiveSessionEvent(
+                UUID.randomUUID(), session.id(), 1, null, LiveSessionState.APPROVAL_PENDING,
+                "CREATE", actor.userId(), command.requestId(), command.traceId(), "SESSION_CREATED",
+                command.idempotencyKey(), scope.pilotScopeHash(), "{}", now
+        );
+        PilotScopeBinding stored = transactionService.materialize(
+                actor, session, risk, createdEvent, scope, observations);
+        return new PilotScopeMaterializationResult(
+                session.id(), stored.id(), observations.id(), stored.pilotScopeHash());
+    }
+
+    @Override
+    public PilotScopeMaterializationResult materializeMinimal(
+            AuthenticatedLiveControlActor actor,
+            MinimalPilotMaterializationCommand command
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(command, "command must not be null");
+        if (!authorization.lockAndCheckRole(actor.userId(), OPERATOR_ROLE)) {
+            throw new LiveControlException("LIVE_SESSION_OPERATOR_ROLE_REQUIRED", "operator role is required");
+        }
+        PilotScopeAuthorityResolver.ResolvedMinimalAuthority authority =
+                authorityResolver.resolveMinimal(actor, command);
+        OperatorPilotAuthority operatorAuthority = authority.operatorPilotAuthority();
+        Instant now = liveControlRepository.currentTime();
+        LiveSession session = LiveSession.createOperatorPilot(
+                command.sessionId(), actor.userId(), command.exchangeAccountId(), operatorAuthority.id(),
+                operatorAuthority.canonicalDigest(), command.credentialReferenceId(), command.instrument(),
+                command.configuredPilotMaxNotional(), command.executionWindowStart(),
+                command.executionWindowEnd(), actor.userId(), now);
+        TrustedOperatorPilotBootstrap bootstrap = resolveTrustedOperatorPilotBootstrap(
+                actor, command, session, now);
+        PilotScopeBinding scope = bootstrap.scopeBinding();
+        PilotObservationSet observations = bootstrap.observationSet();
+        requireTrustedOperatorPilotBootstrap(actor, command, session, scope, observations, now);
+        requireTrustedOperatorObservationSet(session, scope, observations, now);
+        LiveSessionEvent createdEvent = new LiveSessionEvent(
+                UUID.randomUUID(), session.id(), 1, null, LiveSessionState.APPROVAL_PENDING,
+                "CREATE", actor.userId(), command.requestId(), command.traceId(), "SESSION_CREATED",
+                command.idempotencyKey(), scope.pilotScopeHash(), "{}", now);
+        PilotScopeBinding stored = transactionService.materializeOperatorPilot(
+                actor, session, operatorAuthority, createdEvent, scope, observations);
+        return new PilotScopeMaterializationResult(
+                session.id(), stored.id(), observations.id(), stored.pilotScopeHash());
+    }
+
+    private static PilotScopeMaterializationCommand.RiskSelection selection(RiskLimitSet risk) {
+        return new PilotScopeMaterializationCommand.RiskSelection(
+                risk.id(), risk.canonicalDigest(), risk.version(), risk.capitalCap(), risk.maxOrderNotional(),
+                risk.maxSymbolPositionNotional(), risk.maxDailyRealizedLoss(), risk.maxDailyTotalLoss(),
+                risk.maxOpenOrders(), risk.maxIntradayOrders(), risk.symbolAllowlist(),
+                risk.maxSessionDurationSeconds(), risk.spreadLimitBps(), risk.slippageLimitBps(),
+                risk.maxMarketDataAgeMs(), risk.minDataCoverageBps());
+    }
+
+    private PilotObservationSet resolveTrustedObservationSet(
+            LiveSession session,
+            PilotScopeBinding scope,
+            Instant resolvedAt
+    ) {
+        try {
+            return observationAuthority.resolveTrustedObservationSet(session, scope, resolvedAt);
+        } catch (LiveControlException exception) {
+            throw exception;
+        } catch (RuntimeException exception) {
+            LiveControlException denied = new LiveControlException(
+                    "TRUSTED_PREREQUISITE_OBSERVATION_INVALID",
+                    "trusted prerequisite observation is invalid");
+            denied.initCause(exception);
+            throw denied;
+        }
+    }
+
+    private TrustedOperatorPilotBootstrap resolveTrustedOperatorPilotBootstrap(
+            AuthenticatedLiveControlActor actor,
+            MinimalPilotMaterializationCommand command,
+            LiveSession session,
+            Instant resolvedAt
+    ) {
+        try {
+            return observationAuthority.bootstrapTrustedOperatorPilotScope(
+                    session, command.pilotScopeId(), actor.userId(), resolvedAt);
+        } catch (LiveControlException exception) {
+            throw exception;
+        } catch (RuntimeException exception) {
+            LiveControlException denied = new LiveControlException(
+                    "TRUSTED_OPERATOR_CONTROLLED_EXECUTION_SCOPE_BOOTSTRAP_INVALID",
+                    "trusted operator pilot scope bootstrap is invalid");
+            denied.initCause(exception);
+            throw denied;
+        }
+    }
+
+    @Override
+    public OperatorApproval approve(AuthenticatedLiveControlActor actor, PilotScopeApprovalCommand command) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(command, "command must not be null");
+        if (!authorization.lockAndCheckRole(actor.userId(), OperatorApproval.REQUIRED_ROLE)) {
+            throw new LiveControlException("EXECUTION_APPROVAL_FORBIDDEN", "pilot approval authorization failed");
+        }
+        LiveSession session = liveControlRepository.findSession(command.sessionId())
+                .orElseThrow(() -> new LiveControlException("LIVE_SESSION_NOT_FOUND", "live session was not found"));
+        if (session.authorityType()
+                == LiveSessionAuthorityType.OPERATOR_CONTROLLED_EXECUTION) {
+            throw new LiveControlException(
+                    "OPERATOR_CONTROLLED_EXECUTION_EXTERNAL_APPROVAL_FORBIDDEN",
+                    "operator pilot approval is carried by its explicit authority");
+        }
+        PilotScopeBinding scope = pilotScopeRepository.findBySessionId(command.sessionId())
+                .orElseThrow(() -> new LiveControlException("EXECUTION_SCOPE_NOT_FOUND", "pilot scope was not found"));
+        if (!scope.id().equals(command.pilotScopeId())
+                || !constantTimeEquals(scope.pilotScopeHash(), command.expectedPilotScopeHash())) {
+            throw new LiveControlException("EXECUTION_APPROVAL_SCOPE_MISMATCH", "approval does not bind the exact pilot scope");
+        }
+        OperatorApproval approval = new OperatorApproval(
+                command.approvalId(), session.id(), OperatorApproval.PILOT_SCOPE_SCHEMA, scope.id(),
+                scope.pilotScopeHash(), session.releaseDigest(), session.riskLimitSetDigest(), actor.userId(),
+                OperatorApproval.REQUIRED_ROLE, OperatorApproval.Decision.APPROVED, command.reason(),
+                command.approvedAt(), command.expiresAt()
+        );
+        return transactionService.approve(actor, approval);
+    }
+
+    @Override
+    public PilotScopePreflightResult preflight(AuthenticatedLiveControlActor actor, UUID sessionId) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(sessionId, "sessionId must not be null");
+        if (!authorization.lockAndCheckRole(actor.userId(), OPERATOR_ROLE)) {
+            throw new LiveControlException("EXECUTION_PREFLIGHT_OPERATOR_ROLE_REQUIRED", "operator role is required");
+        }
+        LiveSession session = liveControlRepository.findSession(sessionId)
+                .filter(value -> value.ownerId() == actor.userId())
+                .orElseThrow(() -> new LiveControlException("LIVE_SESSION_NOT_FOUND", "live session was not found"));
+        return transactionService.preflight(sessionId, session.capitalCap());
+    }
+
+    private static PilotScopeBinding canonicalScope(
+            AuthenticatedLiveControlActor actor,
+            PilotScopeMaterializationCommand command,
+            PilotScopeAuthorityResolver.ResolvedScopeBindings value,
+            LiveSession session,
+            Instant now
+    ) {
+        return canonicalScope(actor, command.pilotScopeId(), value, session, now);
+    }
+
+    private static PilotScopeBinding canonicalScope(
+            AuthenticatedLiveControlActor actor,
+            UUID pilotScopeId,
+            PilotScopeAuthorityResolver.ResolvedScopeBindings value,
+            LiveSession session,
+            Instant now
+    ) {
+        Objects.requireNonNull(value, "scopeBindings must not be null");
+        PilotScopeBinding draft = new PilotScopeBinding(
+                pilotScopeId, session.id(), value.instrumentMetadataDigest(),
+                value.instrumentSourceIdentity(), value.instrumentSourceSchemaVersion(),
+                value.instrumentMaximumAgeMs(), value.feeScheduleDigest(), value.feeTier(),
+                value.feeEvidenceClass(), value.feeSourceIdentity(), value.feeSourceSchemaVersion(),
+                value.feeMaximumAgeMs(), value.balanceSourceIdentity(), value.balanceSourceSchemaVersion(),
+                value.balanceMaximumAgeMs(), value.clockSourceIdentity(), value.clockSourceSchemaVersion(),
+                value.clockMaximumAgeMs(), value.signedTimestampSource(), value.maximumToleratedSkewMs(),
+                value.endpointPolicyVersion(), value.endpointPolicyDigest(), value.providerContractIdentity(),
+                value.providerArtifactDigest(), value.workerIdentity(), value.workerReleaseDigest(),
+                ZERO_DIGEST, actor.userId(), now
+        );
+        return draft.withCanonicalHash(session);
+    }
+
+    private static void requireTrustedObservationSet(
+            LiveSession session,
+            PilotScopeBinding scope,
+            PilotObservationSet observations,
+            Instant resolvedAt
+    ) {
+        Objects.requireNonNull(observations, "trusted observations must not be null");
+        var values = observations.observations();
+        boolean exactEnvelope = values.stream().allMatch(value ->
+                value.envelope().recordedAt().equals(resolvedAt)
+                        && !value.envelope().observedAt().isAfter(resolvedAt)
+                        && !value.envelope().observedAt().isAfter(value.envelope().recordedAt())
+                        && value.envelope().recorderIdentity().equals(scope.workerIdentity()));
+        boolean exactSources = observations.instrumentMetadata().envelope().sourceIdentity()
+                .equals(scope.instrumentSourceIdentity())
+                && observations.instrumentMetadata().envelope().sourceSchemaVersion()
+                .equals(scope.instrumentSourceSchemaVersion())
+                && observations.feeSchedule().envelope().sourceIdentity().equals(scope.feeSourceIdentity())
+                && observations.feeSchedule().envelope().sourceSchemaVersion().equals(scope.feeSourceSchemaVersion())
+                && observations.balanceSnapshot().envelope().sourceIdentity().equals(scope.balanceSourceIdentity())
+                && observations.balanceSnapshot().envelope().sourceSchemaVersion()
+                .equals(scope.balanceSourceSchemaVersion())
+                && observations.clockSync().envelope().sourceIdentity().equals(scope.clockSourceIdentity())
+                && observations.clockSync().envelope().sourceSchemaVersion().equals(scope.clockSourceSchemaVersion());
+        boolean exactSymbols = observations.instrumentMetadata().items().stream()
+                .map(item -> item.symbol()).toList().equals(session.symbolAllowlist());
+        PilotScopePreflightResult validation = new PilotScopeFreshnessPolicy()
+                .evaluate(scope, observations, BigDecimal.ZERO, resolvedAt);
+        if (!exactEnvelope || !exactSources || !exactSymbols || !validation.eligible()) {
+            throw new LiveControlException(
+                    "TRUSTED_PREREQUISITE_OBSERVATION_INVALID",
+                    "trusted prerequisite observation does not match immutable pilot scope"
+            );
+        }
+    }
+
+    private static void requireTrustedOperatorPilotBootstrap(
+            AuthenticatedLiveControlActor actor,
+            MinimalPilotMaterializationCommand command,
+            LiveSession session,
+            PilotScopeBinding scope,
+            PilotObservationSet observations,
+            Instant resolvedAt
+    ) {
+        boolean exact = scope.id().equals(command.pilotScopeId())
+                && scope.sessionId().equals(session.id())
+                && scope.createdBy() == actor.userId()
+                && scope.createdAt().equals(resolvedAt)
+                && scope.hasCanonicalHash(session)
+                && observations.pilotScopeId().equals(scope.id());
+        if (!exact) {
+            throw new LiveControlException(
+                    "TRUSTED_OPERATOR_CONTROLLED_EXECUTION_SCOPE_BOOTSTRAP_INVALID",
+                    "trusted operator pilot scope bootstrap does not bind the exact session");
+        }
+    }
+
+    private static void requireTrustedOperatorObservationSet(
+            LiveSession session,
+            PilotScopeBinding scope,
+            PilotObservationSet observations,
+            Instant resolvedAt
+    ) {
+        Objects.requireNonNull(observations, "trusted observations must not be null");
+        Instant recordedAt = observations.instrumentMetadata().envelope().recordedAt();
+        long collectionMaximumAgeMs = Math.min(
+                Math.min(scope.instrumentMaximumAgeMs(), scope.feeMaximumAgeMs()),
+                Math.min(scope.balanceMaximumAgeMs(), scope.clockMaximumAgeMs()));
+        Instant maximumObservedAt = recordedAt.plusMillis(scope.maximumToleratedSkewMs());
+        boolean exactEnvelope = !recordedAt.isBefore(resolvedAt)
+                && !resolvedAt.plusMillis(collectionMaximumAgeMs).isBefore(recordedAt)
+                && observations.observations().stream().allMatch(value ->
+                        value.envelope().recordedAt().equals(recordedAt)
+                                && !value.envelope().observedAt().isAfter(maximumObservedAt)
+                                && value.envelope().recorderIdentity().equals(scope.workerIdentity()));
+        boolean exactSources = observations.instrumentMetadata().envelope().sourceIdentity()
+                .equals(scope.instrumentSourceIdentity())
+                && observations.instrumentMetadata().envelope().sourceSchemaVersion()
+                .equals(scope.instrumentSourceSchemaVersion())
+                && observations.feeSchedule().envelope().sourceIdentity().equals(scope.feeSourceIdentity())
+                && observations.feeSchedule().envelope().sourceSchemaVersion().equals(scope.feeSourceSchemaVersion())
+                && observations.balanceSnapshot().envelope().sourceIdentity().equals(scope.balanceSourceIdentity())
+                && observations.balanceSnapshot().envelope().sourceSchemaVersion()
+                .equals(scope.balanceSourceSchemaVersion())
+                && observations.clockSync().envelope().sourceIdentity().equals(scope.clockSourceIdentity())
+                && observations.clockSync().envelope().sourceSchemaVersion().equals(scope.clockSourceSchemaVersion());
+        boolean exactSymbols = observations.instrumentMetadata().items().stream()
+                .map(item -> item.symbol()).toList().equals(session.symbolAllowlist());
+        PilotScopePreflightResult validation = new PilotScopeFreshnessPolicy()
+                .evaluate(scope, observations, BigDecimal.ZERO, recordedAt);
+        if (!exactEnvelope || !exactSources || !exactSymbols || !validation.eligible()) {
+            throw new LiveControlException(
+                    "TRUSTED_PREREQUISITE_OBSERVATION_INVALID",
+                    "trusted prerequisite observation does not match immutable pilot scope"
+            );
+        }
+    }
+
+    private static void requireExactRisk(PilotScopeMaterializationCommand.RiskSelection supplied, RiskLimitSet stored) {
+        Objects.requireNonNull(supplied, "risk selection must not be null");
+        boolean exact = stored.id().equals(supplied.riskLimitSetId())
+                && constantTimeEquals(stored.canonicalDigest(), supplied.riskLimitSetDigest())
+                && stored.version() == supplied.version()
+                && moneyEquals(stored.capitalCap(), supplied.capitalCap())
+                && moneyEquals(stored.maxOrderNotional(), supplied.maxOrderNotional())
+                && moneyEquals(stored.maxSymbolPositionNotional(), supplied.maxSymbolPositionNotional())
+                && moneyEquals(stored.maxDailyRealizedLoss(), supplied.maxDailyRealizedLoss())
+                && moneyEquals(stored.maxDailyTotalLoss(), supplied.maxDailyTotalLoss())
+                && stored.maxOpenOrders() == supplied.maxOpenOrders()
+                && stored.maxIntradayOrders() == supplied.maxIntradayOrders()
+                && stored.symbolAllowlist().equals(new RiskLimitSet(
+                stored.id(), supplied.version(), supplied.capitalCap(), supplied.maxOrderNotional(),
+                supplied.maxSymbolPositionNotional(), supplied.maxDailyRealizedLoss(),
+                supplied.maxDailyTotalLoss(), supplied.maxOpenOrders(), supplied.maxIntradayOrders(),
+                supplied.symbolAllowlist(), supplied.maxSessionDurationSeconds(), supplied.spreadLimitBps(),
+                supplied.slippageLimitBps(), supplied.maxMarketDataAgeMs(), supplied.minDataCoverageBps(),
+                stored.createdBy(), stored.createdAt()).symbolAllowlist())
+                && stored.maxSessionDurationSeconds() == supplied.maxSessionDurationSeconds()
+                && moneyEquals(stored.spreadLimitBps(), supplied.spreadLimitBps())
+                && moneyEquals(stored.slippageLimitBps(), supplied.slippageLimitBps())
+                && stored.maxMarketDataAgeMs() == supplied.maxMarketDataAgeMs()
+                && stored.minDataCoverageBps() == supplied.minDataCoverageBps();
+        if (!exact) {
+            throw new LiveControlException("EXECUTION_RISK_REFERENCE_MISMATCH", "supplied risk facts differ from stored SoR");
+        }
+    }
+
+    private static boolean moneyEquals(BigDecimal left, BigDecimal right) {
+        return left != null && right != null && left.compareTo(right) == 0;
+    }
+
+    private static boolean constantTimeEquals(String left, String right) {
+        return left != null && right != null && MessageDigest.isEqual(
+                left.getBytes(StandardCharsets.UTF_8), right.getBytes(StandardCharsets.UTF_8));
+    }
+}

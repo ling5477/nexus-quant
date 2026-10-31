@@ -1,0 +1,59 @@
+.marketdata-workspace,
+.marketdata-workspace .ant-space-item,
+.marketdata-workspace .ant-tabs-content-holder,
+.marketdata-workspace .ant-tabs-tabpane,
+.marketdata-workspace .ant-card,
+.marketdata-workspace .ant-card-body,
+.marketdata-workspace .ant-collapse-content-box {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.marketdata-workspace .ant-card-head-wrapper {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.marketdata-workspace .ant-card-head-title,
+.marketdata-workspace .ant-typography,
+.marketdata-workspace .ant-tag,
+.marketdata-workspace .ant-descriptions-item-content {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.marketdata-workspace .ant-table-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.marketdata-workspace .ant-table-cell {
+    overflow-wrap: anywhere;
+}
+
+.marketdata-workspace .ant-form-item,
+.marketdata-workspace .ant-form-item-control {
+    min-width: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 575px) {
+    .marketdata-workspace .ant-card-head {
+        padding-inline: 12px;
+    }
+
+    .marketdata-workspace .ant-card-body {
+        padding: 12px;
+    }
+
+    .marketdata-workspace .ant-card-extra {
+        margin-inline-start: 0;
+        max-width: 100%;
+    }
+
+    .marketdata-workspace .ant-picker,
+    .marketdata-workspace .ant-input,
+    .marketdata-workspace .ant-select {
+        max-width: 100%;
+    }
+}
