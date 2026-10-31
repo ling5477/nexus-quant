@@ -2,7 +2,7 @@
 
 版本以包内VERSION为准。[v1.0.3](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3)已于2026-10-31T06:00:01Z正式发布，Release ID429746750，Schema V52；v1.0.0～v1.0.2历史发行保持原字节。本页为发行后开发文档同步，不是重新构建或替换正式包。
 
-**固定发行Source Commit为5f770f60e2b6f11b376535b865a60ef5976db3c1；本次或未来文档提交不替代它。** 正式安装使用该Release的已验证ZIP，不从当前dev重新构包冒充1.0.3。完整来源、Tag/Snapshot及六资产摘要见[STATUS](docs/current/STATUS.md)与Release Notes。开发数据库不是正式升级目标，不使用Flyway repair。
+**固定发行Source Commit为5f770f60e2b6f11b376535b865a60ef5976db3c1；本次或未来文档提交不替代它。** 正式安装使用该Release的已验证ZIP，不从当前dev重新构包冒充1.0.3。完整来源、Tag/Snapshot及六资产摘要见[正式发行说明](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3)。开发数据库不是正式升级目标，不使用Flyway repair。
 
 ## 取得正式安装资产
 
@@ -28,7 +28,7 @@ py -3.11 -m venv .venv
 
 ### 维护者构包历史参考（不重建已发布1.0.3）
 
-以下只保留构包前提和命令参考，不是本轮操作或用户安装步骤，不授权从新的文档提交重建/覆盖正式1.0.3。
+以下只保留构包前提和命令参考，不属于用户安装步骤，也不允许从文档更新后的提交重建/覆盖正式1.0.3。
 
 维护者必须从v1.0.2实际官方ZIP、Manifest与镜像TAR核验原PG身份；不能由浮动postgres:16.15或更早版本记录推定兼容。可信v1.0.2 Package Manifest SHA256为 `74406593acccdc452004067a5877a080d7dff596d9417f0af60e54aceb200d5f`，TAR SHA256为 `7177b7019c6c87409b58729f19a3b748303db57794adc8dcbcd95515f524806e`。核验原制品后从新准确提交的已验证不可变导出构包：
 

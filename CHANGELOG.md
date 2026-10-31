@@ -6,7 +6,7 @@ Release URL: https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3
 
 Release ID429746750，published_at=2026-10-31T06:00:01Z，draft=false/prerelease=false。三个功能阶段及限定范围最终准入均完成；Windows11 amd64/Docker Linux Containers/PG16.15/V52 Self-Hosted与独立Windows CPython3.11/NumPy2.3.5 Companion已正式交付。
 
-正式Source=5f770f60e2b6f11b376535b865a60ef5976db3c1 / Source CI41078509409（9/9）；无父Snapshot=29677025572536bcab0ce2bf77ac46fe766cf844 / Tree294085f526528afb780d4ee152f1abc0333d732a；Annotated Tag Object=03da66b14beeda90152758d06e9d215431407696。六资产与来源映射见[STATUS](docs/current/STATUS.md)，发行后文档CI单独记录，来源映射未签名。
+正式Source=5f770f60e2b6f11b376535b865a60ef5976db3c1 / Source CI41078509409（9/9）；无父Snapshot=29677025572536bcab0ce2bf77ac46fe766cf844 / Tree294085f526528afb780d4ee152f1abc0333d732a；Annotated Tag Object=03da66b14beeda90152758d06e9d215431407696。六资产与来源映射见[正式发行说明](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3)，发行后文档CI单独记录，来源映射未签名。
 
 ## Features
 

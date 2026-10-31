@@ -8,7 +8,7 @@ NexusQuant 是面向 OKX Spot 的研究与模拟交易工作台。Java Control P
 
 产品由 **NexusQuant Self-Hosted + NexusQuant Python Research Companion** 两个独立组件交付。正式验证范围为Windows 11 amd64 / 已运行Docker Desktop Linux Containers / PostgreSQL16（本包16.15）/ V52；Companion为Windows amd64 / CPython3.11 x64 / NumPy2.3.5独立离线安装。Linux/macOS/ARM64、Public Demo及其他Python版本未取得本版正式资格。
 
-正式Qualified Source Commit为5f770f60e2b6f11b376535b865a60ef5976db3c1，Source CI41078509409为9/9成功；独立无父Snapshot为29677025572536bcab0ce2bf77ac46fe766cf844，Tree为294085f526528afb780d4ee152f1abc0333d732a，Annotated Tag Object为03da66b14beeda90152758d06e9d215431407696。[完整发行身份及六资产](docs/current/STATUS.md)与[未签名provenance](https://github.com/ling5477/nexus-quant/releases/download/v1.0.3/NexusQuant-1.0.3-provenance.json)分别记录来源与制品；发行后文档commit/CI不替代正式Source，Snapshot CI=NOT_RUN。
+正式Qualified Source Commit为5f770f60e2b6f11b376535b865a60ef5976db3c1，Source CI41078509409为9/9成功；独立无父Snapshot为29677025572536bcab0ce2bf77ac46fe766cf844，Tree为294085f526528afb780d4ee152f1abc0333d732a，Annotated Tag Object为03da66b14beeda90152758d06e9d215431407696。[完整发行身份及六资产](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3)与[未签名provenance](https://github.com/ling5477/nexus-quant/releases/download/v1.0.3/NexusQuant-1.0.3-provenance.json)分别记录来源与制品；发行后文档commit/CI不替代正式Source，Snapshot CI=NOT_RUN。
 
 ## v1.0.3 功能
 
