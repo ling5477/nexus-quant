@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=fe206edffd937c871323278891532b694a47f3ab
 accepted_batch_acceptance_head=fe206edffd937c871323278891532b694a47f3ab
 accepted_batch_ci_run=41048377808
-work_batch=NQ-V103-03-FACTOR-RESEARCH-FOUNDATION
-work_batch_status=ACCEPTED|CI_GREEN
-work_batch_commit=fe206edffd937c871323278891532b694a47f3ab
-work_batch_ci_run=41048377808
-next_action=NQ-V103-FUNCTIONAL-CLOSEOUT-PLAN
+work_batch=NQ-V104-PLANNING
+work_batch_status=NOT_STARTED
+work_batch_commit=NONE
+work_batch_ci_run=NOT_RUN
+next_action=NQ-V104-PLAN
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -32,6 +32,49 @@ nq-current-authority:end -->
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
 ## 当前正式发行与下一阶段
+
+NQ v1.0.0、v1.0.1、v1.0.2、v1.0.3均为 **RELEASED**。v1.0.3已正式发布，三个业务阶段、功能收口、限定范围发行准备与最终准入均完成；本次只是发行事实和当前文档同步，不重新资格化、不增加功能或审查阶段。
+
+| 发行身份层 | 固定事实 |
+| --- | --- |
+| Qualified Source Commit / Source Tree | 5f770f60e2b6f11b376535b865a60ef5976db3c1 / bf7ad89766deb01ccd468d6c39dc7c0b672a6f64 |
+| Qualified Source CI | [41078509409](https://github.com/ling5477/nexus-quant/actions/runs/41078509409)，准确Source head、pull_request、completed/success、9/9 SUCCESS |
+| Development Merge / Merge CI | 1badf22e976efef4e2582885046eb64fa678e40c / [41082190021](https://github.com/ling5477/nexus-quant/actions/runs/41082190021)，准确merge head、push、9/9 SUCCESS；tree与Source相同 |
+| 无父Release Snapshot / Tree | 29677025572536bcab0ce2bf77ac46fe766cf844 / 294085f526528afb780d4ee152f1abc0333d732a，2228文件、parents=[] |
+| Annotated Tag / Object / Peeled | v1.0.3 / 03da66b14beeda90152758d06e9d215431407696 / 29677025572536bcab0ce2bf77ac46fe766cf844 |
+| Release / Published | [v1.0.3 / 429746750](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3) / 2026-10-31T06:00:01Z（北京时间14:00:01），draft=false、prerelease=false |
+| Snapshot CI / Post-release Documentation CI | Snapshot CI=NOT_RUN；发行后文档CI单独绑定本次文档commit/PR/merge，不替代正式Source或业务接受pair |
+
+Self-Hosted Source Manifest SHA256=9400efd78ebb0d0b38b4a5593a68b199636f226344e96275e7c65a2fe86d7484；Release Source Hash=82cfa1be500dad60fd24bf34a76d4efd8639366def0234866c08b3d9a41cec2e；Package Manifest=d985d38099f11beca3f3ef98bf4f320e93f4c54d54b5b400473d7e89e8f47734；images-amd64.tar=b6bcb3318900ac9ab807cd6320b68f205f70be0504247eae45b37cc3a5aacfc1。
+
+Companion Source Manifest SHA256=0235f0455f73785e1033020454a4a313ca8673c1a4c0fb8a4b9f9ad651f5e1cc；Source Hash=676ac7a89edb6ecb30cfef9f181855e38e6bc280ba3a42b99730112d213e9bad；Companion Manifest=286493b957a20316e1b4c57480762cf09c89a2fbdb0fe07ed48e212a867aaaae；Wheel=32f0af7fcea903349dd4f3b7ccbd1a6bb5fe8882d0c60b5641afd2d371edf499；Dependency Manifest=990f0ad9141d3e9c1889c0f893ab749ee25b37b62c11e6c7c0a3253a7a422b39；NumPy Wheel=a414504bef8945eae5f2d7cb7be2d4af77c5d1cb5e20b296c2c25b61dff2900c。完整公开映射见[provenance](https://github.com/ling5477/nexus-quant/releases/download/v1.0.3/NexusQuant-1.0.3-provenance.json)，类型UNSIGNED_RELEASE_SOURCE_MAPPING，不是数字签名。
+
+### 六项已发布资产
+
+| 正式资产 | GitHub ID | Bytes | SHA256 |
+| --- | --- | ---: | --- |
+| NexusQuant-1.0.3-windows-amd64.zip | 694496626 | 320966803 | fa743eaeb202abfbfef820ff17900a42692318242b6309b4b712a5b493679e61 |
+| NexusQuant-1.0.3-windows-amd64.zip.sha256 | 694494770 | 101 | f05b7f8b5c09166e7e181549343e7f6cc9a04d46426ee3dc3ba670ffc0388cbe |
+| NexusQuant-Python-Research-Companion-1.0.3-windows-amd64-py311.zip | 694496245 | 13107099 | bfd099adbe85c82781e8f00fd07ec51feb9b8b71cc8dbcf495b2386952edcb0b |
+| NexusQuant-Python-Research-Companion-1.0.3-windows-amd64-py311.zip.sha256 | 694495179 | 133 | d321839f21724a5abc3f96cf883bceb3c7bc276305320fcfed3bec33ae6a74f0 |
+| NexusQuant-1.0.3-provenance.json | 694495620 | 17062 | 76fd5f9f6180c173fc140120bb1a19dbd8959a69b4108425b9864eb0bdaffada |
+| NexusQuant-1.0.3-provenance.json.sha256 | 694494510 | 99 | 1cee3662b39d4bf413f2d7356a68e77340e167277a647098d0edf260803c192b |
+
+六项均为uploaded；正式发布阶段已逐项做匿名完整下载/大小/SHA256核验，未用Range替代完整文件。发行后本轮只读复核GitHub固定身份与本地原件摘要，不重新下载全部大包或运行安装/升级测试。两ZIP原字节、正式Snapshot/Tag/资产和历史资格证据保持不变。
+
+正式范围仅Self-Hosted Windows 11 amd64 / 已安装且运行的Docker Desktop Linux Containers / PostgreSQL 16（本包16.15）/ Flyway V52，以及独立Python Companion Windows amd64 / CPython 3.11 x64（实际3.11.9）/ NumPy 2.3.5离线安装。两个组件同源、各有独立ZIP/来源hash；Companion不进入Java运行时、Compose或Self-Hosted Snapshot，不拥有交易权限。普通直接升级仅正式v1.0.2/V49→v1.0.3/V52。
+
+原Whole-run=FAILED / RETAINED，原Update Exit=1 / RETAINED，Raw Comparison=DIFFERENT / RETAINED。后续RECOVERY_RECONCILIATION_02只使Recovery=QUALIFIED_FOR_HISTORICAL_DATA_AND_STABLE_CONTROLS：同一实际故障的历史业务/经济事实与稳定控制恢复正确；scheduled_job_controls及tenant_work_scan_cursors两行后续核对只有四个运行时间字段推进。首次/后续采样不同，不宣称全部raw、全部时间戳或物理库相同，不把原FAILED改为PASS。
+
+保留历史C4 NOT_ACCEPTED / EVIDENCE_GAPS、owner ACCEPT_WITH_EVIDENCE_EXCEPTION与72小时WAIVED；180天不是多年研究或长期策略优势，回放availableAt为实验假设且留出已暴露，Forward合成时钟不等于自然长期观察，Python探索统计不证明可持续盈利。Linux/macOS/ARM64、其他Python及Public Demo未取得本版正式资格，旧Linux低内存600秒仅SCOPED_PASS、长期NOT_VERIFIED；旧research/py安装提示和本地128项工具failure1/skip1保留。LIVE=DISABLED、Kill Switch=ENGAGED，不开放真实资金自动交易。
+
+最近业务接受pair继续为NQ-V103-03 / fe206edffd937c871323278891532b694a47f3ab / CI41048377808；GateZ冻结身份不变。唯一下一阶段仅登记NQ-V104-PLANNING / NOT_STARTED，work commit=NONE、CI=NOT_RUN，next_action=NQ-V104-PLAN。本轮不选题、不制定v1.0.4方案或启动实现。
+
+[TESTING](TESTING.md)与[WORKLOG](WORKLOG.md)仅追加本次事实。实际文档commit、PR、merge、各自准确CI与清理记录在仓库外 E:/Project/NQ_V103_POST_RELEASE_CLOSEOUT.md；新文档提交永远不替代上述正式Source Commit。
+
+## 历史记录：v1.0.2发行与v1.0.3候选准备
+
+以下保留既有原文的形成时点，包括旧“当前”、NOT_RUN及下一任务描述；它们不覆盖本页顶部机器authority和上述已发布1.0.3事实。
 
 NQ-V103-FUNCTIONAL-CLOSEOUT 已于2026-10-30接受，三个业务阶段功能范围COMPLETE，开发Schema V52。当前执行 NQ-V103-RELEASE-READINESS：版本/正式白名单与独立Python Companion交付准备；顶部accepted pair继续记录最近已接受业务候选，不提前绑定新的源码CI或包资格。v1.0.3未创建Tag/Release，安装/升级/恢复与离线Wheel资格以仓库外准确候选报告为准。用户明确授权本轮Git交付与隔离发行资格，不授予生产或真实交易权限。
 

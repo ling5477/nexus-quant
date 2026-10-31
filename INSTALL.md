@@ -1,12 +1,34 @@
 # NexusQuant 安装与运维
 
-版本以包内VERSION为准。v1.0.2/V49已发布；当前源码是 **v1.0.3发行候选 / V52**，三个业务阶段功能完整。准确候选安装、升级及恢复资格以绑定包SHA256的发行资格报告和最终Release Notes为准，不从源码或旧包资格推导PASS。已发布历史不改写，开发数据库不是正式升级目标，不使用Flyway repair。
+版本以包内VERSION为准。[v1.0.3](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3)已于2026-10-31T06:00:01Z正式发布，Release ID429746750，Schema V52；v1.0.0～v1.0.2历史发行保持原字节。本页为发行后开发文档同步，不是重新构建或替换正式包。
 
-## v1.0.3目标范围与普通升级
+**固定发行Source Commit为5f770f60e2b6f11b376535b865a60ef5976db3c1；本次或未来文档提交不替代它。** 正式安装使用该Release的已验证ZIP，不从当前dev重新构包冒充1.0.3。完整来源、Tag/Snapshot及六资产摘要见[STATUS](docs/current/STATUS.md)与Release Notes。开发数据库不是正式升级目标，不使用Flyway repair。
 
-Self-Hosted目标为Windows11 amd64 / 已安装且运行的Docker Desktop Linux Containers / PostgreSQL16；Linux/macOS/ARM64与Public Demo不纳入正式声明。历史support-matrix保持其原版本合同，不改成新候选PASS。
+## 取得正式安装资产
 
-目标普通升级为 **v1.0.2/V49 → v1.0.3/V52**，由原正式安装器check-update/update执行V50、V51、V52。要求可信独立渠道取得目标Manifest SHA256、版本递增、Schema单调及相同POSTGRES_CONFIG_DIGEST。已有受限nq_runtime / NOLOGIN nq_schema_owner及RLS合同保持；不引入新的桥接。v1.0.0、v1.0.1或其他路径未经本版资格不声称直接支持。
+Self-Hosted下载NexusQuant-1.0.3-windows-amd64.zip（320966803 bytes），SHA256为fa743eaeb202abfbfef820ff17900a42692318242b6309b4b712a5b493679e61；完整解压后根目录仍为NexusQuant-1.0.3-rc2-windows-amd64，不能只重命名内部文件或使用GitHub自动源码归档代替安装包。在该解压根目录执行installers/install.ps1。
+
+Companion另行下载NexusQuant-Python-Research-Companion-1.0.3-windows-amd64-py311.zip（13107099 bytes），SHA256为bfd099adbe85c82781e8f00fd07ec51feb9b8b71cc8dbcf495b2386952edcb0b。用户自行准备CPython3.11 x64，在独立解压目录按该包根INSTALL创建venv：
+
+~~~powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip --isolated install --no-index --no-cache-dir --only-binary=:all: --find-links .\wheelhouse --require-hashes -r .\requirements.lock
+.\.venv\Scripts\python.exe -m pip check
+~~~
+
+两份ZIP和sidecar从可信发行渠道取得；同包摘要只检测损坏，不独立证明发行者身份。最终provenance为UNSIGNED_RELEASE_SOURCE_MAPPING，不是数字签名。Companion不需要checkout research/py或editable安装，不进入Java、Compose或安装器生命周期，Python不拥有交易权限。
+
+## v1.0.3正式范围与普通升级
+
+正式已验证Self-Hosted为Windows11 amd64 / 已安装且运行的Docker Desktop Linux Containers / PostgreSQL16.15 / Flyway V52；Companion为Windows amd64 / CPython3.11 x64（实际3.11.9）/ NumPy2.3.5独立离线安装。Linux/macOS/ARM64、其他Python及Public Demo未取得本版正式支持资格，历史support-matrix保持原版本合同。
+
+已验证普通升级仅为 **v1.0.2/V49 → v1.0.3/V52**，由原正式安装器check-update/update执行V50、V51、V52。要求可信独立渠道取得目标Manifest SHA256、版本递增、Schema单调及相同POSTGRES_CONFIG_DIGEST。已有受限nq_runtime / NOLOGIN nq_schema_owner及RLS合同保持；不引入新的桥接。v1.0.0、v1.0.1或其他路径未经本版资格不声称直接支持。
+
+目标1.0.3 Package Manifest可信SHA256为d985d38099f11beca3f3ef98bf4f320e93f4c54d54b5b400473d7e89e8f47734，普通更新必须经原正式check-update/update并保持原PG config digest。新安装、正常升级、备份恢复、主动回滚均已有固定包证据；原故障更新仍exit1，原整轮FAILED和两表raw DIFFERENT保留，自动恢复只按历史数据与稳定控制QUALIFIED，不要求改写原失败或全部raw相同。
+
+### 维护者构包历史参考（不重建已发布1.0.3）
+
+以下只保留构包前提和命令参考，不是本轮操作或用户安装步骤，不授权从新的文档提交重建/覆盖正式1.0.3。
 
 维护者必须从v1.0.2实际官方ZIP、Manifest与镜像TAR核验原PG身份；不能由浮动postgres:16.15或更早版本记录推定兼容。可信v1.0.2 Package Manifest SHA256为 `74406593acccdc452004067a5877a080d7dff596d9417f0af60e54aceb200d5f`，TAR SHA256为 `7177b7019c6c87409b58729f19a3b748303db57794adc8dcbcd95515f524806e`。核验原制品后从新准确提交的已验证不可变导出构包：
 
@@ -26,7 +48,7 @@ Java安装和运维无需Python。Companion只读本地V2导出并显式生成�
 
 ## 历史平台入口与通用运维合同
 
-下列V1.0.0平台矩阵保留历史归属；通用安全、备份、身份、资源和运维步骤继续适用。新候选实际资格另由准确包证据表达；不将旧NOT_RUN或SCOPED_PASS追认为本版PASS。
+下列V1.0.0平台矩阵保留历史归属；通用安全、备份、身份、资源和运维步骤继续适用。当前1.0.3资格由上述固定发行与准确证据表达；下文历史候选、V1平台矩阵及Bridge文字保留生成时点，不将旧NOT_RUN或SCOPED_PASS追认为本版PASS。
 
 ## 系统要求与发行包
 
