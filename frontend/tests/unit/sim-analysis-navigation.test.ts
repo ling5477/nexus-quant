@@ -33,6 +33,13 @@ describe('SIM analysis navigation context', () => {
             simAsOf: '2026-10-03T00:00:00Z', observationId: 'observation', reviewId: 'review', validationId: 'validation', experimentId: 'experiment',
             selectedTrialId: 'trial', strategyVersionId: 'version', publishId: 'publication'});
     });
+    it('preserves explicit event diagnostics with the original exact target and cutoff', () => {
+        const result = new URLSearchParams(simAnalysisNavigationSearch('?paperRunId=run-1&simDiagnostic=events&simFrom=2026-10-31T09:00:00Z&simTo=2026-11-01T09:00:00Z&simAsOf=2026-11-01T09:15:05.667317Z&observationId=original&tab=risk'));
+        expect(result.get('simDiagnostic')).toBe('events');
+        expect(result.get('simAsOf')).toBe('2026-11-01T09:15:05.667317Z');
+        expect(result.get('observationId')).toBe('original');
+        expect(result.has('tab')).toBe(false);
+    });
     it('keeps explicit legacy source and view but drops page-local filters and grouping', () => {
         expect(
             simAnalysisNavigationSearch(

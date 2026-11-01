@@ -77,14 +77,31 @@ export function parseObservationResponse(text: string): unknown {
 }
 const exact = {transformResponse: [parseObservationResponse]};
 type RunIdentity = Pick<SimAnalysisRun, 'paperRunId' | 'canonicalAccountId' | 'strategyVersionId' | 'publishId'>;
-function sameTime(left: string, right: string) {return Number.isFinite(Date.parse(left)) && Date.parse(left) === Date.parse(right);}
+/** 保留服务端Instant的纳秒身份；Date会截断微秒，不能用来核对固定截止。 */
+function instantNanos(value: string | null | undefined): bigint | null {
+    const match = typeof value === 'string' && /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d{1,9}))?(Z|[+-]\d{2}:\d{2})$/.exec(value);
+    if (!match) return null;
+    const millis = Date.parse(match[1] + match[3]);
+    return Number.isFinite(millis) ? BigInt(millis) * 1_000_000n + BigInt((match[2] ?? '').padEnd(9, '0')) : null;
+}
+export function sameObservationTime(left: string | null | undefined, right: string | null | undefined) {
+    const a = instantNanos(left), b = instantNanos(right);
+    return a !== null && b !== null && a === b;
+}
 export function evaluationWindow(from: string | null, to: string | null, asOf: string | null): EvaluationWindow | null {
     if (!from || !to || !asOf) return null;
-    const timestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
-    if (![from, to, asOf].every(value => timestamp.test(value))) return null;
-    const start = Date.parse(from), end = Date.parse(to), observed = Date.parse(asOf);
-    return Number.isFinite(start) && Number.isFinite(end) && Number.isFinite(observed)
-        && end > start && end - start <= 90 * 86_400_000 ? {from, to, asOf} : null;
+    const start = instantNanos(from), end = instantNanos(to), observed = instantNanos(asOf);
+    return start !== null && end !== null && observed !== null && end > start
+        && end - start <= 90n * 86_400_000_000_000n ? {from, to, asOf} : null;
+}
+/** 诊断只使用原评价已保存的覆盖端点和同一截止，不以整Run结果补齐缺失边界。 */
+export function observationEventWindow(value: ForwardEvaluation): EvaluationWindow | null {
+    if (value.timeBasis !== 'ACTUAL_EVENT_TIME') return null;
+    const range = evaluationWindow(value.coverageStart, value.coverageEnd, value.observedAt);
+    const target = evaluationWindow(value.observationFrom, value.observationTo, value.observedAt);
+    if (!range || !target) return null;
+    return instantNanos(range.from)! >= instantNanos(target.from)! && instantNanos(range.to)! <= instantNanos(target.to)!
+        && instantNanos(range.to)! <= instantNanos(range.asOf)! ? range : null;
 }
 export function requireObservationScope(value: RunIdentity, run: RunIdentity) {
     if (value.paperRunId !== run.paperRunId || value.canonicalAccountId !== run.canonicalAccountId
@@ -98,8 +115,8 @@ export function requireEvaluationScope(value: ForwardEvaluation, run: RunIdentit
         || !value.samples || !Array.isArray(value.samples.gapRanges) || !Array.isArray(value.findings)
         || !value.metrics || !Array.isArray(value.metrics.fees) || !Array.isArray(value.metrics.orderStatuses)
         || !/^[a-f0-9]{64}$/i.test(value.checksum)
-        || (window && (!sameTime(value.observationFrom, window.from) || !sameTime(value.observationTo, window.to)
-            || !sameTime(value.observedAt, window.asOf)))) throw new Error('FORWARD_EVALUATION_SCOPE_MISMATCH');
+        || (window && (!sameObservationTime(value.observationFrom, window.from) || !sameObservationTime(value.observationTo, window.to)
+            || !sameObservationTime(value.observedAt, window.asOf)))) throw new Error('FORWARD_EVALUATION_SCOPE_MISMATCH');
     return value;
 }
 const root = '/strategy-observations';
@@ -126,7 +143,7 @@ export const observationsApi = {
         const {data} = await apiClient.get<ObservationReviewDetail>(`${root}/${encodeURIComponent(observationId)}/reviews/${encodeURIComponent(reviewId)}`, {...exact, signal});
         requireEvaluationScope(data.evaluation, run);
         if (data.review.observationId !== observationId || data.review.reviewId !== reviewId
-            || data.review.evaluationChecksum !== data.evaluation.checksum || !sameTime(data.review.observedAt, data.evaluation.observedAt))
+            || data.review.evaluationChecksum !== data.evaluation.checksum || !sameObservationTime(data.review.observedAt, data.evaluation.observedAt))
             throw new Error('OBSERVATION_REVIEW_SCOPE_MISMATCH');
         return data;
     },

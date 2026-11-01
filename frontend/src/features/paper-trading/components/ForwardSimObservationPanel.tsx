@@ -14,13 +14,13 @@ import {PerformanceStatisticsCards} from '@/features/accounts/components/Perform
 import {decimalDisplay} from '@/utils/decimal-display';
 import {confirmTimeWithoutSubmittingForm} from '@/utils/time-range';
 import type {SimAnalysisRun} from '../api/analysis';
-import {evaluationWindow, observationIdPattern, frozenSimCostRows, type ObservationDecision, type ObservationCreateRequest} from '../api/observations';
+import {evaluationWindow, observationIdPattern, sameObservationTime, frozenSimCostRows, type EvaluationWindow, type ObservationDecision, type ObservationCreateRequest} from '../api/observations';
 import {useForwardSimObservations} from '../hooks/useForwardSimObservations';
+import {ForwardSimEventDiagnostics} from './ForwardSimEventDiagnostics';
 
 dayjs.extend(utc);
 const decisions: ObservationDecision[] = ['CONTINUE_OBSERVATION', 'STOP_OBSERVATION', 'RETURN_TO_RESEARCH'];
 const utcInput = (value: Dayjs) => dayjs.utc(value.format('YYYY-MM-DDTHH:mm:ss.SSS')).toISOString();
-const sameTime = (left: string | null | undefined, right: string | null | undefined) => !!left && !!right && Date.parse(left) === Date.parse(right);
 interface RangeDraft {from: Dayjs; to: Dayjs; asOf: Dayjs}
 
 /** URL只拥有选择和固定观察截止；冻结评价与人工决定必须由显式按钮提交原操作身份。 */
@@ -35,7 +35,8 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
     const [reviewsOffset, setReviewsOffset] = useState(0);
     const [kind, setKind] = useState<ObservationCreateRequest['kind']>('RETROSPECTIVE');
     const [localError, setLocalError] = useState<string | null>(null);
-    const draftState = useRef({context: '', edited: false});
+    const draftState = useRef<{context: string; edited: boolean; exact: Partial<Record<keyof RangeDraft, string>>}>({context: '', edited: false, exact: {}});
+    const diagnosticOpen = params.get('simDiagnostic') === 'events';
     const from = params.get('simFrom'), to = params.get('simTo'), asOf = params.get('simAsOf');
     const range = evaluationWindow(from, to, asOf);
     const requestedId = params.get('observationId'), requestedReview = params.get('reviewId');
@@ -45,7 +46,7 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
     const reviewId = !invalidIdentity && requestedReview ? requestedReview : null;
     const invalidRange = [from, to, asOf].some(value => value !== null) && !range;
     const onSaved = (id: string, review?: string) => {setReviewsOffset(0); setParams(previous => {
-        const next = new URLSearchParams(previous); next.set('observationId', id);
+        const next = new URLSearchParams(previous); next.set('observationId', id); next.delete('simDiagnostic');
         if (review) next.set('reviewId', review); else next.delete('reviewId');
         return next;
     });};
@@ -67,23 +68,30 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
     const rawFrom = query.rawPerformance.data?.coverageStart, rawTo = query.rawPerformance.data?.coverageEnd;
     useEffect(() => {
         const context = JSON.stringify([from, to, asOf, observation?.observationId]);
-        if (draftState.current.context !== context) draftState.current = {context, edited: false};
+        if (draftState.current.context !== context) draftState.current = {context, edited: false, exact: {}};
         if (draftState.current.edited) return;
-        form.setFieldsValue({from: dayjs.utc(from ?? observation?.observationFrom ?? rawFrom ?? run.createdAt),
-            to: dayjs.utc(to ?? observation?.observationTo ?? rawTo ?? undefined), asOf: dayjs.utc(asOf ?? undefined)});
-    }, [form, from, to, asOf, observation?.observationFrom, observation?.observationTo, rawFrom, rawTo, run.createdAt]);
+        const exact = {from: from ?? observation?.observationFrom ?? rawFrom ?? run.createdAt,
+            to: to ?? observation?.observationTo ?? rawTo ?? dayjs.utc().toISOString(), asOf: asOf ?? dayjs.utc().toISOString()};
+        draftState.current.exact = exact;
+        form.setFieldsValue({from: dayjs.utc(exact.from), to: dayjs.utc(exact.to), asOf: dayjs.utc(exact.asOf)});
+    }, [form, from, to, asOf, observation?.observationId, observation?.observationFrom, observation?.observationTo, rawFrom, rawTo, run.createdAt]);
     const value = (unknown: string | number | null | undefined) => unknown == null ? '—' : String(unknown);
     const state = (status: string) => t(`forwardObservation.states.${status}`, {defaultValue: status});
     const percent = (amount: string | null) => amount === null ? '—' : decimalDisplay(amount, 4, 2) + '%';
     const visibleError = localError ?? (invalidIdentity ? t('forwardObservation.invalidIdentity') : invalidRange ? t('forwardObservation.invalidRange') : null);
     const errors = [query.list.error, query.detail.error, query.review.error, query.mutation.error,
         ...(range ? [query.evaluation.error] : [query.rawPerformance.error])].filter(Boolean);
-    const applyRange = (draft: RangeDraft) => {
-        const nextRange = evaluationWindow(utcInput(draft.from), utcInput(draft.to), utcInput(draft.asOf));
-        if (!nextRange) {setLocalError(t('forwardObservation.invalidRange')); return;}
+    const applyExactRange = (nextRange: EvaluationWindow) => {
         setLocalError(null);
         setParams(previous => {const next = new URLSearchParams(previous); next.set('simFrom', nextRange.from);
-            next.set('simTo', nextRange.to); next.set('simAsOf', nextRange.asOf); next.delete('reviewId'); return next;});
+            next.set('simTo', nextRange.to); next.set('simAsOf', nextRange.asOf); next.delete('reviewId'); next.delete('simDiagnostic'); return next;});
+    };
+    const applyRange = (draft: RangeDraft) => {
+        // 未编辑端点沿用原字符串，避免日期控件把服务端微秒截成毫秒或整秒。
+        const exact = draftState.current.exact;
+        const nextRange = evaluationWindow(exact.from ?? utcInput(draft.from), exact.to ?? utcInput(draft.to), exact.asOf ?? utcInput(draft.asOf));
+        if (!nextRange) {setLocalError(t('forwardObservation.invalidRange')); return;}
+        applyExactRange(nextRange);
     };
     const createObservation = async () => {
         try {
@@ -99,11 +107,11 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
                 ...(observation ? {supersedesObservationId: observation.observationId} : {})}});
         } catch (error) {if (error instanceof Error) setLocalError(error.message);}
     };
-    const reviewRangeMatches = !!observation && !!evaluation && sameTime(observation.observationFrom, evaluation.observationFrom)
-        && sameTime(observation.observationTo, evaluation.observationTo);
+    const reviewRangeMatches = !!observation && !!evaluation && sameObservationTime(observation.observationFrom, evaluation.observationFrom)
+        && sameObservationTime(observation.observationTo, evaluation.observationTo);
     const selectObservation = (id?: string) => {setReviewsOffset(0); setParams(previous => {
         const next = new URLSearchParams(previous); if (id) next.set('observationId', id); else next.delete('observationId');
-        next.delete('reviewId'); return next;
+        next.delete('reviewId'); next.delete('simDiagnostic'); return next;
     });};
     return <Card title={t('forwardObservation.title')} data-testid="forward-sim-observation">
         <Space direction="vertical" size={16} style={{width: '100%', minWidth: 0}}>
@@ -116,32 +124,42 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
                 <Button disabled={!writable || query.mutation.isPending} onClick={() => query.mutation.mutate({kind: 'RESEND', original: query.pending!})}>{t('forwardObservation.resendOriginal')}</Button>
                 {query.pending.rejected && <Button onClick={query.discardRejected}>{t('forwardObservation.discardRejected')}</Button>}
             </Space>}/>}
-            <Form form={form} layout="vertical" onFinish={applyRange} onValuesChange={() => {draftState.current.edited = true;}} data-testid="forward-observation-range">
+            <Form form={form} layout="vertical" onFinish={applyRange} onValuesChange={changed => {
+                draftState.current.edited = true;
+                for (const field of Object.keys(changed) as (keyof RangeDraft)[]) delete draftState.current.exact[field];
+            }} data-testid="forward-observation-range">
                 <Space wrap align="start">
                     {(['from', 'to', 'asOf'] as const).map(field => <Form.Item key={field} name={field} label={t(`forwardObservation.${field}`)} rules={[{required: true}]}>
                         <DatePicker showTime={{format: 'HH:mm:ss'}} format="YYYY-MM-DD HH:mm:ss" allowClear={false} onKeyDown={confirmTimeWithoutSubmittingForm}/>
                     </Form.Item>)}
                 </Space>
                 <Space wrap><Button type="primary" htmlType="submit" loading={query.evaluation.isFetching}>{t('forwardObservation.evaluate')}</Button>
-                    <Button onClick={() => {draftState.current.edited = true; form.setFieldValue('asOf', dayjs.utc());}}>{t('forwardObservation.now')}</Button>
+                    <Button onClick={() => {draftState.current.edited = true; delete draftState.current.exact.asOf; form.setFieldValue('asOf', dayjs.utc());}}>{t('forwardObservation.now')}</Button>
                     <Button onClick={() => {setLocalError(null); draftState.current.edited = false; form.resetFields();
-                        form.setFieldsValue({from: dayjs.utc(observation?.observationFrom ?? rawFrom ?? run.createdAt),
-                            to: dayjs.utc(observation?.observationTo ?? rawTo ?? undefined), asOf: dayjs.utc()});
+                        const exact = {from: observation?.observationFrom ?? rawFrom ?? run.createdAt,
+                            to: observation?.observationTo ?? rawTo ?? dayjs.utc().toISOString(), asOf: dayjs.utc().toISOString()};
+                        draftState.current.exact = exact;
+                        form.setFieldsValue({from: dayjs.utc(exact.from), to: dayjs.utc(exact.to), asOf: dayjs.utc(exact.asOf)});
                         setParams(previous => {const next = new URLSearchParams(previous);
-                        for (const key of ['simFrom', 'simTo', 'simAsOf', 'reviewId']) next.delete(key); return next;});}}>{t('forwardObservation.allEvents')}</Button>
+                        for (const key of ['simFrom', 'simTo', 'simAsOf', 'reviewId', 'simDiagnostic']) next.delete(key); return next;});}}>{t('forwardObservation.allEvents')}</Button>
                     {range && <Button onClick={() => {if (reviewId) void query.review.refetch(); else void query.evaluation.refetch();}}>{t('forwardObservation.refreshFixed')}</Button>}
                 </Space>
             </Form>
-            {(query.evaluation.isFetching || query.rawPerformance.isPending || query.review.isFetching) && <Spin/>}
+            {(query.evaluation.isFetching || query.rawPerformance.isFetching || query.review.isFetching) && <Spin/>}
             {reviewId && <Alert type="info" message={t('forwardObservation.frozenView')}/>}
             {evaluation && <>
                 <Space wrap><Tag>{state(evaluation.status)}</Tag><Tag>{evaluation.timeBasis}</Tag>{evaluation.reason && <Typography.Text>{evaluation.reason}</Typography.Text>}</Space>
-                <Descriptions size="small" column={{xs: 1, md: 2}} items={[
+                {evaluation.reason === 'OBSERVATION_BOUNDARY_MARK_UNAVAILABLE' && <Alert type="warning" showIcon
+                    message={t('forwardObservation.boundaryMarkMissing')} description={t('forwardObservation.boundaryMarkMeaning')}/>}
+                <Descriptions size="small" layout="vertical" column={{xs: 1, md: 2}} styles={{content: {overflowWrap: 'anywhere'}}} items={[
                     {key: 'requested', label: t('forwardObservation.requestedRange'), children: `${evaluation.observationFrom} → ${evaluation.observationTo}`},
                     {key: 'due', label: t('forwardObservation.dueRange'), children: `${value(evaluation.dueFrom)} → ${value(evaluation.dueTo)}`},
                     {key: 'coverage', label: t('forwardObservation.coverage'), children: `${value(evaluation.coverageStart)} → ${value(evaluation.coverageEnd)}`},
                     {key: 'asOf', label: t('forwardObservation.asOf'), children: evaluation.observedAt},
                 ]}/>
+                <ForwardSimEventDiagnostics key={`${run.paperRunId}/${evaluation.checksum}`} run={run} evaluation={evaluation} open={diagnosticOpen}
+                    onToggle={() => setParams(previous => {const next = new URLSearchParams(previous);
+                        if (diagnosticOpen) next.delete('simDiagnostic'); else next.set('simDiagnostic', 'events'); return next;})}/>
                 <div className="sim-analysis-metrics">{(['expected', 'observed', 'missing', 'unknown'] as const).map(field =>
                     <NqMetricCard key={field} label={t(`forwardObservation.${field}`)} value={evaluation.timeBasis === 'ACTUAL_EVENT_TIME' ? value(evaluation.samples[field]) : '—'} footer={state(evaluation.samples.status)}/>)}</div>
                 {(evaluation.samples.windowLimited || evaluation.metrics.windowLimited) && <Alert type="warning" message={t('forwardObservation.windowLimited')}/>}
@@ -223,16 +241,16 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
                 <Button disabled={blockWrite || !contextValid || (evaluation?.timeBasis ?? performance?.timeBasis) !== 'ACTUAL_EVENT_TIME'} onClick={() => void createObservation()}>{t('forwardObservation.create')}</Button>
             </Space>}]}/>
             {observation && <>
-                <Descriptions size="small" column={1} items={[
+                <Descriptions size="small" column={1} styles={{content: {overflowWrap: 'anywhere'}}} items={[
                     {key: 'id', label: t('forwardObservation.records'), children: observation.observationId},
                     {key: 'revision', label: t('forwardObservation.revision'), children: `${observation.revision} · ${observation.status} · ${observation.kind}`},
                     {key: 'range', label: t('forwardObservation.requestedRange'), children: `${observation.observationFrom} → ${observation.observationTo}`},
                     {key: 'registration', label: t('forwardObservation.registeredAt'), children: observation.registeredAt},
                 ]}/>
-                <Button onClick={() => applyRange({from: dayjs.utc(observation.observationFrom), to: dayjs.utc(observation.observationTo), asOf: dayjs.utc()})}>{t('forwardObservation.evaluateRecord')}</Button>
+                <Button onClick={() => applyExactRange({from: observation.observationFrom, to: observation.observationTo, asOf: dayjs.utc().toISOString()})}>{t('forwardObservation.evaluateRecord')}</Button>
                 <Alert type="warning" message={t('forwardObservation.decisionBoundary')}/>
                 <Form form={decisionForm} layout="vertical" initialValues={{decision: 'CONTINUE_OBSERVATION'}} onFinish={draft => {
-                    if (!evaluation || !reviewRangeMatches) return;
+                    if (!evaluation || !reviewRangeMatches || diagnosticOpen) return;
                     query.mutation.mutate({kind: 'OBSERVATION_REVIEW', observationId: observation.observationId,
                         input: {expectedRevision: observation.revision, decision: draft.decision, reason: draft.reason.trim(),
                             observedAt: evaluation.observedAt, expectedEvaluationChecksum: evaluation.checksum}});
@@ -241,8 +259,9 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
                         <Select options={decisions.map(decision => ({value: decision, label: t(`forwardObservation.decisions.${decision}`)}))}/>
                     </Form.Item>
                     <Form.Item name="reason" label={t('forwardObservation.reason')} rules={[{required: true, whitespace: true}, {max: 2000}]}><Input.TextArea rows={3} maxLength={2000}/></Form.Item>
-                    <Button type="primary" htmlType="submit" loading={query.mutation.isPending} disabled={blockWrite || observation.status !== 'OPEN' || !evaluation || !!reviewId || !reviewRangeMatches}>{t('forwardObservation.saveReview')}</Button>
+                    <Button type="primary" htmlType="submit" loading={query.mutation.isPending} disabled={blockWrite || observation.status !== 'OPEN' || !evaluation || !!reviewId || !reviewRangeMatches || diagnosticOpen}>{t('forwardObservation.saveReview')}</Button>
                 </Form>
+                {diagnosticOpen && <Typography.Text type="secondary">{t('forwardObservation.returnBeforeReview')}</Typography.Text>}
                 {!reviewRangeMatches && <Typography.Text type="secondary">{t('forwardObservation.sameWindowRequired')}</Typography.Text>}
                 <Table size="small" rowKey="reviewId" dataSource={detail?.reviews ?? []} pagination={{pageSize: 10}} scroll={{x: 850}} columns={[
                     {title: t('forwardObservation.decision'), dataIndex: 'decision', render: decision => t(`forwardObservation.decisions.${decision}`, {defaultValue: decision})},
