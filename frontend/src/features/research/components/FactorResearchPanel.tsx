@@ -6,12 +6,14 @@ import {factorResearchApi, type FactorArtifact, type StatisticalWindow} from '..
 import {formatApiError} from '@/api/errors';
 import type {AppApiError} from '@/types/api';
 import {useAuthStore} from '@/store/auth-store';
+import {factorResearchHandoff, type FactorResearchHandoff} from '../factor-research-handoff';
 
 /** 报告只在服务端核验完成后显示；切换数据或会话时取消旧请求并清除旧报告。 */
 export function FactorResearchPanel() {
     const {t} = useTranslation('pages');
     const [datasetId, setDatasetId] = useState<string>();
     const sessionId = useAuthStore(state => state.sessionId);
+    const owner = useAuthStore(state => state.currentUser?.userId);
     return <Card title={t('factorResearch.title')} data-testid="factor-research-panel">
         <Space direction="vertical" style={{display: 'flex'}}>
             <Alert type="info" showIcon message="PYTHON_OFFLINE_RESEARCH · DIAGNOSTIC_ONLY"
@@ -19,7 +21,7 @@ export function FactorResearchPanel() {
             <MarketdataDatasetPicker value={datasetId} active onChange={setDatasetId}
                 aria-label={t('factorResearch.dataset')}
                 constraints={{exchangeCode: 'OKX', marketType: 'SPOT', interval: '1h', status: 'READY', qualityStatus: 'OK', maximumGapCount: 0}} />
-            <FactorResearchWorkflow key={`${sessionId}:${datasetId ?? 'empty'}`} datasetId={datasetId} />
+            <FactorResearchWorkflow key={`${owner}:${sessionId}:${datasetId ?? 'empty'}`} datasetId={datasetId} />
         </Space>
     </Card>;
 }
@@ -27,6 +29,7 @@ export function FactorResearchPanel() {
 function FactorResearchWorkflow({datasetId}: {datasetId?: string}) {
     const {t} = useTranslation('pages');
     const [report, setReport] = useState<FactorArtifact>();
+    const [handoff, setHandoff] = useState<FactorResearchHandoff>();
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string>();
     const controller = useRef<AbortController | null>(null);
@@ -39,17 +42,22 @@ function FactorResearchWorkflow({datasetId}: {datasetId?: string}) {
         return controller.current;
     };
     const fail = (failure: unknown, request: AbortController) => {
-        if (!request.signal.aborted) setError(formatApiError(failure as AppApiError));
+        if (!request.signal.aborted) setError(failure instanceof Error && failure.message === 'FACTOR_INPUT_IDENTITY_INVALID'
+            ? t('factorResearch.invalidInputIdentity') : formatApiError(failure as AppApiError));
     };
     const download = async () => {
         if (!datasetId) return;
+        setHandoff(undefined);
         const request = begin();
         try {
             const blob = await factorResearchApi.download(datasetId, request.signal);
             if (request.signal.aborted) return;
+            const nextHandoff = await factorResearchHandoff(blob, datasetId);
+            if (request.signal.aborted) return;
+            setHandoff(nextHandoff);
             const url = URL.createObjectURL(blob);
             const anchor = document.createElement('a');
-            anchor.href = url; anchor.download = 'frozen-input.json'; anchor.click();
+            anchor.href = url; anchor.download = nextHandoff.inputName; anchor.click();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         } catch (failure) { fail(failure, request); }
         finally { if (!request.signal.aborted) setBusy(false); }
@@ -77,15 +85,35 @@ function FactorResearchWorkflow({datasetId}: {datasetId?: string}) {
     ];
     return <Space direction="vertical" style={{display: 'flex', minWidth: 0}}>
         <Typography.Paragraph>{t('factorResearch.instructions')}</Typography.Paragraph>
+        <Alert type="info" showIcon message={t('factorResearch.inputPrerequisite')}/>
+        <Collapse items={[{key: 'install', label: t('factorResearch.installTitle'), children: <Space direction="vertical" style={{width: '100%'}}>
+            <Typography.Paragraph>{t('factorResearch.installMeaning')}</Typography.Paragraph>
+            <Typography.Link href="https://github.com/ling5477/nexus-quant/releases" target="_blank" rel="noopener noreferrer">{t('factorResearch.companionRelease')}</Typography.Link>
+            <Typography.Link href="https://github.com/ling5477/nexus-quant/blob/dev/research/py/INSTALL.md" target="_blank" rel="noopener noreferrer">{t('factorResearch.installDocument')}</Typography.Link>
+            <Typography.Paragraph code copyable style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere'}}>{'py -3.11 -m venv .venv\n.\\.venv\\Scripts\\python.exe -m pip --isolated install --no-index --no-cache-dir --only-binary=:all: --find-links .\\wheelhouse --require-hashes -r .\\requirements.lock\n.\\.venv\\Scripts\\python.exe -m pip check'}</Typography.Paragraph>
+        </Space>}]}/>
         <Space wrap>
             <Button disabled={!datasetId || busy} loading={busy} onClick={() => void download()}>{t('factorResearch.download')}</Button>
             <Button disabled={!datasetId || busy} onClick={() => fileInput.current?.click()}>{t('factorResearch.preview')}</Button>
             <input ref={fileInput} type="file" accept=".json,application/json" hidden aria-label={t('factorResearch.file')}
                 onChange={event => {const file = event.target.files?.[0]; event.target.value = ''; void preview(file);}} />
         </Space>
-        <Typography.Paragraph code copyable style={{overflowWrap: 'anywhere'}}>
-            python -m nq_research --frozen-input frozen-input.json --factor-output factor-artifact.json --factor-window 24 --horizon-bars 6 --seed 42
-        </Typography.Paragraph>
+        {!handoff && <Typography.Paragraph type="secondary">{t('factorResearch.downloadFirst')}</Typography.Paragraph>}
+        {handoff && <div data-testid="factor-research-handoff">
+            <Descriptions size="small" layout="vertical" column={1} styles={{content: {overflowWrap: 'anywhere'}}} items={[
+                {key: 'dataset', label: t('factorResearch.dataset'), children: handoff.datasetId},
+                {key: 'version', label: t('factorResearch.inputVersion'), children: handoff.datasetVersionId},
+                {key: 'directory', label: t('factorResearch.researchDirectory'), children: handoff.directory},
+                {key: 'input', label: t('factorResearch.inputFilename'), children: handoff.inputName},
+                {key: 'time', label: t('factorResearch.fixedTime'), children: handoff.createdAt ?? '—'},
+                {key: 'output', label: t('factorResearch.outputFilename'), children: handoff.outputName ?? '—'},
+            ]}/>
+            <Typography.Paragraph>{t('factorResearch.directoryMeaning')}</Typography.Paragraph>
+            {handoff.command ? <Typography.Paragraph code copyable data-testid="factor-research-command" style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere'}}>{handoff.command}</Typography.Paragraph>
+                : <Alert type="warning" showIcon message={t('factorResearch.frozenTimeUnavailable')}/>}
+            <Typography.Paragraph type="secondary">{t('factorResearch.repeatMeaning')}</Typography.Paragraph>
+            <Typography.Paragraph type="secondary">{t('factorResearch.manualNotes')}</Typography.Paragraph>
+        </div>}
         {error && <Alert type="error" showIcon message={error} />}
         {report && <>
             <Alert type="success" message={t('factorResearch.verified')} description={t('factorResearch.untrustedStatistics')} />

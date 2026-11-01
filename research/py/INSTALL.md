@@ -14,13 +14,19 @@ py -3.11 -m venv .venv
 
 运行依赖固定 NumPy 2.3.5，完整依赖 Wheel 与 hash 随包提供；无需全局 NumPy、包缓存、editable 源码安装或外部包索引。NumPy Wheel 自带其及所包含数值库的许可证，详见该 Wheel 的 dist-info/LICENSE.txt；项目法律说明为本目录 LICENSE、DISCLAIMER.md 与 THIRD_PARTY_NOTICES.md。源码和构建工具版本保存在 source/ 与 dependencies.json，不是运行时需联网安装的内容。
 
-在 NQ 原 research 页选择自己的已冻结 V2 Dataset，下载 frozen-input.json。支持 OKX SPOT BTC/ETH 1h、721～4320根，导出最多8MiB。将文件带到离线研究目录，显式运行：
+在 NQ 原 research 页选择自己的已冻结 V2 Dataset。支持 OKX SPOT BTC/ETH 1h、721～4320根，导出最多8MiB。目录可选不代表已冻结 V2；未冻结或 V1 输入先沿原研究/回测配置流程显式准备，不由下载自动冻结或补采。
+
+成功下载后，页面按原 Dataset/Version 显示专属文件名、研究子目录和命令。在 Companion 根目录新建该研究子目录，将下载输入移入，再从 Companion 根目录的 PowerShell 复制执行页面命令。不要从源码 checkout 安装正式运行环境；复用上面已安装的独立 `.venv`。
+
+以下仅为手工路径示例，实际文件名和固定 UTC 时间使用页面所示原导出身份：
 
 ```powershell
-.\.venv\Scripts\python.exe -m nq_research --frozen-input frozen-input.json --factor-output factor-artifact.json --factor-window 24 --horizon-bars 6 --seed 42 --bootstrap-repetitions 200
+.\.venv\Scripts\python.exe -m nq_research --frozen-input .\my-research\frozen-input.json --factor-output .\my-research\factor-repeat-a.json --factor-window 24 --horizon-bars 6 --seed 42 --bootstrap-repetitions 200 --created-at '<替换为原导出frozenAt或不早于它的固定UTC时间>'
 ```
 
-也可执行 `.\.venv\Scripts\nq-research.exe` 加相同参数。复现完整字节时增加 `--created-at <不早于输入frozenAt的固定UTC时间>`；省略时生成时间/文件身份变化。保留输入、参数、固定时间、数值运行时、manifest 和 Artifact。随后在同一 NQ 页面选择本地 Artifact，Java 验证身份/摘要/格式并只读预览，不持久化该文件。
+也可执行 `.\.venv\Scripts\nq-research.exe` 加相同参数。页面从真实 frozenAt 建议固定时间，不在未知时伪造；需保留该时间的完整精度。省略 `--created-at` 时统计仍确定，但生成时间、Artifact ID/checksum 会变化。固定输入/参数/seed/时间和 NumPy 运行时后重复到另一个输出名，并比较完整文件 SHA256。不同 Dataset/Version 分目录；CLI 仍可覆盖已有输出，页面示例先用 Test-Path 拒绝覆盖，不能把相同输出名当成另一份独立研究。
+
+保留输入、参数、固定时间、数值运行时、manifest 和 Artifact。随后在同一 NQ 页面选择本地 Artifact，Java 验证身份/摘要/格式并只读预览，不持久化该文件。请人工在研究材料中记录原观察/版本、Artifact ID/checksum、本地路径和局限；不会建立自动策略关联。
 
 合同为 frozen-research-export.v1 → factor-research-1.0.0 / 三因子版本1.0.0 / PURGED_CHRONOLOGICAL_PEARSON_MOVING_BLOCK_V1 → python-factor-research-artifact.v1；产品/Wheel 版本更新不改变这些数学合同。source/research/py/fixtures 的共享721根向量是合成受控兼容样本，不是用户真实市场研究。
 
