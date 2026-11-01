@@ -3,7 +3,7 @@ import {apiClient} from '../../src/api/client';
 import {paperTradingQueryKeys} from '../../src/api/query-keys';
 import {useAuthStore} from '../../src/store/auth-store';
 import {evaluationWindow, parseObservationResponse, requireEvaluationScope, observationsApi,
-    frozenSimCostRows, type FrozenSimCostAssumptions, type ForwardEvaluation, type ObservationDetail, type ObservationReviewDetail} from '../../src/features/paper-trading/api/observations';
+    sameObservationTime, observationEventWindow, frozenSimCostRows, type FrozenSimCostAssumptions, type ForwardEvaluation, type ObservationDetail, type ObservationReviewDetail} from '../../src/features/paper-trading/api/observations';
 import {readObservationOperation, storeObservationOperation, executeObservationOperation, requireObservationReceipt,
     type PendingObservationOperation} from '../../src/features/paper-trading/observation-operations';
 import type {SimAnalysisRun} from '../../src/features/paper-trading/api/analysis';
@@ -36,6 +36,35 @@ beforeEach(() => {
 afterEach(() => {vi.restoreAllMocks(); vi.unstubAllGlobals(); useAuthStore.setState({currentUser: null});});
 
 describe('canonical前向观察的只读范围与精确数据', () => {
+    it('微秒截止不按毫秒混同，并接受同一Instant的时区等价表示', () => {
+        expect(sameObservationTime('2026-11-01T09:15:05.667317Z', '2026-11-01T17:15:05.667317000+08:00')).toBe(true);
+        expect(sameObservationTime('2026-11-01T09:15:05.667317Z', '2026-11-01T09:15:05.667318Z')).toBe(false);
+        expect(sameObservationTime(null, null)).toBe(false);
+        const fixed = {...window, asOf: '2026-11-01T09:15:05.667317Z'};
+        expect(() => requireEvaluationScope({...evaluation(), observedAt: '2026-11-01T09:15:05.667318Z'}, run, fixed)).toThrow('SCOPE_MISMATCH');
+        expect(evaluationWindow('2026-10-01T00:00:00.000002Z', '2026-10-01T00:00:00.000001Z', fixed.asOf)).toBeNull();
+        expect(evaluationWindow('2026-10-01T00:00:00.000001Z', '2026-10-01T00:00:00.000002Z', fixed.asOf)).not.toBeNull();
+    });
+    it('事件诊断保留原微秒端点和asOf，仅调用原固定区间GET', async () => {
+        const target = {...evaluation(), coverageStart: '2026-10-01T00:03:18.144123Z', coverageEnd: '2026-10-01T23:00:03.959987Z',
+            observedAt: '2026-11-01T09:15:05.667317Z', status: 'NOT_COMPARABLE', reason: 'OBSERVATION_BOUNDARY_MARK_UNAVAILABLE'};
+        const interval = observationEventWindow(target)!;
+        expect(interval).toEqual({from: target.coverageStart, to: target.coverageEnd, asOf: target.observedAt});
+        const response = {...target, observationFrom: interval.from, observationTo: interval.to, status: 'UNAVAILABLE'};
+        const get = vi.spyOn(apiClient, 'get').mockResolvedValue({data: response});
+        const post = vi.spyOn(apiClient, 'post');
+        expect(await observationsApi.evaluate(run, interval)).toBe(response);
+        expect(get.mock.calls[0][1]?.params).toEqual(interval);
+        expect(post).not.toHaveBeenCalled();
+        expect(target.status).toBe('NOT_COMPARABLE');
+    });
+    it('缺端点、逆序、目标外、截止后或回放不生成诊断范围', () => {
+        const source = {...evaluation(), coverageStart: window.from, coverageEnd: window.to};
+        for (const patch of [{coverageStart: null}, {coverageEnd: null}, {coverageStart: window.to},
+            {coverageStart: '2026-09-30T23:59:59.999999Z'}, {coverageEnd: window.asOf},
+            {observedAt: '2026-10-01T12:00:00Z'}, {timeBasis: 'REPLAY_EVENT_TIME' as const}])
+            expect(observationEventWindow({...source, ...patch})).toBeNull();
+    });
     it('冻结截止进入请求和缓存键，不自动写入业务数据', async () => {
         const get = vi.spyOn(apiClient, 'get').mockResolvedValue({data: evaluation()});
         const post = vi.spyOn(apiClient, 'post');

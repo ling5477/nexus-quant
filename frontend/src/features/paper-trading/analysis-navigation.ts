@@ -7,6 +7,7 @@ export function simAnalysisNavigationSearch(search: string): string {
         'simFrom',
         'simTo',
         'simAsOf',
+        'simDiagnostic',
         'observationId',
         'reviewId',
         'validationId',

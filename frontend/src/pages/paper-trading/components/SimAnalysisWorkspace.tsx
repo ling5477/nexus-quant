@@ -72,7 +72,7 @@ export function SimAnalysisWorkspace({kind}: {kind: 'portfolio' | 'reviews' | 'd
         next.set('paperRunId', id);
         next.delete('orderId');
         next.delete('tab');
-        for (const key of ['simFrom', 'simTo', 'simAsOf', 'observationId', 'reviewId', 'validationId', 'selectedTrialId', 'strategyVersionId', 'publishId', 'experimentId']) next.delete(key);
+        for (const key of ['simFrom', 'simTo', 'simAsOf', 'simDiagnostic', 'observationId', 'reviewId', 'validationId', 'selectedTrialId', 'strategyVersionId', 'publishId', 'experimentId']) next.delete(key);
         setParams(next);
     };
     const requestedTab = params.get('tab');
