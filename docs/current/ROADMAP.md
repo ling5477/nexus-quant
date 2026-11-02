@@ -8,7 +8,7 @@ NQ v1.0.0、v1.0.1、v1.0.2、v1.0.3均已RELEASED。[v1.0.3 / Release429746750]
 
 V103-01长历史研究、V103-02前向SIM评价/人工复盘、V103-03离线Python因子研究均已接受并纳入两个独立交付组件：Self-Hosted及Windows CPython3.11 Companion。Windows新安装、正式v1.0.2/V49→V52普通升级、备份恢复、主动回滚及历史数据/稳定控制范围自动恢复资格已完成；原whole-run FAILED、update exit1及两表raw DIFFERENT保留，非全raw MATCH。
 
-V104-01自然时间首用、V104-02只读事件诊断（PR100）和V104-03离线研究交接（PR101）均已接受，V104_FUNCTIONAL_CLOSEOUT_ACCEPTED / COMPLETE。准确候选、merge及CI由[STATUS](STATUS.md)的接受索引拥有。当前仅NQ-V104-RELEASE-READINESS：同步1.0.4版本/来源闭包/独立Companion并执行新候选Windows安装、v1.0.3/V52→v1.0.4/V52升级及必要恢复资格；资格尚未完成，不提前声称发布或构包通过。
+V104-01自然时间首用、V104-02只读事件诊断（PR100）和V104-03离线研究交接（PR101）均已接受，V104_FUNCTIONAL_CLOSEOUT_ACCEPTED / COMPLETE。准确候选、merge及CI由[STATUS](STATUS.md)的接受索引拥有。NQ-V104-RELEASE-READINESS现已QUALIFIED_FOR_VERIFIED_SCOPE：固定Source f5a24b5d9ac5c89dc7fbf6a53361f5d2b1a31bd0 / CI41374718081，merge13c487057c7d810129bcc53240515a5d1d724cfb / CI41376688035均9/9；Windows新安装、独立Companion离线安装/复现、非空v1.0.3/V52→v1.0.4/V52普通升级、正式包页面、备份恢复、主动回滚及一次有界真实失败自动恢复已按范围取得证据。两轮取证driver原FAILED、失败update exit1、运行元数据raw DIFFERENT及历史CI根因UNRESOLVED分别保留，不追认为全raw或物理库MATCH。唯一后续NQ-V104-RELEASE-FINAL-ADMISSION / NOT_STARTED；未创建新Snapshot/Tag/Release，不授予发布、生产或真实交易权限。
 
 Windows11 amd64/Docker Linux Containers/PG16及独立Companion资格边界、Linux/macOS/ARM64/其他Python未资格、历史C4审查与owner例外、研究时间/统计假设和低内存残余保持。LIVE=DISABLED、Kill Switch=ENGAGED；Java继续是唯一交易authority，Python无交易权限。
 

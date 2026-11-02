@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=46159c1e687d4ec1089b8d10cac61f532897f512
 accepted_batch_acceptance_head=46159c1e687d4ec1089b8d10cac61f532897f512
 accepted_batch_ci_run=41317985113
 work_batch=NQ-V104-RELEASE-READINESS
-work_batch_status=IMPLEMENTED|SELF_REVIEWED
-work_batch_commit=NONE
-work_batch_ci_run=NOT_RUN
-next_action=NQ-V104-READINESS-COMMIT
+work_batch_status=ACCEPTED|CI_GREEN
+work_batch_commit=f5a24b5d9ac5c89dc7fbf6a53361f5d2b1a31bd0
+work_batch_ci_run=41374718081
+next_action=NQ-V104-RELEASE-FINAL-ADMISSION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -33,7 +33,17 @@ nq-current-authority:end -->
 
 ## v1.0.4功能接受与发行准备
 
-V104_FUNCTIONAL_CLOSEOUT_ACCEPTED；功能范围COMPLETE，开发Schema V52。当前执行NQ-V104-RELEASE-READINESS，尚未取得新源码CI或包级资格；机器work状态记录IMPLEMENTED|SELF_REVIEWED、commit=NONE、CI=NOT_RUN，表示本提交的源码准备已自查但尚无对应提交/CI证据，不预填成功。下一入口由机器next_action拥有，不自动创建Snapshot、Tag或Release；正式最新发行仍v1.0.3，发布授权NOT_GRANTED。
+V104_FUNCTIONAL_CLOSEOUT_ACCEPTED；功能范围COMPLETE，开发Schema V52。本轮V104_RELEASE_READINESS_QUALIFIED：Self-Hosted与独立Python Companion仅在实际Windows范围QUALIFIED_FOR_VERIFIED_SCOPE。机器work pair绑定被接受的固定Source f5a24b5d9ac5c89dc7fbf6a53361f5d2b1a31bd0 / Source CI41374718081（pull_request、exact head、9/9 SUCCESS），不是自指本轮治理文档提交。Source Tree=f23c233c6c29d1ce37fe4f687d8b5a4255a32d46；PR103 merge=13c487057c7d810129bcc53240515a5d1d724cfb / post-merge CI41376688035（push、exact merge、9/9 SUCCESS），tree与Source相同。后续治理文档CI另行绑定，不能替代源码或历史功能CI。
+
+Self-Hosted RC1 Manifest SHA256=075ca48be9e2567832d208df4a04ec0bf76568953f9b8e32896fbfb436946119，ZIP SHA256=a600f4ead0f88aa8580ab46c8cb7f24450546353d10ce3cb061929c94b6973d4；Companion ZIP SHA256=96570df41f087c3fec649732c3cc93308161d81443c068316351a7c487176135，Wheel SHA256=51b44f0c528e0dd631cde894286f0840c892a69857c0806131d0d0849e3ef8a9。两资产同源、独立投影；V1～V52原字节不变，无新migration、Java业务或Python数学变化。
+
+实际范围：Windows11 amd64 / Docker Desktop Linux Containers / PostgreSQL16.15 / V52；Companion Windows amd64 / CPython3.11.9 / NumPy2.3.5。新安装、实际ZIP离线安装及CLI/完整字节复现、包级备份恢复、非空正式v1.0.3/V52→v1.0.4/V52普通升级、正式包只读诊断/研究交接、主动回滚及一次真实失败更新自动恢复均有独立范围证据。原24h观察/固定asOf/NOT_COMPARABLE/经济事实及3003对封存文件均保持，不重复自然观察。
+
+首个取证driver因历史sim_pnl_snapshots的13728行超过10000行测量预算而FAILED；UPGRADE_QUALIFICATION_02完整读取132表并完成升级/页面/主动回滚，但其恢复控制器在启动更新前因输出目录缺失而FAILED、实际注入0次。两轮原FAILED保留，不改脚本追认为PASS。RECOVERY_QUALIFICATION_03以执行前冻结的新身份完成唯一一次实际故障：原update仍exit1，原安装器自动恢复1.0.3/V52，pending清除，132表历史行及稳定控制一致，canonical32完全匹配；两张运行表仅预先列出的时间字段推进，raw DIFFERENT保留，不宣称物理库或全部raw相同。
+
+资格资源为任务本地隔离实例，已在验证后正常停止并保留DB/配置/备份/包/证据。整体决定是对已验证范围的资格收口，不把两个失败driver或原失败更新改判PASS。准确证据与原始限制见仓库外E:/Project/NQ_V104_RELEASE_READINESS.md及NQ_V104_RELEASE_NOTES_CANDIDATE.md。
+
+唯一下一任务NQ-V104-RELEASE-FINAL-ADMISSION / NOT_STARTED。最新正式发行仍v1.0.3；未创建v1.0.4 Git Snapshot、Tag或Release，Publication Authorization=NOT_GRANTED。Linux/macOS/ARM64、其他Python、Public Demo、生产部署与真实资金均未获本轮资格/授权，LIVE=DISABLED、Kill Switch=ENGAGED。
 
 | 阶段 | 实际接受身份及范围 |
 | --- | --- |
