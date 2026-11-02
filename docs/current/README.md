@@ -6,8 +6,8 @@
 
 <!-- nq-current-summary:start -->
 - 最近冻结的业务阶段已接受并打 tag；固定身份及 CI 以 [STATUS.md](STATUS.md) 为准，13-role [strict archive](../gates/gate-z/README.md) 保留冻结前历史快照。
-- v1.0.0、v1.0.1、v1.0.2、v1.0.3均已正式发布；最新[v1.0.3 Release](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3)（429746750）为V52，含Self-Hosted及独立Windows CPython3.11离线Companion；Windows11 amd64/Docker Linux Containers及v1.0.2/V49普通升级限定资格已验证。
-- 固定Source/Snapshot/Tag、六资产及保留限制见[STATUS.md](STATUS.md)；原FAILED、update exit1和两表raw DIFFERENT不改写，恢复仅历史数据与稳定控制QUALIFIED。唯一下一入口为NQ-V104-PLAN / NOT_STARTED，仅登记规划状态，见[ROADMAP.md](ROADMAP.md)。
+- v1.0.0、v1.0.1、v1.0.2、v1.0.3、v1.0.4均已正式发布；最新[v1.0.4 Release](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)（431438991）于2026-11-02T12:37:58Z公开，V52；Self-Hosted与独立Windows CPython3.11/NumPy2.3.5 Companion分别发行。Windows11 amd64/Docker Linux Containers/PG16.15及正式v1.0.3/V52→v1.0.4/V52普通升级获限定资格。
+- 固定Source/Snapshot/Annotated Tag、六资产大小/SHA256和认证/匿名完整下载6/6见[STATUS.md](STATUS.md)。原FAILED、update exit1、raw DIFFERENT、CI根因UNRESOLVED及目标NOT_COMPARABLE不改写；恢复仅历史数据与稳定控制QUALIFIED。下一仅登记NQ-V105-PLAN / NOT_STARTED，见[ROADMAP.md](ROADMAP.md)，不在本任务制定计划。
 - accepted batch、work batch 与唯一 next action 从 [STATUS.md](STATUS.md) 的机器区块读取；[ROADMAP.md](ROADMAP.md) 解释后续工作。
 - 历史范围与设计输入见 [归档计划](../gates/gate-z/GATEZ_PLAN.md)；下一动作由本 STATUS 的 `next_action` 决定。
 - GateY pilot 的验收事实见 [STATUS.md](STATUS.md)；该历史验收不授予再次执行权。
