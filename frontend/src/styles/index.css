@@ -1,0 +1,338 @@
+/**
+ * NQ Design System v1 — 全局样式（深色控制台外壳 + 工具类 + Nq 组件样式）。
+ *
+ * 约束：
+ * 1) 颜色/间距/圆角/阴影一律引用 tokens.css 的 CSS variables，禁止散落硬编码；
+ * 2) 禁止大面积渐变、毛玻璃、营销风视觉；分割线统一 1px；
+ * 3) 数字字段使用 .nq-num（tabular-nums），ID/hash/traceId 使用 .nq-mono。
+ */
+@import './tokens.css';
+@import '../nq-design-system/tokens/nq-tokens.css';
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--nq-font-family);
+  font-size: var(--nq-font-size-md);
+  line-height: var(--nq-line-height);
+  background: var(--nq-color-bg-page);
+  color: var(--nq-color-text);
+}
+
+a {
+  color: inherit;
+}
+
+/* 深色滚动条，避免系统浅色滚动条割裂整体视觉 */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--nq-color-border);
+  border-radius: var(--nq-radius-lg);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------------------------------- */
+/* 工具类：数字与等宽排版               */
+/* ---------------------------------- */
+
+/* 所有价格、数量、收益率、回撤、评分、成交量、仓位、延迟、滑点字段必须使用 */
+.nq-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* ID / hash / traceId 等标识符使用等宽字体 */
+.nq-mono {
+  font-family: var(--nq-font-family-mono);
+  font-size: 0.92em;
+}
+
+/* 表格数字列右对齐（作用于 th + td，通过 antd column className 注入） */
+.nq-col-num {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.nq-text-up {
+  color: var(--nq-color-up);
+}
+
+.nq-text-down {
+  color: var(--nq-color-down);
+}
+
+/* ---------------------------------- */
+/* 控制台外壳                           */
+/* ---------------------------------- */
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-shell__body { min-width: 0; }
+
+.app-shell__sider {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.app-shell__sider .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell__nav { min-height: 0; overflow-y: auto; flex: 1; }
+.app-shell__drawer .ant-drawer-body { padding: 8px 0; }
+.app-shell__drawer .app-shell__nav { height: 100%; }
+
+.app-shell__sider.ant-layout-sider {
+  background: var(--nq-color-bg-sunken);
+  border-inline-end: 1px solid var(--nq-color-border-subtle);
+}
+
+.app-shell__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--nq-space-md);
+  height: 68px;
+  min-height: 68px;
+  margin: 0 var(--nq-space-lg);
+  color: var(--nq-color-text);
+}
+
+.app-shell__menu.ant-menu {
+  background: transparent;
+  border-inline-end: none;
+  padding: 0 var(--nq-space-sm) var(--nq-space-md);
+}
+
+.app-shell__content {
+  padding: var(--nq-space-lg);
+}
+
+.app-shell__header {
+  position: sticky;
+  top: 0;
+  z-index: var(--nq-z-header);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nq-space-lg);
+  min-height: 68px;
+  padding: var(--nq-space-md) var(--nq-space-lg);
+  background: var(--nq-color-bg-sunken);
+  border-bottom: 1px solid var(--nq-color-border-subtle);
+}
+
+.app-shell__header-left,
+.app-shell__header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--nq-space-md);
+}
+
+.app-shell__header-left { flex: 0 0 auto; }
+.app-shell__header-right { flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+.app-shell__header-right .ant-tag { margin-inline-end: 0; }
+.app-shell__context-title { max-width: 180px; }
+.app-shell__account-selector { max-width: 290px; min-width: 0; }
+.app-shell__account-label { overflow: hidden; text-overflow: ellipsis; }
+.app-shell__user { display: inline-flex; align-items: center; gap: 8px; }
+.app-shell__username { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-shell__user .ant-avatar { background: var(--nq-color-primary-active); color: var(--nq-color-text); }
+
+.app-shell__menu .ant-menu-item { height: 38px; line-height: 38px; }
+.app-shell__menu .ant-menu-item-group-title { font-size: 11px; padding-top: 16px; color: var(--nq-color-text-tertiary); }
+.app-shell__menu .ant-menu-item-selected { box-shadow: inset 2px 0 var(--nq-color-accent); }
+.app-shell__menu .ant-menu-item .anticon { font-size: 17px; }
+
+@media (max-width: 1350px) {
+  .app-shell__context-title { display: none; }
+}
+
+@media (max-width: 767px) {
+  .app-shell__header { align-items: flex-start; gap: 8px; }
+  .app-shell__header-right { gap: 8px; }
+  .app-shell__account-selector { max-width: min(260px, 65vw); }
+  .app-shell__header { padding: 8px 12px; }
+  .app-shell__header-right { gap: 6px; }
+  .app-shell__header-right .ant-tag { font-size: 10px; padding-inline: 4px; }
+  .app-shell__account-selector { max-width: 160px; }
+  .app-shell__username { max-width: 70px; }
+}
+
+.app-shell__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nq-space-md);
+}
+
+.nq-page-scaffold {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nq-space-lg);
+  min-width: 0;
+}
+
+.app-shell__breadcrumb {
+  margin-top: 0;
+}
+
+/* ---------------------------------- */
+/* 页面容器：紧凑卡片、1px 边、低阴影    */
+/* ---------------------------------- */
+
+.page-card,
+.page-section {
+  background: var(--nq-color-bg-panel);
+  border: 1px solid var(--nq-color-border-subtle);
+  box-shadow: var(--nq-shadow-low);
+}
+
+.page-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nq-space-sm);
+}
+
+/* ---------------------------------- */
+/* Nq 组件样式                          */
+/* ---------------------------------- */
+
+.nq-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nq-space-sm);
+}
+
+.nq-page-header__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--nq-space-lg);
+  flex-wrap: wrap;
+}
+
+.nq-page-header .ant-typography h3,
+.nq-page-header h3.ant-typography { font-size: 20px; }
+
+:where(button, a, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--nq-color-accent);
+  outline-offset: 3px;
+}
+
+.page-card, .page-section { border-radius: var(--nq-radius-lg); }
+.page-section .ant-card-head-title { font-weight: 600; }
+.page-section .ant-card-extra { max-width: 55%; overflow-wrap: anywhere; }
+.page-section .ant-card-head { flex-wrap: wrap; }
+
+/* 诊断字段名可能很长，详情表在自身容器滚动，不能撑宽整个工作台。 */
+.app-shell__content .ant-descriptions-view { overflow-x: auto; }
+
+.nq-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nq-space-xs);
+  padding: var(--nq-space-md) var(--nq-space-lg);
+  background: var(--nq-color-bg-panel);
+  border: 1px solid var(--nq-color-border-subtle);
+  border-radius: var(--nq-radius-lg);
+  box-shadow: var(--nq-shadow-low);
+  min-width: 0;
+}
+
+.nq-metric-card__label {
+  font-size: var(--nq-font-size-sm);
+  color: var(--nq-color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.nq-metric-card__value {
+  font-size: var(--nq-font-size-xl);
+  font-weight: 600;
+  color: var(--nq-color-text);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  line-height: 1.3;
+}
+
+.nq-metric-card__value--success { color: var(--nq-color-success); }
+.nq-metric-card__value--warning { color: var(--nq-color-warning); }
+.nq-metric-card__value--danger { color: var(--nq-color-danger); }
+.nq-metric-card__value--up { color: var(--nq-color-up); }
+.nq-metric-card__value--down { color: var(--nq-color-down); }
+.nq-metric-card__value--muted { color: var(--nq-color-text-tertiary); }
+
+.nq-metric-card__footer {
+  font-size: var(--nq-font-size-xs);
+  color: var(--nq-color-text-tertiary);
+}
+
+.nq-metric-card__value, .nq-metric-card__footer { overflow-wrap: anywhere; }
+
+/* 状态摘要条：横向一排迷你指标，用于详情页顶部 */
+.nq-status-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--nq-space-sm);
+}
+
+.nq-chart {
+  width: 100%;
+}
+
+/* Paper Run 列表 id：完整文本保留在 DOM，仅视觉省略 */
+.nq-run-id {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--nq-color-text-secondary);
+}
+
+/* Paper Run 列表当前焦点行高亮 */
+.nq-row-active > td {
+  background: var(--nq-color-bg-selected) !important;
+}
+
+.nq-row-active > td:first-child {
+  box-shadow: inset 2px 0 0 var(--nq-color-primary);
+}
+
+.loading-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--nq-space-xl);
+}
+
+.loading-screen__panel {
+  min-width: min(100%, 280px);
+  text-align: center;
+}
+
+@media (max-width: 960px) {
+  .app-shell__content { padding: var(--nq-space-md); }
+}

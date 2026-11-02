@@ -1,0 +1,46 @@
+.ingestion-workspace {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+}
+
+.ingestion-workspace > .ant-space-item,
+.ingestion-workspace .ant-list-item > .ant-space,
+.ingestion-workspace .ant-card-body {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.ingestion-workspace .ant-card-head-wrapper {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ingestion-workspace .ant-card-extra {
+    margin-inline-start: 0;
+}
+
+.ingestion-original .ant-collapse,
+.ingestion-result {
+    margin-top: 12px;
+}
+
+.ingestion-workspace .ant-descriptions-item-content,
+.ingestion-workspace .ant-list-item {
+    overflow-wrap: anywhere;
+}
+
+.ingestion-workspace .ant-pagination {
+    margin-top: 12px;
+}
+
+@media (max-width: 575px) {
+    .ingestion-workspace .ant-card-head-title,
+    .ingestion-workspace .ant-card-extra {
+        flex-basis: 100%;
+    }
+
+    .ingestion-workspace .ant-card-head-wrapper {
+        padding-block: 10px;
+    }
+}

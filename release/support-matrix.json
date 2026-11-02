@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "version": "1.0.0",
+  "qualificationStatus": "ADMITTED_WITH_DOCUMENTED_EXCEPTION_LOCAL_SCOPED",
+  "requiredClaimedHosts": [
+    {
+      "os": "Windows 11",
+      "architecture": "amd64",
+      "dockerDesktop": "INSTALLED",
+      "dockerDaemon": "RUNNING",
+      "containerOs": "linux"
+    }
+  ],
+  "unclaimedEnvironments": [
+    {
+      "environment": "Windows Docker missing",
+      "status": [
+        "IMPLEMENTED",
+        "NOT_QUALIFIED",
+        "NOT_CLAIMED"
+      ]
+    },
+    {
+      "environment": "Windows daemon stopped",
+      "status": [
+        "IMPLEMENTED",
+        "NOT_QUALIFIED",
+        "NOT_CLAIMED"
+      ]
+    },
+    {
+      "environment": "Ubuntu amd64",
+      "status": [
+        "NOT_QUALIFIED",
+        "NOT_CLAIMED"
+      ]
+    },
+    {
+      "environment": "Ubuntu arm64",
+      "status": [
+        "NOT_QUALIFIED",
+        "NOT_CLAIMED"
+      ]
+    },
+    {
+      "environment": "macOS arm64",
+      "status": [
+        "NOT_QUALIFIED",
+        "NOT_CLAIMED"
+      ]
+    },
+    {
+      "environment": "macOS amd64",
+      "status": [
+        "NOT_CLAIMED"
+      ]
+    }
+  ],
+  "retainedUnqualifiedCapabilities": {
+    "dockerBootstrap": "AVAILABLE_BUT_UNQUALIFIED",
+    "daemonRecovery": "AVAILABLE_BUT_UNQUALIFIED",
+    "linuxInstaller": "AVAILABLE_BUT_UNQUALIFIED",
+    "macosInstaller": "AVAILABLE_BUT_UNQUALIFIED"
+  },
+  "arm64ImageBuild": "BUILD_AVAILABLE_IS_NOT_RUNTIME_QUALIFICATION",
+  "hostDevelopmentToolsRequired": [],
+  "licenseStatus": "Apache-2.0",
+  "publicReleaseStatus": "SUBJECT_TO_FINAL_RELEASE_QUALIFICATION_AND_CURRENT_RELEASE_AUTHORITY",
+  "localQualification": {
+    "sourceCommit": "565764cce5862ecc02ca7d1ce18d56fc382d8841",
+    "releaseId": "53dc4bd18e2797cfb1327a1c04c3ce374d7565d7db7c5b03d90b517b608f1949",
+    "scope": "Windows 11 amd64; Docker Desktop installed and daemon running; fresh install, backup/restore and restart",
+    "status": "QUALIFIED_LOCAL_SCOPED",
+    "schemaVersion": 34,
+    "postgresVersion": "16.15",
+    "upgradeStatus": "UPGRADE_NOT_VERIFIED"
+  },
+  "c4Qualification": {
+    "originalSourceCommit": "064b6801f08486943c6e4691537de641dcd25c4d",
+    "runStatus": "72H_RUN_COMPLETED",
+    "originalReviewStatus": "NOT_ACCEPTED / EVIDENCE_GAPS",
+    "missingScheduledUiHours": [
+      12,
+      18,
+      36,
+      60
+    ],
+    "ownerDecision": "ACCEPT_WITH_EVIDENCE_EXCEPTION",
+    "rerun72h": "WAIVED",
+    "independentReclassification": "NO_REPORT_FOUND",
+    "formalExceptionAdmission": "ADMITTED_WITH_DOCUMENTED_EXCEPTION",
+    "currentCandidateSourceCommit": "565764cce5862ecc02ca7d1ce18d56fc382d8841",
+    "currentCandidateInheritance": "UNCHANGED_PATHS_INHERITED;CHANGED_PATHS_TARGETED_PROOF",
+    "targetedProofTestsPassed": 39
+  },
+  "publicationQualification": {
+    "exactHeadCiForNewSourceCommit": "PENDING_NOT_RUN",
+    "publicRelease": "NOT_PUBLISHED",
+    "upgrade": "UPGRADE_NOT_VERIFIED"
+  }
+}

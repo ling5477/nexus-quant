@@ -1,0 +1,151 @@
+/* 市场与事实占主工作区，查询和证据在辅助区；沿用批准原型的密度与同一套语义Token。 */
+.app-shell__header-left {flex: 1; min-width: 0;}
+.app-shell__header-left .app-shell__object-search {width: min(340px, 100%); justify-content: flex-start;}
+.app-shell__header-left .app-shell__object-search > span:last-child {display: inline;}
+.app-shell__header {gap: 12px;}
+.product-workspace {min-width: 0; width: 100%;}
+.workspace-navigation {display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--nq-color-border-subtle); margin: 0 0 16px; min-width: 0;}
+.workspace-navigation__label {color: var(--nq-color-text-tertiary); font-size: 11px; white-space: nowrap;}
+.workspace-navigation ol {display: flex; list-style: none; padding: 0; margin: 0; gap: 6px; overflow-x: auto; min-width: 0;}
+.workspace-navigation a {display: flex; gap: 8px; align-items: center; padding: 10px 12px; white-space: nowrap; color: var(--nq-color-text-secondary); border-bottom: 2px solid transparent;}
+.workspace-navigation a.active {border-color: var(--nq-color-primary); color: var(--nq-color-text); background: var(--nq-color-primary-bg);}
+.workspace-navigation__index {font-size: 10px; color: var(--nq-color-text-tertiary); font-variant-numeric: tabular-nums;}
+.product-workspace .page-card:has(.nq-page-header) {background: transparent; border: 0; box-shadow: none;}
+.product-workspace .page-card:has(.nq-page-header) > .ant-card-body {padding: 0 0 8px;}
+.product-workspace .nq-page-header__row {align-items: center;}
+.product-workspace .nq-page-header h3.ant-typography {font-size: 22px; letter-spacing: .2px;}
+.product-workspace .ant-table-thead > tr > th {background: var(--nq-color-bg-elevated); color: var(--nq-color-text-secondary); font-size: 11px;}
+.product-workspace .ant-table-cell {vertical-align: middle;}
+.product-workspace .ant-table-row:hover > td {background: var(--nq-color-bg-hover);}
+.product-workspace .ant-table-wrapper {max-width: 100%; overflow-x: auto;}
+
+/* 所有查询字段和动作保留；桌面侧置筛选，结果区与其顶端对齐，手机按阅读顺序排列。 */
+.product-workspace .nq-page-scaffold:has(> .workspace-filter-panel),
+.product-workspace .ant-space-vertical:has(> .ant-space-item > .workspace-filter-panel) {display: grid !important; grid-template-columns: 244px minmax(0, 1fr); gap: 12px !important; align-items: start;}
+.product-workspace .nq-page-scaffold:has(> .workspace-filter-panel) > *,
+.product-workspace .ant-space-vertical:has(> .ant-space-item > .workspace-filter-panel) > .ant-space-item {grid-column: 1 / -1; min-width: 0;}
+.product-workspace .nq-page-scaffold > .workspace-filter-panel,
+.product-workspace .ant-space-item:has(> .workspace-filter-panel) {grid-column: 1 !important;}
+.product-workspace .nq-page-scaffold > .workspace-results-panel,
+.product-workspace .ant-space-item:has(> .workspace-results-panel) {grid-column: 2 !important;}
+.product-workspace .workspace-filter-panel .ant-col {flex: 0 0 100% !important; max-width: 100% !important;}
+.product-workspace .workspace-filter-panel .ant-form-item {margin-bottom: 16px;}
+.product-workspace .workspace-filter-panel .ant-card-head-wrapper {flex-wrap: wrap; gap: 6px;}
+.product-workspace .workspace-filter-panel .ant-card-extra {max-width: 100%; margin: 0;}
+.product-workspace .workspace-results-panel {min-height: 360px;}
+.product-workspace .workspace-results-panel .ant-empty {margin: 64px 12px;}
+.product-workspace .workspace-filter-panel .ant-picker {max-width: 100%;}
+
+.product-workspace .nq-dashboard {grid-template-columns: minmax(0, 1.8fr) minmax(340px, 1fr); gap: 12px;}
+.product-workspace .nq-dashboard__heading {grid-column: 1 / -1;}
+.product-workspace .nq-dashboard__heading .nq-page-header > .ant-alert {padding: 8px 12px;}
+.overview-boundary {color: var(--nq-color-text-secondary); font-size: 12px; border-left: 2px solid var(--nq-color-warning); padding: 6px 10px;}
+.overview-boundary summary {cursor: pointer;}
+.overview-boundary[open] summary {margin-bottom: 8px;}
+.product-workspace .nq-dashboard__market {grid-column: 1; min-width: 0;}
+.product-workspace .nq-dashboard__watchlist,
+.product-workspace .nq-dashboard__account-activity {grid-column: 1 / -1; min-width: 0;}
+.product-workspace .nq-dashboard__account {grid-column: 2; min-width: 0;}
+/* 总览双面板固定同高；折叠明细在正文内滚动，避免撑高网格并推移后续交易事实。 */
+.product-workspace .nq-dashboard > .nq-dashboard__market,
+.product-workspace .nq-dashboard > .nq-account-overview {
+    height: 768px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.product-workspace .nq-dashboard > .nq-dashboard__market > .ant-card-head,
+.product-workspace .nq-dashboard > .nq-account-overview > .ant-card-head,
+.product-workspace .nq-dashboard > .nq-dashboard__sim-summary > .ant-card-head,
+.product-workspace .nq-dashboard > .nq-dashboard__runtime > .ant-card-head,
+.product-workspace .nq-dashboard__feed > .ant-card > .ant-card-head {flex: 0 0 auto;}
+.product-workspace .nq-dashboard > .nq-dashboard__market > .ant-card-body,
+.product-workspace .nq-dashboard > .nq-account-overview > .ant-card-body,
+.product-workspace .nq-dashboard > .nq-dashboard__sim-summary > .ant-card-body,
+.product-workspace .nq-dashboard > .nq-dashboard__runtime > .ant-card-body,
+.product-workspace .nq-dashboard__feed > .ant-card > .ant-card-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+.product-workspace .nq-dashboard__feed > .ant-card {
+    height: 320px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.overview-market-toolbar {display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;}
+.overview-market-toolbar > .ant-select:first-child {min-width: 190px; flex: 1;}
+.overview-market-toolbar > .ant-select:nth-child(2) {min-width: 72px;}
+.overview-price-line {display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; color: var(--nq-color-text-tertiary); font-size: 11px;}
+.overview-price {font-size: 28px; line-height: 1.2; color: var(--nq-color-text); font-weight: 600;}
+.overview-price-line > .ant-space {width: 100%;}
+.overview-price-line b {color: var(--nq-color-text-secondary); font-weight: 400;}
+.overview-market-source {display: block; margin-top: 8px; font-size: 10px;}
+.product-workspace .nq-account-overview .nq-account-range {gap: 8px; margin-bottom: 10px;}
+.product-workspace .nq-account-overview .nq-account-range .ant-form-item {margin: 0; width: 100%;}
+.product-workspace .nq-account-overview .nq-account-range .ant-form-item-row {flex-wrap: nowrap;}
+.product-workspace .nq-account-overview .nq-account-range .ant-form-item-control {min-width: 0;}
+.product-workspace .nq-account-overview .nq-account-range .ant-picker {width: 100%;}
+.product-workspace .nq-account-overview .nq-account-metrics {grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; margin-bottom: 10px;}
+.product-workspace .nq-account-overview .nq-metric-card {padding: 10px; box-shadow: none; border-radius: 0;}
+.product-workspace .nq-account-overview .nq-metric-card__value {font-size: 20px;}
+.product-workspace .nq-account-overview .nq-status-strip:not(.nq-account-metrics) {grid-template-columns: 1fr; gap: 0;}
+.product-workspace .nq-account-overview .nq-status-strip:not(.nq-account-metrics) .nq-metric-card {display: grid; grid-template-columns: 1fr auto; gap: 4px;}
+.product-workspace .nq-account-overview .nq-status-strip:not(.nq-account-metrics) .nq-metric-card__footer {grid-column: 1 / -1;}
+.product-workspace .nq-account-overview .ant-empty {margin: 20px 0;}
+.product-workspace .nq-dashboard__sim-summary {grid-column: 1; min-width: 0;}
+.product-workspace .nq-dashboard__sim-summary .nq-dashboard__metrics {grid-template-columns: repeat(3, minmax(0, 1fr));}
+.product-workspace .nq-dashboard__runtime {grid-column: 2; min-width: 0;}
+/* 自选下方先呈现独立SIM与运行边界，两栏固定同高并保留全部状态与入口。 */
+.product-workspace .nq-dashboard > .nq-dashboard__sim-summary,
+.product-workspace .nq-dashboard > .nq-dashboard__runtime {height: 440px; display: flex; flex-direction: column; min-height: 0;}
+.product-workspace .nq-dashboard__runtime .nq-status-strip {grid-template-columns: repeat(2, minmax(0, 1fr));}
+.product-workspace .nq-dashboard__workspaces .ant-card {box-shadow: none;}
+
+/* K线与成交量紧邻，数据准备及原始明细保留在后续区域。 */
+.product-workspace .market-terminal-grid {display: grid !important; grid-template-columns: 224px minmax(0, 1fr); gap: 12px !important; align-items: start;}
+.market-terminal-grid > .ant-space-item {grid-column: 1 / -1; min-width: 0;}
+.market-terminal-grid > .ant-space-item:has(> .market-terminal-controls) {grid-column: 1;}
+.market-terminal-grid > .ant-space-item:has(> .market-terminal-chart) {grid-column: 2;}
+.market-terminal-controls .ant-space {width: 100%;}
+.market-terminal-controls .ant-space-item {width: 100%;}
+.market-terminal-controls .ant-form-item {margin-bottom: 12px;}
+.market-terminal-controls .ant-form-item .ant-select,
+.market-terminal-controls .ant-form-item .ant-picker {width: 100% !important;}
+.market-terminal-chart .ant-card-body {padding: 12px !important;}
+.market-terminal-chart [data-testid="marketdata-kline-readiness-view"] {gap: 8px !important;}
+.market-terminal-chart .nq-chart {border: 0;}
+
+@media (max-width: 1199px) {
+    .app-shell__header-left .app-shell__object-search {width: auto;}
+    .app-shell__header-left .app-shell__object-search > span:last-child {display: none;}
+    .product-workspace .nq-dashboard {grid-template-columns: minmax(0, 1fr);}
+    .product-workspace .nq-dashboard__account, .product-workspace .nq-dashboard__market,
+    .product-workspace .nq-dashboard__runtime, .product-workspace .nq-dashboard__sim-summary {grid-column: 1;}
+    .product-workspace .nq-account-overview .nq-account-metrics {grid-template-columns: repeat(5, minmax(0, 1fr));}
+}
+@media (max-width: 767px) {
+    .product-workspace .nq-dashboard > .nq-dashboard__market,
+    .product-workspace .nq-dashboard > .nq-account-overview {height: 680px;}
+    .settings-sections > .ant-tabs-nav .ant-tabs-tab {font-size: 12px;}
+    .settings-sections > .ant-tabs-nav {scroll-margin-top: 150px;}
+    .workspace-navigation {display: block; margin-bottom: 12px;}
+    .workspace-navigation__label {display: block; margin-bottom: 4px;}
+    .workspace-navigation a {padding: 8px; font-size: 12px;}
+    .product-workspace .nq-page-scaffold:has(> .workspace-filter-panel),
+    .product-workspace .ant-space-vertical:has(> .ant-space-item > .workspace-filter-panel),
+    .product-workspace .market-terminal-grid {grid-template-columns: minmax(0, 1fr);}
+    .product-workspace .nq-page-scaffold > .workspace-results-panel,
+    .product-workspace .ant-space-item:has(> .workspace-results-panel),
+    .market-terminal-grid > .ant-space-item:has(> .market-terminal-chart) {grid-column: 1 !important;}
+    .product-workspace .nq-dashboard__sim-summary .nq-dashboard__metrics {grid-template-columns: repeat(2, minmax(0, 1fr));}
+    .product-workspace .nq-account-overview .nq-account-metrics {grid-template-columns: repeat(2, minmax(0, 1fr));}
+    .product-workspace .nq-page-header h3.ant-typography {font-size: 20px;}
+    .product-workspace .ant-card-extra {max-width: 100%;}
+}
+
+.nq-sim-fact-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;min-width:0}
+@media(max-width:1100px){.nq-sim-fact-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.nq-sim-fact-summary{grid-template-columns:1fr}}

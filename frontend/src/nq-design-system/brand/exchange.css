@@ -1,0 +1,16 @@
+.nq-exchange-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    flex: 0 0 26px;
+    border: 1px solid var(--nq-color-border);
+    border-radius: var(--nq-radius-md);
+    background: var(--nq-color-bg-sunken);
+    color: var(--nq-color-text-secondary);
+    vertical-align: middle;
+}
+
+.nq-exchange-icon img { display: block; width: 18px; height: 18px; object-fit: contain; }
+.nq-exchange-badge { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }

@@ -1,0 +1,63 @@
+.strategy-validation-workspace,
+.strategy-validation-workspace .ant-space-item,
+.strategy-validation-workspace .ant-tabs-content-holder,
+.strategy-validation-workspace .ant-tabs-tabpane,
+.strategy-validation-workspace .ant-card,
+.strategy-validation-workspace .ant-card-body,
+.strategy-validation-workspace .ant-collapse-content-box {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.strategy-validation-workspace .ant-card-head-title,
+.strategy-validation-workspace .ant-typography,
+.strategy-validation-workspace .ant-tag,
+.strategy-validation-workspace .ant-descriptions-item-content {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.strategy-validation-workspace .ant-card-head-wrapper {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.strategy-validation-workspace .ant-table-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.strategy-validation-workspace .ant-table-cell {
+    overflow-wrap: anywhere;
+}
+
+.validation-query-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+    gap: 12px;
+}
+
+@media (max-width: 575px) {
+    .strategy-validation-workspace .ant-descriptions-view table {
+        table-layout: fixed;
+    }
+
+    .strategy-validation-workspace .ant-card-head {
+        padding-inline: 12px;
+    }
+
+    .strategy-validation-workspace .ant-card-body {
+        padding: 12px;
+    }
+
+    .strategy-validation-workspace .ant-card-extra {
+        margin-inline-start: 0;
+        max-width: 100%;
+    }
+}
+
+.strategy-validation-workspace span[title] {
+    max-width: 100%;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+}

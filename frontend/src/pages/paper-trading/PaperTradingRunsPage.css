@@ -1,0 +1,70 @@
+.paper-runs-workspace,
+.paper-runs-workspace .ant-space-item,
+.paper-runs-workspace .ant-col,
+.paper-runs-workspace .ant-card,
+.paper-runs-workspace .ant-card-body {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.paper-runs-workspace .nq-mono,
+.paper-runs-workspace .ant-descriptions-item-content {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.paper-runs-workspace .nq-run-id {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+.paper-runs-workspace .ant-table-wrapper,
+.paper-runs-workspace .ant-tabs {
+    min-width: 0;
+    max-width: 100%;
+}
+
+@media (max-width: 767px) {
+    .paper-runs-workspace > .ant-space-item > .ant-card > .ant-card-head {
+        padding-inline: 12px;
+    }
+
+    .paper-runs-workspace .ant-card-head-wrapper {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .paper-runs-workspace .ant-card-extra {
+        margin-inline-start: 0;
+        max-width: 100%;
+    }
+
+    .paper-runs-query-actions {
+        padding-block: 8px;
+    }
+
+    .paper-runs-workspace .nq-status-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+/* 窄屏将新增可信运行入口放到说明下方，避免按钮挤占历史来源说明的阅读宽度。 */
+@media (max-width: 600px) {
+    .paper-runs-legacy-trust {
+        flex-wrap: wrap;
+    }
+
+    .paper-runs-legacy-trust .ant-alert-content {
+        flex: 1 1 calc(100% - 36px);
+    }
+
+    .paper-runs-legacy-trust .ant-alert-action {
+        margin: 8px 0 0 24px;
+    }
+}
+
+.nq-sim-run-filter{margin-bottom:12px}
+.nq-sim-run-filter .ant-card-head-wrapper{flex-direction:column;align-items:stretch;gap:8px;padding-block:12px}
+.nq-sim-run-filter .ant-form-item{margin-bottom:12px}
+.nq-sim-run-filter .paper-runs-query-actions{padding-block:0}
+.nq-sim-run-filter .ant-card-extra{margin-inline-start:0;max-width:100%}

@@ -1,0 +1,26 @@
+package com.guidinglight.nexusquant.strategy.application.result;
+
+import com.guidinglight.nexusquant.contracts.model.OrderStatus;
+import com.guidinglight.nexusquant.strategy.domain.StrategyRunStatus;
+
+/**
+ * StrategyManualTriggerResult 表示手动 trigger 的最小返回摘要。
+ */
+public record StrategyManualTriggerResult(
+        String strategyId,
+        String strategyRunId,
+        String requestId,
+        String orderId,
+        OrderStatus orderStatus,
+        StrategyRunStatus strategyRunStatus,
+        boolean idempotentHit,
+        boolean duplicateAdmission
+) {
+    public StrategyManualTriggerResult(String strategyId, String strategyRunId, String requestId, String orderId,
+                                       OrderStatus orderStatus, StrategyRunStatus strategyRunStatus, boolean idempotentHit) {
+        this(strategyId, strategyRunId, requestId, orderId, orderStatus, strategyRunStatus, idempotentHit, false);
+    }
+}
+
+
+

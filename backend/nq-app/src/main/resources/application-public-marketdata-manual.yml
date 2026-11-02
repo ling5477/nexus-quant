@@ -1,0 +1,29 @@
+spring:
+  config:
+    activate:
+      on-profile: public-marketdata-manual
+
+nq:
+  continuous-sim:
+    # 连续策略 SIM 需与公开行情出站、策略 SIM 分别显式启用，缺一项即不装配轮询器。
+    enabled: ${NQ_CONTINUOUS_SIM_ENABLED:false}
+  env-safety:
+    # Why: manual public marketdata 只允许公开行情受控外联，不得顺带打开 LIVE、AI、DH、RealClient 或 real provider。
+    live-enabled: ${NQ_LIVE_ENABLED:false}
+    ai-enabled: ${NQ_AI_ENABLED:false}
+    dh-runtime-enabled: ${NQ_DH_RUNTIME_ENABLED:false}
+    real-provider-enabled: ${NQ_REAL_PROVIDER_ENABLED:false}
+    real-client-enabled: ${NQ_REAL_CLIENT_ENABLED:false}
+    real-exchange-enabled: ${NQ_REAL_EXCHANGE_ENABLED:false}
+  public-marketdata:
+    outbound:
+      # Why: 这是后续 O-5 手动 public smoke 的唯一 feature flag；默认 false，O-1 不执行真实 public outbound。
+      enabled: ${NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED:false}
+      fallback-origin: ${NQ_PUBLIC_MARKETDATA_FALLBACK_ORIGIN:LOCAL_DB}
+      # 连续 feed 未配置 origin 时仍使用 https://www.okx.com；完整环境变量名优先于旧名回退。
+      connect-timeout: ${NQ_PUBLIC_MARKETDATA_CONNECT_TIMEOUT:PT3S}
+      read-timeout: ${NQ_PUBLIC_MARKETDATA_READ_TIMEOUT:PT5S}
+      total-request-timeout: ${NQ_PUBLIC_MARKETDATA_TOTAL_REQUEST_TIMEOUT:PT8S}
+      max-retries: ${NQ_PUBLIC_MARKETDATA_MAX_RETRIES:2}
+      first-backoff: ${NQ_PUBLIC_MARKETDATA_FIRST_BACKOFF:PT0.5S}
+      second-backoff: ${NQ_PUBLIC_MARKETDATA_SECOND_BACKOFF:PT1S}

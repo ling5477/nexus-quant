@@ -1,0 +1,44 @@
+.nq-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    color: var(--nq-color-text);
+}
+
+.nq-brand__monogram {
+    display: grid;
+    place-items: center;
+    flex: 0 0 38px;
+    height: 38px;
+    width: 38px;
+}
+
+.nq-brand__monogram img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.nq-brand__lockup {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.nq-brand__name {
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: 0.045em;
+    white-space: nowrap;
+}
+
+.nq-brand__caption {
+    color: var(--nq-color-text-secondary);
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.ant-layout-sider-collapsed .nq-brand__lockup { display: none; }

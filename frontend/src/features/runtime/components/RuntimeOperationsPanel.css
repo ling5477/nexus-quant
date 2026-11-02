@@ -1,0 +1,12 @@
+.nq-monitor-counts {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.nq-monitor-counts strong {
+    display: block;
+    font-size: 24px;
+    font-variant-numeric: tabular-nums;
+}

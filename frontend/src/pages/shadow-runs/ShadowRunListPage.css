@@ -1,0 +1,84 @@
+.shadow-run-list-page {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+}
+
+.shadow-list-filter {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.shadow-list-filter .ant-select {
+    width: 220px;
+    max-width: 100%;
+}
+
+.shadow-list-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.shadow-list-metrics .nq-metric-card,
+.shadow-run-list-page .ant-space-item,
+.shadow-run-list-page .ant-card {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.shadow-list-record {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.shadow-list-record .ant-typography,
+.shadow-run-list-page .ant-table-cell,
+.shadow-list-technical .ant-descriptions-item-content {
+    overflow-wrap: anywhere;
+}
+
+.shadow-list-technical summary,
+.shadow-list-overview > summary {
+    cursor: pointer;
+    color: var(--nq-color-text-secondary);
+}
+
+.shadow-list-technical[open] > summary,
+.shadow-list-overview[open] > summary {
+    margin-bottom: 10px;
+}
+
+.shadow-list-pagination {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.shadow-list-mobile-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+@media (max-width: 575px) {
+    .shadow-list-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .shadow-list-filter .ant-select {
+        width: 100%;
+    }
+
+    .shadow-list-filter {
+        align-items: stretch;
+    }
+
+    .shadow-list-pagination {
+        justify-content: flex-start;
+    }
+}

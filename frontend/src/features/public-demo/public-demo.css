@@ -1,0 +1,9 @@
+.nq-demo-auth { display: block; box-sizing: border-box; padding: var(--nq-space-6, 24px); }
+.nq-demo-auth__header { display: flex; justify-content: space-between; align-items: center; gap: 16px; width: min(960px, 100%); margin: 0 auto; }
+.nq-demo-auth__card { width: min(480px, 100%); margin: 40px auto; padding: clamp(20px, 4vw, 32px); background: var(--nq-color-bg-panel); border: 1px solid var(--nq-color-border); border-radius: 12px; box-sizing: border-box; }
+.nq-demo-auth__card h1 { font-size: 24px; margin-top: 0; }
+.nq-demo-auth__card .ant-alert { margin-bottom: 20px; }
+.nq-demo-auth__card a { display: inline-block; margin-top: 20px; }
+.nq-demo-account { width: 100%; min-width: 0; }
+.nq-demo-account .ant-descriptions-item-content { overflow-wrap: anywhere; }
+@media (max-width: 480px) { .nq-demo-auth { padding: 16px; } .nq-demo-auth__card { margin: 24px auto; } }

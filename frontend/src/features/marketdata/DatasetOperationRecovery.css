@@ -1,0 +1,38 @@
+.dataset-operation-recovery {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 16px;
+    min-width: 0;
+}
+.dataset-operation-recovery:empty {
+    display: none;
+}
+.dataset-operation-recovery .ant-descriptions {
+    margin-top: 12px;
+}
+.dataset-operation-recovery .ant-descriptions-item-content,
+.dataset-operation-recovery .ant-typography {
+    overflow-wrap: anywhere;
+    min-width: 0;
+}
+.dataset-operation-recovery pre {
+    max-height: 320px;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+.dataset-recovery-actions {
+    margin: 4px 0 12px;
+}
+@media (max-width: 600px) {
+    .dataset-recovery-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+    .dataset-recovery-actions .ant-btn {
+        width: 100%;
+        height: auto;
+        min-height: 32px;
+        white-space: normal;
+    }
+}
