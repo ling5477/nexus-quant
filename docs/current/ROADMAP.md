@@ -2,15 +2,15 @@
 
 当前阶段和安全状态由 [STATUS.md](STATUS.md) 的机器区块唯一拥有。本文件解释当前迭代及历史发布动作，不授予提交、公开发行或部署权限。
 
-## v1.0.4发行准备与已发布v1.0.3
+## v1.0.4已发布与下一规划入口
 
-NQ v1.0.0、v1.0.1、v1.0.2、v1.0.3均已RELEASED。[v1.0.3 / Release429746750](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3)于2026-10-31T06:00:01Z公开，Schema V52；完整Source/CI、无父Snapshot/Tag及六资产身份由[STATUS](STATUS.md)记录，发行后的文档CI单独绑定本次交付，不替换正式Source CI。
+v1.0.0、v1.0.1、v1.0.2、v1.0.3、v1.0.4均RELEASED。[v1.0.4 / Release431438991](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)于2026-11-02T12:37:58Z公开，Schema V52。正式Qualified Source=f5a24b5d9ac5c89dc7fbf6a53361f5d2b1a31bd0，Source/merge CI41374718081/41376688035各9/9；无父Snapshot=2c5cc6d1d90ce9e1112c1968b0b1fade6518ada4，tree=ccef37c3a006b4d97f33f9aa45f7a7f8c8c6c672，2230文件；annotated tag object=92cd23fa5d44e96cba240d13be13c6228e10fabd。完整六资产大小/SHA256、双重完整下载及unsigned来源映射由[STATUS](STATUS.md)登记。新文档CI独立绑定，不替换正式Source或已接受功能pair。
 
-V103-01长历史研究、V103-02前向SIM评价/人工复盘、V103-03离线Python因子研究均已接受并纳入两个独立交付组件：Self-Hosted及Windows CPython3.11 Companion。Windows新安装、正式v1.0.2/V49→V52普通升级、备份恢复、主动回滚及历史数据/稳定控制范围自动恢复资格已完成；原whole-run FAILED、update exit1及两表raw DIFFERENT保留，非全raw MATCH。
+V104-01原24小时自然首用、02只读事件诊断和03独立Companion研究交接均已接受。发行前认证完整下载6/6、发行后正式URL匿名完整下载6/6通过；原工具TLS超时、Draft缓存URL导致404与纠正结果分别保留。Windows新安装、正式v1.0.3/V52→v1.0.4/V52普通升级、备份恢复、主动回滚及历史业务/稳定控制范围自动恢复已取得固定候选证据，本次不重跑。
 
-V104-01自然时间首用、V104-02只读事件诊断（PR100）和V104-03离线研究交接（PR101）均已接受，V104_FUNCTIONAL_CLOSEOUT_ACCEPTED / COMPLETE。准确候选、merge及CI由[STATUS](STATUS.md)的接受索引拥有。NQ-V104-RELEASE-READINESS现已QUALIFIED_FOR_VERIFIED_SCOPE：固定Source f5a24b5d9ac5c89dc7fbf6a53361f5d2b1a31bd0 / CI41374718081，merge13c487057c7d810129bcc53240515a5d1d724cfb / CI41376688035均9/9；Windows新安装、独立Companion离线安装/复现、非空v1.0.3/V52→v1.0.4/V52普通升级、正式包页面、备份恢复、主动回滚及一次有界真实失败自动恢复已按范围取得证据。两轮取证driver原FAILED、失败update exit1、运行元数据raw DIFFERENT及历史CI根因UNRESOLVED分别保留，不追认为全raw或物理库MATCH。唯一后续NQ-V104-RELEASE-FINAL-ADMISSION / NOT_STARTED；未创建新Snapshot/Tag/Release，不授予发布、生产或真实交易权限。
+两轮原取证driver FAILED、原故障update exit1、raw DIFFERENT、历史CI根因UNRESOLVED及原Forward目标NOT_COMPARABLE保留；24小时不证明长期盈利。仅Windows11 amd64/Docker Linux Containers/PG16.15/V52、独立Companion Windows CPython3.11.9/NumPy2.3.5获限定资格；其他平台/Python/长期运行未资格。Java是唯一交易authority，LIVE=DISABLED、Kill Switch=ENGAGED。
 
-Windows11 amd64/Docker Linux Containers/PG16及独立Companion资格边界、Linux/macOS/ARM64/其他Python未资格、历史C4审查与owner例外、研究时间/统计假设和低内存残余保持。LIVE=DISABLED、Kill Switch=ENGAGED；Java继续是唯一交易authority，Python无交易权限。
+下一工作批次仅登记NQ-V105-PLANNING / NOT_STARTED，next_action=NQ-V105-PLAN。本轮不定义v1.0.5目标、范围或实施步骤；下一规划须另行发起。
 
 ## 历史记录：v1.0.2及v1.0.3准备
 

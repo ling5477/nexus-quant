@@ -1,13 +1,16 @@
-# 1.0.4 — 候选 / Release readiness
+# 1.0.4 — 已发布 / Released
 
-Target Schema: V52 / UNCHANGED。功能收口已接受；发行准备进行中，尚未发布，不预填新包资格或制品摘要。
+Release Date: 2026-11-02 (UTC)
 
-- 原v1.0.3能力完成真实公开OKX BTC-USDT 1h的单个24小时自然时间窗口，24/24覆盖、游标/一次重启后推进、Canonical经济事实一致；没有新引擎或策略。
-- 原Forward SIM面板新增只读事件诊断及精确asOf导航。原目标NOT_COMPARABLE保持，诊断不能替代目标收益或历史review。
-- 原research页提供正式独立Companion安装引导、Dataset/Version下载身份、独立目录、完整固定参数/时间命令与输出覆盖防护；Python仍离线手动运行，Java只读核验Artifact。
-- Self-Hosted/Companion及Wheel对齐1.0.4，NumPy2.3.5、因子数学与Artifact合同不变；无Java业务、schema或migration变化。
-- 目标资格为Windows11 amd64/Docker Linux Containers/PG16，以及独立Windows CPython3.11。普通升级目标仅v1.0.3/V52→v1.0.4/V52；新候选实际资格须绑定其CI、来源与不可变包。
-- 保留单窗口/单owner限制、统计不足、原经济事实及PR101首次CI根因UNRESOLVED；不声明长期盈利或其他平台资格。LIVE=DISABLED、Kill Switch=ENGAGED。以下已发布历史不改写。
+[Release431438991](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)，published_at=2026-11-02T12:37:58Z，draft=false/prerelease=false。Qualified Source=f5a24b5d9ac5c89dc7fbf6a53361f5d2b1a31bd0 / Tree f23c233c6c29d1ce37fe4f687d8b5a4255a32d46；Source CI41374718081及merge CI41376688035各9/9。无父Snapshot=2c5cc6d1d90ce9e1112c1968b0b1fade6518ada4 / Tree ccef37c3a006b4d97f33f9aa45f7a7f8c8c6c672（2230文件）；annotated v1.0.4 object=92cd23fa5d44e96cba240d13be13c6228e10fabd。本次文档提交不替代正式Source，已发布Notes和资产不改写。
+
+- 原v1.0.3完成真实OKX BTC-USDT 1h单个24小时自然观察，24/24覆盖、游标/原重启后推进及Canonical事实一致；仅该窗口，不证明长期盈利。
+- 原Forward SIM面板提供只读事件诊断及精确asOf导航，目标仍NOT_COMPARABLE，子区间AVAILABLE不替代整窗收益或原review。
+- 原research页改善独立Companion安装指引、Dataset/Version文件身份、完整固定参数/时间命令和覆盖防护；Python仍离线手动运行，Java仅只读核验。
+- Windows11 amd64/Docker Linux Containers/PG16.15/V52 Self-Hosted及独立Windows CPython3.11.9/NumPy2.3.5 Companion限定资格；正式普通升级仅v1.0.3/V52→v1.0.4/V52，无新migration。
+- 六正式资产认证完整下载6/6、匿名正式URL完整下载6/6均匹配；ZIP原字节不变，UNSIGNED_RELEASE_SOURCE_MAPPING不是数字签名。全部大小/SHA256见[STATUS](docs/current/STATUS.md)。
+- 原预算不足driver FAILED、第二轮恢复控制器注入前FAILED、故障update exit1、两运行表raw DIFFERENT及历史CI根因UNRESOLVED分别保留；第三轮实际故障恢复只QUALIFIED_FOR_HISTORICAL_DATA_AND_STABLE_CONTROLS。发布工具TLS超时与Draft缓存URL三次404原失败保留，纠正后同六资产核验通过，不追认失败为PASS。
+- 历史C4原审查/owner例外/72h豁免、未资格平台/Python及长期稳定限制不变。LIVE=DISABLED、Kill Switch=ENGAGED，无生产部署或真实交易授权。
 
 # 1.0.3 — 已发布 / Released
 

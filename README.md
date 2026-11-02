@@ -2,11 +2,11 @@
 
 NexusQuant是面向OKX Spot的研究与模拟交易工作台。Java Control Plane是唯一canonical Risk / Order / Trade / Ledger权威。
 
-## v1.0.4候选与发行状态
+## v1.0.4正式发行
 
-当前开发目标为1.0.4 / Schema V52，功能收口已接受，源码及包级发行准备进行中。最新正式发行仍为[v1.0.3](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3)，其Source、Snapshot、Tag及资产不变。1.0.4尚未发布，不能将候选构建或功能CI等同正式发行/部署授权。准确候选资格由绑定其来源和制品摘要的发行记录表达。
+[NexusQuant v1.0.4](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)已于2026-11-02T12:37:58Z正式公开（Release ID431438991，非draft、非prerelease），Schema V52。v1.0.0～v1.0.4均RELEASED。固定Qualified Source=f5a24b5d9ac5c89dc7fbf6a53361f5d2b1a31bd0；本次或未来文档提交不替换它，不从最新dev重新构包冒充已发布资产。
 
-产品继续由 **NexusQuant Self-Hosted 1.0.4 + NexusQuant Python Research Companion 1.0.4** 两个独立组件组成。候选验证目标为Windows11 amd64 / 已运行Docker Desktop Linux Containers / PostgreSQL16 / V52；Companion为Windows amd64 / CPython3.11 x64 / NumPy2.3.5。其他平台、Python及Public Demo不据构建结果取得资格。
+产品由 **NexusQuant Self-Hosted 1.0.4 + NexusQuant Python Research Companion 1.0.4** 两个独立组件组成。正式范围为Windows11 amd64 / 已运行Docker Desktop Linux Containers / PostgreSQL16.15 / V52；Companion为Windows amd64 / CPython3.11 x64（实际3.11.9）/ NumPy2.3.5。其他平台、Python及Public Demo未取得本版资格。准确Source/Tree/CI、无父Snapshot/Annotated Tag、六项资产大小/SHA256及保留失败见[发行状态](docs/current/STATUS.md)。来源映射UNSIGNED_RELEASE_SOURCE_MAPPING不是数字签名。
 
 ## 本版功能
 
@@ -18,13 +18,13 @@ NexusQuant是面向OKX Spot的研究与模拟交易工作台。Java Control Plan
 
 ## 安装与研究
 
-正式安装必须取得可信发行渠道的对应完整ZIP及独立可信摘要，不能用GitHub自动源码包替代镜像安装包；1.0.4尚无正式下载资产。通过资格且获发布授权后，Self-Hosted在解压包根执行：
+从上述正式Release取得完整Self-Hosted ZIP、独立Companion ZIP及可信摘要；六资产已完成发布前认证与发布后匿名完整下载校验。GitHub自动源码包不能替代镜像安装包。Self-Hosted在解压包根执行：
 
 ```powershell
 .\installers\install.ps1
 ```
 
-普通安装和运维无需宿主Java、Maven、Node、PostgreSQL或Python。默认仅loopback，首次管理员登录须改密。候选普通升级目标为v1.0.3/V52→v1.0.4/V52，经正式check-update/update、可信Manifest和相同PG immutable config；其实际资格不能从旧版本记录推定。
+普通安装和运维无需宿主Java、Maven、Node、PostgreSQL或Python。默认仅loopback，首次管理员登录须改密。已验证普通升级仅v1.0.3/V52→v1.0.4/V52，使用原check-update/update、可信Manifest和相同PG immutable image/config；本版无新migration。
 
 Companion独立ZIP包含nexus-quant-research==1.0.4及NumPy2.3.5 wheelhouse/hash-lock。用户自行准备CPython3.11 x64并创建干净venv，按包内INSTALL以--no-index离线安装；不需要源码checkout。固定输入/参数/seed/生成时间/数值运行时才能比较完整Artifact字节。Java只核验owner、冻结身份、格式、摘要，不认证科学结论，不保存Artifact，不从Java启动Python。
 
@@ -34,7 +34,7 @@ Companion独立ZIP包含nexus-quant-research==1.0.4及NumPy2.3.5 wheelhouse/hash
 
 LIVE=DISABLED，Kill Switch=ENGAGED。无真实资金/私有交易provider、真实PLACE/CANCEL、transfer/withdraw、AI交易或Python交易权限。STOP_OBSERVATION只结束研究观察，PAUSE Continuous SIM也不自动平仓。
 
-原24h目标缺锚和null指标保持；短样本、未平仓估值、回放availableAt假设、已暴露留出及Bootstrap假设不支持长期盈利推断。PR101首次CI估值负例状态断言失败根因仍UNRESOLVED；同候选重跑成功不代表修复，发行影响由新候选证据限定。历史长时运行原NOT_ACCEPTED/EVIDENCE_GAPS、所有者例外、72小时豁免及v1.0.3恢复原FAILED/exit1/raw DIFFERENT分别保留。Linux/macOS/ARM64、其他Python及Public Demo未取得本版正式资格。
+原24h目标缺锚和null指标保持；短样本、未平仓估值、回放availableAt假设、已暴露留出及Bootstrap假设不支持长期盈利推断。PR101首次CI估值负例状态断言失败根因仍UNRESOLVED；同候选重跑成功不代表修复，固定Source/merge CI及包级证据仅支持已验证发行范围非阻断。原两轮取证driver FAILED、故障update exit1和两运行表raw DIFFERENT保留，恢复仅历史数据与稳定控制QUALIFIED。历史长时运行原NOT_ACCEPTED/EVIDENCE_GAPS、所有者例外、72小时豁免及v1.0.3恢复原FAILED/exit1/raw DIFFERENT分别保留。Linux/macOS/ARM64、其他Python及Public Demo未取得本版正式资格。
 
 ## License and financial risk
 
