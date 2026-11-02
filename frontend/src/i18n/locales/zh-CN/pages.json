@@ -8,7 +8,7 @@
     "installTitle": "独立 Companion：安装与运行前提",
     "installMeaning": "从官方发行取得并核验独立 Companion ZIP，解压后在包根目录按随包 INSTALL.md 操作。v1.0.3 已验证 Windows 11 amd64 / CPython 3.11 x64，NumPy 2.3.5。预先安装 Python 后建立不继承全局包的 venv，用随包 wheelhouse 和 requirements.lock 离线安装；不要把源码目录当成正式安装方式。",
     "companionRelease": "官方发行与独立 Companion 下载",
-    "installDocument": "安装说明（随包 INSTALL.md；当前源码文档供查阅）",
+    "installDocument": "安装说明：阅读 Companion ZIP 根目录的 INSTALL.md",
     "downloadFirst": "成功下载原 V2 后，才会依据其真实身份与冻结时间显示专属文件名和可复制命令。",
     "invalidInputIdentity": "下载内容与所选 Dataset/V2 身份不一致，已停止生成交接命令。",
     "inputVersion": "冻结 Dataset Version",
