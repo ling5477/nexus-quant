@@ -8,7 +8,7 @@
     "installTitle": "Standalone Companion: installation and runtime",
     "installMeaning": "Obtain and verify the standalone Companion ZIP from the official release. Extract it and follow its INSTALL.md from the package root. Version 1.0.3 is verified on Windows 11 amd64 / CPython 3.11 x64 with NumPy 2.3.5. Preinstall Python, create a venv without global packages, then install offline using the bundled wheelhouse and requirements.lock. A source directory is not the formal installation path.",
     "companionRelease": "Official releases and standalone Companion download",
-    "installDocument": "Installation instructions (bundled INSTALL.md; current source document for reference)",
+    "installDocument": "Installation instructions: read INSTALL.md in the Companion ZIP root",
     "downloadFirst": "A successful V2 download supplies the actual identities and frozen time used to show distinct filenames and a copyable command.",
     "invalidInputIdentity": "The downloaded Dataset/V2 identity does not match the selection. No handoff command was generated.",
     "inputVersion": "Frozen Dataset Version",

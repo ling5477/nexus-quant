@@ -89,7 +89,7 @@ function FactorResearchWorkflow({datasetId}: {datasetId?: string}) {
         <Collapse items={[{key: 'install', label: t('factorResearch.installTitle'), children: <Space direction="vertical" style={{width: '100%'}}>
             <Typography.Paragraph>{t('factorResearch.installMeaning')}</Typography.Paragraph>
             <Typography.Link href="https://github.com/ling5477/nexus-quant/releases" target="_blank" rel="noopener noreferrer">{t('factorResearch.companionRelease')}</Typography.Link>
-            <Typography.Link href="https://github.com/ling5477/nexus-quant/blob/dev/research/py/INSTALL.md" target="_blank" rel="noopener noreferrer">{t('factorResearch.installDocument')}</Typography.Link>
+            <Typography.Text>{t('factorResearch.installDocument')}</Typography.Text>
             <Typography.Paragraph code copyable style={{whiteSpace: 'pre-wrap', overflowWrap: 'anywhere'}}>{'py -3.11 -m venv .venv\n.\\.venv\\Scripts\\python.exe -m pip --isolated install --no-index --no-cache-dir --only-binary=:all: --find-links .\\wheelhouse --require-hashes -r .\\requirements.lock\n.\\.venv\\Scripts\\python.exe -m pip check'}</Typography.Paragraph>
         </Space>}]}/>
         <Space wrap>
