@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-V103-03-FACTOR-RESEARCH-FOUNDATION
+accepted_batch=NQ-V104-03-OFFLINE-RESEARCH-HANDOFF
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=fe206edffd937c871323278891532b694a47f3ab
-accepted_batch_acceptance_head=fe206edffd937c871323278891532b694a47f3ab
-accepted_batch_ci_run=41048377808
-work_batch=NQ-V104-PLANNING
-work_batch_status=NOT_STARTED
+accepted_batch_implementation_commit=46159c1e687d4ec1089b8d10cac61f532897f512
+accepted_batch_acceptance_head=46159c1e687d4ec1089b8d10cac61f532897f512
+accepted_batch_ci_run=41317985113
+work_batch=NQ-V104-RELEASE-READINESS
+work_batch_status=IMPLEMENTED|SELF_REVIEWED
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-V104-PLAN
+next_action=NQ-V104-READINESS-COMMIT
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,7 +31,23 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
-## 当前正式发行与下一阶段
+## v1.0.4功能接受与发行准备
+
+V104_FUNCTIONAL_CLOSEOUT_ACCEPTED；功能范围COMPLETE，开发Schema V52。当前执行NQ-V104-RELEASE-READINESS，尚未取得新源码CI或包级资格；机器work状态记录IMPLEMENTED|SELF_REVIEWED、commit=NONE、CI=NOT_RUN，表示本提交的源码准备已自查但尚无对应提交/CI证据，不预填成功。下一入口由机器next_action拥有，不自动创建Snapshot、Tag或Release；正式最新发行仍v1.0.3，发布授权NOT_GRANTED。
+
+| 阶段 | 实际接受身份及范围 |
+| --- | --- |
+| V104-01 | LOCAL NATURAL-TIME ACCEPTED；实际运行v1.0.3 Source 5f770f60e2b6f11b376535b865a60ef5976db3c1；[2026-10-31T09:00:00Z,2026-11-01T09:00:00Z)真实公开24/24小时，Canonical事实一致、一次原进程重启后推进。无该阶段源码提交，不编造CI。仅此窗口/记录owner，不证明长期盈利或全故障恢复 |
+| V104-02 | candidate 66f345c4f048f0bb7009b2502eb27c65e60f80a9；PR100；merge 272421ffee8dfcede912083f1b793b372bfef991；post-merge CI41307607932，exact merge / push / 9/9 SUCCESS。事件诊断只读，原目标NOT_COMPARABLE及精确asOf保留 |
+| V104-03 | candidate 46159c1e687d4ec1089b8d10cac61f532897f512；PR101；merge fee19f76e6a30da1a80227275389e0aca98341bf；post-merge CI41321924996，exact merge / push / 9/9 SUCCESS。独立Companion离线交接；固定输入/参数/时间/数值运行时可完整复现；Java只核验身份/格式/摘要 |
+
+历史V103-03接受pair仍为fe206edffd937c871323278891532b694a47f3ab / CI41048377808，不能被本轮文档CI替代。机器最新accepted pair绑定V104-03候选及其最终PR CI；合并CI另列，GateZ冻结身份不变。
+
+V104-03 PR CI41317985113 attempt1 / job124881994141在ForwardSimEvaluationPostgresIntegrationTest:259预期UNAVAILABLE、实际NOT_COMPARABLE，失败原记录保留；同候选一次失败job重跑及merge新CI成功，根因UNRESOLVED。不能声称已修复或确认基础设施原因；本轮发行影响以新候选准确CI和包级证据另行裁定。
+
+原目标checksum 481c32bc6d7277e47310bd60061c6aa35f911c690639e003f0fb6c9c0046215e、asOf=2026-11-01T09:15:05.667317Z、原26决策/1Order/1Trade/6Ledger/1Position及封存证据不变；研究观察OPEN与continuous STOPPED/两jobs OFF分别保留。功能及发行准备报告位于仓库外E:/Project/NQ_V104_FUNCTIONAL_CLOSEOUT.md和NQ_V104_RELEASE_READINESS.md，后者只有实际完成后才形成资格结论。
+
+## 已发布v1.0.3固定身份与历史下一阶段
 
 NQ v1.0.0、v1.0.1、v1.0.2、v1.0.3均为 **RELEASED**。v1.0.3已正式发布，三个业务阶段、功能收口、限定范围发行准备与最终准入均完成；本次只是发行事实和当前文档同步，不重新资格化、不增加功能或审查阶段。
 
@@ -68,7 +84,7 @@ Companion Source Manifest SHA256=0235f0455f73785e1033020454a4a313ca8673c1a4c0fb8
 
 保留历史C4 NOT_ACCEPTED / EVIDENCE_GAPS、owner ACCEPT_WITH_EVIDENCE_EXCEPTION与72小时WAIVED；180天不是多年研究或长期策略优势，回放availableAt为实验假设且留出已暴露，Forward合成时钟不等于自然长期观察，Python探索统计不证明可持续盈利。Linux/macOS/ARM64、其他Python及Public Demo未取得本版正式资格，旧Linux低内存600秒仅SCOPED_PASS、长期NOT_VERIFIED；旧research/py安装提示和本地128项工具failure1/skip1保留。LIVE=DISABLED、Kill Switch=ENGAGED，不开放真实资金自动交易。
 
-最近业务接受pair继续为NQ-V103-03 / fe206edffd937c871323278891532b694a47f3ab / CI41048377808；GateZ冻结身份不变。唯一下一阶段仅登记NQ-V104-PLANNING / NOT_STARTED，work commit=NONE、CI=NOT_RUN，next_action=NQ-V104-PLAN。本轮不选题、不制定v1.0.4方案或启动实现。
+最近业务接受pair继续为NQ-V103-03 / fe206edffd937c871323278891532b694a47f3ab / CI41048377808；GateZ冻结身份不变。该次发行后文档同步当时仅登记NQ-V104-PLANNING / NOT_STARTED；该历史入口已由顶部机器区和v1.0.4接受索引推进，不作为当前待办。
 
 [TESTING](TESTING.md)与[WORKLOG](WORKLOG.md)仅追加本次事实。实际文档commit、PR、merge、各自准确CI与清理记录在仓库外 E:/Project/NQ_V103_POST_RELEASE_CLOSEOUT.md；新文档提交永远不替代上述正式Source Commit。
 

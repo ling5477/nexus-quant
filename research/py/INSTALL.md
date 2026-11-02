@@ -1,6 +1,6 @@
-# NexusQuant Python Research Companion 1.0.3
+# NexusQuant Python Research Companion 1.0.4
 
-此独立资产对应 NexusQuant Self-Hosted 1.0.3；Wheel 的 distribution 为 `nexus-quant-research==1.0.3`。候选资格以绑定此资产 SHA256 的发行资格报告为准。最小验证目标为 Windows 11 amd64 / CPython 3.11 x64；其他版本、Linux/macOS/ARM64 不据 `requires-python>=3.11` 声明正式资格。
+此独立资产对应 NexusQuant Self-Hosted 1.0.4；Wheel 的 distribution 为 `nexus-quant-research==1.0.4`。候选资格以绑定此资产 SHA256 的发行资格报告为准。最小验证目标为 Windows 11 amd64 / CPython 3.11 x64；其他版本、Linux/macOS/ARM64 不据 `requires-python>=3.11` 声明正式资格。
 
 先从可信发行渠道取得整个 Companion ZIP 及其可信 SHA256，核验后解压。`SHA256SUMS.txt` 和同包摘要只能检测损坏，不能独立证明发行者身份。`companion-manifest.json` 与 `source.json` 分别绑定 Wheel/依赖和准确开发 Commit 的独立 Git Blob 投影；映射为未签名来源说明。
 

@@ -1,6 +1,6 @@
 # V1 发布源码边界
 
-`source-manifest.json` 使用逐文件精确列表，当前候选目标版本为 `1.0.3`，必须与同一提交内的 `VERSION` 一致。清单与源码必须来自同一个完整 40 位 Git commit；没有工作区复制、通配符发现或导出时重写文件。新增文件默认 `REVIEW_REQUIRED`，后续安装器与文档必须经过审查后显式加入清单。Java 主源码/正式资源与 frontend/src 的新增文件若未纳入，覆盖门禁拒绝导出；已审查的开发配置、开发页和未使用素材继续排除。发现范围不会自动将文件加入发行包，也不能通过改标 EXCLUDE_TEST 隐藏正式源码。
+`source-manifest.json` 使用逐文件精确列表，当前候选目标版本为 `1.0.4`，必须与同一提交内的 `VERSION` 一致。清单与源码必须来自同一个完整 40 位 Git commit；没有工作区复制、通配符发现或导出时重写文件。新增文件默认 `REVIEW_REQUIRED`，后续安装器与文档必须经过审查后显式加入清单。Java 主源码/正式资源与 frontend/src 的新增文件若未纳入，覆盖门禁拒绝导出；已审查的开发配置、开发页和未使用素材继续排除。发现范围不会自动将文件加入发行包，也不能通过改标 EXCLUDE_TEST 隐藏正式源码。
 
 ```powershell
 python scripts/release/release_source.py export --repo E:/Project/nexus-quant --commit <40-hex> --output E:/release-export --audit E:/release-audit.json
@@ -86,3 +86,7 @@ Python使用release/python-companion-source-manifest.json精确列表，通过sc
 先export/verify，再使用投影中的release/build-python-companion.ps1于干净Windows amd64/CPython3.11构建；runtime与构建工具由python-companion-dependencies.json精确锁定，NumPy2.3.5 Windows cp311 Wheel摘要/元数据必须吻合。构建器不从工作树复制业务文件，不联网解析运行依赖。最终独立ZIP包含Wheel、依赖、hash安装锁、来源/版本/摘要manifest、说明与许可证；用户显式以--no-index离线安装和运行，无Java subprocess/Compose/Python守护进程。
 
 两资产独立验证、共享开发SOURCE_SHA；Self-Hosted Snapshot不包含Python，Companion来源另有树摘要。保留未签名provenance的真实边界，不更改严格18字段Java Package Manifest、既有导出器coverage或普通升级门禁。正式候选资格/安装/恢复及最终发行授权分别记录。
+
+## v1.0.4候选来源
+
+本轮只新增两份已接受前端生产依赖的INCLUDE_RUNTIME：ForwardSimEventDiagnostics.tsx及factor-research-handoff.ts；不修改coverage规则，不加入测试源码。版本与独立Companion均1.0.4，NumPy2.3.5和数学/Artifact合同不变；research/py/INSTALL.md进入独立Companion投影，继续排除于Self-Hosted。V52及V1～V52字节不变。新候选须独立完成准确源码CI、不可变来源与包级资格；v1.0.3的Source、Snapshot、Tag、资产及原失败记录不变，本轮不创建新Snapshot/Tag/Release。

@@ -1,3 +1,14 @@
+# 1.0.4 — 候选 / Release readiness
+
+Target Schema: V52 / UNCHANGED。功能收口已接受；发行准备进行中，尚未发布，不预填新包资格或制品摘要。
+
+- 原v1.0.3能力完成真实公开OKX BTC-USDT 1h的单个24小时自然时间窗口，24/24覆盖、游标/一次重启后推进、Canonical经济事实一致；没有新引擎或策略。
+- 原Forward SIM面板新增只读事件诊断及精确asOf导航。原目标NOT_COMPARABLE保持，诊断不能替代目标收益或历史review。
+- 原research页提供正式独立Companion安装引导、Dataset/Version下载身份、独立目录、完整固定参数/时间命令与输出覆盖防护；Python仍离线手动运行，Java只读核验Artifact。
+- Self-Hosted/Companion及Wheel对齐1.0.4，NumPy2.3.5、因子数学与Artifact合同不变；无Java业务、schema或migration变化。
+- 目标资格为Windows11 amd64/Docker Linux Containers/PG16，以及独立Windows CPython3.11。普通升级目标仅v1.0.3/V52→v1.0.4/V52；新候选实际资格须绑定其CI、来源与不可变包。
+- 保留单窗口/单owner限制、统计不足、原经济事实及PR101首次CI根因UNRESOLVED；不声明长期盈利或其他平台资格。LIVE=DISABLED、Kill Switch=ENGAGED。以下已发布历史不改写。
+
 # 1.0.3 — 已发布 / Released
 
 Release Date: 2026-10-31 (UTC)

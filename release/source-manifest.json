@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "targetVersion": "1.0.3",
+  "targetVersion": "1.0.4",
   "sourceIdentity": "exact-40-hex-git-commit;git-blobs-only",
   "treeHashAlgorithm": "sha256-canonical-json-v1",
   "groups": [
@@ -1876,6 +1876,7 @@
         "frontend/src/features/paper-trading/components/ContinuousOperationRecovery.tsx",
         "frontend/src/features/paper-trading/components/ContinuousSimStatusPanel.css",
         "frontend/src/features/paper-trading/components/ContinuousSimStatusPanel.tsx",
+        "frontend/src/features/paper-trading/components/ForwardSimEventDiagnostics.tsx",
         "frontend/src/features/paper-trading/components/ForwardSimObservationPanel.tsx",
         "frontend/src/features/paper-trading/components/NqAlertPanel.tsx",
         "frontend/src/features/paper-trading/components/NqHeartbeatPanel.tsx",
@@ -1941,6 +1942,7 @@
         "frontend/src/features/research/components/FactorResearchPanel.tsx",
         "frontend/src/features/research/components/ResearchConfigPicker.tsx",
         "frontend/src/features/research/creation-operations.ts",
+        "frontend/src/features/research/factor-research-handoff.ts",
         "frontend/src/features/research/hooks/useResearchListQuery.ts",
         "frontend/src/features/research/types/research.ts",
         "frontend/src/features/runs/api/runs.ts",

@@ -1,3 +1,51 @@
+# NexusQuant 1.0.4候选安装与运维
+
+版本以包内VERSION为准。1.0.4功能已接受，当前为发行准备候选，尚未创建正式Tag或Release。最新正式发行仍[v1.0.3](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3)；旧Source及资产保持原字节。新包资格以绑定其来源/制品摘要的实际报告为准，不由本文预授予。
+
+## 1.0.4候选目标与可信输入
+
+Self-Hosted目标Windows11 amd64 / 已安装且运行的Docker Desktop Linux Containers / PostgreSQL16 / Flyway V52；Companion目标Windows amd64 / CPython3.11 x64 / NumPy2.3.5。Linux/macOS/ARM64、其他Python及Public Demo不声明正式资格。
+
+使用完整Self-Hosted ZIP及独立可信Package Manifest SHA256；同包SHA256SUMS只能检测损坏，不能独立证明发行者身份。GitHub自动源码归档不能替代冻结镜像安装包。未发布1.0.4没有正式下载地址或预填摘要，维护者候选需从准确Git Commit导出并构建。已取得授权的包在解压根执行：
+
+```powershell
+.\installers\install.ps1
+```
+
+默认仅绑定loopback；首次admin登录必须改密。普通安装/运维无需宿主Java、Maven、Node、PostgreSQL或Python。LIVE=DISABLED、Kill Switch=ENGAGED，不启用真实交易provider或Python服务。
+
+## v1.0.3/V52→v1.0.4/V52
+
+仅以已发布v1.0.3可信正式资产安装的实例作为普通升级来源。使用原宿主nexusquant.ps1的check-update/update，指定新包和独立可信Manifest SHA256；目标版本严格递增、schema保持V52、原V1～V52 migration checksum不变。必须符合相同PG immutable image/config digest；不能用浮动标签替代兼容证明、手工SQL或直接换应用冒充正式升级。
+
+维护者从可信v1.0.3 ZIP/Manifest/images TAR核验PG输入，再从干净Git Blob投影构包：
+
+```powershell
+.\release\build-package.ps1 -OutputDirectory <new-directory> -Architectures amd64 `
+  -PostgresImage sha256:9e2cf6287f25c3151f4c9421ccce2b17f3e60061c111a29165e0d2cdd9ff0a97 `
+  -ExpectedPostgresConfigDigest sha256:066167ff39c2a612402ce99b734ea1cff92a9d1f2ac52f697a5f0384f0d88d6b
+```
+
+停写、验证备份、journal、健康/版本/schema检查及失败恢复仍由原安装器负责。回滚或失败恢复须恢复更新前完整V52数据库与绑定的1.0.3资产，不能只换镜像；备份仅保留该检查点，不自动保留之后新事实。不得删pending或使用Flyway repair掩盖失败。包级备份/恢复、主动回滚和必要失败恢复须对新候选取得实际证据；旧1.0.3资格不能替代它。原运行元数据时间推进与历史业务/稳定控制保护分开核验，不要求把所有活跃时间字段冒称不变。
+
+## 独立Python Research Companion1.0.4
+
+取得可信独立ZIP，用户自行预装CPython3.11 x64；按其中INSTALL建立干净venv并离线安装nexus-quant-research==1.0.4和NumPy2.3.5：
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip --isolated install --no-index --no-cache-dir --only-binary=:all: --find-links .\wheelhouse --require-hashes -r .\requirements.lock
+.\.venv\Scripts\python.exe -m pip check
+```
+
+从自己的原research页下载已冻结V2，在Companion根建立页面所示独立研究目录，移入身份明确的输入文件，再手动执行页面完整命令。保持window/horizon/seed/bootstrap/created-at与数值运行时；固定时间来自原frozenAt，未知不伪造；重复时使用新输出名并比较完整字节。原CLI允许覆盖，页面命令用Test-Path防护。不要安装源码checkout或让Java代跑Python。
+
+原目标NOT_COMPARABLE不变；事件诊断只读且使用同一精确asOf，不替代24h目标收益。Java预览只校验owner、冻结身份、摘要和格式，不认证统计、不保存Artifact。原24h自然观察仅覆盖该窗口；因子相关、Bootstrap或一次复现不证明盈利，原观察/经济事实及封存数据不修改。
+
+## 以下为已发布1.0.3与更早版本历史
+
+下列版本号、固定Source、摘要、资格及Bridge说明均保留其历史归属；不构成本候选的新来源或资格，不替换上述1.0.4步骤。
+
 # NexusQuant 安装与运维
 
 版本以包内VERSION为准。[v1.0.3](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.3)已于2026-10-31T06:00:01Z正式发布，Release ID429746750，Schema V52；v1.0.0～v1.0.2历史发行保持原字节。本页为发行后开发文档同步，不是重新构建或替换正式包。
