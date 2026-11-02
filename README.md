@@ -6,7 +6,7 @@ NexusQuant是面向OKX Spot的研究与模拟交易工作台。Java Control Plan
 
 [NexusQuant v1.0.4](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)已于2026-11-02T12:37:58Z正式公开（Release ID431438991，非draft、非prerelease），Schema V52。v1.0.0～v1.0.4均RELEASED。固定Qualified Source=f5a24b5d9ac5c89dc7fbf6a53361f5d2b1a31bd0；本次或未来文档提交不替换它，不从最新dev重新构包冒充已发布资产。
 
-产品由 **NexusQuant Self-Hosted 1.0.4 + NexusQuant Python Research Companion 1.0.4** 两个独立组件组成。正式范围为Windows11 amd64 / 已运行Docker Desktop Linux Containers / PostgreSQL16.15 / V52；Companion为Windows amd64 / CPython3.11 x64（实际3.11.9）/ NumPy2.3.5。其他平台、Python及Public Demo未取得本版资格。准确Source/Tree/CI、无父Snapshot/Annotated Tag、六项资产大小/SHA256及保留失败见[发行状态](docs/current/STATUS.md)。来源映射UNSIGNED_RELEASE_SOURCE_MAPPING不是数字签名。
+产品由 **NexusQuant Self-Hosted 1.0.4 + NexusQuant Python Research Companion 1.0.4** 两个独立组件组成。正式范围为Windows11 amd64 / 已运行Docker Desktop Linux Containers / PostgreSQL16.15 / V52；Companion为Windows amd64 / CPython3.11 x64（实际3.11.9）/ NumPy2.3.5。其他平台、Python及Public Demo未取得本版资格。准确Source/Tree/CI、无父Snapshot/Annotated Tag、六项资产大小/SHA256及保留失败见[正式发行说明](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)。来源映射UNSIGNED_RELEASE_SOURCE_MAPPING不是数字签名。
 
 ## 本版功能
 

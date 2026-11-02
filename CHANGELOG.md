@@ -8,9 +8,9 @@ Release Date: 2026-11-02 (UTC)
 - 原Forward SIM面板提供只读事件诊断及精确asOf导航，目标仍NOT_COMPARABLE，子区间AVAILABLE不替代整窗收益或原review。
 - 原research页改善独立Companion安装指引、Dataset/Version文件身份、完整固定参数/时间命令和覆盖防护；Python仍离线手动运行，Java仅只读核验。
 - Windows11 amd64/Docker Linux Containers/PG16.15/V52 Self-Hosted及独立Windows CPython3.11.9/NumPy2.3.5 Companion限定资格；正式普通升级仅v1.0.3/V52→v1.0.4/V52，无新migration。
-- 六正式资产认证完整下载6/6、匿名正式URL完整下载6/6均匹配；ZIP原字节不变，UNSIGNED_RELEASE_SOURCE_MAPPING不是数字签名。全部大小/SHA256见[STATUS](docs/current/STATUS.md)。
+- 六正式资产认证完整下载6/6、匿名正式URL完整下载6/6均匹配；ZIP原字节不变，UNSIGNED_RELEASE_SOURCE_MAPPING不是数字签名。全部大小/SHA256见[正式发行说明](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)。
 - 原预算不足driver FAILED、第二轮恢复控制器注入前FAILED、故障update exit1、两运行表raw DIFFERENT及历史CI根因UNRESOLVED分别保留；第三轮实际故障恢复只QUALIFIED_FOR_HISTORICAL_DATA_AND_STABLE_CONTROLS。发布工具TLS超时与Draft缓存URL三次404原失败保留，纠正后同六资产核验通过，不追认失败为PASS。
-- 历史C4原审查/owner例外/72h豁免、未资格平台/Python及长期稳定限制不变。LIVE=DISABLED、Kill Switch=ENGAGED，无生产部署或真实交易授权。
+- 历史长时运行原审查/owner例外/72h豁免、未资格平台/Python及长期稳定限制不变。LIVE=DISABLED、Kill Switch=ENGAGED，无生产部署或真实交易授权。
 
 # 1.0.3 — 已发布 / Released
 

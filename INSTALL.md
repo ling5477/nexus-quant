@@ -1,6 +1,6 @@
 # NexusQuant 1.0.4安装与运维
 
-[v1.0.4](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)已于2026-11-02T12:37:58Z正式发布，Release ID431438991。固定Qualified Source=f5a24b5d9ac5c89dc7fbf6a53361f5d2b1a31bd0；本次开发文档同步不重建、替换正式包或变更其SHA256。完整Source/Tree/CI、Snapshot/Tag、六资产与资格限制见[STATUS](docs/current/STATUS.md)。
+[v1.0.4](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)已于2026-11-02T12:37:58Z正式发布，Release ID431438991。固定Qualified Source=f5a24b5d9ac5c89dc7fbf6a53361f5d2b1a31bd0；本次开发文档同步不重建、替换正式包或变更其SHA256。完整Source/Tree/CI、Snapshot/Tag、六资产与资格限制见[正式发行说明](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)。
 
 ## 正式范围与可信安装资产
 
