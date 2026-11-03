@@ -121,6 +121,14 @@ export function requireEvaluationScope(value: ForwardEvaluation, run: RunIdentit
 }
 const root = '/strategy-observations';
 export const observationsApi = {
+    /** 导出保留原始JSON数值词法；显示解析与下载字节共用一次原GET，避免两次读取水位不同。 */
+    async evaluateEvidence(run: RunIdentity, window: EvaluationWindow, signal?: AbortSignal) {
+        const {data} = await apiClient.get<string>(`/paper-trading/strategy-sim/analysis/runs/${encodeURIComponent(run.paperRunId)}/forward-evaluation`,
+            {params: window, signal, responseType: 'text', transformResponse: [(raw: string) => raw]});
+        if (typeof data !== 'string') throw new Error('INVALID_EVALUATION_EVIDENCE');
+        const evaluation = requireEvaluationScope(parseObservationResponse(data) as ForwardEvaluation, run, window);
+        return {evaluation, rawJson: data, receivedAt: new Date().toISOString()};
+    },
     async evaluate(run: RunIdentity, window: EvaluationWindow, signal?: AbortSignal) {
         const {data} = await apiClient.get<ForwardEvaluation>(`/paper-trading/strategy-sim/analysis/runs/${encodeURIComponent(run.paperRunId)}/forward-evaluation`,
             {...exact, params: window, signal});

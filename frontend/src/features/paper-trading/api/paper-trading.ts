@@ -101,9 +101,10 @@ export const paperTradingApi = {
         return parseContinuousSimStatus(data, paperRunId);
     },
     /** 服务端入口可用性与当前运行状态分别读取；前端构建开关不能证明后端已启用。 */
-    async continuousSimCapabilities(): Promise<{commandsAvailable: boolean}> {
+    async continuousSimCapabilities({signal}: {signal?: AbortSignal} = {}): Promise<{commandsAvailable: boolean}> {
         const {data} = await apiClient.get<{commandsAvailable: boolean}>(
             '/paper-trading/strategy-sim/runs/continuous-capabilities',
+            {signal},
         );
         if (typeof data?.commandsAvailable !== 'boolean')
             throw new Error('Invalid continuous capabilities');

@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {useAuthStore} from '@/store/auth-store';
+import {selectSessionIdentity, useAuthStore} from '@/store/auth-store';
 import {paperTradingQueryKeys} from '@/api/query-keys';
 import {simAnalysisApi, type SimAnalysisRun} from '../api/analysis';
 import {observationsApi, type EvaluationWindow, type ObservationCreateRequest, type ObservationReviewRequest} from '../api/observations';
@@ -11,6 +11,8 @@ import type {AppApiError} from '@/types/api';
 export function useForwardSimObservations(run: SimAnalysisRun, range: EvaluationWindow | null, observationId: string | null,
     reviewId: string | null, offset: number, reviewsOffset: number, onSaved: (observationId: string, reviewId?: string) => void) {
     const owner = useAuthStore(state => state.currentUser?.userId);
+    const session = useAuthStore(selectSessionIdentity);
+    const scoped = (key: readonly unknown[]) => [...key, session];
     const cache = useQueryClient();
     const [stored, setStored] = useState<{owner?: number; run: string; pending: PendingObservationOperation | null; storageError: boolean}>({owner, run: run.paperRunId, pending: null, storageError: false});
     const scope = useRef({owner, run: run.paperRunId, active: true});
@@ -24,16 +26,16 @@ export function useForwardSimObservations(run: SimAnalysisRun, range: Evaluation
         refresh(); window.addEventListener(observationOperationChanged, refresh); window.addEventListener('storage', refresh);
         return () => {window.removeEventListener(observationOperationChanged, refresh); window.removeEventListener('storage', refresh);};
     }, [owner, run.paperRunId]);
-    const rawPerformance = useQuery({queryKey: paperTradingQueryKeys.performance(owner, run.paperRunId, null, null),
+    const rawPerformance = useQuery({queryKey: scoped(paperTradingQueryKeys.performance(owner, run.paperRunId, null, null)),
         queryFn: ({signal}) => simAnalysisApi.performance(run.paperRunId, null, null, signal), enabled: !!owner && !range && !reviewId,
         retry: false, refetchInterval: 30_000});
-    const evaluation = useQuery({queryKey: paperTradingQueryKeys.forwardEvaluation(owner, run.paperRunId, range),
+    const evaluation = useQuery({queryKey: scoped(paperTradingQueryKeys.forwardEvaluation(owner, run.paperRunId, range)),
         queryFn: ({signal}) => observationsApi.evaluate(run, range!, signal), enabled: !!owner && !!range && !reviewId, retry: false});
-    const list = useQuery({queryKey: paperTradingQueryKeys.observations(owner, run.paperRunId, offset),
+    const list = useQuery({queryKey: scoped(paperTradingQueryKeys.observations(owner, run.paperRunId, offset)),
         queryFn: ({signal}) => observationsApi.list(run, offset, signal), enabled: !!owner, retry: false});
-    const detail = useQuery({queryKey: paperTradingQueryKeys.observation(owner, run.paperRunId, observationId, reviewsOffset),
+    const detail = useQuery({queryKey: scoped(paperTradingQueryKeys.observation(owner, run.paperRunId, observationId, reviewsOffset)),
         queryFn: ({signal}) => observationsApi.detail(observationId!, run, signal, reviewsOffset), enabled: !!owner && !!observationId, retry: false});
-    const review = useQuery({queryKey: paperTradingQueryKeys.observationReview(owner, run.paperRunId, observationId, reviewId),
+    const review = useQuery({queryKey: scoped(paperTradingQueryKeys.observationReview(owner, run.paperRunId, observationId, reviewId)),
         queryFn: ({signal}) => observationsApi.review(observationId!, reviewId!, run, signal), enabled: !!owner && !!observationId && !!reviewId, retry: false});
     const mutation = useMutation({mutationFn: async (action: {kind: 'OBSERVATION'; input: ObservationCreateRequest}
         | {kind: 'OBSERVATION_REVIEW'; observationId: string; input: ObservationReviewRequest}
