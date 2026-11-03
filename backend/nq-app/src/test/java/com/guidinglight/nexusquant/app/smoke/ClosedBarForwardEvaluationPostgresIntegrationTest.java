@@ -10,6 +10,17 @@ import java.math.RoundingMode;
 import org.springframework.dao.DataAccessException;
 import com.guidinglight.nexusquant.app.research.ResearchCreationOperationService;
 import org.springframework.jdbc.core.JdbcTemplate;
+import com.guidinglight.nexusquant.common.tenant.TenantWorkAccess;
+import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperTradingRunService;
+import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRepository;
+import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRunService;
+import com.guidinglight.nexusquant.scheduler.paper.StrategySimRunService;
+import java.time.Clock;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.concurrent.atomic.AtomicReference;
+import org.springframework.test.util.ReflectionTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.math.BigDecimal;
@@ -305,7 +316,45 @@ class ClosedBarForwardEvaluationPostgresIntegrationTest {
                 var facts = ForwardSimEvaluationFixture.allFacts(db);
                 assertEquals(held, http.ok("GET", ClosedBarForwardEvaluationFixture.path(scenario), token, null));
                 assertEquals(facts, ForwardSimEvaluationFixture.allFacts(db));
-                evidence("no-trade-and-pending.json", Map.of("source", "SYNTHETIC_HOURLY_RECEIPT_CANONICAL_SIM", "held", held, "partial", partial));
+                String run = scenario.binding().paperRunId();
+                var economicBeforeRevision = new LinkedHashMap<>(ResearchSimComparisonPostgresIntegrationTest.economicFacts(db));
+                economicBeforeRevision.remove("continuous_sim_runs");
+                var barsBeforeRevision = facts.get("continuous_sim_bars");
+                Instant requestStarted = scenario.to().plusSeconds(6), detectedAt = scenario.to().plusSeconds(12);
+                var currentTime = new AtomicReference<>(requestStarted);
+                Clock revisionClock = new Clock() {
+                    @Override public ZoneId getZone() { return ZoneOffset.UTC; }
+                    @Override public Clock withZone(ZoneId zone) { return this; }
+                    @Override public Instant instant() { return currentTime.get(); }
+                };
+                ClosedBarMarketFeed revised = (firstOpen, maximum) -> {
+                    currentTime.set(detectedAt);
+                    return new ClosedBarMarketFeed.Observation(detectedAt, detectedAt,
+                            List.of(ClosedBarForwardEvaluationFixture.bar(firstOpen, new BigDecimal("77777"), detectedAt, detectedAt)),
+                            new ClosedBarMarketFeed.Rule(detectedAt, "LIVE", new BigDecimal("0.01"), new BigDecimal("0.0001"), new BigDecimal("0.0001")),
+                            new ClosedBarMarketFeed.Quote(detectedAt, new BigDecimal("52200")));
+                };
+                var driver = new ContinuousSimRunService(app.getBean(ContinuousSimRepository.class),
+                        app.getBean(StrategySimRunService.class), app.getBean(PaperTradingRunService.class), revised,
+                        app.getBean(JdbcTemplate.class), revisionClock);
+                ReflectionTestUtils.setField(driver, "tenantWork", app.getBean(TenantWorkAccess.class));
+                var stopped = db.as(owner, () -> driver.pollOnce(run));
+                assertEquals("STOPPED", stopped.status()); assertEquals("DATA_REVISION_DETECTED", stopped.blockReason());
+                assertEquals(detectedAt, db.admin.queryForObject("SELECT updated_at FROM continuous_sim_runs WHERE paper_run_id=?", Timestamp.class, run).toInstant());
+                ForwardSimEvaluationFixture.clock(app, detectedAt);
+                var beforeDetection = http.ok("GET", ForwardSimEvaluationFixture.evaluationPath(run, scenario.from(), scenario.to(),
+                        requestStarted.plusSeconds(1)) + "&methodVersion=" + METHOD, token, null);
+                assertAvailable(beforeDetection);
+                var knownRevision = http.ok("GET", ForwardSimEvaluationFixture.evaluationPath(run, scenario.from(), scenario.to(),
+                        detectedAt) + "&methodVersion=" + METHOD, token, null);
+                assertUnavailable(knownRevision); assertEquals("DATA_REVISION_DETECTED", knownRevision.path("reason").asText());
+                assertEquals(held, http.ok("GET", ClosedBarForwardEvaluationFixture.path(scenario), token, null));
+                assertEquals(barsBeforeRevision, ForwardSimEvaluationFixture.allFacts(db).get("continuous_sim_bars"));
+                var economicAfterRevision = new LinkedHashMap<>(ResearchSimComparisonPostgresIntegrationTest.economicFacts(db));
+                economicAfterRevision.remove("continuous_sim_runs");
+                assertEquals(economicBeforeRevision, economicAfterRevision);
+                evidence("no-trade-and-pending.json", Map.of("source", "SYNTHETIC_HOURLY_RECEIPT_CANONICAL_SIM", "held", held,
+                        "partial", partial, "beforeRevisionDetection", beforeDetection, "knownRevision", knownRevision));
             }
         }
     }
