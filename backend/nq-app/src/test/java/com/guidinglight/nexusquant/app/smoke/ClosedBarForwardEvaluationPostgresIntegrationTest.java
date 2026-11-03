@@ -1,8 +1,8 @@
 package com.guidinglight.nexusquant.app.smoke;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -267,7 +267,8 @@ class ClosedBarForwardEvaluationPostgresIntegrationTest {
                         """, 10000 - originalCount, trade);
                     long started = System.nanoTime();
                     JsonNode exactly = unavailable(http, scenario, token);
-                    assertNotEquals("TRADE_WINDOW_LIMITED", exactly.path("reason").asText(), exactly.toPrettyString());
+                    assertEquals("LEDGER_INCOMPLETE", exactly.path("performance").path("status").asText(), exactly.toPrettyString());
+                    assertFalse(exactly.path("metrics").path("windowLimited").asBoolean(), exactly.toPrettyString());
                     cases.put("exactly-10000-facts", exactly);
                     inject(db, """
                         INSERT INTO trades SELECT (jsonb_populate_record(NULL::trades,to_jsonb(t)||jsonb_build_object(
