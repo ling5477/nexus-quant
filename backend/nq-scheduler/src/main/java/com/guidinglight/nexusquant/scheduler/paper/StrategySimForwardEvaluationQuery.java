@@ -124,7 +124,25 @@ public class StrategySimForwardEvaluationQuery {
         displayed(full, comparable), calculated.metrics(), frozenCostAssumptions(runKnown ? run.configSnapshotJson() : null, mapper),
         details, List.copyOf(findings), status, reason);
     ObjectNode semantic = mapper.valueToTree(result); semantic.remove("checksum");
-    return result.withChecksum(digest(semantic));
+    return result.withChecksum(digest(canonicalChecksumInput(semantic, mapper)));
+  }
+
+  /** 新方法的语义摘要不依赖跨JVM反射getter顺序；旧V1历史摘要路径保持原样。 */
+  static JsonNode canonicalChecksumInput(JsonNode value, ObjectMapper mapper) {
+    if (value.isObject()) {
+      ObjectNode ordered = mapper.createObjectNode();
+      var fields = new TreeMap<String, JsonNode>();
+      value.fields().forEachRemaining(entry -> fields.put(entry.getKey(), entry.getValue()));
+      fields.forEach((key, child) -> ordered.set(key, canonicalChecksumInput(child, mapper)));
+      return ordered;
+    }
+    if (value.isArray()) {
+      var ordered = mapper.createArrayNode();
+      value.forEach(child -> ordered.add(canonicalChecksumInput(child, mapper)));
+      return ordered;
+    }
+    // 保留原DecimalNode/整数/空值，避免摘要规范化改变金额精度或数组的经济顺序。
+    return value;
   }
 
   private JsonNode closedBarDetails(ClosedBarValuation.Result result, Instant asOf, String priceDigest,

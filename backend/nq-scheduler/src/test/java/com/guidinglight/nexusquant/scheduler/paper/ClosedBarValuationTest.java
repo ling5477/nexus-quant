@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.account.domain.performance.ClosedTradeStatistics;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
@@ -23,6 +24,23 @@ class ClosedBarValuationTest {
   private static final Instant FROM = Instant.parse("2026-01-01T00:00:00Z");
   private final ObjectMapper mapper = new ObjectMapper();
   private final ClosedBarValuation verifier = new ClosedBarValuation(new JdbcTemplate(), mapper);
+
+  @Test void closedBarChecksumIgnoresNestedObjectOrderWithoutChangingNumbersOrArrayOrder() throws Exception {
+    var left = mapper.createObjectNode();
+    var right = mapper.createObjectNode();
+    BigDecimal exact = new BigDecimal("0.1234567890123456789012345678901234");
+    left.putArray("samples").add(mapper.createObjectNode().put("source", "first").put("equity", exact));
+    left.put("status", "AVAILABLE");
+    right.put("status", "AVAILABLE");
+    right.putArray("samples").add(mapper.createObjectNode().put("equity", exact).put("source", "first"));
+    JsonNode canonical = StrategySimForwardEvaluationQuery.canonicalChecksumInput(left, mapper);
+    assertEquals(canonical.toString(), StrategySimForwardEvaluationQuery.canonicalChecksumInput(right, mapper).toString());
+    assertEquals(exact, canonical.path("samples").get(0).path("equity").decimalValue());
+    ((ObjectNode) right.path("samples").get(0)).put("source", "different");
+    assertFalse(canonical.toString().equals(StrategySimForwardEvaluationQuery.canonicalChecksumInput(right, mapper).toString()));
+    var sequence = mapper.createArrayNode().add(2).add(1);
+    assertEquals("[2,1]", StrategySimForwardEvaluationQuery.canonicalChecksumInput(sequence, mapper).toString());
+  }
 
   @Test void receivedPriceAfterBoundaryIsLegalOnlyWhenKnowledgeCutoffIncludesTheResponse() {
     var row = bar(FROM, FROM.plusSeconds(2), FROM.plusSeconds(4));
