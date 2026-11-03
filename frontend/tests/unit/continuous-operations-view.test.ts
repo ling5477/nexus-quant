@@ -76,6 +76,11 @@ describe('UTC每日证据保留原评价与时间精度', () => {
         expect(JSON.parse(exported).context).toMatchObject({ownerUserId: 1, asOf: cutoff, observationId: null});
         expect(JSON.parse(exported).evaluation).toMatchObject({status: 'NOT_COMPARABLE', performance: {pnl: null}});
         expect(get).toHaveBeenCalledWith(expect.stringContaining('/sim-1/forward-evaluation'), expect.objectContaining({params: range, signal, responseType: 'text'}));
+        const transforms = get.mock.calls[0][1]?.transformResponse as ((raw: string, headers: unknown, status: number) => unknown)[];
+        expect(transforms[0](raw, {}, 200)).toBe(raw);
+        expect(transforms[0]('{"code":"FORBIDDEN","traceId":"trc-test","message":"denied"}', {}, 403))
+            .toEqual({code: 'FORBIDDEN', traceId: 'trc-test', message: 'denied'});
+        expect(transforms[0]('upstream unavailable', {}, 503)).toBe('upstream unavailable');
         expect(post).not.toHaveBeenCalled();
     });
     it('串运行/账户/方法时间截止与无权读取不能成为可导出的响应', async () => {

@@ -124,7 +124,13 @@ export const observationsApi = {
     /** 导出保留原始JSON数值词法；显示解析与下载字节共用一次原GET，避免两次读取水位不同。 */
     async evaluateEvidence(run: RunIdentity, window: EvaluationWindow, signal?: AbortSignal) {
         const {data} = await apiClient.get<string>(`/paper-trading/strategy-sim/analysis/runs/${encodeURIComponent(run.paperRunId)}/forward-evaluation`,
-            {params: window, signal, responseType: 'text', transformResponse: [(raw: string) => raw]});
+            {params: window, signal, responseType: 'text', transformResponse: [(raw: string, _headers: unknown, status?: number) => {
+                // 成功响应保留数值词法；错误响应沿用统一结构化错误码与诊断合同。
+                if (status !== undefined && status >= 400) {
+                    try {return JSON.parse(raw) as unknown;} catch {return raw;}
+                }
+                return raw;
+            }]});
         if (typeof data !== 'string') throw new Error('INVALID_EVALUATION_EVIDENCE');
         const evaluation = requireEvaluationScope(parseObservationResponse(data) as ForwardEvaluation, run, window);
         return {evaluation, rawJson: data, receivedAt: new Date().toISOString()};
