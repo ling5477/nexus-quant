@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import {apiClient} from '../../src/api/client';
 import {paperTradingQueryKeys} from '../../src/api/query-keys';
-import {useAuthStore} from '../../src/store/auth-store';
+import {selectSessionIdentity, useAuthStore} from '../../src/store/auth-store';
 import {evaluationWindow, parseObservationResponse, requireEvaluationScope, observationsApi,
     sameObservationTime, observationEventWindow, frozenSimCostRows, type FrozenSimCostAssumptions, type ForwardEvaluation, type ObservationDetail, type ObservationReviewDetail} from '../../src/features/paper-trading/api/observations';
 import {readObservationOperation, storeObservationOperation, executeObservationOperation, requireObservationReceipt,
@@ -33,7 +33,7 @@ beforeEach(() => {
     vi.stubGlobal('navigator', {locks: {request: async (_key: string, _options: unknown, action: (lock: object | null) => Promise<unknown>) => action({})}});
     useAuthStore.setState({currentUser: {userId: 1} as NonNullable<ReturnType<typeof useAuthStore.getState>['currentUser']>});
 });
-afterEach(() => {vi.restoreAllMocks(); vi.unstubAllGlobals(); useAuthStore.setState({currentUser: null});});
+afterEach(() => {vi.restoreAllMocks(); vi.unstubAllGlobals(); useAuthStore.setState({currentUser: null, sessionId: null});});
 
 describe('canonical前向观察的只读范围与精确数据', () => {
     it('微秒截止不按毫秒混同，并接受同一Instant的时区等价表示', () => {
@@ -120,6 +120,18 @@ describe('canonical前向观察的只读范围与精确数据', () => {
 });
 
 describe('显式人工复盘原身份恢复', () => {
+    it('同owner重新登录后不消费旧会话在途结果，并保留原UUID供显式恢复', async () => {
+        useAuthStore.setState({sessionId: 'old-session'});
+        const pending = original(); storeObservationOperation(1, run.paperRunId, pending);
+        vi.spyOn(observationsApi, 'saveReview').mockImplementation(async () => {
+            useAuthStore.setState({sessionId: 'new-session'});
+            return result();
+        });
+        const current = () => selectSessionIdentity(useAuthStore.getState()) === 'old-session';
+        await expect(executeObservationOperation(1, run, pending, true, current)).rejects.toThrow('SCOPE_CHANGED');
+        expect(readObservationOperation(1, run.paperRunId)?.operationId).toBe(operationId);
+        expect(selectSessionIdentity(useAuthStore.getState())).toBe('new-session');
+    });
     it('GET 404保留原UUID，不自动POST或换号', async () => {
         const pending = original(); storeObservationOperation(1, run.paperRunId, pending);
         vi.spyOn(observationsApi, 'receipt').mockRejectedValue({status: 404});

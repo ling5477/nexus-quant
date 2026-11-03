@@ -14,10 +14,11 @@ import {PerformanceStatisticsCards} from '@/features/accounts/components/Perform
 import {decimalDisplay} from '@/utils/decimal-display';
 import {confirmTimeWithoutSubmittingForm} from '@/utils/time-range';
 import type {SimAnalysisRun} from '../api/analysis';
-import {evaluationWindow, observationIdPattern, sameObservationTime, frozenSimCostRows, type EvaluationWindow, type ObservationDecision, type ObservationCreateRequest} from '../api/observations';
+import {evaluationWindow, observationIdPattern, sameObservationTime, frozenSimCostRows, eventObservationMethod, closedBarObservationMethod, type ObservationMethod, type EvaluationWindow, type ObservationDecision, type ObservationCreateRequest} from '../api/observations';
 import {useForwardSimObservations} from '../hooks/useForwardSimObservations';
 import {ForwardSimEventDiagnostics} from './ForwardSimEventDiagnostics';
 import {ForwardSimDailyEvidence} from './ForwardSimDailyEvidence';
+import {ForwardSimBenchmarkComparison} from './ForwardSimBenchmarkComparison';
 
 dayjs.extend(utc);
 const decisions: ObservationDecision[] = ['CONTINUE_OBSERVATION', 'STOP_OBSERVATION', 'RETURN_TO_RESEARCH'];
@@ -35,9 +36,10 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
     const [offset, setOffset] = useState(0);
     const [reviewsOffset, setReviewsOffset] = useState(0);
     const [kind, setKind] = useState<ObservationCreateRequest['kind']>('RETROSPECTIVE');
+    const [newMethod, setNewMethod] = useState<ObservationMethod>(eventObservationMethod);
     const [localError, setLocalError] = useState<string | null>(null);
     const draftState = useRef<{context: string; edited: boolean; exact: Partial<Record<keyof RangeDraft, string>>}>({context: '', edited: false, exact: {}});
-    const diagnosticOpen = params.get('simDiagnostic') === 'events';
+    const diagnosticRequested = params.get('simDiagnostic') === 'events';
     const from = params.get('simFrom'), to = params.get('simTo'), asOf = params.get('simAsOf');
     const range = evaluationWindow(from, to, asOf);
     const requestedId = params.get('observationId'), requestedReview = params.get('reviewId');
@@ -52,11 +54,14 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
         return next;
     });};
     const query = useForwardSimObservations(run, invalidRange ? null : range, observationId, reviewId, offset, reviewsOffset, onSaved);
+    const diagnosticOpen = diagnosticRequested && query.method === eventObservationMethod;
     const detail = !query.detail.isError ? query.detail.data : undefined;
-    const savedReview = !query.review.isError && !invalidIdentity ? query.review.data : undefined;
+    const savedReview = !query.review.isError && !invalidIdentity && query.targetReady
+        && query.review.data?.evaluation.methodVersion === query.method ? query.review.data : undefined;
     const observation = detail?.observation;
-    const evaluation = invalidIdentity || invalidRange ? undefined : reviewId ? savedReview?.evaluation : !query.evaluation.isError ? query.evaluation.data : undefined;
-    const performance = evaluation?.performance ?? (!reviewId && !invalidRange && !invalidIdentity && !range && !query.rawPerformance.isError
+    const evaluation = invalidIdentity || invalidRange || !query.targetReady || !query.method ? undefined : reviewId ? savedReview?.evaluation
+        : !query.evaluation.isError && query.evaluation.data?.methodVersion === query.method ? query.evaluation.data : undefined;
+    const performance = evaluation?.performance ?? (!observationId && !reviewId && !invalidRange && !invalidIdentity && !range && !query.rawPerformance.isError
         && query.rawPerformance.data?.paperRunId === run.paperRunId ? query.rawPerformance.data : undefined);
     const method = evaluation?.methodDetails;
     const validationId = observation?.validationId ?? params.get('validationId'), trialId = observation?.selectedTrialId ?? params.get('selectedTrialId');
@@ -105,6 +110,7 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
             query.mutation.mutate({kind: 'OBSERVATION', input: {paperRunId: run.paperRunId, canonicalAccountId: run.canonicalAccountId,
                 strategyVersionId: run.strategyVersionId, publishId: run.publishId, validationId: validationId!, selectedTrialId: trialId!,
                 kind, observationFrom: start, observationTo: end,
+                ...(kind === 'FORWARD' && newMethod === closedBarObservationMethod ? {methodVersion: newMethod} : {}),
                 ...(observation ? {supersedesObservationId: observation.observationId} : {})}});
         } catch (error) {if (error instanceof Error) setLocalError(error.message);}
     };
@@ -118,6 +124,8 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
         <Space direction="vertical" size={16} style={{width: '100%', minWidth: 0}}>
             <Alert type="info" showIcon message={t('forwardObservation.boundary')} description={t('forwardObservation.rangeMeaning')}/>
             {visibleError && <Alert type="error" showIcon message={visibleError}/>}
+            {observation && !query.method && <Alert type="error" showIcon message={t('forwardValuation.unknownMethod')}/>}
+            {query.targetReady && query.review.data && !savedReview && <Alert type="error" showIcon message={t('forwardValuation.methodMismatch')}/>}
             {errors.map((error, index) => <Alert key={index} type="error" showIcon message={formatApiError(error as AppApiError)}/>)}
             {query.storageError && <Alert type="error" message={t('forwardObservation.storageError')}/>}
             {query.pending && <Alert type="warning" message={t('forwardObservation.pending')} description={query.pending.operationId} action={<Space wrap>
@@ -158,9 +166,10 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
                     {key: 'coverage', label: t('forwardObservation.coverage'), children: `${value(evaluation.coverageStart)} → ${value(evaluation.coverageEnd)}`},
                     {key: 'asOf', label: t('forwardObservation.asOf'), children: evaluation.observedAt},
                 ]}/>
-                <ForwardSimEventDiagnostics key={`${run.paperRunId}/${evaluation.checksum}`} run={run} evaluation={evaluation} open={diagnosticOpen}
+                {evaluation.methodVersion === eventObservationMethod && <ForwardSimEventDiagnostics key={`${run.paperRunId}/${evaluation.checksum}`} run={run} evaluation={evaluation} open={diagnosticOpen}
                     onToggle={() => setParams(previous => {const next = new URLSearchParams(previous);
-                        if (diagnosticOpen) next.delete('simDiagnostic'); else next.set('simDiagnostic', 'events'); return next;})}/>
+                        if (diagnosticOpen) next.delete('simDiagnostic'); else next.set('simDiagnostic', 'events'); return next;})}/>}
+                <ForwardSimBenchmarkComparison evaluation={evaluation}/>
                 <div className="sim-analysis-metrics">{(['expected', 'observed', 'missing', 'unknown'] as const).map(field =>
                     <NqMetricCard key={field} label={t(`forwardObservation.${field}`)} value={evaluation.timeBasis === 'ACTUAL_EVENT_TIME' ? value(evaluation.samples[field]) : '—'} footer={state(evaluation.samples.status)}/>)}</div>
                 {(evaluation.samples.windowLimited || evaluation.metrics.windowLimited) && <Alert type="warning" message={t('forwardObservation.windowLimited')}/>}
@@ -231,7 +240,7 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
             </>}
             <ForwardSimDailyEvidence run={run} observation={observation}
                 available={!invalidIdentity && !invalidRange && (!observationId || (!!observation && !query.detail.isFetching))
-                    && (!reviewId || !!savedReview)} fixedAsOf={evaluation?.observedAt ?? range?.asOf}/>
+                    && !!query.method && (!reviewId || !!savedReview)} fixedAsOf={evaluation?.observedAt ?? range?.asOf}/>
             <Typography.Title level={5}>{t('forwardObservation.records')}</Typography.Title>
             <Select aria-label={t('forwardObservation.records')} allowClear style={{width: '100%'}} value={observationId ?? undefined}
                 onChange={selectObservation} options={query.list.data?.map(record => ({value: record.observationId, label: `${t(`forwardObservation.kinds.${record.kind}`)} · ${state(record.status)} · ${record.observationFrom} → ${record.observationTo} · ${record.observationId}`}))}/>
@@ -241,6 +250,15 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
             <Collapse items={[{key: 'create', label: t('forwardObservation.create'), children: <Space direction="vertical" style={{width: '100%'}}>
                 <Radio.Group value={kind} onChange={event => setKind(event.target.value)} options={['RETROSPECTIVE', 'FORWARD'].map(choice => ({value: choice, label: t(`forwardObservation.kinds.${choice}`)}))}/>
                 <Typography.Paragraph>{t(kind === 'FORWARD' ? 'forwardObservation.forwardPlan' : 'forwardObservation.retroPlan')}</Typography.Paragraph>
+                {kind === 'FORWARD' && <>
+                    <Form.Item label={t('forwardValuation.newMethod')}>
+                        <Select aria-label={t('forwardValuation.newMethod')} value={newMethod} onChange={setNewMethod} style={{width: '100%'}} options={[
+                            {value: eventObservationMethod, label: t('forwardValuation.eventMethod')},
+                            {value: closedBarObservationMethod, label: t('forwardValuation.closedBarMethod'), disabled: run.symbol !== 'BTC-USDT' || run.intervalCode !== '1h'},
+                        ]}/>
+                    </Form.Item>
+                    <Typography.Paragraph type="secondary">{t('forwardValuation.newMethodMeaning')}</Typography.Paragraph>
+                </>}
                 {!contextValid && <Alert type="info" message={t('forwardObservation.researchRequired')}/>}
                 <Button disabled={blockWrite || !contextValid || (evaluation?.timeBasis ?? performance?.timeBasis) !== 'ACTUAL_EVENT_TIME'} onClick={() => void createObservation()}>{t('forwardObservation.create')}</Button>
             </Space>}]}/>

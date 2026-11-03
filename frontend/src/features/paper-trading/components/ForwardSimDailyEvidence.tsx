@@ -8,7 +8,7 @@ import {formatApiError} from '@/api/errors';
 import type {AppApiError} from '@/types/api';
 import {NqAmountText} from '@/components/nq/NqNumericText';
 import {dailyEvidenceExport, dailyEvidenceWindow, firstEvidenceDate} from '../daily-evidence';
-import {observationsApi, type EvaluationWindow, type Observation} from '../api/observations';
+import {observationsApi, observationMethod, type EvaluationWindow, type Observation} from '../api/observations';
 import type {SimAnalysisRun} from '../api/analysis';
 
 interface Props {run: SimAnalysisRun; observation?: Observation; available: boolean; fixedAsOf?: string}
@@ -17,7 +17,7 @@ interface Props {run: SimAnalysisRun; observation?: Observation; available: bool
 export function ForwardSimDailyEvidence(props: Props) {
     const owner = useAuthStore(state => state.currentUser?.userId);
     const session = useAuthStore(selectSessionIdentity);
-    return <DailyEvidence key={`${owner}/${session}/${props.run.paperRunId}/${props.observation?.observationId}/${props.available}/${props.fixedAsOf}`}
+    return <DailyEvidence key={`${owner}/${session}/${props.run.paperRunId}/${props.observation?.observationId}/${observationMethod(props.observation)}/${props.available}/${props.fixedAsOf}`}
         {...props} owner={owner} session={session}/>;
 }
 
@@ -30,9 +30,10 @@ function DailyEvidence({run, observation, available, fixedAsOf, owner, session}:
     const [selected, setSelected] = useState<EvaluationWindow | null>(null);
     const [invalid, setInvalid] = useState(false);
     const range = dailyEvidenceWindow(date, asOf, observation);
-    const query = useQuery({queryKey: paperTradingQueryKeys.dailyEvidence(owner, session, run.paperRunId, observation?.observationId ?? null, selected),
-        queryFn: ({signal}) => observationsApi.evaluateEvidence(run, selected!, signal),
-        enabled: available && !!owner && !!session && !!selected, retry: false, gcTime: 0});
+    const method = observationMethod(observation);
+    const query = useQuery({queryKey: paperTradingQueryKeys.dailyEvidence(owner, session, run.paperRunId, observation?.observationId ?? null, selected, method),
+        queryFn: ({signal}) => observationsApi.evaluateEvidence(run, selected!, signal, method!),
+        enabled: available && !!owner && !!session && !!selected && !!method, retry: false, gcTime: 0});
     const result = available && !query.isError && !query.isFetching && selected ? query.data : undefined;
     const state = (value: string) => t(`forwardObservation.states.${value}`, {defaultValue: value});
     const clear = () => {setSelected(null); setInvalid(false);};
@@ -58,9 +59,9 @@ function DailyEvidence({run, observation, available, fixedAsOf, owner, session}:
                     onChange={event => {clear(); setDate(event.target.value);}}/></Form.Item>
                 <Form.Item label={t('dailySimEvidence.asOf')}><Input aria-label={t('dailySimEvidence.asOf')} value={asOf} maxLength={64}
                     onChange={event => {clear(); setAsOf(event.target.value);}}/></Form.Item>
-                <Space wrap><Button htmlType="submit" disabled={!available || !owner} loading={query.isFetching}>{t('dailySimEvidence.read')}</Button>
+                <Space wrap><Button htmlType="submit" disabled={!available || !owner || !method} loading={query.isFetching}>{t('dailySimEvidence.read')}</Button>
                     <Button disabled={!available} onClick={() => {clear(); setAsOf(new Date(Date.now() + offset).toISOString());}}>{t('forwardObservation.now')}</Button>
-                    <Button disabled={!result} onClick={download}>{t('dailySimEvidence.download')}</Button></Space>
+                    <Button disabled={!result || !method} onClick={download}>{t('dailySimEvidence.download')}</Button></Space>
             </Form>
             {invalid && <Alert type="error" showIcon message={t('dailySimEvidence.invalid')}/>}
             {query.isError && <Alert type="error" showIcon message={formatApiError(query.error as AppApiError)}/>}

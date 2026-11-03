@@ -74,6 +74,14 @@ public class StrategySimPerformanceQuery {
     return new ObservationData(value, List.copyOf(scope.fills));
   }
 
+  /** 可信闭合价只替换估值输入；资金、成交、费用与账务仍走原校验和累加核心。 */
+  ObservationData readClosedBarObservation(StrategySimAnalysisQuery.Run run, Instant from, Instant to,
+      Instant asOf, List<Mark> marks) {
+    var scope = new ObservationScope(from, to, asOf, marks);
+    View value = readFacts(run, from, to, scope).forRun(run.paperRunId());
+    return new ObservationData(value, List.copyOf(scope.fills));
+  }
+
   private View readFacts(StrategySimAnalysisQuery.Run run, Instant from, Instant to, ObservationScope scope) {
     if ((from == null) != (to == null)
         || (from != null
@@ -98,8 +106,11 @@ public class StrategySimPerformanceQuery {
             scope == null ? new Object[]{run.canonicalAccountId()}
                 : new Object[]{run.canonicalAccountId(), Timestamp.from(scope.asOf), Timestamp.from(scope.to), Timestamp.from(scope.asOf)});
     Instant ledgerAsOf = latestLedger == null ? null : latestLedger.toInstant();
+    if (scope != null && scope.closedBar && "DISCOUNT_ASSET_IF_FUNDED".equals(
+        read(run.configSnapshotJson()).path("feeExecutionSpec").path("feePaymentPolicy").asText()))
+      return unavailable("UNSUPPORTED_VALUATION_FEE_ASSET", clock, cadence, ledgerAsOf);
     DiscountContext discount = discountContext(run);
-    var marks = loadMarks(run, from, to, scope);
+    var marks = scope != null && scope.closedBar ? scope.marks : loadMarks(run, from, to, scope);
     if (marks.size() > (scope == null ? 1000 : 10000))
       return unavailable("HISTORY_WINDOW_LIMITED", clock, cadence, ledgerAsOf);
     if (marks.isEmpty()) return unavailable("NO_DATA", clock, cadence, ledgerAsOf);
@@ -167,6 +178,9 @@ OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? %s AND ref_type IN ('S
         return unavailable("FUNDING_HISTORY_UNAVAILABLE", clock, cadence, ledgerAsOf);
       initialBudget = discount.plan().totalBudget();
     }
+    if (scope != null && scope.closedBar
+        && (!funds.getFirst().at().isBefore(from) || !run.paperRunId().equals(funds.getFirst().runId())))
+      return unavailable("OPENING_FUNDING_UNAVAILABLE", clock, cadence, ledgerAsOf);
     // 持续SIM的历史暖机信号早于真实注资，不能把未来预算提前放入这些时点。
     if (continuous)
       marks = marks.stream().filter(mark -> !mark.at().isBefore(funds.getFirst().at())).toList();
@@ -245,7 +259,7 @@ OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? %s AND ref_type IN ('S
         to,
         discount,
         scope == null ? 1000 : 10000,
-        scope != null);
+        scope != null, scope != null && scope.closedBar, scope == null ? null : scope.asOf);
   }
 
   private List<Mark> loadMarks(StrategySimAnalysisQuery.Run run, Instant from, Instant to, ObservationScope scope) {
@@ -362,7 +376,14 @@ OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? %s AND ref_type IN ('S
   private static final class ObservationScope {
     final Instant from, to, asOf;
     List<Fill> fills = List.of();
-    ObservationScope(Instant from, Instant to, Instant asOf) { this.from = from; this.to = to; this.asOf = asOf; }
+    final boolean closedBar;
+    final List<Mark> marks;
+    ObservationScope(Instant from, Instant to, Instant asOf) {
+      this.from = from; this.to = to; this.asOf = asOf; this.closedBar = false; this.marks = List.of();
+    }
+    ObservationScope(Instant from, Instant to, Instant asOf, List<Mark> marks) {
+      this.from = from; this.to = to; this.asOf = asOf; this.closedBar = true; this.marks = List.copyOf(marks);
+    }
   }
 
   /** 现金只累加正式账户分录，数量只取正式成交；回放映射模型事件，持续SIM使用实际成交时刻。 */
@@ -398,6 +419,20 @@ OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? %s AND ref_type IN ('S
       DiscountContext discount,
       int maximumSamples,
       boolean observation) {
+    return calculate(id, clock, cadence, ledgerAsOf, funding, marks, fills, from, to, discount,
+        maximumSamples, observation, false, null);
+  }
+
+  /** 已验证接收证据与经济边界分开；整点权益不包含该整点成交，不改变旧事件方法。 */
+  static View calculateClosedBars(String id, Instant ledgerAsOf, BigDecimal funding, List<Mark> marks,
+      List<Fill> fills, Instant from, Instant to, Instant asOf) {
+    return calculate(id, "ACTUAL_EVENT_TIME", 3600, ledgerAsOf, funding, marks, fills, from, to, null,
+        10000, true, true, asOf);
+  }
+
+  private static View calculate(String id, String clock, long cadence, Instant ledgerAsOf,
+      BigDecimal funding, List<Mark> marks, List<Fill> fills, Instant from, Instant to,
+      DiscountContext discount, int maximumSamples, boolean observation, boolean closedBar, Instant asOf) {
     var ordered =
         fills.stream()
             .filter(fill -> !observation || to == null || fill.trade().at().isBefore(to))
@@ -415,8 +450,12 @@ OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? %s AND ref_type IN ('S
       try {
         price = new BigDecimal(mark.price());
         if (price.signum() <= 0
-            || Instant.parse(mark.availableAt()).isAfter(mark.at())
-            || Instant.parse(mark.closeTime()).isAfter(mark.at()))
+            || (!closedBar && Instant.parse(mark.availableAt()).isAfter(mark.at()))
+            || Instant.parse(mark.closeTime()).isAfter(mark.at())
+            || (closedBar && (!"CLOSED_BAR_PERIOD_END".equals(mark.markType())
+                || !Instant.parse(mark.closeTime()).equals(mark.at().minusMillis(1))
+                || mark.receivedAt() == null || asOf == null || mark.receivedAt().isAfter(asOf)
+                || Instant.parse(mark.availableAt()).isAfter(asOf))))
           return unavailable("MARK_SOURCE_UNAVAILABLE", clock, cadence, ledgerAsOf);
         // 执行估值必须能对应保存的公开报价/模型开盘时刻，不能把已含滑点的成交价倒当行情。
         if ("EXECUTION_QUOTE".equals(mark.markType())
@@ -427,7 +466,7 @@ OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? %s AND ref_type IN ('S
       }
       // 半开观察区间的首个估值必须在from同刻成交之前，才能把该成交费用计入期间损益。
       // 后续估值仍复用原账户累加算法；旧接口保持包含估值同刻成交的历史语义。
-      boolean openingBoundary = observation && from != null && mark.at().equals(from);
+      boolean openingBoundary = closedBar || observation && from != null && mark.at().equals(from);
       while (cursor < ordered.size()
           && (openingBoundary ? ordered.get(cursor).trade().at().isBefore(mark.at())
               : !ordered.get(cursor).trade().at().isAfter(mark.at()))) {
@@ -480,7 +519,7 @@ OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? %s AND ref_type IN ('S
                 point == null ? null : point.observedAt(),
                 point == null ? null : point.visibleAt(),
                 point == null ? null : point.sourceSha256(),
-                Instant.parse(mark.closeTime()),
+                closedBar ? mark.receivedAt() : Instant.parse(mark.closeTime()),
                 Instant.parse(mark.availableAt())));
     }
     if (samples.size() > maximumSamples)
@@ -546,7 +585,7 @@ OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? %s AND ref_type IN ('S
         funding);
   }
 
-  private static View unavailable(String status, String clock, long cadence, Instant ledgerAsOf) {
+  static View unavailable(String status, String clock, long cadence, Instant ledgerAsOf) {
     return new View(
         null,
         status,
@@ -574,7 +613,12 @@ OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? %s AND ref_type IN ('S
       String symbol,
       String availableAt,
       String closeTime,
-      String markType) {
+      String markType,
+      Instant receivedAt) {
+    Mark(String decisionId, Instant at, String price, String symbol, String availableAt,
+        String closeTime, String markType) {
+      this(decisionId, at, price, symbol, availableAt, closeTime, markType, null);
+    }
     Mark(
         String decisionId,
         Instant at,
@@ -733,12 +777,13 @@ OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? %s AND ref_type IN ('S
 
     @JsonProperty("valuationMethod")
     public String valuationMethod() {
-      return "CANONICAL_SIM_LEDGER_AND_FROZEN_MARK_V1";
+      return "CLOSED_BAR_PERIOD_END".equals(markType)
+          ? "CANONICAL_SIM_LEDGER_AND_CLOSED_BAR_V1" : "CANONICAL_SIM_LEDGER_AND_FROZEN_MARK_V1";
     }
 
     @JsonProperty("valuationSource")
     public String valuationSource() {
-      return "strategy_sim_decisions:" + decisionId;
+      return ("CLOSED_BAR_PERIOD_END".equals(markType) ? "continuous_sim_bars:" : "strategy_sim_decisions:") + decisionId;
     }
 
     @JsonProperty("valuationStatus")
@@ -837,7 +882,7 @@ OR EXISTS(SELECT 1 FROM ledger_entries WHERE account_id=? %s AND ref_type IN ('S
       return quoteCurrency;
     }
 
-    private View forRun(String id) {
+    View forRun(String id) {
       return new View(
           id,
           status,

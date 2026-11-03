@@ -1,4 +1,4 @@
-import {observationsApi, observationIdPattern, requireEvaluationScope, requireObservationScope,
+import {observationsApi, observationIdPattern, observationMethod, eventObservationMethod, closedBarObservationMethod, requireEvaluationScope, requireObservationScope,
     type ObservationCreateRequest, type ObservationReviewRequest, type ObservationReceipt} from './api/observations';
 import type {SimAnalysisRun} from './api/analysis';
 import {useAuthStore} from '@/store/auth-store';
@@ -16,7 +16,10 @@ export function readObservationOperation(owner: number, run: string): PendingObs
     if (!observationIdPattern.test(value.operationId) || value.paperRunId !== run || !value.input
         || typeof value.input !== 'object' || Array.isArray(value.input)
         || (value.kind !== 'OBSERVATION' && value.kind !== 'OBSERVATION_REVIEW')
-        || (value.kind === 'OBSERVATION' && (value.parentKey !== run || value.input.paperRunId !== run))
+        || (value.kind === 'OBSERVATION' && (value.parentKey !== run || value.input.paperRunId !== run
+            || (value.input.methodVersion !== undefined && value.input.methodVersion !== eventObservationMethod
+                && value.input.methodVersion !== closedBarObservationMethod)
+            || (value.input.methodVersion === closedBarObservationMethod && value.input.kind !== 'FORWARD')))
         || (value.kind === 'OBSERVATION_REVIEW' && (!observationIdPattern.test(value.parentKey)
             || !Number.isInteger(value.input.expectedRevision) || value.input.expectedRevision < 0
             || !['CONTINUE_OBSERVATION', 'STOP_OBSERVATION', 'RETURN_TO_RESEARCH'].includes(value.input.decision)
@@ -73,6 +76,7 @@ export async function executeObservationOperation(owner: number, run: SimAnalysi
             if (original.kind !== 'OBSERVATION' || result.observation.validationId !== original.input.validationId
                 || result.observation.selectedTrialId !== original.input.selectedTrialId
                 || result.observation.kind !== original.input.kind
+                || observationMethod(result.observation) !== (original.input.methodVersion ?? eventObservationMethod)
                 || result.observation.supersedesObservationId !== (original.input.supersedesObservationId ?? null)
                 || result.observation.observationFrom !== original.input.observationFrom
                     && Date.parse(result.observation.observationFrom) !== Date.parse(original.input.observationFrom)

@@ -296,7 +296,9 @@ public class ContinuousSimRunService {
         } catch (RuntimeException ex) {
             String reason = classify(ex);
             String next = "DATA_REVISION_DETECTED".equals(reason) ? "STOPPED" : "STALLED";
-            progress.pollResult(runId, now, latestAvailable, gapStart, next, reason, false);
+            // 修订直到响应校验完成才可知，不能把请求开始时刻当作历史评价已知修订的时间。
+            Instant failedAt = "DATA_REVISION_DETECTED".equals(reason) ? clock.instant() : now;
+            progress.pollResult(runId, failedAt, latestAvailable, gapStart, next, reason, false);
             return status(runId);
         }
     }

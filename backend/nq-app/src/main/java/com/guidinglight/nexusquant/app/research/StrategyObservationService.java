@@ -2,9 +2,11 @@ package com.guidinglight.nexusquant.app.research;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.guidinglight.nexusquant.common.tenant.TenantKind;
 import com.guidinglight.nexusquant.scheduler.paper.StrategySimAnalysisQuery;
+import com.guidinglight.nexusquant.scheduler.paper.StrategySimForwardEvaluationQuery;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -56,8 +58,12 @@ public class StrategyObservationService {
     public Detail create(UUID operation, CreateRequest request, long owner) {
         actor(owner);
         validateCreate(request);
+        var input = mapper.valueToTree(request);
+        // 缺省与显式V1均沿用升级前回执JSON，新增可选字段不能使旧UUID重放冲突。
+        if (StrategySimForwardEvaluationQuery.METHOD.equals(method(request)))
+            ((ObjectNode) input).remove("methodVersion");
         var receipt = operations.execute(operation, owner, "OBSERVATION", request.paperRunId(),
-                mapper.valueToTree(request), () -> {
+                input, () -> {
                     Instant registeredAt = clock.instant();
                     validateWindow(request, registeredAt);
                     var identity = requireRun(owner, request.paperRunId(), request.canonicalAccountId(),
@@ -75,7 +81,7 @@ public class StrategyObservationService {
                                 && previous.publishId().equals(request.publishId()), "OBSERVATION_PREDECESSOR_MISMATCH");
                     }
                     var policy = mapper.createObjectNode()
-                            .put("methodVersion", "CONTINUOUS_SIM_OBSERVATION_V1")
+                            .put("methodVersion", method(request))
                             .put("metricSource", "CANONICAL_SIM_ANALYSIS")
                             .put("researchComparisonStatus", "NOT_COMPARABLE")
                             .put("researchComparisonReason", "DIFFERENT_MARKET_PERIODS_AND_METRIC_BASES")
@@ -87,6 +93,19 @@ public class StrategyObservationService {
                                     String.class, request.validationId()))
                             .put("backtestConfigId", linked.backtestConfigId())
                             .put("backtestRunId", linked.backtestRunId());
+                    if (StrategySimForwardEvaluationQuery.CLOSED_BAR_METHOD.equals(method(request))) {
+                        require("BTC-USDT".equals(identity.symbol()) && "1h".equals(identity.intervalCode()),
+                                "TRUSTED_VALUATION_MARKET_UNSUPPORTED");
+                        policy.put("collectionMethod", "RESPONSE_COMPLETED_UTC_V1")
+                                .put("economicBoundary", "STRICTLY_BEFORE_EACH_UTC_HOUR")
+                                .put("priceSource", "OKX_SPOT_BTC_USDT_CLOSED_1H")
+                                .put("valuationMapping", "PRIOR_HOUR_CLOSE_TO_PERIOD_END")
+                                .put("maximumLatenessSeconds", 900).put("maximumClockLagSeconds", 120)
+                                .put("maximumClockLeadSeconds", 5)
+                                .put("baseline", "POSITIVE_VERIFIED_OPENING_EQUITY")
+                                .put("cashAssumption", "ZERO_INTEREST")
+                                .put("buyHoldAssumption", "GROSS_PRICE_RETURN_NO_FEES_NO_SLIPPAGE");
+                    }
                     UUID id = UUID.randomUUID();
                     jdbc.update("""
                         INSERT INTO strategy_observations(observation_id,operation_id,owner_user_id,paper_run_id,
@@ -156,7 +175,8 @@ public class StrategyObservationService {
                     requireRun(owner, observation.paperRunId(), observation.canonicalAccountId(),
                             observation.strategyVersionId(), observation.publishId());
                     var evaluation = canonical().readForwardEvaluation(owner, observation.paperRunId(),
-                            observation.observationFrom(), observation.observationTo(), request.observedAt())
+                            observation.observationFrom(), observation.observationTo(), request.observedAt(),
+                            observation.policy().path("methodVersion").asText())
                             .orElseThrow(StrategyObservationService::notFound);
                     require("ACTUAL_EVENT_TIME".equals(evaluation.timeBasis())
                             && request.expectedEvaluationChecksum().equals(evaluation.checksum()),
@@ -233,7 +253,15 @@ public class StrategyObservationService {
                 || !Set.of("FORWARD", "RETROSPECTIVE").contains(r.kind() == null ? "" : r.kind())
                 || r.observationFrom() == null || r.observationTo() == null)
             throw bad("INVALID_OBSERVATION_INPUT");
+        String method = method(r);
+        if (!Set.of(StrategySimForwardEvaluationQuery.METHOD, StrategySimForwardEvaluationQuery.CLOSED_BAR_METHOD).contains(method)
+                || StrategySimForwardEvaluationQuery.CLOSED_BAR_METHOD.equals(method) && !"FORWARD".equals(r.kind()))
+            throw bad("INVALID_OBSERVATION_METHOD");
         requireId(r.paperRunId()); requireId(r.strategyVersionId()); requireId(r.publishId());
+    }
+
+    private static String method(CreateRequest request) {
+        return request.methodVersion() == null ? StrategySimForwardEvaluationQuery.METHOD : request.methodVersion();
     }
 
     static void validateWindow(CreateRequest r, Instant registeredAt) {
@@ -277,7 +305,15 @@ public class StrategyObservationService {
 
     public record CreateRequest(String paperRunId, long canonicalAccountId, String strategyVersionId, String publishId,
             UUID validationId, UUID selectedTrialId, String kind, Instant observationFrom, Instant observationTo,
-            UUID supersedesObservationId) {}
+            UUID supersedesObservationId, String methodVersion) {
+        /** 旧调用缺省方法保持V1，既有幂等身份及目标语义不升级。 */
+        public CreateRequest(String paperRunId, long canonicalAccountId, String strategyVersionId, String publishId,
+                UUID validationId, UUID selectedTrialId, String kind, Instant observationFrom, Instant observationTo,
+                UUID supersedesObservationId) {
+            this(paperRunId, canonicalAccountId, strategyVersionId, publishId, validationId, selectedTrialId, kind,
+                    observationFrom, observationTo, supersedesObservationId, null);
+        }
+    }
     public record ReviewRequest(long expectedRevision, String decision, String reason, Instant observedAt,
             String expectedEvaluationChecksum) {}
     public record Observation(UUID observationId, String paperRunId, long canonicalAccountId, String strategyVersionId,

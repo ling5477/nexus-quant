@@ -92,8 +92,9 @@ public class StrategySimAnalysisController {
             @PathVariable @NotBlank @Size(max = 128) String paperRunId,
             @RequestParam Instant from,
             @RequestParam Instant to,
-            @RequestParam(required = false) Instant asOf) {
-        return query.readForwardEvaluation(owner(), paperRunId, from, to, asOf)
+            @RequestParam(required = false) Instant asOf,
+            @RequestParam(required = false) @Size(max = 64) String methodVersion) {
+        return query.readForwardEvaluation(owner(), paperRunId, from, to, asOf, methodVersion)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "SIM_RUN_NOT_FOUND"));
     }
 }
