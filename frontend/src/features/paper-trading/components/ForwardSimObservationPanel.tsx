@@ -17,6 +17,7 @@ import type {SimAnalysisRun} from '../api/analysis';
 import {evaluationWindow, observationIdPattern, sameObservationTime, frozenSimCostRows, type EvaluationWindow, type ObservationDecision, type ObservationCreateRequest} from '../api/observations';
 import {useForwardSimObservations} from '../hooks/useForwardSimObservations';
 import {ForwardSimEventDiagnostics} from './ForwardSimEventDiagnostics';
+import {ForwardSimDailyEvidence} from './ForwardSimDailyEvidence';
 
 dayjs.extend(utc);
 const decisions: ObservationDecision[] = ['CONTINUE_OBSERVATION', 'STOP_OBSERVATION', 'RETURN_TO_RESEARCH'];
@@ -228,6 +229,9 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
                     items={(['paperRunId', 'canonicalAccountId', 'strategyVersionId', 'publishId', 'timeBasis', 'methodVersion', 'watermark', 'checksum'] as const).map(field =>
                         ({key: field, label: field, children: String(evaluation[field])}))}/>}]} />
             </>}
+            <ForwardSimDailyEvidence run={run} observation={observation}
+                available={!invalidIdentity && !invalidRange && (!observationId || (!!observation && !query.detail.isFetching))
+                    && (!reviewId || !!savedReview)} fixedAsOf={evaluation?.observedAt ?? range?.asOf}/>
             <Typography.Title level={5}>{t('forwardObservation.records')}</Typography.Title>
             <Select aria-label={t('forwardObservation.records')} allowClear style={{width: '100%'}} value={observationId ?? undefined}
                 onChange={selectObservation} options={query.list.data?.map(record => ({value: record.observationId, label: `${t(`forwardObservation.kinds.${record.kind}`)} · ${state(record.status)} · ${record.observationFrom} → ${record.observationTo} · ${record.observationId}`}))}/>

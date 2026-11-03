@@ -6,8 +6,8 @@ import type {
 } from '@/features/scheduler/types';
 
 export const schedulerApi = {
-    async list(): Promise<ScheduledJobControl[]> {
-        const {data} = await apiClient.get<ScheduledJobControl[]>('/scheduler/jobs');
+    async list({signal}: {signal?: AbortSignal} = {}): Promise<ScheduledJobControl[]> {
+        const {data} = await apiClient.get<ScheduledJobControl[]>('/scheduler/jobs', {signal});
         return data;
     },
     async patch(jobKey: string, request: ScheduledJobPatch): Promise<ScheduledJobControl> {

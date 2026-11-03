@@ -528,6 +528,11 @@ export const tradingWorkbenchQueryKeys = {
 };
 
 export const paperTradingQueryKeys = {
+    operations: (owner: number | undefined, session: string | null, run: string, part: string) =>
+        ['paper-trading-runs', 'operations', owner, session, run, part] as const,
+    dailyEvidence: (owner: number | undefined, session: string | null, run: string, observation: string | null,
+        range: {from: string; to: string; asOf: string} | null) =>
+        ['paper-trading-runs', 'daily-evidence', owner, session, run, observation, range?.from, range?.to, range?.asOf] as const,
     legacyAnalysis: (userId: number | undefined) =>
         ['paper-trading-runs', 'legacy-analysis', userId] as const,
     analysisCatalog: (userId: number | undefined, offset: number) =>

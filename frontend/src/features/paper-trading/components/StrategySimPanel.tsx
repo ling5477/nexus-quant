@@ -18,7 +18,8 @@ import {
     continuousOperationErrorKey,
     type ConfirmedContinuousOperation,
 } from '../continuous-operations';
-import {useAuthStore} from '@/store/auth-store';
+import {selectSessionIdentity, useAuthStore} from '@/store/auth-store';
+import {ContinuousSimOperationsPanel} from './ContinuousSimOperationsPanel';
 import {isPublicDemo} from '@/utils/distribution';
 
 import {useTranslation} from 'react-i18next';
@@ -46,6 +47,7 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
     const strategyEnabled = import.meta.env.VITE_STRATEGY_SIM_ENABLED === 'true';
     const continuousEnabled = import.meta.env.VITE_CONTINUOUS_SIM_ENABLED === 'true';
     const currentUser = useAuthStore((state) => state.currentUser);
+    const session = useAuthStore(selectSessionIdentity);
     const canOperate = canOperateContinuous();
     const selectedId = Boolean(selectedRun?.canonicalAccountId) ? selectedRun!.paperRunId : null;
     const pendingOperation = usePendingContinuousOperation();
@@ -72,14 +74,14 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
         }));
 
     const continuousQuery = useQuery({
-        queryKey: paperTradingQueryKeys.continuous(selectedId ?? ''),
+        queryKey: paperTradingQueryKeys.operations(currentUser?.userId, session, selectedId ?? '', 'cursor'),
         queryFn: ({signal}) => paperTradingApi.continuousSimStatus(selectedId!, signal),
         enabled: Boolean(selectedId),
         refetchInterval: 30_000,
         retry: false,
     });
     const capabilities = useQuery({
-        queryKey: paperTradingQueryKeys.continuousCapabilities,
+        queryKey: paperTradingQueryKeys.operations(currentUser?.userId, session, selectedId ?? '', 'capability'),
         queryFn: paperTradingApi.continuousSimCapabilities,
         enabled: strategyEnabled,
         staleTime: 30_000,
@@ -418,6 +420,10 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
                             }}
                             onAction={(action) => void changeContinuous(action)}
                         />
+                        <ContinuousSimOperationsPanel key={`${currentUser?.userId}/${session}/${selectedId}`}
+                            run={selectedId} status={continuousQuery.isError || identityMismatch ? null : continuous} readable={!continuousQuery.isError && !identityMismatch}
+                            parentStatus={selectedRun?.status ?? ''} checkedAt={continuousQuery.dataUpdatedAt}
+                            commandsAvailable={capabilities.isError ? null : capabilities.data?.commandsAvailable ?? null}/>
                         <CanonicalSimFacts paperRunId={selectedId} details />
                     </>
                 )}
