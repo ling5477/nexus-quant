@@ -6,6 +6,7 @@ import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.guidinglight.nexusquant.common.tenant.TenantKind;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -122,6 +125,17 @@ SELECT p.paper_run_id,p.canonical_account_id,p.status,p.symbol,p.interval_code,p
   @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ, timeout = 15)
   public Optional<StrategySimForwardEvaluationQuery.Evaluation> readForwardEvaluation(
       long owner, String paperRunId, Instant from, Instant to, Instant asOf) {
+    return readForwardEvaluation(owner, paperRunId, from, to, asOf, StrategySimForwardEvaluationQuery.METHOD);
+  }
+
+  /** 新方法仅适用于事先登记的新FORWARD目标；每日读取必须完整落在该目标内。 */
+  @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ, timeout = 15)
+  public Optional<StrategySimForwardEvaluationQuery.Evaluation> readForwardEvaluation(
+      long owner, String paperRunId, Instant from, Instant to, Instant asOf, String methodVersion) {
+    String method = methodVersion == null ? StrategySimForwardEvaluationQuery.METHOD : methodVersion;
+    if (!StrategySimForwardEvaluationQuery.METHOD.equals(method)
+        && !StrategySimForwardEvaluationQuery.CLOSED_BAR_METHOD.equals(method))
+      throw new IllegalArgumentException("UNSUPPORTED_FORWARD_VALUATION_METHOD");
     var identity = TenantContext.requireCurrent();
     if (identity.kind() != TenantKind.LOCAL)
       throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN,
@@ -129,7 +143,19 @@ SELECT p.paper_run_id,p.canonical_account_id,p.status,p.symbol,p.interval_code,p
     if (identity.userId() != owner) return Optional.empty();
     return owned(owner, paperRunId).map(run -> {
       if (forwardEvaluation == null) throw new IllegalStateException("FORWARD_EVALUATION_UNAVAILABLE");
-      return forwardEvaluation.read(run, from, to, asOf);
+      if (StrategySimForwardEvaluationQuery.CLOSED_BAR_METHOD.equals(method)) {
+        if (from == null || to == null) throw new IllegalArgumentException("INVALID_FORWARD_OBSERVATION_RANGE");
+        boolean registered = Boolean.TRUE.equals(jdbc.queryForObject("""
+            SELECT EXISTS(SELECT 1 FROM strategy_observations WHERE paper_run_id=? AND owner_user_id=?
+              AND canonical_account_id=? AND strategy_version_id=? AND publish_id=? AND kind='FORWARD'
+              AND policy->>'methodVersion'=? AND observation_from<=? AND observation_to>=?
+              AND registered_at<observation_from)
+            """, Boolean.class, paperRunId, owner, run.canonicalAccountId(), run.strategyVersionId(), run.publishId(),
+            method, Timestamp.from(from), Timestamp.from(to)));
+        if (!registered) throw new ResponseStatusException(
+            HttpStatus.CONFLICT, "TRUSTED_FORWARD_OBSERVATION_REQUIRED");
+      }
+      return forwardEvaluation.read(run, from, to, asOf, method);
     });
   }
 

@@ -14,12 +14,16 @@ import java.net.http.HttpClient;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.Clock;
+import java.time.ZoneOffset;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.time.ZoneId;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -123,7 +127,12 @@ class OkxClosedBarMarketFeedTest {
                 paths.clear();
                 try (var context = context(properties, environment, "public-marketdata-manual", "true")) {
                     assertEquals(before, calls.get(), "组件构造不得发起请求");
-                    var observation = context.getBean(OkxClosedBarMarketFeed.class).observe(first, 24);
+                    var feed = context.getBean(OkxClosedBarMarketFeed.class);
+                    Field clockField = OkxClosedBarMarketFeed.class.getDeclaredField("clock");
+                    clockField.setAccessible(true);
+                    clockField.set(feed, Clock.fixed(serverTime.plusSeconds(2), ZoneOffset.UTC));
+                    var observation = feed.observe(first, 24);
+                    assertEquals(serverTime.plusSeconds(2), observation.observedAt());
                     assertEquals(List.of("/api/v5/public/time",
                             "/api/v5/public/instruments?instType=SPOT&instId=BTC-USDT",
                             "/api/v5/market/ticker?instId=BTC-USDT",
@@ -217,8 +226,14 @@ class OkxClosedBarMarketFeedTest {
         try {
             var feed = new OkxClosedBarMarketFeed(HttpClient.newHttpClient(),
                     URI.create("http://127.0.0.1:" + server.getAddress().getPort()),
-                    new ObjectMapper());
+                    new ObjectMapper(), Clock.fixed(serverTime.plusSeconds(2), ZoneOffset.UTC));
             var observed = feed.observe(first, 24);
+            assertEquals(serverTime.plusSeconds(2), observed.observedAt());
+            var received = new ObjectMapper().readTree(observed.bars().getLast().rawPayloadJson());
+            assertEquals("RESPONSE_COMPLETED_UTC_V1", received.path("collectionMethod").asText());
+            assertEquals(observed.observedAt().toString(), received.path("receivedAt").asText());
+            assertEquals(serverTime.toString(), received.path("serverTime").asText());
+            assertEquals("1", received.path("candle").get(8).asText());
             assertEquals(2, observed.bars().size());
             assertEquals(first, observed.bars().getFirst().openTime());
             assertEquals(first.plusSeconds(3600), observed.bars().getLast().openTime());
@@ -231,6 +246,52 @@ class OkxClosedBarMarketFeedTest {
         } finally {
             server.stop(0);
         }
+    }
+
+    @Test
+    void candleResponseCompletionCannotBeBackdatedToVenueTimeAndClockSkewIsRejected() throws Exception {
+        Instant boundary = Instant.parse("2026-11-01T09:00:00Z");
+        Instant serverTime = boundary.plusSeconds(5);
+        var receipt = new AtomicReference<>(serverTime);
+        Clock mutableClock = new Clock() {
+            @Override public ZoneId getZone() { return ZoneOffset.UTC; }
+            @Override public Clock withZone(ZoneId zone) { return this; }
+            @Override public Instant instant() { return receipt.get(); }
+        };
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/", exchange -> {
+            String path = exchange.getRequestURI().getPath();
+            String body;
+            if (path.endsWith("/time")) body = "{\"code\":\"0\",\"data\":[{\"ts\":\"" + serverTime.toEpochMilli() + "\"}]}";
+            else if (path.endsWith("/instruments")) body = """
+                    {"code":"0","data":[{"instId":"BTC-USDT","instType":"SPOT","state":"live",
+                    "baseCcy":"BTC","quoteCcy":"USDT","tickSz":"0.1","lotSz":"0.0001","minSz":"0.0001"}]}
+                    """;
+            else if (path.endsWith("/ticker")) body = "{\"code\":\"0\",\"data\":[{\"instId\":\"BTC-USDT\",\"last\":\"105\",\"ts\":\"" + serverTime.toEpochMilli() + "\"}]}";
+            else {
+                // 控制响应完成后的本地时钟，证明asOf在请求和完成之间时不能提前可见。
+                receipt.updateAndGet(value -> value.plusSeconds(10));
+                body = "{\"code\":\"0\",\"data\":[" + candle(boundary.minusSeconds(3600), "1") + "]}";
+            }
+            byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (var output = exchange.getResponseBody()) { output.write(bytes); }
+        });
+        server.start();
+        try {
+            var feed = new OkxClosedBarMarketFeed(HttpClient.newHttpClient(),
+                    URI.create("http://127.0.0.1:" + server.getAddress().getPort()), new ObjectMapper(), mutableClock);
+            Instant cutoff = serverTime.plusSeconds(1);
+            var observation = feed.observe(boundary.minusSeconds(3600), 1);
+            assertTrue(observation.serverTime().isBefore(cutoff));
+            assertTrue(observation.bars().getFirst().availableAt().isBefore(cutoff));
+            assertTrue(observation.observedAt().isAfter(cutoff));
+            for (Instant invalid : List.of(serverTime.plusSeconds(121), serverTime.minusSeconds(16))) {
+                receipt.set(invalid);
+                assertEquals("PUBLIC_MARKET_CLOCK_SKEW", assertThrows(IllegalStateException.class,
+                        () -> feed.observe(boundary.minusSeconds(3600), 1)).getMessage());
+            }
+        } finally { server.stop(0); }
     }
 
     private static String candle(Instant open, String confirmed) {

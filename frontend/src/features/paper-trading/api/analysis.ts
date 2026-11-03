@@ -54,7 +54,7 @@ export interface SimPerformance {
         cash: string;
         positionQuantity: string;
         equity: string;
-        markType: 'SIGNAL_CLOSE' | 'EXECUTION_QUOTE';
+        markType: 'SIGNAL_CLOSE' | 'EXECUTION_QUOTE' | 'CLOSED_BAR_PERIOD_END';
         valuationCurrency?: string;
         valuationTime?: string;
         valuationMethod?: string;

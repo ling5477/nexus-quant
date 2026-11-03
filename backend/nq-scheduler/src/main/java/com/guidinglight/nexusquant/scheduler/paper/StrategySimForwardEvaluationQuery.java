@@ -3,6 +3,7 @@ package com.guidinglight.nexusquant.scheduler.paper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(prefix = "nq.strategy-sim", name = "enabled", havingValue = "true")
 public class StrategySimForwardEvaluationQuery {
   public static final String METHOD = "CONTINUOUS_SIM_OBSERVATION_V1";
+  public static final String CLOSED_BAR_METHOD = "CONTINUOUS_SIM_CLOSED_BAR_VALUATION_V1";
   private static final int MAXIMUM = 10000;
   private final JdbcTemplate jdbc;
   private final StrategySimPerformanceQuery performance;
@@ -41,6 +43,131 @@ public class StrategySimForwardEvaluationQuery {
     this.jdbc = new JdbcTemplate(jdbc.getDataSource());
     this.jdbc.setQueryTimeout(5);
     this.performance = performance;
+  }
+
+  /** 方法只能显式选择；缺省及旧观察始终保留旧计算和checksum。 */
+  Evaluation read(StrategySimAnalysisQuery.Run run, Instant from, Instant to, Instant asOf, String method) {
+    if (method == null || METHOD.equals(method)) return read(run, from, to, asOf);
+    if (!CLOSED_BAR_METHOD.equals(method)) throw new IllegalArgumentException("UNSUPPORTED_FORWARD_VALUATION_METHOD");
+    return readClosedBars(run, from, to, asOf);
+  }
+
+  private Evaluation readClosedBars(StrategySimAnalysisQuery.Run run, Instant from, Instant to, Instant requestedAsOf) {
+    Instant asOf = requestedAsOf == null ? clock.instant().truncatedTo(ChronoUnit.MICROS) : requestedAsOf;
+    if (from == null || to == null || !from.isBefore(to) || !from.equals(from.truncatedTo(ChronoUnit.HOURS))
+        || !to.equals(to.truncatedTo(ChronoUnit.HOURS))
+        || Duration.between(from, to).compareTo(Duration.ofDays(90)) > 0 || asOf.isAfter(clock.instant()))
+      throw new IllegalArgumentException("INVALID_FORWARD_OBSERVATION_RANGE");
+    boolean actual = Boolean.TRUE.equals(jdbc.queryForObject(
+        "SELECT EXISTS(SELECT 1 FROM continuous_sim_runs WHERE paper_run_id=?)", Boolean.class, run.paperRunId()));
+    boolean identity = run.strategyVersionId() != null && !run.strategyVersionId().isBlank()
+        && run.publishId() != null && !run.publishId().isBlank();
+    String reason = !actual ? "REPLAY_EVENT_TIME" : !identity ? "SOURCE_IDENTITY_UNAVAILABLE"
+        : !"BTC-USDT".equals(run.symbol()) || !"1h".equals(run.intervalCode()) ? "UNSUPPORTED_VALUATION_MARKET"
+        : run.createdAt() == null || run.createdAt().isAfter(asOf) ? "RUN_NOT_AVAILABLE_AS_OF"
+        : to.isAfter(asOf) ? "OBSERVATION_NOT_FULLY_DUE" : null;
+    String timeBasis = actual ? "ACTUAL_EVENT_TIME" : "REPLAY_EVENT_TIME";
+    var prices = new ClosedBarValuation.Result(List.of(), List.of(), reason);
+    Coverage coverage = new Coverage(new Samples(Duration.between(from, to).toHours(), 0, 0,
+        Duration.between(from, to).toHours(), "UNAVAILABLE", List.of(), false), List.of(), false);
+    var full = StrategySimPerformanceQuery.unavailable("UNAVAILABLE", timeBasis, 3600, null).forRun(run.paperRunId());
+    List<StrategySimPerformanceQuery.Fill> fills = List.of();
+    List<OrderFact> orders = List.of();
+    List<RiskFact> risks = List.of();
+    boolean factsRead = false;
+    if (reason == null) {
+      factsRead = true;
+      prices = new ClosedBarValuation(jdbc, mapper).read(run, from, to, asOf);
+      coverage = coverage(run, from, to, asOf);
+      reason = prices.reason();
+      if (reason == null) {
+        var data = performance.readClosedBarObservation(run, from, to, asOf, prices.marks());
+        full = data.performance(); fills = data.fills();
+        if (!"AVAILABLE".equals(full.status())) reason = full.status();
+        else if (full.initialEquity() == null || full.initialEquity().signum() <= 0)
+          reason = "NON_POSITIVE_OPENING_EQUITY";
+        else if (!"AVAILABLE".equals(coverage.samples().status())) reason = "INCOMPLETE_OR_INSUFFICIENT_OBSERVATION";
+      }
+      orders = orders(run, from, to, asOf); risks = risks(run, from, to, asOf);
+    }
+    boolean limited = orders.size() > MAXIMUM || risks.size() > MAXIMUM || coverage.samples().windowLimited()
+        || full.status().endsWith("WINDOW_LIMITED") || "VALUATION_WINDOW_LIMITED".equals(reason);
+    if (limited) reason = "OBSERVATION_WINDOW_LIMITED";
+    String status = !actual || !identity || "UNSUPPORTED_VALUATION_MARKET".equals(reason) ? "NOT_COMPARABLE"
+        : "OBSERVATION_NOT_FULLY_DUE".equals(reason) || Duration.between(from, to).toHours() < 2
+        ? "INSUFFICIENT_SAMPLES" : reason == null ? "AVAILABLE" : "UNAVAILABLE";
+    if (reason == null && !"AVAILABLE".equals(status)) reason = "TWO_COMPLETED_HOURLY_SLOTS_REQUIRED";
+    boolean comparable = "AVAILABLE".equals(status);
+    var calculated = metrics(from, to, asOf, full, fills, orders, risks, comparable, limited, actual && factsRead,
+        full.samples().stream().map(StrategySimPerformanceQuery.Sample::decisionId).collect(Collectors.toSet()));
+    var details = (ObjectNode) methodDetails(calculated, full, factsRead ? coverage : null, from, to, actual);
+    String priceDigest = digest(prices.prices());
+    details.set("closedBarValuation", closedBarDetails(prices, asOf, priceDigest, status, reason));
+    details.set("benchmarks", benchmarks(full, run.symbol(), from, to, asOf, priceDigest, comparable, reason));
+    details.put("turnoverDefinition", "ABSOLUTE_TRADED_NOTIONAL_DIVIDED_BY_MEAN_TARGET_HOURLY_BOUNDARY_EQUITY");
+    var findings = new ArrayList<Finding>();
+    findings.add(new Finding(comparable ? "OBSERVATION_AVAILABLE" : "VALUATION_UNAVAILABLE", status,
+        comparable ? "DATA_QUALITY_IS_NOT_STRATEGY_PROFITABILITY" : reason, from, to, null));
+    if (coverage.samples().missing() > 0 || coverage.samples().unknown() > 0)
+      findings.add(new Finding("DATA_INCOMPLETE", coverage.samples().status(),
+          "PRICE_COVERAGE_DOES_NOT_PROVE_STRATEGY_DECISION_COVERAGE", from, to,
+          coverage.samples().missing() + coverage.samples().unknown()));
+    String watermark = digest(Map.of("run", run.paperRunId(), "asOf", asOf, "coverage", coverage.facts(),
+        "prices", prices.prices(), "fills", fills, "orders", orders, "risks", risks));
+    boolean runKnown = run.createdAt() != null && !run.createdAt().isAfter(asOf);
+    Instant dueTo = to.isAfter(asOf) ? asOf.truncatedTo(ChronoUnit.HOURS) : to;
+    if (dueTo.isBefore(from)) dueTo = from;
+    var result = new Evaluation(run.paperRunId(), run.canonicalAccountId(), runKnown ? run.strategyVersionId() : null,
+        runKnown ? run.publishId() : null,
+        timeBasis, from, to, asOf, from, dueTo,
+        full.coverageStart(), full.coverageEnd(), watermark, CLOSED_BAR_METHOD, null, coverage.samples(),
+        displayed(full, comparable), calculated.metrics(), frozenCostAssumptions(runKnown ? run.configSnapshotJson() : null, mapper),
+        details, List.copyOf(findings), status, reason);
+    ObjectNode semantic = mapper.valueToTree(result); semantic.remove("checksum");
+    return result.withChecksum(digest(semantic));
+  }
+
+  private JsonNode closedBarDetails(ClosedBarValuation.Result result, Instant asOf, String priceDigest,
+      String status, String reason) {
+    ObjectNode details = mapper.createObjectNode();
+    details.put("status", status); details.set("reason", mapper.valueToTree(reason));
+    details.put("source", "CONTINUOUS_SIM_BARS");
+    details.put("priceMethod", "PREVIOUS_CONFIRMED_HOURLY_CLOSE");
+    details.put("economicBoundary", "STRICTLY_BEFORE_BOUNDARY");
+    details.set("knowledgeCutoff", mapper.valueToTree(asOf));
+    details.put("maximumLatenessSeconds", ClosedBarValuation.MAXIMUM_LATENESS_SECONDS);
+    details.put("collectionMethod", ClosedBarValuation.COLLECTION_METHOD);
+    details.put("maximumClockOffsetSeconds", ClosedBarValuation.MAXIMUM_CLOCK_OFFSET_SECONDS);
+    details.put("gridPointCount", result.prices().size()); details.put("priceDigest", priceDigest);
+    details.put("drawdownSampling", "HOURLY_CLOSE_NOT_INTRAHOUR");
+    details.set("prices", mapper.valueToTree(result.prices()));
+    return details;
+  }
+
+  /** 相同B和价格digest的联立研究投影；策略不可比时不单独给出似乎完整的基准。 */
+  static JsonNode benchmarks(StrategySimPerformanceQuery.View full, String symbol, Instant from, Instant to,
+      Instant asOf, String priceDigest, boolean comparable, String reason) {
+    ObjectMapper mapper = new ObjectMapper().findAndRegisterModules()
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    ObjectNode result = mapper.createObjectNode();
+    result.put("status", comparable ? "AVAILABLE" : "UNAVAILABLE");
+    result.set("reason", mapper.valueToTree(reason)); result.put("symbol", symbol); result.put("quoteCurrency", "USDT");
+    result.set("from", mapper.valueToTree(from)); result.set("to", mapper.valueToTree(to)); result.set("asOf", mapper.valueToTree(asOf));
+    result.put("priceDigest", priceDigest);
+    BigDecimal budget = comparable ? full.initialEquity() : null;
+    result.set("initialEquity", mapper.valueToTree(budget));
+    BigDecimal buyReturn = comparable ? full.samples().getLast().markPrice()
+        .divide(full.samples().getFirst().markPrice(), MathContext.DECIMAL128).subtract(BigDecimal.ONE) : null;
+    for (String type : List.of("cash", "buyHold")) {
+      ObjectNode benchmark = result.putObject(type);
+      benchmark.put("status", comparable ? "AVAILABLE" : "UNAVAILABLE");
+      BigDecimal ratio = comparable ? "cash".equals(type) ? BigDecimal.ZERO : buyReturn : null;
+      benchmark.set("returnRatio", mapper.valueToTree(ratio));
+      benchmark.set("finalEquity", mapper.valueToTree(comparable ? budget.multiply(BigDecimal.ONE.add(ratio), MathContext.DECIMAL128) : null));
+      benchmark.set("excessReturn", mapper.valueToTree(comparable ? full.returnRatio().subtract(ratio) : null));
+      benchmark.put("costAssumption", "cash".equals(type) ? "NO_INTEREST" : "GROSS_PRICE_RETURN_EXCLUDES_FEES_SLIPPAGE_EXECUTABILITY");
+    }
+    return result;
   }
 
   /** 调用者先完成原实例所有者/租户/费用来源校验，并在同一REPEATABLE_READ快照内调用。 */
@@ -295,7 +422,8 @@ public class StrategySimForwardEvaluationQuery {
     BigDecimal days = frequencyBasis.naturalDays();
     BigDecimal frequency = comparable && days.signum() > 0 ? BigDecimal.valueOf(current.size()).divide(days, MathContext.DECIMAL128) : null;
     // 起点前一根bar可以提供开端估值，但不属于目标期已完成的小时槽位，不能多算进换手分母。
-    var hourly = full.samples().stream().filter(sample -> "SIGNAL_CLOSE".equals(sample.markType())
+    var hourly = full.samples().stream().filter(sample -> ("SIGNAL_CLOSE".equals(sample.markType())
+        || "CLOSED_BAR_PERIOD_END".equals(sample.markType()) && sample.eventAt().isAfter(from))
         && observedHourlyDecisions.contains(sample.decisionId())).toList();
     BigDecimal turnover = null, mean = null;
     if (comparable && !hourly.isEmpty()) {

@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -43,6 +44,7 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
     private final HttpClient http;
     private final URI origin;
     private final ObjectMapper mapper;
+    private final Clock clock;
 
     public OkxClosedBarMarketFeed() {
         this(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build(),
@@ -58,6 +60,11 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
     }
 
     OkxClosedBarMarketFeed(HttpClient http, URI origin, ObjectMapper mapper) {
+        this(http, origin, mapper, Clock.systemUTC());
+    }
+
+    OkxClosedBarMarketFeed(HttpClient http, URI origin, ObjectMapper mapper, Clock clock) {
+        this.clock = Objects.requireNonNull(clock);
         this.http = Objects.requireNonNull(http);
         this.origin = Objects.requireNonNull(origin);
         this.mapper = Objects.requireNonNull(mapper);
@@ -145,7 +152,7 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
             throw new IllegalStateException("PUBLIC_MARKET_QUOTE_UNAVAILABLE", ex);
         }
         if (firstOpen.equals(endExclusive)) {
-            return new Observation(serverTime, serverTime, List.of(),
+            return new Observation(serverTime, receivedAt(serverTime), List.of(),
                     new Rule(serverTime, rule.state(), rule.tickSize(), rule.lotSize(), rule.minimumSize()), quote);
         }
         String path = "/api/v5/market/history-candles?instId=BTC-USDT&bar=1H&after="
@@ -156,6 +163,8 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
                 || candles.path("data").size() > maximumBars) {
             throw new IllegalStateException("PUBLIC_MARKET_RESPONSE_INVALID");
         }
+        // 接收时刻在完整响应读取与解析之后取得，不把请求前的venue时间当作已经收到行情。
+        Instant receivedAt = receivedAt(serverTime);
         List<HistoricalBar> bars = new ArrayList<>();
         for (JsonNode row : candles.path("data")) {
             if (!row.isArray() || row.size() < 9) {
@@ -171,11 +180,22 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
                     open, open.plus(Duration.ofHours(1)).minusMillis(1),
                     decimal(row, 1), decimal(row, 2), decimal(row, 3), decimal(row, 4),
                     decimal(row, 5), row.get(7).isNull() ? null : decimal(row, 7),
-                    null, "OK", row.toString(), serverTime));
+                    null, "OK", mapper.createObjectNode()
+                            .put("collectionMethod", "RESPONSE_COMPLETED_UTC_V1")
+                            .put("receivedAt", receivedAt.toString()).put("serverTime", serverTime.toString())
+                            .set("candle", row).toString(), serverTime));
         }
         bars.sort(Comparator.comparing(HistoricalBar::openTime));
-        return new Observation(serverTime, serverTime, List.copyOf(bars),
+        return new Observation(serverTime, receivedAt, List.copyOf(bars),
                 new Rule(serverTime, rule.state(), rule.tickSize(), rule.lotSize(), rule.minimumSize()), quote);
+    }
+
+    private Instant receivedAt(Instant serverTime) {
+        Instant received = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        // 完整公开请求链有有界重试；超出时钟容差时拒绝新采集，不能生成可信接收证明。
+        if (received.isBefore(serverTime.minusSeconds(5)) || received.isAfter(serverTime.plusSeconds(120)))
+            throw new IllegalStateException("PUBLIC_MARKET_CLOCK_SKEW");
+        return received;
     }
 
     private BigDecimal decimal(JsonNode row, int index) {

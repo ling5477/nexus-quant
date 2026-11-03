@@ -3,7 +3,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {selectSessionIdentity, useAuthStore} from '@/store/auth-store';
 import {paperTradingQueryKeys} from '@/api/query-keys';
 import {simAnalysisApi, type SimAnalysisRun} from '../api/analysis';
-import {observationsApi, type EvaluationWindow, type ObservationCreateRequest, type ObservationReviewRequest} from '../api/observations';
+import {observationsApi, observationMethod, type EvaluationWindow, type ObservationCreateRequest, type ObservationReviewRequest} from '../api/observations';
 import {readObservationOperation, storeObservationOperation, executeObservationOperation, observationOperationChanged,
     clearObservationOperation, type PendingObservationOperation} from '../observation-operations';
 import type {AppApiError} from '@/types/api';
@@ -15,8 +15,8 @@ export function useForwardSimObservations(run: SimAnalysisRun, range: Evaluation
     const scoped = (key: readonly unknown[]) => [...key, session];
     const cache = useQueryClient();
     const [stored, setStored] = useState<{owner?: number; run: string; pending: PendingObservationOperation | null; storageError: boolean}>({owner, run: run.paperRunId, pending: null, storageError: false});
-    const scope = useRef({owner, run: run.paperRunId, active: true});
-    scope.current.owner = owner; scope.current.run = run.paperRunId;
+    const scope = useRef({owner, session, run: run.paperRunId, active: true});
+    scope.current.owner = owner; scope.current.session = session; scope.current.run = run.paperRunId;
     useEffect(() => {scope.current.active = true; return () => {scope.current.active = false;};}, []);
     useEffect(() => {
         const refresh = () => {
@@ -26,15 +26,18 @@ export function useForwardSimObservations(run: SimAnalysisRun, range: Evaluation
         refresh(); window.addEventListener(observationOperationChanged, refresh); window.addEventListener('storage', refresh);
         return () => {window.removeEventListener(observationOperationChanged, refresh); window.removeEventListener('storage', refresh);};
     }, [owner, run.paperRunId]);
-    const rawPerformance = useQuery({queryKey: scoped(paperTradingQueryKeys.performance(owner, run.paperRunId, null, null)),
-        queryFn: ({signal}) => simAnalysisApi.performance(run.paperRunId, null, null, signal), enabled: !!owner && !range && !reviewId,
-        retry: false, refetchInterval: 30_000});
-    const evaluation = useQuery({queryKey: scoped(paperTradingQueryKeys.forwardEvaluation(owner, run.paperRunId, range)),
-        queryFn: ({signal}) => observationsApi.evaluate(run, range!, signal), enabled: !!owner && !!range && !reviewId, retry: false});
     const list = useQuery({queryKey: scoped(paperTradingQueryKeys.observations(owner, run.paperRunId, offset)),
         queryFn: ({signal}) => observationsApi.list(run, offset, signal), enabled: !!owner, retry: false});
     const detail = useQuery({queryKey: scoped(paperTradingQueryKeys.observation(owner, run.paperRunId, observationId, reviewsOffset)),
         queryFn: ({signal}) => observationsApi.detail(observationId!, run, signal, reviewsOffset), enabled: !!owner && !!observationId, retry: false});
+    const method = observationMethod(detail.isError ? undefined : detail.data?.observation);
+    const targetReady = !observationId || (!detail.isError && !!detail.data && !detail.isFetching);
+    const rawPerformance = useQuery({queryKey: scoped(paperTradingQueryKeys.performance(owner, run.paperRunId, null, null)),
+        queryFn: ({signal}) => simAnalysisApi.performance(run.paperRunId, null, null, signal), enabled: !!owner && !range && !reviewId && !observationId,
+        retry: false, refetchInterval: 30_000});
+    const evaluation = useQuery({queryKey: scoped(paperTradingQueryKeys.forwardEvaluation(owner, run.paperRunId, range, method)),
+        queryFn: ({signal}) => observationsApi.evaluate(run, range!, signal, method!),
+        enabled: !!owner && !!range && !reviewId && targetReady && !!method, retry: false});
     const review = useQuery({queryKey: scoped(paperTradingQueryKeys.observationReview(owner, run.paperRunId, observationId, reviewId)),
         queryFn: ({signal}) => observationsApi.review(observationId!, reviewId!, run, signal), enabled: !!owner && !!observationId && !!reviewId, retry: false});
     const mutation = useMutation({mutationFn: async (action: {kind: 'OBSERVATION'; input: ObservationCreateRequest}
@@ -50,7 +53,8 @@ export function useForwardSimObservations(run: SimAnalysisRun, range: Evaluation
                 ? {operationId: crypto.randomUUID(), paperRunId: run.paperRunId, kind: 'OBSERVATION', parentKey: run.paperRunId, input: action.input}
                 : {operationId: crypto.randomUUID(), paperRunId: run.paperRunId, kind: 'OBSERVATION_REVIEW', parentKey: action.observationId, input: action.input};
         }
-        const current = () => scope.current.active && scope.current.owner === owner && scope.current.run === run.paperRunId;
+        const current = () => scope.current.active && scope.current.owner === owner && scope.current.session === session
+            && selectSessionIdentity(useAuthStore.getState()) === session && scope.current.run === run.paperRunId;
         try {
             const result = await executeObservationOperation(owner, run, original, action.kind !== 'QUERY', current,
                 action.kind === 'OBSERVATION' || action.kind === 'OBSERVATION_REVIEW');
@@ -68,5 +72,5 @@ export function useForwardSimObservations(run: SimAnalysisRun, range: Evaluation
         if (owner && stored.pending?.rejected) clearObservationOperation(owner, run.paperRunId, stored.pending.operationId);
     };
     const visibleStorage = stored.owner === owner && stored.run === run.paperRunId ? stored : {pending: null, storageError: false};
-    return {rawPerformance, evaluation, list, detail, review, mutation, pending: visibleStorage.pending, storageError: visibleStorage.storageError, discardRejected};
+    return {rawPerformance, evaluation, list, detail, review, mutation, method, targetReady, pending: visibleStorage.pending, storageError: visibleStorage.storageError, discardRejected};
 }

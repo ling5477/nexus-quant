@@ -531,8 +531,8 @@ export const paperTradingQueryKeys = {
     operations: (owner: number | undefined, session: string | null, run: string, part: string) =>
         ['paper-trading-runs', 'operations', owner, session, run, part] as const,
     dailyEvidence: (owner: number | undefined, session: string | null, run: string, observation: string | null,
-        range: {from: string; to: string; asOf: string} | null) =>
-        ['paper-trading-runs', 'daily-evidence', owner, session, run, observation, range?.from, range?.to, range?.asOf] as const,
+        range: {from: string; to: string; asOf: string} | null, method?: string | null) =>
+        ['paper-trading-runs', 'daily-evidence', owner, session, run, observation, range?.from, range?.to, range?.asOf, method] as const,
     legacyAnalysis: (userId: number | undefined) =>
         ['paper-trading-runs', 'legacy-analysis', userId] as const,
     analysisCatalog: (userId: number | undefined, offset: number) =>
@@ -545,8 +545,8 @@ export const paperTradingQueryKeys = {
         from: string | null,
         to: string | null,
     ) => ['paper-trading-runs', 'performance', userId, paperRunId, from, to] as const,
-    forwardEvaluation: (userId: number | undefined, run: string, range: {from: string; to: string; asOf: string} | null) =>
-        ['paper-trading-runs', 'forward-evaluation', userId, run, range?.from, range?.to, range?.asOf] as const,
+    forwardEvaluation: (userId: number | undefined, run: string, range: {from: string; to: string; asOf: string} | null, method?: string | null) =>
+        ['paper-trading-runs', 'forward-evaluation', userId, run, range?.from, range?.to, range?.asOf, method] as const,
     observationRoot: (userId: number | undefined, run: string) => ['paper-trading-runs', 'observations', userId, run] as const,
     observations: (userId: number | undefined, run: string, offset: number) =>
         ['paper-trading-runs', 'observations', userId, run, 'list', offset] as const,
