@@ -1,3 +1,13 @@
+# 1.0.5 — 发行候选 / Release candidate
+
+目标版本1.0.5，Schema V52；当前正式Release仍为[v1.0.4](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)。本节固定功能范围，不预先声明候选包、准确CI、Windows安装/升级/恢复或Companion资格通过；最终以同一冻结源码的实际证据为准。没有创建Tag或公开Release。
+
+- Continuous SIM运营可见性、UTC Daily Evidence、可信闭合小时估值、同窗Cash与Buy & Hold基准复用Canonical事实；Java保持唯一交易authority，Python Companion继续独立离线发行。
+- 七日自然时间运营验证PASS：2026-11-04T09:00:00Z～2026-11-11T09:00:00Z，168小时/169估值边界，缺失与执行异常0，窗口内62笔成交。固定AsOf=2026-11-17T02:06:08.364922Z，评价Checksum=4abbad501649860d571c34e330356f53e80a6af58ab7b30dbf0b23fd37d9bf43。窗后41笔成交单独保留。
+- 净收益-356.51 USDT、收益率-3.557%、最大小时回撤4.899%；稳定盈利能力NOT_ESTABLISHED。OWNER决定RETURN_TO_RESEARCH，原观察CLOSED/revision=1。该运营证据不是功能CI或策略盈利证明；阿里云Ubuntu24.04仅SCOPED_OPERATIONAL_EVIDENCE，不授予Linux发行资格。
+
+已知限制保留：观察到期不会自动暂停Continuous SIM；父Paper Run RUNNING与Continuous SIM STOPPED是不同生命周期；首页及行情页不具备真正实时K线订阅；保存OKX Demo凭据不表示余额同步或交易授权。原Forward CI根因UNRESOLVED及全部原失败/差异/跳过结果继续保留，不因后续成功改判。LIVE保持DISABLED、Kill Switch保持ENGAGED；本次准备不新增策略、SIM或观察。
+
 # 1.0.4 — 已发布 / Released
 
 Release Date: 2026-11-02 (UTC)

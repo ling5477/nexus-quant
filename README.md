@@ -1,3 +1,7 @@
+## v1.0.5发行候选准备
+
+开发目标为NexusQuant Self-Hosted 1.0.5与独立Python Research Companion 1.0.5，Schema V52；最新正式发行仍为v1.0.4，下面的正式资产身份与历史资格不变。候选仅进入源码冻结与Windows11 amd64/Docker Linux Containers/PG16及独立CPython3.11离线资格验证，尚不声明通过或已公开。功能、七日运营证据与已知限制见[CHANGELOG](CHANGELOG.md)。七日策略收益为负，盈利能力未建立；研究复盘RETURN_TO_RESEARCH/CLOSED，Continuous SIM已暂停，不自动启动新研究或交易。
+
 # NexusQuant
 
 NexusQuant是面向OKX Spot的研究与模拟交易工作台。Java Control Plane是唯一canonical Risk / Order / Trade / Ledger权威。
