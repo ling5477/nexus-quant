@@ -1,6 +1,8 @@
-## 当前v1.0.5发行候选范围（2026-11-17）
+## 当前v1.0.5发行候选资格（2026-11-17）
 
-唯一authority见[STATUS](STATUS.md)。V105-01/02已完成准确PR/CI交付；V105-03七日168小时/169边界运营验证PASS，策略盈利NOT_ESTABLISHED，人工RETURN_TO_RESEARCH/CLOSED。Continuous SIM STOPPED、两个指定调度DISABLED，原62窗内和41窗后成交保持。当前工作是1.0.5精确源码投影、版本对齐、独立检查、准确新CI及Windows/Python候选资格；未通过的资格不预填。限定功能为运营可见性、UTC Daily Evidence、可信闭合小时估值、同窗Cash/Buy & Hold和七日自然运营验证，不增加交易功能。保留v1.0.4发布及全部历史失败；不新增SIM/观察，不改云端，不创建Tag或公开Release。
+唯一authority见[STATUS](STATUS.md)。NQ_V105_RELEASE_READINESS_QUALIFIED，Source eb323eddbf5a81416e623b6ece083026b7dd5f67 / PR108 / Source CI44046457785与merge CI44050203113各9/9。Windows11 amd64、Docker Desktop Linux Containers、PG16/V52安装/非空1.0.4升级/备份恢复/核心页面/主动回滚/一次真实失败自动恢复及独立Python离线资格完成，限定QUALIFIED_FOR_VERIFIED_SCOPE。三个原driver FAILED、原故障update FAILED、raw DIFFERENT和旧CI根因UNRESOLVED保留。候选包及具体证据由STATUS登记；这四份current文档不进入固定发行投影。
+
+V105-01/02已交付，六项限定功能与七日168小时/169边界运营验证已接受；策略盈利NOT_ESTABLISHED、RETURN_TO_RESEARCH/CLOSED、62窗内与41窗后独立保持。LIVE DISABLED、Kill ENGAGED，原Continuous STOPPED及两调度DISABLED。Linux仅SCOPED_OPERATIONAL_EVIDENCE。正式Release仍v1.0.4，v1.0.5未Tag/未公开发布/未部署；下一任务NQ-V105-RELEASE-PUBLICATION，等待相应指令，不自动执行。
 
 # Roadmap
 

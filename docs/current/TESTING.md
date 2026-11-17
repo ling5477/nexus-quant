@@ -1,4 +1,14 @@
-## NQ-V105-RELEASE-READINESS（2026-11-17，源码准备）
+## NQ-V105-RELEASE-READINESS限定资格（2026-11-17）
+
+当前authority见[STATUS](STATUS.md)。固定Source=eb323eddbf5a81416e623b6ece083026b7dd5f67 / Tree=4f224e7ee9de35b128b27eed34a0d1ca43fd6830；PR108，准确Source CI44046457785与merge CI44050203113均9/9 SUCCESS。29项来源测试、9项Companion包装测试、生产闭包2237文件/2179 runtime/52 migration/missing0、双导出metadata字节匹配、boundary通过、secretFindings=0（raw1为协议分隔符误报）；一次独立检查及frontend runner两行增量补核已接受。
+
+限定Windows11 amd64 / Docker Desktop Linux Containers / PG16.15/V52：正式ZIP新安装/初始认证安全、非空v1.0.4→1.0.5普通升级(transaction20261117T093259139Z-3f988a89)、备份恢复、真实安装包核心UI及只读Continuous/估值拒绝、主动回滚、一次DB_MAY_CHANGE后的真实端口冲突自动恢复PASS。故障transaction=20261117T095411683Z-7f2ee738，原update exit1/FAILED；原安装器自动恢复1.0.4/V52、pending清除，非手工回滚代替。132表历史行/schema/稳定控制保持，canonical32 MATCH；scheduler三时间字段集合及cursor.updated_at可推进，raw DIFFERENT保留，不虚称全部raw相同。独立Companion CPython3.11.9/NumPy2.3.5离线hash安装、CLI、三因子/Artifact完整字节兼容与两个负例PASS；721根合成兼容向量不是自然市场证据。
+
+原qualification/02/03 driver依次FAILED于错误GET405、restore启动前非法日志路径、区间内重复登录新增auth_sessions。原FAILED及harness hash保留；REMAINING_QUALIFICATION_04事前冻结新控制器/合同、复用同候选有效子范围，认证先于UI baseline，完成剩余范围。首次Source CI44044745109的Ubuntu26.04/Playwright1.58.2失败保留，仅pin原frontend job至24.04并重绑定既有例外digest；新准确CI证明受支持环境，不改规则。Docker默认地址池耗尽/前置driver失败均保留，本任务使用两条隔离非重叠网络，不改全局配置。历史PR101根因UNRESOLVED与原PG浏览器条件SKIP1保留，不计PASS。
+
+七日云端168h/169边界、62窗内/41窗后、原AsOf/checksum及RETURN_TO_RESEARCH/CLOSED仅引用封存证据，未重新访问云端或重跑观察；盈利NOT_ESTABLISHED。全部候选摘要、原失败和限定范围详见STATUS及维护者本地NQ_V105_RELEASE_READINESS.md。任务实例停止，正式包/数据库/备份/关键证据保留。没有Tag、GitHub Release、云端变更或新SIM；Linux发行未资格。该四文档后续准确CI单列于外部报告，不替换固定Source及其CI。
+
+## 历史准备时点：NQ-V105-RELEASE-READINESS（2026-11-17）
 
 以dev 78078b18e5a2c37f83d92e0bdb63f2203b14f974为基线，同步V105-01 PR106/最终CI41573371353与mergeCI41574653869、V105-02 PR107/最终CI41586151641与mergeCI41588992852。原七日168小时/169边界/62窗内/41窗后及原AsOf/Checksum、RETURN_TO_RESEARCH/CLOSED按既有证据接受；不是本轮新CI或Linux发行资格。版本和独立Companion目标1.0.5，精确补8个生产依赖，白名单规则/迁移/Python算法保持。当前新候选构建、安装升级恢复、准确CI与独立检查尚待执行，结果在外部NQ_V105_RELEASE_READINESS.md按真实身份补充；不预填PASS，不改原FAILED/DIFFERENT或UNRESOLVED记录。
 
