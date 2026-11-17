@@ -97,5 +97,13 @@
     "exactHeadCiForNewSourceCommit": "PENDING_NOT_RUN",
     "publicRelease": "NOT_PUBLISHED",
     "upgrade": "UPGRADE_NOT_VERIFIED"
+  },
+  "candidateQualification": {
+    "targetVersion": "1.0.5",
+    "status": "PENDING_CANDIDATE_QUALIFICATION",
+    "intendedScope": "Windows 11 amd64; Docker Desktop running Linux containers; PostgreSQL 16; Flyway V52",
+    "linuxCloudEvidence": "SCOPED_OPERATIONAL_EVIDENCE_ONLY_NOT_FORMALLY_QUALIFIED_LINUX_RELEASE",
+    "publication": "NOT_PUBLISHED",
+    "historicalQualifications": "RETAINED_WITH_ORIGINAL_SOURCE_AND_SCOPE"
   }
 }

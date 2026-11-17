@@ -1,6 +1,6 @@
 # V1 发布源码边界
 
-`source-manifest.json` 使用逐文件精确列表，当前候选目标版本为 `1.0.4`，必须与同一提交内的 `VERSION` 一致。清单与源码必须来自同一个完整 40 位 Git commit；没有工作区复制、通配符发现或导出时重写文件。新增文件默认 `REVIEW_REQUIRED`，后续安装器与文档必须经过审查后显式加入清单。Java 主源码/正式资源与 frontend/src 的新增文件若未纳入，覆盖门禁拒绝导出；已审查的开发配置、开发页和未使用素材继续排除。发现范围不会自动将文件加入发行包，也不能通过改标 EXCLUDE_TEST 隐藏正式源码。
+`source-manifest.json` 使用逐文件精确列表，当前候选目标版本为 `1.0.5`，必须与同一提交内的 `VERSION` 一致。清单与源码必须来自同一个完整 40 位 Git commit；没有工作区复制、通配符发现或导出时重写文件。新增文件默认 `REVIEW_REQUIRED`，后续安装器与文档必须经过审查后显式加入清单。Java 主源码/正式资源与 frontend/src 的新增文件若未纳入，覆盖门禁拒绝导出；已审查的开发配置、开发页和未使用素材继续排除。发现范围不会自动将文件加入发行包，也不能通过改标 EXCLUDE_TEST 隐藏正式源码。
 
 ```powershell
 python scripts/release/release_source.py export --repo E:/Project/nexus-quant --commit <40-hex> --output E:/release-export --audit E:/release-audit.json
@@ -90,3 +90,7 @@ Python使用release/python-companion-source-manifest.json精确列表，通过sc
 ## v1.0.4候选来源
 
 本轮只新增两份已接受前端生产依赖的INCLUDE_RUNTIME：ForwardSimEventDiagnostics.tsx及factor-research-handoff.ts；不修改coverage规则，不加入测试源码。版本与独立Companion均1.0.4，NumPy2.3.5和数学/Artifact合同不变；research/py/INSTALL.md进入独立Companion投影，继续排除于Self-Hosted。V52及V1～V52字节不变。新候选须独立完成准确源码CI、不可变来源与包级资格；v1.0.3的Source、Snapshot、Tag、资产及原失败记录不变，本轮不创建新Snapshot/Tag/Release。
+
+## v1.0.5候选来源
+
+仅逐文件纳入V105-01/02新增的8个正式生产依赖；覆盖规则、排除规则和开发测试边界不变。当前版本及独立Companion为1.0.5，V1～V52迁移与Python研究算法不变。七日云端运营证据不替代功能CI或Linux发行资格；原负收益、RETURN_TO_RESEARCH及已发布v1.0.4身份保持。候选源码、CI、Windows升级/恢复及离线Companion资格必须绑定实际结果，本阶段不创建Tag、Release Snapshot或GitHub Release。

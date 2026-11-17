@@ -1,3 +1,8 @@
+## NQ-V105-RELEASE-READINESS（2026-11-17，源码准备）
+
+以dev 78078b18e5a2c37f83d92e0bdb63f2203b14f974为基线，同步V105-01 PR106/最终CI41573371353与mergeCI41574653869、V105-02 PR107/最终CI41586151641与mergeCI41588992852。原七日168小时/169边界/62窗内/41窗后及原AsOf/Checksum、RETURN_TO_RESEARCH/CLOSED按既有证据接受；不是本轮新CI或Linux发行资格。版本和独立Companion目标1.0.5，精确补8个生产依赖，白名单规则/迁移/Python算法保持。当前新候选构建、安装升级恢复、准确CI与独立检查尚待执行，结果在外部NQ_V105_RELEASE_READINESS.md按真实身份补充；不预填PASS，不改原FAILED/DIFFERENT或UNRESOLVED记录。
+
+
 # V1 Release 准备摘要（2026-10-20）
 
 - 基线 `565764cce5862ecc02ca7d1ce18d56fc382d8841` / PR #64 / exact-head CI `39373837941`：9/9 SUCCESS；本轮新文档/Snapshot提交不在该CI内；其远端exact-head CI为待发布门槛。

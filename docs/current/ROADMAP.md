@@ -1,3 +1,7 @@
+## 当前v1.0.5发行候选范围（2026-11-17）
+
+唯一authority见[STATUS](STATUS.md)。V105-01/02已完成准确PR/CI交付；V105-03七日168小时/169边界运营验证PASS，策略盈利NOT_ESTABLISHED，人工RETURN_TO_RESEARCH/CLOSED。Continuous SIM STOPPED、两个指定调度DISABLED，原62窗内和41窗后成交保持。当前工作是1.0.5精确源码投影、版本对齐、独立检查、准确新CI及Windows/Python候选资格；未通过的资格不预填。限定功能为运营可见性、UTC Daily Evidence、可信闭合小时估值、同窗Cash/Buy & Hold和七日自然运营验证，不增加交易功能。保留v1.0.4发布及全部历史失败；不新增SIM/观察，不改云端，不创建Tag或公开Release。
+
 # Roadmap
 
 当前阶段和安全状态由 [STATUS.md](STATUS.md) 的机器区块唯一拥有。本文件解释当前迭代及历史发布动作，不授予提交、公开发行或部署权限。
@@ -10,7 +14,7 @@ V104-01原24小时自然首用、02只读事件诊断和03独立Companion研究�
 
 两轮原取证driver FAILED、原故障update exit1、raw DIFFERENT、历史CI根因UNRESOLVED及原Forward目标NOT_COMPARABLE保留；24小时不证明长期盈利。仅Windows11 amd64/Docker Linux Containers/PG16.15/V52、独立Companion Windows CPython3.11.9/NumPy2.3.5获限定资格；其他平台/Python/长期运行未资格。Java是唯一交易authority，LIVE=DISABLED、Kill Switch=ENGAGED。
 
-下一工作批次仅登记NQ-V105-PLANNING / NOT_STARTED，next_action=NQ-V105-PLAN。本轮不定义v1.0.5目标、范围或实施步骤；下一规划须另行发起。
+以上保留v1.0.4发行后时点；当前V105功能收口和候选准备见本页上方及STATUS机器区块。
 
 ## 历史记录：v1.0.2及v1.0.3准备
 

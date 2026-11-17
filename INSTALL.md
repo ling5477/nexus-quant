@@ -1,3 +1,7 @@
+# NexusQuant 1.0.5候选安装范围
+
+当前源码目标1.0.5/V52，正式发布仍为v1.0.4。候选验证目标是Windows11 amd64、已运行Docker Desktop Linux Containers、PostgreSQL16与Flyway V52；独立Python Companion为Windows amd64/CPython3.11离线环境。新安装、v1.0.4→v1.0.5普通升级、备份恢复、主动回滚与受控失败自动恢复均须以实际候选包身份单独验证，未执行不得宣称通过。下面v1.0.4的链接、摘要、来源及资格按原历史身份保留，不作为1.0.5新包证明。
+
 # NexusQuant 1.0.4安装与运维
 
 [v1.0.4](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)已于2026-11-02T12:37:58Z正式发布，Release ID431438991。固定Qualified Source=f5a24b5d9ac5c89dc7fbf6a53361f5d2b1a31bd0；本次开发文档同步不重建、替换正式包或变更其SHA256。完整Source/Tree/CI、Snapshot/Tag、六资产与资格限制见[正式发行说明](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.4)。

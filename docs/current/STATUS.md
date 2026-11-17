@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-V104-03-OFFLINE-RESEARCH-HANDOFF
+accepted_batch=NQ-V105-02-TRUSTED-FORWARD-VALUATION
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=46159c1e687d4ec1089b8d10cac61f532897f512
-accepted_batch_acceptance_head=46159c1e687d4ec1089b8d10cac61f532897f512
-accepted_batch_ci_run=41317985113
-work_batch=NQ-V105-PLANNING
-work_batch_status=NOT_STARTED
+accepted_batch_implementation_commit=f8505f02186a980958fb785bb24ae77c678f5172
+accepted_batch_acceptance_head=f8505f02186a980958fb785bb24ae77c678f5172
+accepted_batch_ci_run=41586151641
+work_batch=NQ-V105-RELEASE-READINESS
+work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
 work_batch_commit=NONE
 work_batch_ci_run=NOT_RUN
-next_action=NQ-V105-PLAN
+next_action=NQ-V105-COMMIT
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -30,6 +30,22 @@ private_trading=NOT_IMPLEMENTED
 nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
+
+## v1.0.5功能收口与候选准备（2026-11-17）
+
+当前正式Release仍v1.0.4；GateZ固定身份及以下全部已发布和历史接受记录保留。V105-01/02功能已接受，最新功能accepted pair绑定V105-02真实候选/CI；本次版本/来源/文档更新尚待独立检查、准确新CI和包级资格，不用运营报告冒充功能CI，不预填未来Source/CI/包SHA或发行身份。
+
+| 功能接受 | 准确身份 |
+| --- | --- |
+| V105-01：运营可见性、UTC Daily Evidence | PR106；candidate eeee18987b4f2113ac320de8b39cc5de18ebbb94 / PR CI41573371353；merge dfbf14f57ab04e03368f0b25a2f709c9a73a12b5 / push CI41574653869，均9/9 SUCCESS |
+| V105-02：Trusted Closed-Bar Valuation与同窗Cash/Buy & Hold | PR107；candidate f8505f02186a980958fb785bb24ae77c678f5172 / PR CI41586151641；merge 78078b18e5a2c37f83d92e0bdb63f2203b14f974 / push CI41588992852，均9/9 SUCCESS |
+| V105-03：七日自然运营 | 原云端Source=78078b18…；2026-11-04T09:00:00Z～2026-11-11T09:00:00Z；168小时/169边界，缺失0/执行异常0，窗内62成交、窗后41单独保留；SCOPED_OPERATIONAL_EVIDENCE，不是新功能CI或Linux发行资格 |
+
+原Observation=430705bc-a42a-4fc9-91e7-c43ac98e8061；PaperRun=ptr-110a8e6e-0e62-429c-87f7-1d1b27805577；Publish=pub-2e4959d4-464d-4e2e-bdf8-3fa86d36a734；StrategyVersion=sv-faa06fdd-c4af-4e6c-90b0-a0f48d36bf8f。固定AsOf=2026-11-17T02:06:08.364922Z，Checksum=4abbad501649860d571c34e330356f53e80a6af58ab7b30dbf0b23fd37d9bf43；净收益-356.51 USDT/-3.557%，最大小时回撤4.899%。Operational Validation=PASS，Strategy Profitability=NOT_ESTABLISHED。
+
+Review=24436335-b57d-41dd-8683-26f76b48bf44 / OWNER1 / RETURN_TO_RESEARCH / CLOSED / revision1；原Continuous SIM=STOPPED，CONTINUOUS_SIM_POLL与PAPER_MATCHING均DISABLED/version2，其他七项不变，未终态订单0。父PaperRun仍RUNNING，不混同连续运行生命周期。完整运营证据及原始失败在维护者外部报告NQ_V105_03_FINAL_CLOSEOUT.md保留，不进入发行源码闭包，不重新采集/创建实验或观察。
+
+当前仅准备1.0.5源码与限定候选资格；Linux发行NOT_QUALIFIED，GitHub Release NOT_PUBLISHED。七日负收益、到期不自动暂停、实时K线订阅缺口、Demo凭据不等于余额同步/交易授权，以及旧Forward CI根因UNRESOLVED全部保留。一次有界独立源码检查已接受，未发现剩余阻断；准确新提交CI与包级资格仍待执行。LIVE=DISABLED，Kill Switch=ENGAGED。下一允许动作是提交已检查的候选，不授予部署、Tag或Release。
 
 ## 已发布v1.0.4固定身份与下一规划入口
 
@@ -67,7 +83,7 @@ Historical CI Root Cause=UNRESOLVED：PR101首次41317985113 attempt1/job1248819
 
 维护者本地原报告仅作内容身份引用，不将本地目录当公开下载链接：E:/Project/NQ_V104_RELEASE_PUBLICATION.md SHA256=77c75e49957ae74d8bb3f05d8db30c29643b41f9f558ee344d780be257d613e9；Final Admission=4cb26fb94e0445449331ad6cfe49b6fea5e48a56a0d2ca0aa060123e8bb81d62；Readiness=1fa5c352c0338b721bb47b187e0c8b0983bea809c76997e0f7461526adebd473；Final Notes=badf9e9a321d0c56880629fe04047208b77af260b3f5fc7d8d7be891015ca2f8。原机器证据、失败、正式包和运行资源保留，不归档数据库、配置或凭据到源码。
 
-GateZ冻结和最近功能接受pair保持：NQ-V104-03 / 46159c1e687d4ec1089b8d10cac61f532897f512 / CI41317985113。下一仅登记NQ-V105-PLANNING / NOT_STARTED / NONE / NOT_RUN，next_action=NQ-V105-PLAN；本轮不制定或实施v1.0.5。LIVE=DISABLED、Kill Switch=ENGAGED，Java仍是唯一canonical交易authority，Python无交易权限。
+GateZ冻结和最近功能接受pair保持：NQ-V104-03 / 46159c1e687d4ec1089b8d10cac61f532897f512 / CI41317985113。该发行后收口当时仅登记NQ-V105-PLANNING / NOT_STARTED；后续实际阶段已由上方v1.0.5记录与机器区块更新。LIVE=DISABLED、Kill Switch=ENGAGED，Java仍是唯一canonical交易authority，Python无交易权限。
 
 本次五项文档校验、准确文档commit/PR/merge/CI与精确清理结果单列于仓库外E:/Project/NQ_V104_POST_RELEASE_CLOSEOUT.md，不预填未来CI/合并，也不替代正式Source身份。
 
