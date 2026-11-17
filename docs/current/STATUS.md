@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=f8505f02186a980958fb785bb24ae77c678f5172
 accepted_batch_acceptance_head=f8505f02186a980958fb785bb24ae77c678f5172
 accepted_batch_ci_run=41586151641
 work_batch=NQ-V105-RELEASE-READINESS
-work_batch_status=REVIEW_ACCEPTED|READY_TO_COMMIT
-work_batch_commit=NONE
-work_batch_ci_run=NOT_RUN
-next_action=NQ-V105-COMMIT
+work_batch_status=ACCEPTED|CI_GREEN
+work_batch_commit=eb323eddbf5a81416e623b6ece083026b7dd5f67
+work_batch_ci_run=44046457785
+next_action=NQ-V105-RELEASE-PUBLICATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,9 +31,9 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
-## v1.0.5功能收口与候选准备（2026-11-17）
+## v1.0.5功能收口与候选资格（2026-11-17）
 
-当前正式Release仍v1.0.4；GateZ固定身份及以下全部已发布和历史接受记录保留。V105-01/02功能已接受，最新功能accepted pair绑定V105-02真实候选/CI；本次版本/来源/文档更新尚待独立检查、准确新CI和包级资格，不用运营报告冒充功能CI，不预填未来Source/CI/包SHA或发行身份。
+当前正式Release仍v1.0.4；GateZ固定身份及以下全部已发布和历史接受记录保留。V105-01/02功能已接受，最新功能accepted pair绑定V105-02真实候选/CI；本次固定源码已通过一次有界独立检查、准确Source/merge CI与下述包级资格；运营证据、源码CI和正式发行身份分别记录。尚未创建v1.0.5 Tag或GitHub Release。
 
 | 功能接受 | 准确身份 |
 | --- | --- |
@@ -45,7 +45,21 @@ nq-current-authority:end -->
 
 Review=24436335-b57d-41dd-8683-26f76b48bf44 / OWNER1 / RETURN_TO_RESEARCH / CLOSED / revision1；原Continuous SIM=STOPPED，CONTINUOUS_SIM_POLL与PAPER_MATCHING均DISABLED/version2，其他七项不变，未终态订单0。父PaperRun仍RUNNING，不混同连续运行生命周期。完整运营证据及原始失败在维护者外部报告NQ_V105_03_FINAL_CLOSEOUT.md保留，不进入发行源码闭包，不重新采集/创建实验或观察。
 
-当前仅准备1.0.5源码与限定候选资格；Linux发行NOT_QUALIFIED，GitHub Release NOT_PUBLISHED。七日负收益、到期不自动暂停、实时K线订阅缺口、Demo凭据不等于余额同步/交易授权，以及旧Forward CI根因UNRESOLVED全部保留。一次有界独立源码检查已接受，未发现剩余阻断；准确新提交CI与包级资格仍待执行。LIVE=DISABLED，Kill Switch=ENGAGED。下一允许动作是提交已检查的候选，不授予部署、Tag或Release。
+1.0.5源码与限定候选资格已完成，具体身份见下文；Linux发行NOT_QUALIFIED，GitHub Release NOT_PUBLISHED。七日负收益、到期不自动暂停、实时K线订阅缺口、Demo凭据不等于余额同步/交易授权，以及旧Forward CI根因UNRESOLVED全部保留。LIVE=DISABLED，Kill Switch=ENGAGED。下一任务为发行准备后的正式发布，须有相应指令，本轮不执行部署、Tag或Release。
+
+### v1.0.5限定发行资格
+
+NQ_V105_RELEASE_READINESS_QUALIFIED / QUALIFIED_FOR_VERIFIED_SCOPE。固定Source=eb323eddbf5a81416e623b6ece083026b7dd5f67，Tree=4f224e7ee9de35b128b27eed34a0d1ca43fd6830；PR108，Source CI44046457785与merge dc9e6bcae1c3e4f25d2285ce65bca0fc7c8a3631 / CI44050203113，均准确head、9/9 SUCCESS，Source/merge同tree。机器work pair绑定该固定源码及其CI，后续current文档提交不替换发行Source，且这四份文档在发行投影外。
+
+Self-Hosted RC1 ZIP SHA256=ebc70939723432dd8ebf08c8b7f4a16a94f1ce374472c126dde816df6969b8a4，Manifest=2c2d17e4b41767b00e16c267e072a3b219925858ec5a578952c5d9f1aa682572；独立Companion ZIP=78c0ae843905f22090bc1b3a0c13c508b07ce0ec3ad9eb80ae1bed7b4c28f7a9，Wheel=0849f510bf89cd18b4a17f647e97605e24ccfbf1d5ccb7b67929fc40376cfcae。两资产同Source/1.0.5，Java交易运行时不依赖Python；原52份migration和研究算法保持。
+
+Windows11 amd64 / Docker Desktop Linux Containers / PG16.15 / V52：新安装、初始登录与改密门禁、角色/RLS、核心正式包页面、Continuous STOPPED只读接口、旧V1目标对新估值方法409拒绝、非空正式v1.0.4→1.0.5普通升级、备份恢复、主动回滚均PASS。唯一一次真实端口故障在DB_MAY_CHANGE/V52后发生，transaction=20261117T095411683Z-7f2ee738；原update exit1 / FAILED保留，原安装器自动恢复1.0.4/V52、pending清除。恢复与主动回滚独立证明；132表历史行、schema及稳定控制保持，canonical32完全匹配。两运行表的预列时间字段允许推进，raw DIFFERENT原样保留，不称物理库或全部raw一致。任务实例结束后停止，DB/备份/候选/证据保留。
+
+独立Companion在Windows amd64 / CPython3.11.9 / NumPy2.3.5完成全新venv离线hash安装、pip check、CLI、721根既有合成兼容向量三因子及完整Artifact字节复现、坏hash与缺依赖拒绝；仅兼容研究证明，不作为真实市场或盈利验证。
+
+三个原资格driver FAILED分别为错误GET路径405、restore进程启动前Windows日志路径非法、驱动重复登录新增auth_sessions；原脚本/合同/FAILED均保留。新REMAINING_QUALIFICATION_04复用同一冻结候选的有效子范围，登录在UI测量前完成，并完成剩余UI/主动回滚/自动恢复，不追认前三轮全量PASS。初Source CI44044745109因ubuntu-latest变26.04不被锁定Playwright1.58.2支持而FAILED；只将原frontend job固定ubuntu-24.04及同条目digest重绑定，增量独立检查已接受，不跳过验证。历史PR101 CI根因仍UNRESOLVED；PG既存浏览器条件测试1 SKIP不计PASS。
+
+七日策略收益为负，稳定盈利能力未建立；观察到期不自动暂停Continuous SIM；父Paper Run RUNNING与Continuous STOPPED为独立生命周期；首页/行情无真正实时K线订阅；OKX Demo凭据保存不代表余额同步或交易授权。服务制品仍0.1.0-SNAPSHOT，安装包身份为1.0.5，二者分别展示。Linux云端仅SCOPED_OPERATIONAL_EVIDENCE，不声明正式Linux发行资格。当前正式Release仍v1.0.4，下一任务NQ-V105-RELEASE-PUBLICATION；不自动发行、部署或启动SIM。
 
 ## 已发布v1.0.4固定身份与下一规划入口
 
