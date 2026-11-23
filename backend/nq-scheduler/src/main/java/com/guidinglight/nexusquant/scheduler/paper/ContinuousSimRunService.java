@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
@@ -202,7 +203,10 @@ public class ContinuousSimRunService {
         ContinuousSimRepository.Cursor cursor = progress.get(runId);
         if ("STOPPED".equals(cursor.status())) return status(runId);
         Instant now = clock.instant();
-        if (cursor.bounded() != null && progress.closeAdmissionIfDue(runId)) return settle(runId);
+        var recovery = cursor.bounded() != null && cursor.overlapCheckPending()
+                && cursor.manualEndAt() == null && cursor.revisionDetectedAt() == null
+                ? progress.recoverableOverlapCheck(runId) : null;
+        if (cursor.bounded() != null && recovery == null && progress.closeAdmissionIfDue(runId)) return settle(runId);
         Instant latestAvailable = cursor.lastObservedOpenTime();
         Instant gapStart = null;
         boolean resolvingOverlap = false;
@@ -214,14 +218,28 @@ public class ContinuousSimRunService {
             Instant firstOpen = latestOpen.minus(HOUR);
             boolean bounded = cursor.bounded() != null;
             resolvingOverlap = bounded;
-            if (bounded && !progress.beginOverlapCheck(runId))
+            var check = bounded ? progress.beginOverlapCheck(runId, firstOpen, latestOpen, recovery) : null;
+            if (bounded && check == null)
                 return progress.closeAdmissionIfDue(runId) ? settle(runId) : status(runId);
+            if (check != null) {
+                firstOpen = check.firstOpen();
+                latestOpen = check.latestOpen();
+            }
             ClosedBarMarketFeed.Observation observation;
             try {
                 observation = feed.observe(firstOpen, 24);
             } catch (ClosedBarMarketFeed.IncompleteObservation failure) {
                 if (bounded) {
-                    progress.finishOverlapCheck(runId, firstOpen, latestOpen, failure.verifiedBars(), false, clock);
+                    String reason = "INCOMPLETE_HTTP_RESPONSE".equals(failure.getMessage())
+                            ? failure.getMessage() : "OVERLAP_CHECK_INCOMPLETE";
+                    progress.finishOverlapCheck(runId, check, failure.verifiedBars(), false, reason, clock);
+                    if ("INCOMPLETE_HTTP_RESPONSE".equals(reason) || check.retry()) return status(runId);
+                }
+                throw failure;
+            } catch (IllegalStateException failure) {
+                if (check != null && check.retry()) {
+                    progress.finishOverlapCheck(runId, check, List.of(), false, "OVERLAP_CHECK_INCOMPLETE", clock);
+                    return status(runId);
                 }
                 throw failure;
             }
@@ -230,7 +248,8 @@ public class ContinuousSimRunService {
                         .filter(bar -> isClosedBar(bar, observation.serverTime())).toList();
                 boolean complete = verifiedBars.size() == observation.bars().size()
                         && coversRequestedPage(firstOpen, latestOpen, observation.serverTime(), verifiedBars);
-                progress.finishOverlapCheck(runId, firstOpen, latestOpen, verifiedBars, complete, clock);
+                progress.finishOverlapCheck(runId, check, verifiedBars, complete, "OVERLAP_CHECK_INCOMPLETE", clock);
+                if (check.retry() && progress.recoverableOverlapCheck(runId) != null) return status(runId);
                 if (progress.closeAdmissionIfDue(runId)) return settle(runId);
             }
             resolvingOverlap = false;
@@ -337,7 +356,7 @@ public class ContinuousSimRunService {
             return status(runId);
         } catch (RuntimeException ex) {
             if ((cursor.bounded() != null && ex instanceof TransientDataAccessException)
-                    || (resolvingOverlap && ex instanceof DataAccessException)) throw ex;
+                    || (resolvingOverlap && (ex instanceof DataAccessException || ex instanceof TransactionException))) throw ex;
             String reason = classify(ex);
             String next = "DATA_REVISION_DETECTED".equals(reason) ? "STOPPED" : "STALLED";
             // 修订直到响应校验完成才可知，不能把请求开始时刻当作历史评价已知修订的时间。

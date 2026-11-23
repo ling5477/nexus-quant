@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.guidinglight.nexusquant.common.tenant.TenantIdentity;
-import com.guidinglight.nexusquant.ledger.service.port.SimCashFundingPort;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
 import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimOperationRequest;
@@ -41,6 +40,8 @@ import org.flywaydb.core.api.FlywayException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -138,6 +139,13 @@ class BoundedContinuousSimPostgresIntegrationTest {
             upgraded.fields().forEachRemaining(field -> assertEquals(field.getValue(), recovered.get(field.getKey()), field.getKey()));
             assertFalse(recovered.required("overlap_check_pending").asBoolean());
             assertTrue(recovered.required("pending_revision_detected_at").isNull());
+            var v54History = db.admin.queryForList("SELECT version,checksum FROM flyway_schema_history ORDER BY installed_rank");
+            var v55 = db.migration("55");
+            assertEquals(1, v55.migrate().migrationsExecuted);
+            v55.validate();
+            assertEquals(0, v55.migrate().migrationsExecuted);
+            assertEquals(v54History, db.admin.queryForList("SELECT version,checksum FROM flyway_schema_history WHERE version::int<=54 ORDER BY installed_rank"));
+            assertEquals(0, db.admin.queryForObject("SELECT count(*) FROM continuous_sim_overlap_checks", Integer.class));
             // 模拟调度器停机越过整点，此时游标仍是 RUNNING。独立新订单事务直接验证数据库时钟守卫。
             db.runtime();
             var owner = db.local("historical-local");
@@ -170,7 +178,9 @@ class BoundedContinuousSimPostgresIntegrationTest {
             assertTrue(rejected.getMostSpecificCause().getMessage().contains("CONTINUOUS_SIM_ADMISSION_CLOSED"));
             assertEquals(0,countOrders(db,stalledAccount));
             // 本例没有安装测试时钟，直接用 PG 实际时钟核对延迟调度也能关闭准入。
-            var repository = new ContinuousSimRepository(db.jdbc,ForwardSimEvaluationFixture.JSON);
+            var repository = new ContinuousSimRepository(db.jdbc, ForwardSimEvaluationFixture.JSON,
+                    new com.guidinglight.nexusquant.scheduler.paper.StrategySimDecisionRepository(db.jdbc),
+                    new com.guidinglight.nexusquant.ledger.infra.jdbc.JdbcLedgerPostingRepository(db.jdbc));
             assertEquals(Boolean.TRUE, db.as(owner, () -> new TransactionTemplate(db.manager)
                     .execute(tx -> repository.closeAdmissionIfDue("stalled-paper"))));
             assertEquals("ADMISSION_CLOSED",db.admin.queryForObject(
@@ -577,6 +587,145 @@ class BoundedContinuousSimPostgresIntegrationTest {
         }
     }
 
+    @Test @Timeout(210)
+    void truncatedHttpResponseRequiresANewDurableOverlapCheck() throws Exception {
+        try (var db = TenantIsolationTestDatabase.create(null)) {
+            var owner = db.local(USER);
+            var anotherTenant = db.demo("OVERLAP_CHECK_OTHER", "overlap-check-demo");
+            try (var app = startWithDatabaseClock(db);
+                    var http = new TenantIsolationHttpIntegrationTest.Http(app.getWebServer().getPort())) {
+                var binding = ResearchSimComparisonFixture.seed(app, db, owner);
+                var driver = app.getBean(ContinuousSimRunService.class);
+                var repository = app.getBean(ContinuousSimRepository.class);
+                db.as(owner, () -> driver.stop(binding.paperRunId()));
+                String token = http.login(USER);
+                var market = app.getBean(ResearchSimComparisonFixture.MarketServer.class);
+                Instant end = market.end().plus(HOUR);
+                Instant before = end.minusSeconds(1), after = end.plusSeconds(4);
+                var tick = new java.util.concurrent.atomic.AtomicReference<>(before);
+                Clock clock = org.mockito.Mockito.mock(Clock.class);
+                org.mockito.Mockito.when(clock.instant()).thenAnswer(call -> tick.get());
+                var feed = new OkxClosedBarMarketFeed("http://127.0.0.1:" + market.server.getAddress().getPort());
+                ReflectionTestUtils.setField(feed, "clock", clock);
+                market.server.createContext("/api/v5/public/time", ex -> reply(ex,
+                        "{\"code\":\"0\",\"data\":[{\"ts\":\"" + tick.get().toEpochMilli() + "\"}]}"));
+                market.server.createContext("/api/v5/market/ticker", ex -> reply(ex,
+                        "{\"code\":\"0\",\"data\":[{\"instId\":\"BTC-USDT\",\"last\":\"50000\",\"ts\":\""
+                                + tick.get().toEpochMilli() + "\"}]}"));
+                for (String mode : List.of("retry", "commit-failure", "revised")) {
+                    tick.set(before);
+                    setDatabaseTime(db, before);
+                    ReflectionTestUtils.setField(driver, "clock", Clock.fixed(market.end(), ZoneOffset.UTC));
+                    String run = http.ok("POST", OPS, token, create(binding.publishId(), end)).required("paperRunId").asText();
+                    var bars = db.as(owner, () -> repository.recentBars(run));
+                    var earlier = bars.get(bars.size() - 2);
+                    var overlap = bars.getLast();
+                    assertEquals(end.minus(HOUR.multipliedBy(2)), overlap.openTime());
+                    String digest = ContinuousSimRepository.contentSha(overlap);
+                    String original = httpCandle(overlap, overlap.closePrice());
+                    String prefix = "revised".equals(mode) ? httpCandle(overlap, overlap.closePrice().add(new BigDecimal("0.01"))) : original;
+                    String closing = httpCandle(ClosedBarForwardEvaluationFixture.bar(
+                            end.minus(HOUR), new BigDecimal("52300"), end, after), new BigDecimal("52300"));
+                    String complete = "{\"code\":\"0\",\"data\":[" + httpCandle(earlier, earlier.closePrice())
+                            + "," + original + "," + closing + "]}";
+                    String incomplete = "{\"code\":\"0\",\"data\":[" + prefix + ",[\"truncated";
+                    var calls = new AtomicInteger();
+                    var allowComplete = new java.util.concurrent.atomic.AtomicBoolean(true);
+                    var closingCalls = new AtomicInteger();
+                    market.server.removeContext("/api/v5/market/history-candles");
+                    market.server.createContext("/api/v5/market/history-candles", ex -> {
+                        if (ex.getRequestURI().getQuery().endsWith("limit=24")) {
+                            int sent = calls.incrementAndGet();
+                            tick.set(after);
+                            setDatabaseTime(db, after);
+                            // 同一次 GET 如有内置重试，第二次即可得到原样完整页。
+                            reply(ex, sent == 1 || !allowComplete.get() ? incomplete : complete);
+                        } else {
+                            closingCalls.incrementAndGet();
+                            reply(ex, "{\"code\":\"0\",\"data\":[" + closing + "]}");
+                        }
+                    });
+                    ReflectionTestUtils.setField(driver, "clock", clock);
+                    ReflectionTestUtils.setField(driver, "feed", feed);
+                    if ("commit-failure".equals(mode)) {
+                        db.admin.execute("""
+                                CREATE FUNCTION interrupt_http_response_evidence() RETURNS trigger LANGUAGE plpgsql AS $$
+                                BEGIN RAISE EXCEPTION 'fixture http evidence commit interrupted'; END; $$
+                                """);
+                        db.admin.execute("""
+                                CREATE CONSTRAINT TRIGGER interrupt_http_response_evidence AFTER UPDATE ON continuous_sim_overlap_checks
+                                DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION interrupt_http_response_evidence()
+                                """);
+                        var rejected = assertThrows(RuntimeException.class, () -> db.as(owner, () -> driver.pollOnce(run)));
+                        assertTrue(org.springframework.core.NestedExceptionUtils.getMostSpecificCause(rejected)
+                                .getMessage().contains("fixture http evidence commit interrupted"));
+                        db.admin.execute("DROP TRIGGER interrupt_http_response_evidence ON continuous_sim_overlap_checks");
+                    } else {
+                        db.as(owner, () -> driver.pollOnce(run));
+                    }
+                    assertEquals(1, calls.get());
+                    assertEquals(0, closingCalls.get());
+                    assertNull(readTime(db, "pending_revision_detected_at", run));
+                    assertEquals("revised".equals(mode) ? after : null, readTime(db, "revision_detected_at", run));
+                    assertTrue(db.admin.queryForObject(
+                            "SELECT overlap_check_pending FROM continuous_sim_runs WHERE paper_run_id=?", Boolean.class, run));
+                    var first = overlapAttempts(db, run).getFirst();
+                    assertEquals("commit-failure".equals(mode) ? null : "INCOMPLETE_HTTP_RESPONSE", first.get("failure_reason"));
+                    assertEquals("commit-failure".equals(mode) ? null : "revised".equals(mode) ? "REVISED" : "INCOMPLETE",
+                            first.get("result"));
+                    assertEquals(0, db.as(anotherTenant, () -> db.jdbc.queryForObject(
+                            "SELECT count(*) FROM continuous_sim_overlap_checks WHERE paper_run_id=?", Integer.class, run)));
+                    assertFalse(status(http, token, run).hasNonNull("terminatedAt"));
+                    if ("retry".equals(mode)) {
+                        allowComplete.set(false);
+                        db.as(owner, () -> driver.pollOnce(run));
+                        assertEquals(2, calls.get());
+                        assertEquals(0, closingCalls.get());
+                        assertEquals("INCOMPLETE", overlapAttempts(db, run).getLast().get("result"));
+                        allowComplete.set(true);
+                        db.as(owner, () -> driver.pollOnce(run));
+                        assertEquals(3, calls.get());
+                        assertEquals(1, closingCalls.get());
+                        var attempts = overlapAttempts(db, run);
+                        assertEquals(first, attempts.getFirst());
+                        assertEquals(3, attempts.stream().map(row -> row.get("check_id")).distinct().count());
+                        assertEquals("VERIFIED", attempts.getLast().get("result"));
+                        assertFalse(db.admin.queryForObject(
+                                "SELECT overlap_check_pending FROM continuous_sim_runs WHERE paper_run_id=?", Boolean.class, run));
+                        assertEquals("COMPLETED", status(http, token, run).required("lifecycleStatus").asText());
+                        db.as(owner, () -> driver.pollOnce(run));
+                        assertEquals(3, calls.get());
+                        assertEquals(attempts, overlapAttempts(db, run));
+                    } else {
+                        restart(db, owner, run, end, "BLOCKED");
+                        assertEquals(List.of(first), overlapAttempts(db, run));
+                        assertEquals("UNAVAILABLE", status(http, token, run).required("finalValuationStatus").asText());
+                        assertEquals("revised".equals(mode) ? after : null, readTime(db, "revision_detected_at", run));
+                        assertEquals(0, closingCalls.get());
+                    }
+                    assertEquals(0, countOrders(db, ForwardSimEvaluationFixture.account(db, run)));
+                    assertEquals(digest, db.admin.queryForObject(
+                            "SELECT bar_sha256 FROM continuous_sim_bars WHERE paper_run_id=? AND open_time=?",
+                            String.class, run, Timestamp.from(overlap.openTime())));
+                }
+            }
+        }
+    }
+
+    private static List<Map<String, Object>> overlapAttempts(TenantIsolationTestDatabase db, String run) {
+        return db.admin.queryForList("""
+                SELECT check_id,result,failure_reason,started_at,finished_at
+                FROM continuous_sim_overlap_checks WHERE paper_run_id=? ORDER BY check_id
+                """, run);
+    }
+
+    private static String httpCandle(HistoricalBar bar, BigDecimal close) {
+        return ForwardSimEvaluationFixture.JSON.createArrayNode().add(Long.toString(bar.openTime().toEpochMilli()))
+                .add(bar.openPrice().toPlainString()).add(bar.highPrice().toPlainString()).add(bar.lowPrice().toPlainString())
+                .add(close.toPlainString()).add(bar.volume().toPlainString()).add("1")
+                .add(bar.quoteVolume().toPlainString()).add("1").toString();
+    }
+
     @Test @Timeout(360)
     void crossedDeadlineRevisionSurvivesInterruptedWritesAndSeparateJvm() throws Exception {
         try (var db = TenantIsolationTestDatabase.create(null)) {
@@ -747,8 +896,8 @@ class BoundedContinuousSimPostgresIntegrationTest {
         }
     }
 
-    @Test @Timeout(150)
-    void manualEndWaitsForCanonicalLedgerConsistencyWithAVerifiedClosingBar() throws Exception {
+    @ParameterizedTest @ValueSource(strings = {"cash", "position", "both", "none"}) @Timeout(150)
+    void manualEndRequiresConsistentCashAndPositionProjections(String fault) throws Exception {
         try (var db = TenantIsolationTestDatabase.create(null)) {
             var owner = db.local(USER);
             try (var app = startWithDatabaseClock(db);
@@ -767,16 +916,25 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 long account = ForwardSimEvaluationFixture.account(db, run);
                 var matching = app.getBean(PaperMatchingService.class);
                 int fills = 0;
-                for (Instant boundary = firstBoundary; boundary.isBefore(end) && fills == 0; boundary = boundary.plus(HOUR)) {
+                boolean consistent = "none".equals(fault);
+                for (Instant boundary = firstBoundary; boundary.isBefore(end) && (consistent || fills == 0);
+                        boundary = boundary.plus(HOUR)) {
                     setDatabaseTime(db, boundary.plusSeconds(5));
                     configure(app, db, owner, run, boundary, end, true);
                     db.as(owner, () -> driver.pollOnce(run));
-                    fills = db.as(owner, () -> matching.matchOnce(100));
+                    fills += db.as(owner, () -> matching.matchOnce(100));
                 }
-                assertEquals(1, fills);
-                assertEquals(1, countOrders(db, account));
-                assertEquals(1, db.admin.queryForObject(
+                assertTrue(fills > 0);
+                assertEquals(fills, countOrders(db, account));
+                assertEquals(fills, db.admin.queryForObject(
                         "SELECT count(*) FROM trades WHERE account_id=?", Integer.class, account));
+                if (consistent) {
+                    assertEquals(List.of("BUY", "SELL"), db.admin.queryForList(
+                            "SELECT DISTINCT side FROM orders WHERE account_id=? AND status='FILLED' ORDER BY side",
+                            String.class, account));
+                    assertEquals(0, BigDecimal.ZERO.compareTo(db.admin.queryForObject(
+                            "SELECT qty FROM positions WHERE account_id=? AND symbol='BTC-USDT'", BigDecimal.class, account)));
+                }
                 setDatabaseTime(db, requestAt);
                 ReflectionTestUtils.setField(driver, "clock", Clock.fixed(requestAt, ZoneOffset.UTC));
                 var mark = ClosedBarForwardEvaluationFixture.bar(end.minus(HOUR), new BigDecimal("52300"), end, requestAt);
@@ -793,28 +951,43 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 var economics = app.getBean(StrategySimRunService.class);
                 assertNull(db.as(owner, () -> economics.settleBounded(run)).blockingReason());
                 var original = ForwardSimEvaluationFixture.allFacts(db);
-                var funding = app.getBean(SimCashFundingPort.class);
-                var cash = db.as(owner, () -> funding.cashBalance(account));
                 var positions = db.admin.queryForList("SELECT * FROM positions WHERE account_id=? ORDER BY symbol", account);
                 assertFalse(positions.isEmpty());
-                // 复用该账户正式成交的引用，只增加一条可精确移除的合成分录。
-                String extra = "fixture-ledger-" + UUID.randomUUID();
-                assertEquals(1, db.as(owner, () -> db.jdbc.update("""
-                        INSERT INTO ledger_entries(entry_id,account_id,currency,delta,direction,ref_type,ref_id,idempotency_key,trace_id,ts)
-                        SELECT ?,account_id,currency,delta,direction,ref_type,ref_id,?,'fixture-ledger-interruption',ts
-                        FROM ledger_entries WHERE account_id=? AND ref_type='TRADE' ORDER BY entry_id LIMIT 1
-                        """, extra, extra, account)));
-                try {
-                    var facts = ForwardSimEvaluationFixture.allFacts(db);
-                    var settlement = db.as(owner, () -> economics.settleBounded(run));
-                    assertEquals(0, settlement.pendingOrders());
-                    assertEquals("SIM_TRADE_LEDGER_MISMATCH", settlement.blockingReason());
-                    assertEquals(cash, db.as(owner, () -> funding.cashBalance(account)));
+                // 仅损坏隔离库的派生投影，保留正式撮合的 Order、Trade、Ledger 与原现金快照。
+                if ("cash".equals(fault) || "both".equals(fault)) {
+                    assertEquals(1, db.as(owner, () -> db.jdbc.update("""
+                            INSERT INTO account_snapshots(account_id,currency,balance,available,frozen,ts,trace_id,
+                                trade_env,balance_basis,balance_scope,recorded_at)
+                            SELECT account_id,currency,balance+1,available+1,frozen,ts,'fixture-cash-projection',
+                                trade_env,balance_basis,balance_scope,clock_timestamp()
+                            FROM account_snapshots WHERE account_id=? AND currency='USDT' AND trade_env='SIM'
+                            ORDER BY snapshot_id DESC LIMIT 1
+                            """, account)));
+                }
+                if ("position".equals(fault) || "both".equals(fault)) {
+                    assertEquals(1, db.as(owner, () -> db.jdbc.update("""
+                            UPDATE positions SET qty=qty+0.001 WHERE account_id=? AND symbol='BTC-USDT'
+                            """, account)));
+                }
+                var settlement = db.as(owner, () -> economics.settleBounded(run));
+                assertEquals(0, settlement.pendingOrders());
+                assertNull(settlement.blockingReason());
+                if (!consistent) {
+                    String reason = switch (fault) {
+                        case "cash" -> "SIM_CASH_PROJECTION_MISMATCH";
+                        case "position" -> "SIM_POSITION_PROJECTION_MISMATCH";
+                        default -> "SIM_ACCOUNT_PROJECTIONS_MISMATCH";
+                    };
+                    var damagedPositions = db.admin.queryForList("SELECT * FROM positions WHERE account_id=?", account);
+                    var damagedCash = db.admin.queryForMap("""
+                            SELECT * FROM account_snapshots WHERE account_id=? AND currency='USDT' AND trade_env='SIM'
+                            ORDER BY snapshot_id DESC LIMIT 1
+                            """, account);
                     db.as(owner, () -> driver.pollOnce(run));
                     var blocked = status(http, token, run);
                     assertEquals("BLOCKED", blocked.required("lifecycleStatus").asText());
                     assertEquals(0, blocked.required("pendingOrders").asInt());
-                    assertEquals("SIM_TRADE_LEDGER_MISMATCH", blocked.required("reason").asText());
+                    assertEquals(reason, blocked.required("reason").asText());
                     assertEquals("UNAVAILABLE", blocked.required("finalValuationStatus").asText());
                     assertFalse(blocked.hasNonNull("terminatedAt"));
                     assertEquals("RUNNING", db.admin.queryForObject(
@@ -825,33 +998,32 @@ class BoundedContinuousSimPostgresIntegrationTest {
                                 'BUY','LIMIT',100,1,'ACCEPTED','accounting-block','PAPER','PAPER','SIM')
                             """, account)));
                     assertTrue(rejected.getMostSpecificCause().getMessage().contains("CONTINUOUS_SIM_ADMISSION_CLOSED"));
-                    restart(db, owner, run, end, "SIM_TRADE_LEDGER_MISMATCH");
+                    if ("both".equals(fault)) restart(db, owner, run, end, reason);
                     assertEquals(receipt, http.ok("POST", OPS, token, command));
                     assertEquals(receipt, http.ok("GET", OPS + "/" + command.get("operationId"), token, null));
                     assertEquals(1, db.admin.queryForObject("SELECT count(*) FROM continuous_sim_operations WHERE operation_id=?",
                             Integer.class, UUID.fromString(command.get("operationId").toString())));
                     assertEquals(blocked, status(http, token, run));
                     assertEquals(requestAt, readTime(db, "manual_end_at", run));
-                    assertEquals(facts.get("ledger_entries"), ForwardSimEvaluationFixture.allFacts(db).get("ledger_entries"));
-                } finally {
-                    assertEquals(1, db.as(owner, () -> db.jdbc.update(
-                            "DELETE FROM ledger_entries WHERE entry_id=? AND account_id=?", extra, account)));
+                    assertEquals(damagedPositions, db.admin.queryForList("SELECT * FROM positions WHERE account_id=?", account));
+                    assertEquals(damagedCash, db.admin.queryForMap("""
+                            SELECT * FROM account_snapshots WHERE account_id=? AND currency='USDT' AND trade_env='SIM'
+                            ORDER BY snapshot_id DESC LIMIT 1
+                            """, account));
+                } else {
+                    db.as(owner, () -> driver.pollOnce(run));
+                    var stopped = status(http, token, run);
+                    assertEquals("MANUALLY_STOPPED", stopped.required("lifecycleStatus").asText());
+                    assertEquals("VERIFIED", stopped.required("finalValuationStatus").asText());
+                    assertEquals(end, Instant.parse(stopped.required("lastValuationBoundary").asText()));
+                    assertEquals(Instant.parse(stopped.required("terminatedAt").asText()), db.admin.queryForObject(
+                            "SELECT stopped_at FROM paper_trading_runs WHERE paper_run_id=? AND status='STOPPED'",
+                            Timestamp.class, run).toInstant());
                 }
-                assertNull(db.as(owner, () -> economics.settleBounded(run)).blockingReason());
-                db.as(owner, () -> driver.pollOnce(run));
-                var stopped = status(http, token, run);
-                assertEquals("MANUALLY_STOPPED", stopped.required("lifecycleStatus").asText());
-                assertEquals("VERIFIED", stopped.required("finalValuationStatus").asText());
-                assertEquals(end, Instant.parse(stopped.required("lastValuationBoundary").asText()));
-                assertEquals(Instant.parse(stopped.required("terminatedAt").asText()), db.admin.queryForObject(
-                        "SELECT stopped_at FROM paper_trading_runs WHERE paper_run_id=? AND status='STOPPED'",
-                        Timestamp.class, run).toInstant());
                 var finalFacts = ForwardSimEvaluationFixture.allFacts(db);
                 for (String table : List.of("orders", "trades", "ledger_entries", "continuous_sim_bars")) {
                     assertEquals(original.get(table), finalFacts.get(table), table);
                 }
-                assertEquals(cash, db.as(owner, () -> funding.cashBalance(account)));
-                assertEquals(positions, db.admin.queryForList("SELECT * FROM positions WHERE account_id=? ORDER BY symbol", account));
             }
         }
     }

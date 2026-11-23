@@ -86,11 +86,11 @@ public class StrategySimDecisionRepository {
     StrategySimRunService.Settlement settlement(String run, long account) {
         return jdbc.queryForObject("""
                 WITH scope AS (SELECT ?::text AS run, ?::bigint AS account),
-                d AS (SELECT d.* FROM strategy_sim_decisions d,scope s
-                       WHERE d.paper_run_id=s.run AND d.canonical_account_id=s.account),
-                o AS (SELECT o.* FROM orders o,scope s WHERE o.account_id=s.account),
-                r AS (SELECT r.* FROM strategy_runs r,scope s WHERE r.account_id=s.account),
-                t AS (SELECT t.* FROM trades t,scope s WHERE t.account_id=s.account),
+                 d AS MATERIALIZED (SELECT d.* FROM strategy_sim_decisions d,scope s
+                       WHERE d.paper_run_id=s.run AND d.canonical_account_id=s.account LIMIT 10001),
+                 o AS MATERIALIZED (SELECT o.* FROM orders o,scope s WHERE o.account_id=s.account LIMIT 10001),
+                 r AS MATERIALIZED (SELECT r.* FROM strategy_runs r,scope s WHERE r.account_id=s.account LIMIT 10001),
+                 t AS MATERIALIZED (SELECT t.* FROM trades t,scope s WHERE t.account_id=s.account LIMIT 10001),
                 expected AS (
                     SELECT t.trade_id ref_id,t.trade_id||':LEDGER:'||leg.suffix AS key,leg.currency,leg.delta,
                            CASE WHEN leg.delta>=0 THEN 'CREDIT' ELSE 'DEBIT' END AS direction,t.ts
@@ -101,12 +101,15 @@ public class StrategySimDecisionRepository {
                     WHERE leg.suffix IN ('1','2') OR t.fee<>0
                 ), actual AS (
                     SELECT e.ref_id,e.idempotency_key AS key,e.currency,e.delta,e.direction,e.ts
-                    FROM ledger_entries e,scope s WHERE e.account_id=s.account AND e.ref_type='TRADE'
+                     FROM ledger_entries e,scope s WHERE e.account_id=s.account AND e.ref_type='TRADE' LIMIT 40001
                 ), pending AS (
                     SELECT count(*)::int AS n FROM o WHERE status NOT IN ('FILLED','CANCELLED','REJECTED','RISK_REJECTED')
                 )
                 SELECT pending.n,
-                  CASE WHEN EXISTS (SELECT 1 FROM o,scope s WHERE NOT EXISTS (
+                   CASE WHEN (SELECT count(*) FROM o)>10000 OR (SELECT count(*) FROM d)>10000
+                        OR (SELECT count(*) FROM r)>10000 OR (SELECT count(*) FROM t)>10000
+                        OR (SELECT count(*) FROM actual)>40000 THEN 'SIM_SETTLEMENT_FACTS_LIMITED'
+                   WHEN EXISTS (SELECT 1 FROM o,scope s WHERE NOT EXISTS (
                       SELECT FROM d JOIN r ON r.strategy_run_id=d.strategy_run_id
                       JOIN strategy_run_dispatch_work w ON w.strategy_run_id=r.strategy_run_id
                       WHERE d.order_id=o.order_id AND d.strategy_run_id=o.strategy_run_id
@@ -151,6 +154,56 @@ public class StrategySimDecisionRepository {
                     THEN 'SIM_CANONICAL_RUN_NOT_TERMINAL'
                   ELSE NULL END AS reason FROM pending
                 """, (rs, row) -> new StrategySimRunService.Settlement(rs.getInt(1), rs.getString(2)), run, account);
+    }
+
+    /** 仅核验现有 BTC/USDT 有界合同。交易核验已确认每笔成交、方向及 USDT 手续费。 */
+    String projectionFailure(String run, long account, BigDecimal cash) {
+        return jdbc.queryForObject("""
+                WITH scope AS (
+                    SELECT p.paper_run_id,p.canonical_account_id,
+                           (p.config_snapshot_json->>'budget')::numeric AS budget
+                    FROM paper_trading_runs p WHERE p.paper_run_id=? AND p.canonical_account_id=?
+                ), funding AS (
+                    SELECT e.* FROM ledger_entries e,scope s
+                    WHERE e.account_id=s.canonical_account_id AND e.ref_type<>'TRADE' LIMIT 3
+                ), btc AS (
+                    SELECT count(*) AS fills, coalesce(sum(CASE o.side WHEN 'BUY' THEN t.qty ELSE -t.qty END),0) AS qty
+                    FROM trades t JOIN orders o ON o.order_id=t.order_id AND o.account_id=t.account_id
+                    WHERE t.account_id=?
+                ), quote AS (
+                    SELECT balance,available,frozen,balance_basis,balance_scope FROM account_snapshots
+                    WHERE account_id=? AND currency='USDT' AND trade_env='SIM' ORDER BY snapshot_id DESC LIMIT 1
+                ), base AS (
+                    SELECT balance,available,frozen,balance_basis,balance_scope FROM account_snapshots
+                    WHERE account_id=? AND currency='BTC' AND trade_env='SIM' ORDER BY snapshot_id DESC LIMIT 1
+                ), checks AS (
+                    SELECT
+                        EXISTS (SELECT 1 FROM scope s WHERE s.budget>0
+                            AND (SELECT count(*) FROM funding)=2
+                            AND (SELECT count(*) FROM funding f WHERE f.ref_id=s.paper_run_id AND f.currency='USDT'
+                                 AND ((f.ref_type='SIM_FUNDING_CASH' AND f.delta=s.budget AND f.direction='CREDIT'
+                                       AND f.idempotency_key=s.paper_run_id||':SIM_FUND:CASH')
+                                  OR (f.ref_type='SIM_FUNDING_CONTRA' AND f.delta=-s.budget AND f.direction='DEBIT'
+                                       AND f.idempotency_key=s.paper_run_id||':SIM_FUND:CONTRA')))=2
+                        ) AND EXISTS (SELECT 1 FROM quote q WHERE q.balance=?::numeric AND q.available=q.balance
+                              AND q.frozen=0 AND q.balance_scope='NQ_MANAGED_ACCOUNT'
+                              AND q.balance_basis='LEDGER_CASH_PROJECTION') AS cash_matches,
+                        NOT EXISTS (SELECT 1 FROM positions p WHERE p.account_id=?
+                            AND (p.symbol<>'BTC-USDT' OR p.qty<>b.qty OR p.available_qty<>b.qty OR p.frozen_qty<>0))
+                        AND b.qty>=0
+                        AND CASE WHEN b.fills=0 THEN NOT EXISTS (SELECT 1 FROM base)
+                            ELSE EXISTS (SELECT 1 FROM positions p WHERE p.account_id=? AND p.symbol='BTC-USDT')
+                             AND EXISTS (SELECT 1 FROM base s WHERE s.balance=b.qty AND s.available=b.qty AND s.frozen=0
+                                  AND s.balance_basis='POSITION_PROJECTION' AND s.balance_scope='NQ_MANAGED_ACCOUNT')
+                            END AS position_matches
+                    FROM btc b
+                )
+                SELECT CASE WHEN NOT cash_matches AND NOT position_matches THEN 'SIM_ACCOUNT_PROJECTIONS_MISMATCH'
+                            WHEN NOT cash_matches THEN 'SIM_CASH_PROJECTION_MISMATCH'
+                            WHEN NOT position_matches THEN 'SIM_POSITION_PROJECTION_MISMATCH'
+                       END
+                FROM checks
+                """, String.class, run, account, account, account, account, cash, account, account);
     }
 
     public void lockAccount(long accountId) {

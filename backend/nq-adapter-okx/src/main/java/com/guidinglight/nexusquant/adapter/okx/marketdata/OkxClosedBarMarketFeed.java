@@ -4,6 +4,8 @@ import com.guidinglight.nexusquant.adapter.okx.error.OkxApiException;
 import com.guidinglight.nexusquant.adapter.okx.http.OkxHttpClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
@@ -72,7 +74,8 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         this.http = Objects.requireNonNull(http);
         this.origin = Objects.requireNonNull(origin);
         this.mapper = Objects.requireNonNull(mapper);
-        this.finalBarHttp = new OkxHttpClient(http, mapper, origin.getScheme() + "://" + origin.getRawAuthority(),
+        this.finalBarHttp = new OkxHttpClient(http, mapper.copy().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS,
+                        DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY), origin.getScheme() + "://" + origin.getRawAuthority(),
                 Duration.ofSeconds(4));
     }
 
@@ -100,7 +103,12 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
 
     @Override
     public Observation observe(Instant firstOpen, int maximumBars) {
-        return observe(firstOpen, maximumBars, true);
+        try {
+            return observe(firstOpen, maximumBars, true);
+        } catch (IncompleteHttpResponse failure) {
+            // 时间、规则或成交价响应不完整时还没有可用的 K 线证据。
+            throw new IncompleteObservation(List.of(), failure);
+        }
     }
 
     @Override
@@ -142,7 +150,13 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         String path = "/api/v5/market/history-candles?instId=BTC-USDT&bar=1H&after="
                 + pageEnd.toEpochMilli() + "&before=" + (firstOpen.toEpochMilli() - 1)
                 + "&limit=" + maximumBars;
-        JsonNode candles = includeExecution ? get(path) : getForFinalBar(path);
+        JsonNode candles;
+        try {
+            candles = includeExecution ? get(path) : getForFinalBar(path);
+        } catch (IncompleteHttpResponse failure) {
+            throw new IncompleteObservation(readConfirmedPrefix(failure.body, firstOpen, pageEnd,
+                    maximumBars, serverTime), failure);
+        }
         if (!"0".equals(candles.path("code").asText()) || !candles.path("data").isArray()
                 || candles.path("data").size() > maximumBars) {
             throw new IllegalStateException("PUBLIC_MARKET_RESPONSE_INVALID");
@@ -166,6 +180,45 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         if (invalid != null) throw new IncompleteObservation(bars, invalid);
         return new Observation(serverTime, receivedAt, List.copyOf(bars),
                 rule, quote);
+    }
+
+    /** 只采纳已结束的 data 行。截断、无成功码或超界的剩余正文始终保留为不完整。 */
+    private List<HistoricalBar> readConfirmedPrefix(byte[] body, Instant firstOpen, Instant pageEnd,
+            int maximumBars, Instant serverTime) {
+        Instant received = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        if (received.isBefore(serverTime.minusSeconds(5)) || received.isAfter(serverTime.plusSeconds(120))) {
+            return List.of();
+        }
+        List<HistoricalBar> found = new ArrayList<>();
+        boolean successful = false;
+        try (var json = mapper.createParser(body)) {
+            if (json.nextToken() != JsonToken.START_OBJECT) return List.of();
+            while (json.nextToken() == JsonToken.FIELD_NAME) {
+                String field = json.currentName();
+                var value = json.nextToken();
+                if ("code".equals(field)) {
+                    successful = value != null && value.isScalarValue() && "0".equals(json.getValueAsString());
+                } else if ("data".equals(field) && value == JsonToken.START_ARRAY) {
+                    for (int index = 0; index < maximumBars && json.nextToken() == JsonToken.START_ARRAY; index++) {
+                        JsonNode row = mapper.readTree(json);
+                        try {
+                            HistoricalBar bar = parseBar(row, serverTime, received);
+                            if ("1".equals(row.get(8).asText()) && !bar.openTime().isBefore(firstOpen)
+                                    && bar.openTime().isBefore(pageEnd)) {
+                                found.add(bar);
+                            }
+                        } catch (IllegalStateException invalidRow) {
+                            // 无效行不参与摘要核验，后续完整行仍可提供修订证据。
+                        }
+                    }
+                } else {
+                    json.skipChildren();
+                }
+            }
+        } catch (IOException truncated) {
+            // 保留已独立解出的行，异常结论由上层按核验尝试持久化。
+        }
+        return successful ? List.copyOf(found) : List.of();
     }
 
     private HistoricalBar parseBar(JsonNode row, Instant serverTime, Instant receivedAt) {
@@ -268,12 +321,29 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
             try {
                 HttpResponse<InputStream> response = http.send(request, HttpResponse.BodyHandlers.ofInputStream());
                 try (InputStream body = response.body()) {
-                    byte[] bytes = body.readNBytes(MAX_RESPONSE_BYTES + 1);
+                    byte[] bytes;
+                    try {
+                        bytes = body.readNBytes(MAX_RESPONSE_BYTES + 1);
+                    } catch (IOException failure) {
+                        if (response.statusCode() == 200) throw new IncompleteHttpResponse(new byte[0], failure);
+                        throw failure;
+                    }
                     if (bytes.length > MAX_RESPONSE_BYTES) {
+                        if (response.statusCode() == 200)
+                            throw new IncompleteHttpResponse(new byte[0], null);
                         throw new IllegalStateException("PUBLIC_MARKET_RESPONSE_TOO_LARGE");
                     }
                     if (response.statusCode() == 200) {
-                        return mapper.readTree(bytes);
+                        try {
+                            var decoded = mapper.reader().with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS,
+                                            DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY)
+                                    .readTree(bytes);
+                            if (decoded == null || decoded.isMissingNode() || !decoded.isObject())
+                                throw new IncompleteHttpResponse(bytes, null);
+                            return decoded;
+                        } catch (IOException failure) {
+                            throw new IncompleteHttpResponse(bytes, failure);
+                        }
                     }
                     if (response.statusCode() < 500 || attempt == 2) {
                         throw new IllegalStateException("PUBLIC_MARKET_HTTP_" + response.statusCode());
@@ -292,5 +362,14 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
             }
         }
         throw new IllegalStateException("PUBLIC_MARKET_UNAVAILABLE");
+    }
+
+    private static final class IncompleteHttpResponse extends IllegalStateException {
+        private final byte[] body;
+
+        private IncompleteHttpResponse(byte[] body, IOException cause) {
+            super("INCOMPLETE_HTTP_RESPONSE", cause);
+            this.body = body;
+        }
     }
 }

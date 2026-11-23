@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.scheduler.paper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.ledger.service.port.LedgerPostingRepository;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
@@ -30,10 +31,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContinuousSimRepository {
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper;
+    private final StrategySimDecisionRepository decisions;
+    private final LedgerPostingRepository ledger;
 
-    public ContinuousSimRepository(JdbcTemplate jdbc, ObjectMapper mapper) {
+    public ContinuousSimRepository(JdbcTemplate jdbc, ObjectMapper mapper,
+                                   StrategySimDecisionRepository decisions, LedgerPostingRepository ledger) {
         this.jdbc = Objects.requireNonNull(jdbc);
         this.mapper = Objects.requireNonNull(mapper);
+        this.decisions = Objects.requireNonNull(decisions);
+        this.ledger = Objects.requireNonNull(ledger);
     }
 
     public boolean exists(String runId) {
@@ -129,18 +135,48 @@ public class ContinuousSimRepository {
 
     /** 发请求前独立提交，响应或进程丢失后也无法把这次核验当作成功。 */
     @Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 10)
-    public boolean beginOverlapCheck(String runId) {
-        lockCursor(runId);
-        return jdbc.update("""
-                UPDATE continuous_sim_runs SET overlap_check_pending=true WHERE paper_run_id=?
-                    AND lifecycle_status='RUNNING' AND NOT overlap_check_pending AND end_at>clock_timestamp()
-                """, runId) == 1;
+    public OverlapCheck beginOverlapCheck(String runId, Instant firstOpen, Instant latestOpen, OverlapCheck previous) {
+        Cursor cursor = lockCursor(runId);
+        if ("STOPPED".equals(cursor.status()) || cursor.manualEndAt() != null || cursor.revisionDetectedAt() != null)
+            return null;
+        if (previous == null) {
+            if (jdbc.update("""
+                    UPDATE continuous_sim_runs SET overlap_check_pending=true WHERE paper_run_id=?
+                        AND lifecycle_status='RUNNING' AND NOT overlap_check_pending AND end_at>clock_timestamp()
+                    """, runId) != 1) return null;
+        } else {
+            OverlapCheck retryable = recoverableOverlapCheck(runId);
+            if (!cursor.overlapCheckPending() || !previous.equals(retryable)) return null;
+            firstOpen = previous.firstOpen();
+            latestOpen = previous.latestOpen();
+        }
+        boolean retry = previous != null;
+        long id = jdbc.queryForObject("""
+                INSERT INTO continuous_sim_overlap_checks(paper_run_id,first_open_time,last_open_time,retry)
+                VALUES (?,?,?,?) RETURNING check_id
+                """, Long.class, runId, Timestamp.from(firstOpen), Timestamp.from(latestOpen), retry);
+        return new OverlapCheck(id, firstOpen, latestOpen, retry);
     }
+
+    /** 超出公开历史页的补读上限时仍保留原证据，由原阻断流程处理。 */
+    OverlapCheck recoverableOverlapCheck(String runId) {
+        return jdbc.query("""
+                SELECT check_id,first_open_time,last_open_time,retry
+                FROM (SELECT * FROM continuous_sim_overlap_checks WHERE paper_run_id=?
+                      ORDER BY check_id DESC LIMIT 1) latest
+                WHERE (failure_reason='INCOMPLETE_HTTP_RESPONSE' AND result='INCOMPLETE'
+                       OR retry AND (result IS NULL OR result='INCOMPLETE'))
+                   AND first_open_time>=date_trunc('hour',clock_timestamp())-interval '168 hours'
+                """, (rs, row) -> new OverlapCheck(rs.getLong(1), instant(rs, "first_open_time"),
+                instant(rs, "last_open_time"), rs.getBoolean("retry")), runId).stream().findFirst().orElse(null);
+    }
+
+    record OverlapCheck(long id, Instant firstOpen, Instant latestOpen, boolean retry) {}
 
     /** 原响应的比较与证据写入共享事务，原 bar 永不改写。随后才能推进截止收敛。 */
     @Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 10)
-    public void finishOverlapCheck(String runId, Instant firstOpen, Instant latestOpen,
-                                   List<HistoricalBar> bars, boolean windowVerified, Clock clock) {
+    public void finishOverlapCheck(String runId, OverlapCheck check,
+                                   List<HistoricalBar> bars, boolean windowVerified, String failureReason, Clock clock) {
         Cursor latest = lockCursor(runId);
         if (!latest.overlapCheckPending() || "STOPPED".equals(latest.status()))
             throw new IllegalStateException("CONTINUOUS_SIM_OVERLAP_CHECK_CONFLICT");
@@ -149,7 +185,8 @@ public class ContinuousSimRepository {
         boolean storedOverlapComplete = true;
         for (HistoricalBar bar : bars) {
             Instant open = bar.openTime();
-            if (!open.isBefore(firstOpen) && !open.isAfter(latestOpen) && open.isBefore(latest.bounded().endAt())) {
+            if (!open.isBefore(check.firstOpen()) && !open.isAfter(check.latestOpen())
+                    && open.isBefore(latest.bounded().endAt())) {
                 var stored = storedDigest(runId, open);
                 if (stored.isEmpty()) {
                     storedOverlapComplete = false;
@@ -159,6 +196,14 @@ public class ContinuousSimRepository {
             }
         }
         boolean complete = windowVerified && storedOverlapComplete;
+        String result = detectedAt != null ? "REVISED" : complete ? "VERIFIED" : "INCOMPLETE";
+        String reason = complete ? (detectedAt == null ? null : "DATA_REVISION_DETECTED") : failureReason;
+        if (jdbc.update("""
+                UPDATE continuous_sim_overlap_checks SET result=?,failure_reason=?,finished_at=clock_timestamp()
+                WHERE paper_run_id=? AND check_id=? AND finished_at IS NULL
+                    AND check_id=(SELECT max(check_id) FROM continuous_sim_overlap_checks WHERE paper_run_id=?)
+                """, result, reason, runId, check.id(), runId) != 1)
+            throw new IllegalStateException("CONTINUOUS_SIM_OVERLAP_CHECK_CONFLICT");
         if (detectedAt != null) {
             Timestamp revision = Timestamp.from(detectedAt);
             // 部分响应已证实的修订直接保留，未核验的其余行继续由待核验标记阻断。
@@ -173,6 +218,14 @@ public class ContinuousSimRepository {
                     UPDATE continuous_sim_runs SET overlap_check_pending=false
                     WHERE paper_run_id=? AND pending_revision_detected_at IS NULL
                     """, runId);
+        } else if ("INCOMPLETE_HTTP_RESPONSE".equals(reason) || check.retry()) {
+            jdbc.update("""
+                    UPDATE continuous_sim_runs SET status='STALLED',block_reason=?,final_valuation_status='UNAVAILABLE',
+                        last_valuation_boundary=NULL, updated_at=clock_timestamp(),
+                        lifecycle_status=CASE WHEN end_at<=clock_timestamp() OR lifecycle_status<>'RUNNING'
+                            THEN 'BLOCKED' ELSE lifecycle_status END
+                    WHERE paper_run_id=?
+                    """, reason, runId);
         }
     }
 
@@ -219,6 +272,17 @@ public class ContinuousSimRepository {
     @Transactional(timeout = 10)
     public void recordSettlement(String runId, String lifecycle, String valuation,
                                  Integer pending, String reason, boolean terminal) {
+        Long account = null;
+        if (terminal) {
+            account = jdbc.queryForObject("""
+                    SELECT canonical_account_id FROM paper_trading_runs
+                    WHERE paper_run_id=? AND trade_env='SIM' AND symbol='BTC-USDT'
+                    """, Long.class, runId);
+            if (account == null) throw new IllegalStateException("CONTINUOUS_SIM_SCOPE_INVALID");
+            // 与正式撮合保持账户行→账务投影→运行游标的顺序，禁止最终核验与投影写入交错。
+            decisions.lockAccount(account);
+            ledger.lockSnapshotCurrencies(account, List.of("BTC", "USDT"));
+        }
         Cursor latest = lockCursor(runId);
         if ("STOPPED".equals(latest.status())) return;
         Instant now = jdbc.queryForObject("SELECT clock_timestamp()", Timestamp.class).toInstant();
@@ -230,14 +294,27 @@ public class ContinuousSimRepository {
             }
         }
         if (terminal && latest.manualEndAt() != null && pending != null && pending == 0) {
-            // 人工意图可能在末价读取后提交；在锁内用已保存的价格重新确认终态事实。
-            if (now.isBefore(latest.manualEndAt())) now = latest.manualEndAt();
-            Instant end = latest.bounded().endAt();
-            valuation = !latest.overlapCheckPending() && latest.revisionDetectedAt() == null
-                    && !latest.manualEndAt().isBefore(end) && closingPriceFailure(runId, end, now) == null
-                    ? "VERIFIED" : "UNAVAILABLE";
-            lifecycle = "MANUALLY_STOPPED";
-            reason = "MANUAL_END";
+            var accounting = decisions.settlement(runId, account);
+            String accountingFailure = accounting.blockingReason();
+            if (accountingFailure == null && accounting.pendingOrders() == 0) {
+                accountingFailure = decisions.projectionFailure(runId, account, ledger.currentBalance(account, "USDT", "SIM"));
+            }
+            if (accountingFailure != null || accounting.pendingOrders() != 0) {
+                pending = accounting.pendingOrders();
+                lifecycle = "BLOCKED";
+                valuation = "UNAVAILABLE";
+                reason = accountingFailure == null ? "SIM_PREVIOUS_EXECUTION_PENDING" : accountingFailure;
+                terminal = false;
+            } else {
+                // 人工意图可能在末价读取后提交；在锁内用已保存的价格重新确认终态事实。
+                if (now.isBefore(latest.manualEndAt())) now = latest.manualEndAt();
+                Instant end = latest.bounded().endAt();
+                valuation = !latest.overlapCheckPending() && latest.revisionDetectedAt() == null
+                        && !latest.manualEndAt().isBefore(end) && closingPriceFailure(runId, end, now) == null
+                        ? "VERIFIED" : "UNAVAILABLE";
+                lifecycle = "MANUALLY_STOPPED";
+                reason = "MANUAL_END";
+            }
         }
         Instant boundary = "VERIFIED".equals(valuation) ? latest.bounded().endAt() : null;
         jdbc.update("""
