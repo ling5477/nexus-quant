@@ -397,6 +397,7 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 setDatabaseTime(db, end);
                 var before = ForwardSimEvaluationFixture.allFacts(db);
                 configure(app,db,owner,missed,end,end,false);
+                ReflectionTestUtils.setField(driver, "clock", Clock.fixed(end, ZoneOffset.UTC));
                 // 截止轮询与另一个已持有游标行锁的事务冲突；该轮超时应完整回滚，下一次仍可从原状态收敛。
                 try (var held = db.database.source().getConnection();
                         var lock = held.prepareStatement("SELECT 1 FROM continuous_sim_runs WHERE paper_run_id=? FOR UPDATE")) {
@@ -415,6 +416,8 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 }
                 assertEquals(before, ForwardSimEvaluationFixture.allFacts(db));
                 db.as(owner, () -> driver.pollOnce(missed));
+                assertEquals("ADMISSION_CLOSED", db.admin.queryForObject(
+                        "SELECT lifecycle_status FROM continuous_sim_runs WHERE paper_run_id=?", String.class, missed));
                 assertEquals("UNAVAILABLE",status(http,token,missed).path("finalValuationStatus").asText());
                 setDatabaseTime(db, end.plusSeconds(901));
                 ReflectionTestUtils.setField(driver,"clock",Clock.fixed(end.plusSeconds(901),ZoneOffset.UTC));
@@ -442,7 +445,7 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 db.as(owner, () -> driver.stop(binding.paperRunId()));
                 String token = http.login(USER);
                 var market = app.getBean(ResearchSimComparisonFixture.MarketServer.class);
-                Instant end = market.end().plus(HOUR.multipliedBy(3));
+                Instant end = market.end().plus(HOUR);
                 Instant before = end.minusSeconds(1), after = end.plusSeconds(4);
                 var tick = new java.util.concurrent.atomic.AtomicReference<>(before);
                 Clock clock = org.mockito.Mockito.mock(Clock.class);
@@ -462,6 +465,7 @@ class BoundedContinuousSimPostgresIntegrationTest {
                     var response = ForwardSimEvaluationFixture.JSON.createObjectNode().put("code","0");
                     var data = response.putArray("data");
                     var overlap = rows.getLast();
+                    assertEquals(end.minus(HOUR.multipliedBy(2)), overlap.openTime());
                     for (HistoricalBar bar : rows.subList(rows.size()-2, rows.size())) {
                         BigDecimal close = revised && bar.equals(overlap) ? bar.closePrice().add(new BigDecimal("0.01")) : bar.closePrice();
                         data.addArray().add(Long.toString(bar.openTime().toEpochMilli())).add(bar.openPrice().toPlainString())
@@ -478,7 +482,8 @@ class BoundedContinuousSimPostgresIntegrationTest {
                             tick.set(after);
                             reply(ex, response.toString());
                         } else {
-                            reply(ex, "{\"code\":\"0\",\"data\":[]}");
+                            reply(ex, "{\"code\":\"0\",\"data\":[[\"" + end.minus(HOUR).toEpochMilli()
+                                    + "\",\"51000\",\"51001\",\"50999\",\"51000\",\"1\",\"1\",\"51000\",\"1\"]]}");
                         }
                     });
                     // JVM 已跨 T 但数据库仍在 T 前时，正式轮询必须仍发出普通行情请求。
@@ -488,21 +493,23 @@ class BoundedContinuousSimPostgresIntegrationTest {
                     ReflectionTestUtils.setField(driver, "feed", feed);
                     var result = db.as(owner, () -> driver.pollOnce(run));
                     assertEquals(1, crossed.get(), "JVM ahead must not close the admission before the DB deadline");
-                    assertNotEquals("COMPLETED",result.bounded().lifecycleStatus());
+                    assertEquals(revised ? "BLOCKED" : "COMPLETED", result.bounded().lifecycleStatus());
                     Timestamp detected = db.admin.queryForObject(
                             "SELECT revision_detected_at FROM continuous_sim_runs WHERE paper_run_id=?",Timestamp.class,run);
                     assertEquals(revised ? after : null, detected == null ? null : detected.toInstant());
                     assertEquals(digest, db.admin.queryForObject("SELECT bar_sha256 FROM continuous_sim_bars WHERE paper_run_id=? AND open_time=?",
                             String.class,run,Timestamp.from(overlap.openTime())));
                     assertEquals(0,countOrders(db,ForwardSimEvaluationFixture.account(db,run)));
-                    assertEquals(0, db.admin.queryForObject("SELECT count(*) FROM strategy_sim_decisions WHERE paper_run_id=?",Integer.class,run));
-                    // 让缺末价或已修订的运行由原生命周期释放租户唯一容量，再创建下一独立对照。
+                    assertEquals(revised ? 0 : 1, db.admin.queryForObject(
+                            "SELECT count(*) FROM strategy_sim_decisions WHERE paper_run_id=?", Integer.class, run));
+                    // 完整末价相同，只有修订版本应阻断；终态重读不得因可用末价变为成功。
                     Instant exhausted = end.plusSeconds(901);
                     setDatabaseTime(db,exhausted);
                     tick.set(exhausted);
                     var terminal = db.as(owner, () -> driver.pollOnce(run));
                     assertEquals("STOPPED",terminal.status());
-                    assertEquals("BLOCKED",terminal.bounded().lifecycleStatus());
+                    assertEquals(revised ? "BLOCKED" : "COMPLETED",terminal.bounded().lifecycleStatus());
+                    assertEquals(revised ? "UNAVAILABLE" : "VERIFIED",terminal.bounded().finalValuationStatus());
                 }
                 // 数据库先到 T，JVM 尚未到 T：禁止进入普通行情/策略推进，原始订单准入也应被拒绝。
                 ReflectionTestUtils.setField(driver, "clock", Clock.fixed(market.end(), ZoneOffset.UTC));
