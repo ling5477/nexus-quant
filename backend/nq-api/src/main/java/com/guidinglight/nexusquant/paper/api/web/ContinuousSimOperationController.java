@@ -68,14 +68,14 @@ public class ContinuousSimOperationController {
     @PostMapping("/runs/continuous")
     public ContinuousSimRunService.Status create(
             @RequestHeader("Idempotency-Key") UUID operationId,
-            @Valid @RequestBody StrategySimRunController.CreateRequest request) {
+            @Valid @RequestBody CreateRequest request) {
         return execute(
                         new ContinuousSimOperationRequest(
                                 operationId,
                                 ContinuousSimOperationRequest.Type.CREATE,
                                 request.publishId(),
                                 request.budget(),
-                                null))
+                                null, request.endAt()))
                 .result();
     }
 
@@ -144,6 +144,9 @@ public class ContinuousSimOperationController {
                 operation.result(),
                 operation.completedAt());
     }
+
+    public record CreateRequest(@NotBlank String publishId,
+            @jakarta.validation.constraints.DecimalMin("0.00000001") java.math.BigDecimal budget, Instant endAt) {}
 
     private record Actor(long owner, String username) {}
 

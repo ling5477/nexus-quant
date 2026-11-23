@@ -23,6 +23,9 @@ public interface PaperTradingRunRepository {
         throw new UnsupportedOperationException("legacy paper analysis read is not implemented");
     }
 
+    /** 返回是否属于有界运行；父停止命令先收紧准入，再由原调度完成收敛。 */
+    default boolean requestBoundedEnd(String paperRunId, Instant now) { return false; }
+
     boolean updateStatus(
             String paperRunId,
             PaperTradingRunStatus status,

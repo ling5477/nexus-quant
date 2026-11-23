@@ -10,11 +10,15 @@ import java.util.UUID;
 
 /** 原编号冻结主体和完整业务输入；同一预算的等值十进制表示使用同一身份。 */
 public record ContinuousSimOperationRequest(
-        UUID operationId, Type type, String publishId, BigDecimal budget, String paperRunId) {
+        UUID operationId, Type type, String publishId, BigDecimal budget, String paperRunId, java.time.Instant endAt) {
+    public ContinuousSimOperationRequest(UUID operationId, Type type, String publishId, BigDecimal budget, String paperRunId) {
+        this(operationId, type, publishId, budget, paperRunId, null);
+    }
     public enum Type {
         CREATE,
         PAUSE,
-        RESUME
+        RESUME,
+        END
     }
 
     public void validate() {
@@ -23,13 +27,14 @@ public record ContinuousSimOperationRequest(
         if (type == Type.CREATE) {
             if (!identity(publishId)
                     || paperRunId != null
+                    || endAt != null && !endAt.equals(endAt.truncatedTo(java.time.temporal.ChronoUnit.HOURS))
                     || budget == null
                     || budget.signum() <= 0
                     || budget.scale() > 8
                     || budget.compareTo(new BigDecimal("100000")) > 0) {
                 throw new IllegalArgumentException("INVALID_CONTINUOUS_SIM_CREATE_INPUT");
             }
-        } else if (!identity(paperRunId) || publishId != null || budget != null) {
+        } else if (!identity(paperRunId) || publishId != null || budget != null || endAt != null) {
             throw new IllegalArgumentException("INVALID_CONTINUOUS_SIM_STATE_INPUT");
         }
     }
@@ -56,6 +61,8 @@ public record ContinuousSimOperationRequest(
                                 .array());
                 if (bytes != null) hash.update(bytes);
             }
+            // 旧请求的字节流保持原样；有界创建独享附加截止时间。
+            if (endAt != null) hash.update(ByteBuffer.allocate(Long.BYTES).putLong(endAt.getEpochSecond()).array());
             return HexFormat.of().formatHex(hash.digest());
         } catch (NoSuchAlgorithmException unavailable) {
             throw new IllegalStateException("SHA-256 unavailable", unavailable);

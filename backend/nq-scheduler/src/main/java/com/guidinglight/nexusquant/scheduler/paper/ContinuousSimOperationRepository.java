@@ -77,8 +77,8 @@ public class ContinuousSimOperationRepository {
         jdbc.update(
                 """
                 INSERT INTO continuous_sim_operations(operation_id,owner_user_id,actor,operation_type,
-                    requested_publish_id,requested_budget,paper_run_id,input_sha256,trace_id,result_json,completed_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?::jsonb,?)
+                    requested_publish_id,requested_budget,paper_run_id,input_sha256,trace_id,result_json,completed_at,requested_end_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?::jsonb,?,?)
                 """,
                 request.operationId(),
                 owner,
@@ -90,7 +90,8 @@ public class ContinuousSimOperationRepository {
                 inputSha,
                 traceId,
                 encode(result),
-                Timestamp.from(now));
+                Timestamp.from(now),
+                request.endAt() == null ? null : Timestamp.from(request.endAt()));
         audit.append(
                 "PAPER_TRADING",
                 "CONTINUOUS_SIM_OPERATION_COMPLETED",

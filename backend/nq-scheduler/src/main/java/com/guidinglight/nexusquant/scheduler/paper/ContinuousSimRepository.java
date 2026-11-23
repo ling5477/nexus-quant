@@ -19,6 +19,7 @@ import java.util.Objects;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /** 连续 SIM 的 run-local 进度与已观察 bar；经济事实仍由 canonical 路径拥有。 */
 @Repository
@@ -39,16 +40,23 @@ public class ContinuousSimRepository {
 
     public void create(String runId, String versionId, String checksum, String costSha,
                        List<HistoricalBar> seed, Instant now) {
+        create(runId, versionId, checksum, costSha, seed, now, null);
+    }
+
+    public void create(String runId, String versionId, String checksum, String costSha,
+                       List<HistoricalBar> seed, Instant now, Instant endAt) {
         HistoricalBar last = seed.getLast();
         jdbc.update("""
                 INSERT INTO continuous_sim_runs(paper_run_id,status,strategy_version_id,strategy_checksum,
                     cost_sha256,seed_last_open_time,last_processed_open_time,last_processed_close_time,
-                    last_processed_sha256,last_observed_open_time,started_at,updated_at)
-                VALUES (?,'RUNNING',?,?,?,?,?,?,?,?,?,?)
+                    last_processed_sha256,last_observed_open_time,started_at,updated_at,
+                    end_at,lifecycle_status,final_valuation_status)
+                VALUES (?,'RUNNING',?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """, runId, versionId, checksum, costSha,
                 Timestamp.from(last.openTime()), Timestamp.from(last.openTime()),
                 Timestamp.from(last.closeTime()), contentSha(last), Timestamp.from(last.openTime()),
-                Timestamp.from(now), Timestamp.from(now));
+                Timestamp.from(now), Timestamp.from(now), endAt == null ? null : Timestamp.from(endAt),
+                endAt == null ? null : "RUNNING", endAt == null ? null : "PENDING");
         for (HistoricalBar bar : seed) insertBar(runId, bar, now);
     }
 
@@ -57,7 +65,10 @@ public class ContinuousSimRepository {
                 SELECT paper_run_id,status,strategy_version_id,strategy_checksum,cost_sha256,
                        seed_last_open_time,last_processed_open_time,last_processed_close_time,
                        last_processed_sha256,last_observed_open_time,gap_start_open_time,started_at,last_poll_at,
-                       last_successful_poll_at,updated_at,block_reason,consecutive_poll_failures
+                       last_successful_poll_at,updated_at,block_reason,consecutive_poll_failures,
+                       end_at,manual_end_at,revision_detected_at,lifecycle_status,final_valuation_status,
+                       last_valuation_boundary,pending_orders,clock_timestamp()>=end_at AS due,
+                       (SELECT p.publish_id FROM paper_trading_runs p WHERE p.paper_run_id=continuous_sim_runs.paper_run_id) AS publish_id
                 FROM (SELECT tr.* FROM continuous_sim_runs tr WHERE nq_entity_tenant('paper',tr.paper_run_id)=nq_current_tenant_id()) continuous_sim_runs WHERE paper_run_id=?
                 """, (rs, row) -> new Cursor(rs.getString("paper_run_id"), rs.getString("status"),
                 rs.getString("strategy_version_id"), rs.getString("strategy_checksum"),
@@ -67,8 +78,64 @@ public class ContinuousSimRepository {
                 instant(rs, "gap_start_open_time"),
                 instant(rs, "started_at"), instant(rs, "last_poll_at"),
                 instant(rs, "last_successful_poll_at"), instant(rs, "updated_at"),
-                rs.getString("block_reason"), rs.getInt("consecutive_poll_failures")), runId)
+                rs.getString("block_reason"), rs.getInt("consecutive_poll_failures"),
+                instant(rs, "manual_end_at"), instant(rs, "revision_detected_at"),
+                rs.getTimestamp("end_at") == null ? null : new ContinuousSimRunService.Bounded(
+                    instant(rs, "end_at"), rs.getBoolean("due") && "RUNNING".equals(rs.getString("lifecycle_status"))
+                            ? "ADMISSION_CLOSED" : rs.getString("lifecycle_status"),
+                    rs.getString("final_valuation_status"), instant(rs, "last_valuation_boundary"),
+                    rs.getObject("pending_orders", Integer.class), rs.getString("block_reason"),
+                    instant(rs, "updated_at"), rs.getString("publish_id"), rs.getString("strategy_version_id"))), runId)
                 .stream().findFirst().orElseThrow(() -> new IllegalArgumentException("CONTINUOUS_SIM_RUN_NOT_FOUND"));
+    }
+
+    public boolean requestEnd(String runId, Instant now) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("SELECT nq_request_continuous_end(?,?)",
+                Boolean.class, runId, Timestamp.from(now)));
+    }
+
+    public void closeAdmission(String runId, Instant now) {
+        jdbc.update("""
+            UPDATE continuous_sim_runs SET lifecycle_status='ADMISSION_CLOSED',block_reason='DEADLINE_REACHED',updated_at=?
+            WHERE paper_run_id=? AND end_at IS NOT NULL AND lifecycle_status='RUNNING'
+            """, Timestamp.from(now), runId);
+    }
+
+    public void recordRevision(String runId, Instant now) {
+        jdbc.update("""
+            UPDATE continuous_sim_runs SET lifecycle_status='BLOCKED',status='STALLED',block_reason='DATA_REVISION_DETECTED',
+                revision_detected_at=?,updated_at=? WHERE paper_run_id=? AND end_at IS NOT NULL
+                AND revision_detected_at IS NULL AND status<>'STOPPED'
+            """, Timestamp.from(now), Timestamp.from(now), runId);
+    }
+
+    String closingPriceFailure(String runId, Instant endAt, Instant asOf) {
+        return new ClosedBarValuation(jdbc, mapper).read(runId, endAt, endAt, asOf).reason();
+    }
+
+    /** 人工意图优先；父运行与容量槽在同一事务内退出，避免父状态过早取消后台收敛资格。 */
+    @Transactional(timeout = 10)
+    public void recordSettlement(String runId, Instant now, String lifecycle, String valuation,
+                                 Integer pending, String reason, boolean terminal) {
+        jdbc.queryForObject("SELECT paper_run_id FROM continuous_sim_runs WHERE paper_run_id=? FOR UPDATE", String.class, runId);
+        Cursor latest = get(runId);
+        if ("STOPPED".equals(latest.status())) return;
+        if (latest.manualEndAt() != null && terminal && pending != null && pending == 0) {
+            lifecycle = "MANUALLY_STOPPED";
+            reason = "MANUAL_END";
+        }
+        Instant boundary = "VERIFIED".equals(valuation) ? latest.bounded().endAt() : null;
+        jdbc.update("""
+            UPDATE continuous_sim_runs SET lifecycle_status=?,final_valuation_status=?,last_valuation_boundary=?,
+                pending_orders=?,block_reason=?,status=?,updated_at=?,last_poll_at=?
+            WHERE paper_run_id=? AND end_at IS NOT NULL
+            """, lifecycle, valuation, boundary == null ? null : Timestamp.from(boundary), pending, reason,
+                terminal ? "STOPPED" : "STALLED", Timestamp.from(now), Timestamp.from(now), runId);
+        if (terminal && jdbc.update("""
+            UPDATE paper_trading_runs SET status='STOPPED',stopped_at=?,updated_at=?
+            WHERE paper_run_id=? AND status='RUNNING'
+            """, Timestamp.from(now), Timestamp.from(now), runId) != 1)
+            throw new IllegalStateException("BOUNDED_PARENT_STATE_CONFLICT");
     }
 
     public List<String> activeIds() {
@@ -110,6 +177,7 @@ public class ContinuousSimRepository {
                     last_observed_open_time=GREATEST(last_observed_open_time,?),
                     consecutive_poll_failures=CASE WHEN ? THEN 0 ELSE consecutive_poll_failures+1 END,
                     updated_at=? WHERE paper_run_id=? AND status <> 'STOPPED'
+                      AND (end_at IS NULL OR lifecycle_status='RUNNING')
                 """, status, reason, gapStart == null ? null : Timestamp.from(gapStart),
                 Timestamp.from(now), success, Timestamp.from(now),
                 Timestamp.from(latestObserved), success, Timestamp.from(now), runId);
@@ -218,5 +286,16 @@ public class ContinuousSimRepository {
                          String lastProcessedSha256, Instant lastObservedOpenTime,
                          Instant gapStartOpenTime,
                          Instant startedAt, Instant lastPollAt, Instant lastSuccessfulPollAt,
-                         Instant updatedAt, String blockReason, int consecutivePollFailures) { }
+                         Instant updatedAt, String blockReason, int consecutivePollFailures, Instant manualEndAt, Instant revisionDetectedAt,
+                         ContinuousSimRunService.Bounded bounded) {
+        public Cursor(String runId, String status, String strategyVersionId, String strategyChecksum, String costSha256,
+                      Instant seedLastOpenTime, Instant lastProcessedOpenTime, Instant lastProcessedCloseTime,
+                      String lastProcessedSha256, Instant lastObservedOpenTime, Instant gapStartOpenTime,
+                      Instant startedAt, Instant lastPollAt, Instant lastSuccessfulPollAt, Instant updatedAt,
+                      String blockReason, int consecutivePollFailures) {
+            this(runId, status, strategyVersionId, strategyChecksum, costSha256, seedLastOpenTime, lastProcessedOpenTime,
+                 lastProcessedCloseTime, lastProcessedSha256, lastObservedOpenTime, gapStartOpenTime, startedAt,
+                 lastPollAt, lastSuccessfulPollAt, updatedAt, blockReason, consecutivePollFailures, null, null, null);
+        }
+    }
 }

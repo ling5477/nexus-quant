@@ -26,12 +26,17 @@ final class ClosedBarValuation {
   }
 
   Result read(StrategySimAnalysisQuery.Run run, Instant from, Instant to, Instant asOf) {
+    return read(run.paperRunId(), from, to, asOf);
+  }
+
+  Result read(String runId, Instant from, Instant to, Instant asOf) {
     // 修订保护保留原bar，完整旧网格不能掩盖截至知识截止已检测到的来源失效。
     // 未记录修订影响的具体小时，因此对该run保守拒绝，不用未来检测结果污染更早asOf。
     if (Boolean.TRUE.equals(jdbc.queryForObject("""
         SELECT EXISTS(SELECT 1 FROM continuous_sim_runs WHERE paper_run_id=?
-          AND block_reason='DATA_REVISION_DETECTED' AND updated_at<=?)
-        """, Boolean.class, run.paperRunId(), Timestamp.from(asOf))))
+          AND ((revision_detected_at IS NOT NULL AND revision_detected_at<=?) OR
+            (end_at IS NULL AND block_reason='DATA_REVISION_DETECTED' AND updated_at<=?)))
+        """, Boolean.class, runId, Timestamp.from(asOf), Timestamp.from(asOf))))
       return new Result(List.of(), List.of(), "DATA_REVISION_DETECTED");
     // 90日最多2161个网格点；仍保持独立10000事实上限，不扫描其他run或窗口外行情。
     var rows = jdbc.query("""
@@ -40,7 +45,7 @@ final class ClosedBarValuation {
         ORDER BY open_time LIMIT 10001
         """, (rs, index) -> new StoredBar(rs.getTimestamp(1).toInstant(), rs.getTimestamp(2).toInstant(),
             rs.getTimestamp(3).toInstant(), rs.getTimestamp(4).toInstant(), rs.getString(5), rs.getString(6)),
-        run.paperRunId(), Timestamp.from(from.minusSeconds(3600)), Timestamp.from(to));
+        runId, Timestamp.from(from.minusSeconds(3600)), Timestamp.from(to));
     if (rows.size() > 10000) return new Result(List.of(), List.of(), "VALUATION_WINDOW_LIMITED");
     var byOpen = new HashMap<Instant, StoredBar>();
     rows.forEach(row -> byOpen.put(row.open(), row));

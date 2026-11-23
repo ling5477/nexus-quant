@@ -24,6 +24,12 @@ import java.util.Optional;
 @Repository
 public class JdbcPaperTradingRunRepository implements PaperTradingRunRepository {
 
+    @Override
+    public boolean requestBoundedEnd(String paperRunId, Instant now) {
+        return Boolean.TRUE.equals(jdbcTemplate.queryForObject("SELECT nq_request_continuous_end(?,?)",
+                Boolean.class, paperRunId, Timestamp.from(now)));
+    }
+
     private static final String BASE_SELECT =
             """
             SELECT paper_run_id, publish_id, strategy_version_id, status, trade_env, exchange_code, market_type,

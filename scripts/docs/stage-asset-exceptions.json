@@ -3,7 +3,7 @@
   "exceptions": [
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "2c5659bf85a23acb0bd0746dd8db6c21bede45840135c91ab858fbd3054299a0",
+      "sha256": "8773f7d11ce6e7502c9fca0d0e973042cb4d7b796dee63b6dd72f3149341bc2d",
       "kind": "GOVERNANCE_CONTRACT",
       "reason": "Current governance or accepted delivery proof, archive schema and offline fixtures. Stage names describe evidence/current authority, not production runtime taxonomy.",
       "owner": "Governance and delivery contract owner",

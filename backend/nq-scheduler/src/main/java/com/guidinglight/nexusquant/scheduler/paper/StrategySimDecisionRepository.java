@@ -23,6 +23,129 @@ public class StrategySimDecisionRepository {
         this.jdbc = jdbc;
     }
 
+    record Boundary(Instant startedAt, Instant endAt, boolean manuallyClosed, boolean closed) {}
+
+    Boundary boundary(String run) {
+        return jdbc.query("""
+                SELECT started_at,end_at, manual_end_at IS NOT NULL,
+                       manual_end_at IS NOT NULL OR lifecycle_status<>'RUNNING' OR clock_timestamp()>=end_at
+                FROM continuous_sim_runs WHERE paper_run_id=? AND end_at IS NOT NULL
+                """, (rs, row) -> new Boundary(rs.getTimestamp(1).toInstant(), rs.getTimestamp(2).toInstant(),
+                        rs.getBoolean(3), rs.getBoolean(4)), run).stream().findFirst().orElse(null);
+    }
+
+    record ClosedWork(String strategyRunId, String runStatus, String rejection, String orderId, String orderStatus) {}
+
+    ClosedWork closedWork(String runId, long account, DecisionView decision) {
+        String request = "sim-" + decision.decisionId().substring(0, 60);
+        var saved = jdbc.query("""
+                SELECT r.strategy_run_id,r.status,w.normalization_rejection,o.order_id,o.status,
+                       (r.strategy_id=? AND r.exchange_code='PAPER' AND r.trade_env='SIM'
+                        AND w.account_id=r.account_id AND w.client_order_id='coid-'||r.request_id
+                        AND w.symbol='BTC-USDT' AND w.side=? AND w.quantity=?
+                        AND (o.order_id IS NULL OR (o.account_id=r.account_id AND o.trade_env='SIM'
+                         AND o.venue='PAPER' AND o.client_order_id=w.client_order_id AND o.symbol=w.symbol
+                         AND o.side=w.side AND o.qty=coalesce(w.effective_quantity,w.quantity)))) AS bound
+                FROM strategy_runs r LEFT JOIN strategy_run_dispatch_work w USING(strategy_run_id)
+                LEFT JOIN orders o ON o.strategy_run_id=r.strategy_run_id
+                WHERE r.account_id=? AND r.request_id=? LIMIT 2
+                """, (rs, row) -> {
+                    if (!rs.getBoolean("bound")) throw new IllegalStateException("SIM_EXECUTION_BINDING_UNKNOWN");
+                    return new ClosedWork(rs.getString(1), rs.getString(2), rs.getString(3),
+                            rs.getString(4), rs.getString(5));
+                }, "sim-sim-" + runId, decision.side(), decision.quantity(), account, request);
+        if (saved.size() > 1) throw new IllegalStateException("SIM_EXECUTION_BINDING_UNKNOWN");
+        return saved.isEmpty() ? null : saved.getFirst();
+    }
+
+    void rejectUnprepared(String strategyRunId) {
+        jdbc.queryForObject("SELECT nq_bind_strategy_effective(?,NULL,NULL,'BOUNDED_RUN_ADMISSION_CLOSED')",
+                Boolean.class, strategyRunId);
+    }
+
+    List<DecisionView> recoverable(String run, long account) {
+        return jdbc.query("""
+                SELECT d.* FROM strategy_sim_decisions d
+                LEFT JOIN orders o ON o.order_id=d.order_id AND o.account_id=d.canonical_account_id
+                LEFT JOIN strategy_runs r ON r.strategy_run_id=d.strategy_run_id AND r.account_id=o.account_id
+                WHERE d.paper_run_id=? AND d.canonical_account_id=? AND (d.reason='DECIDING'
+                  OR (o.status IN ('FILLED','RISK_REJECTED','REJECTED','CANCELLED')
+                    AND r.status IN ('CREATED','DISPATCHING','RUNNING')))
+                ORDER BY d.signal_open_time LIMIT 32
+                """, (rs, row) -> map(rs), run, account);
+    }
+
+    /** 整套事实用同一快照核验。成交引用、资金分录集合或未决工作不闭合时保留所有原始记录。 */
+    StrategySimRunService.Settlement settlement(String run, long account) {
+        return jdbc.queryForObject("""
+                WITH scope AS (SELECT ?::text AS run, ?::bigint AS account),
+                d AS (SELECT d.* FROM strategy_sim_decisions d,scope s
+                       WHERE d.paper_run_id=s.run AND d.canonical_account_id=s.account),
+                o AS (SELECT o.* FROM orders o,scope s WHERE o.account_id=s.account),
+                r AS (SELECT r.* FROM strategy_runs r,scope s WHERE r.account_id=s.account),
+                t AS (SELECT t.* FROM trades t,scope s WHERE t.account_id=s.account),
+                expected AS (
+                    SELECT t.trade_id ref_id,t.trade_id||':LEDGER:'||leg.suffix AS key,leg.currency,leg.delta,
+                           CASE WHEN leg.delta>=0 THEN 'CREDIT' ELSE 'DEBIT' END AS direction,t.ts
+                    FROM t JOIN o USING(order_id)
+                    CROSS JOIN LATERAL (SELECT round(t.price*t.qty,8)*CASE o.side WHEN 'BUY' THEN -1 ELSE 1 END AS cash) v
+                    CROSS JOIN LATERAL (VALUES ('1','USDT',v.cash),('2','USDT',-v.cash),
+                       ('FEE_1',t.fee_currency,-t.fee),('FEE_2',t.fee_currency,t.fee)) leg(suffix,currency,delta)
+                    WHERE leg.suffix IN ('1','2') OR t.fee<>0
+                ), actual AS (
+                    SELECT e.ref_id,e.idempotency_key AS key,e.currency,e.delta,e.direction,e.ts
+                    FROM ledger_entries e,scope s WHERE e.account_id=s.account AND e.ref_type='TRADE'
+                ), pending AS (
+                    SELECT count(*)::int AS n FROM o WHERE status NOT IN ('FILLED','CANCELLED','REJECTED','RISK_REJECTED')
+                )
+                SELECT pending.n,
+                  CASE WHEN EXISTS (SELECT 1 FROM o,scope s WHERE NOT EXISTS (
+                      SELECT FROM d JOIN r ON r.strategy_run_id=d.strategy_run_id
+                      JOIN strategy_run_dispatch_work w ON w.strategy_run_id=r.strategy_run_id
+                      WHERE d.order_id=o.order_id AND d.strategy_run_id=o.strategy_run_id
+                        AND r.strategy_id='sim-sim-'||s.run AND r.request_id='sim-'||left(d.decision_id,60)
+                        AND r.trade_env='SIM' AND r.exchange_code='PAPER'
+                        AND o.trade_env='SIM' AND o.venue='PAPER' AND o.symbol='BTC-USDT'
+                        AND w.account_id=s.account AND w.client_order_id=o.client_order_id
+                        AND w.client_order_id='coid-'||r.request_id AND w.symbol=o.symbol
+                        AND w.side=o.side AND o.side=d.side AND o.qty=d.quantity))
+                    THEN 'SIM_ORDER_BINDING_UNKNOWN'
+                  WHEN EXISTS (SELECT FROM d WHERE status IN ('ACCEPTED','RISK_REJECTED') AND NOT EXISTS
+                      (SELECT FROM o WHERE o.order_id=d.order_id AND o.strategy_run_id=d.strategy_run_id))
+                    THEN 'SIM_DECISION_ORDER_UNKNOWN'
+                  WHEN EXISTS (SELECT FROM t LEFT JOIN o USING(order_id) LEFT JOIN d ON d.order_id=t.order_id
+                      WHERE o.order_id IS NULL OR d.order_id IS NULL OR t.trade_env<>'SIM'
+                      OR t.exchange_code<>'PAPER' OR t.symbol IS DISTINCT FROM o.symbol
+                      OR t.strategy_run_id IS DISTINCT FROM o.strategy_run_id
+                      OR t.price IS DISTINCT FROM d.execution_price OR t.ts IS DISTINCT FROM d.execution_open_time
+                      OR t.fee_currency IS DISTINCT FROM 'USDT' OR d.fee_rate IS NULL
+                      OR t.fee IS DISTINCT FROM round(t.qty*t.price*d.fee_rate,8))
+                    THEN 'SIM_TRADE_BINDING_UNKNOWN'
+                  WHEN EXISTS ((SELECT * FROM expected EXCEPT ALL SELECT * FROM actual)
+                        UNION ALL (SELECT * FROM actual EXCEPT ALL SELECT * FROM expected))
+                    THEN 'SIM_TRADE_LEDGER_MISMATCH'
+                  WHEN EXISTS (SELECT FROM o CROSS JOIN LATERAL nq_strategy_execution_proof(o.order_id) p
+                      WHERE (o.status='FILLED' AND (p.valid IS NOT TRUE OR p.executed_quantity<>o.qty))
+                        OR (o.status IN ('CANCELLED','RISK_REJECTED','REJECTED') AND p.fill_count<>0))
+                    THEN 'SIM_ORDER_TRADE_MISMATCH'
+                  WHEN EXISTS (SELECT FROM o WHERE status IN ('FAILED','SENT','SUBMITTING','NEW','RISK_PASSED','VALIDATED'))
+                    THEN 'SIM_ORDER_OUTCOME_UNKNOWN'
+                  WHEN pending.n>0 THEN 'SIM_PREVIOUS_EXECUTION_PENDING'
+                  WHEN EXISTS (SELECT FROM d WHERE reason='DECIDING') THEN 'SIM_DECISION_RECOVERY_PENDING'
+                  WHEN EXISTS (SELECT FROM r LEFT JOIN o ON o.strategy_run_id=r.strategy_run_id
+                      LEFT JOIN strategy_run_dispatch_work w ON w.strategy_run_id=r.strategy_run_id
+                      WHERE CASE WHEN o.order_id IS NULL THEN (r.status='FAILED' AND w.normalization_rejection IS NOT NULL
+                                 AND EXISTS (SELECT FROM d WHERE d.reason='BOUNDED_RUN_ADMISSION_CLOSED'
+                                 AND r.strategy_id='sim-sim-'||d.paper_run_id AND r.request_id='sim-'||left(d.decision_id,60)
+                                 AND w.account_id=r.account_id AND w.client_order_id='coid-'||r.request_id
+                                 AND w.symbol='BTC-USDT' AND w.side=d.side AND w.quantity=d.quantity))
+                                 WHEN o.status='FILLED' THEN r.status='SUCCEEDED'
+                                 ELSE r.status='FAILED' END IS NOT TRUE)
+                    THEN 'SIM_CANONICAL_RUN_NOT_TERMINAL'
+                  ELSE NULL END AS reason FROM pending
+                """, (rs, row) -> new StrategySimRunService.Settlement(rs.getInt(1), rs.getString(2)), run, account);
+    }
+
     public void lockAccount(long accountId) {
         jdbc.queryForObject(
                 "SELECT account_id FROM accounts WHERE account_id=? FOR NO KEY UPDATE",

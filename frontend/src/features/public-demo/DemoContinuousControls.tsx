@@ -29,8 +29,8 @@ export function DemoContinuousControls({paperRunId}: {paperRunId: string}) {
         client.invalidateQueries({queryKey: paperTradingQueryKeys.all}),
         client.invalidateQueries({queryKey: demoRegistrationKeys.result(userId)}),
     ]);};
-    const command = useMutation({mutationFn: (action: 'stop' | 'resume') => continuousOperations.submit({
-        type: action === 'stop' ? 'PAUSE' : 'RESUME', paperRunId}), retry: false, onSuccess: refresh});
+    const command = useMutation({mutationFn: (action: 'stop' | 'resume' | 'end') => continuousOperations.submit({
+        type: action === 'end' ? 'END' : action === 'stop' ? 'PAUSE' : 'RESUME', paperRunId}), retry: false, onSuccess: refresh});
     return <Space direction="vertical" size={12} style={{width: '100%'}}>
         <ContinuousOperationRecovery canSubmit={available} onResult={refresh} />
         {(command.isError || analysis.isError) && <Alert type="error" showIcon message={formatApiError((command.error ?? analysis.error) as AppApiError)} />}

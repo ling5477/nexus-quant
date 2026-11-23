@@ -111,6 +111,38 @@ async function unknown() {
 }
 
 describe('continuous original operation recovery', () => {
+    it('replays the original bounded creation including its UTC deadline, even after expiry', async () => {
+        const endAt = '2026-10-16T00:00:00Z';
+        const post = vi.spyOn(apiClient, 'post').mockRejectedValue({status: 0, code: 'NETWORK_ERROR'});
+        await expect(continuousOperations.submit({...input, endAt})).rejects.toMatchObject({code: 'NETWORK_ERROR'});
+        const original = pending();
+        expect(post.mock.calls[0][1]).toEqual({...input, endAt, operationId: original.request.operationId});
+        const receipt = response(original);
+        const bounded = {endAt, lifecycleStatus: 'RUNNING', finalValuationStatus: 'PENDING', lastValuationBoundary: null,
+            pendingOrders: null, reason: null, updatedAt: progress.startedAt, publishId: input.publishId, strategyVersionId: 'sv-one'};
+        expect(() => confirmContinuousOperation(original, receipt)).toThrow();
+        expect(() => confirmContinuousOperation(original, {...receipt, result: {...receipt.result,
+            bounded: {...bounded, endAt: '2026-10-17T00:00:00Z'}}})).toThrow();
+        vi.spyOn(apiClient, 'get').mockRejectedValue({status: 404, code: 'NOT_FOUND'});
+        await expect(continuousOperations.lookup(original)).rejects.toMatchObject({status: 404});
+        post.mockResolvedValue({data: {...receipt, result: {...receipt.result, bounded}}});
+        await continuousOperations.resume(original);
+        expect(post.mock.calls[1][1]).toEqual(post.mock.calls[0][1]);
+        expect(readContinuousOperation(17).kind).toBe('none');
+    });
+    it('accepts END only with the same run and a bounded result with closed admission', async () => {
+        const input = {type: 'END' as const, paperRunId: progress.paperRunId};
+        vi.spyOn(apiClient, 'post').mockRejectedValue({status: 0, code: 'NETWORK_ERROR'});
+        await expect(continuousOperations.submit(input)).rejects.toMatchObject({code: 'NETWORK_ERROR'});
+        const original = pending(), receipt = response(original);
+        const bounded = {endAt: '2026-10-16T00:00:00Z', lifecycleStatus: 'SETTLING', finalValuationStatus: 'PENDING',
+            lastValuationBoundary: null, pendingOrders: 1, reason: null, updatedAt: progress.startedAt,
+            publishId: 'pub-one', strategyVersionId: 'sv-one'};
+        expect(() => confirmContinuousOperation(original, receipt)).toThrow();
+        expect(() => confirmContinuousOperation(original, {...receipt,
+            result: {...receipt.result, bounded: {...bounded, lifecycleStatus: 'RUNNING'}}})).toThrow();
+        expect(confirmContinuousOperation(original, {...receipt, result: {...receipt.result, bounded}}).result.bounded).toEqual(bounded);
+    });
     it('a bounded read timeout retains the original identity and cannot authorize another submission', async () => {
         const {original} = await unknown();
         vi.useFakeTimers();

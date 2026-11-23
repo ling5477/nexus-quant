@@ -1,5 +1,27 @@
 import type {ContinuousSimStatus} from './types/paper-trading';
 
+/** 固定 UTC 整点的原始值可用于到期后的回执核对，因此此处不与客户端当前时间比较。 */
+export function isUtcHour(value: unknown): value is string {
+    if (typeof value !== 'string' || !/^\d{4}-\d\d-\d\dT(?:[01]\d|2[0-3]):00:00(?:\.0{1,9})?Z$/.test(value))
+        return false;
+    const instant = Date.parse(value);
+    return Number.isFinite(instant) && new Date(instant).toISOString().slice(0, 19) === value.slice(0, 19);
+}
+
+function validBoundedStatus(value: unknown): boolean {
+    if (value == null) return true;
+    if (typeof value !== 'object' || Array.isArray(value)) return false;
+    const row = value as Record<string, unknown>;
+    const text = (v: unknown) => typeof v === 'string' && v.length > 0 && v.length <= 128;
+    return isUtcHour(row.endAt) && text(row.lifecycleStatus) && text(row.finalValuationStatus)
+        && (row.lastValuationBoundary === null || isUtcHour(row.lastValuationBoundary))
+        && (row.pendingOrders === null || (typeof row.pendingOrders === 'number'
+            && Number.isSafeInteger(row.pendingOrders) && row.pendingOrders >= 0))
+        && (row.reason === null || text(row.reason))
+        && typeof row.updatedAt === 'string' && Number.isFinite(Date.parse(row.updatedAt))
+        && text(row.publishId) && text(row.strategyVersionId);
+}
+
 /** 只有空成功响应表示没有游标；结构损坏和其他运行的数据必须作为读取错误处理。 */
 export function parseContinuousSimStatus(
     value: unknown,
@@ -28,6 +50,7 @@ export function parseContinuousSimStatus(
         !text('lastDecisionId', true) ||
         !text('lastDecisionStatus', true) ||
         !text('blockReason', true) ||
+        !validBoundedStatus(row.bounded) ||
         !Number.isInteger(row.consecutivePollFailures) ||
         (row.consecutivePollFailures as number) < 0 ||
         (row.consecutivePollFailures as number) > 2_147_483_647
@@ -58,8 +81,13 @@ export function continuousStatusKey(status: string): 'running' | 'stalled' | 'st
 export function continuousAction(
     status: ContinuousSimStatus,
     parentStatus: string,
-): 'pause' | 'resume' | null {
+): 'pause' | 'resume' | 'end' | null {
     if (parentStatus !== 'RUNNING') return null;
+    if (status.bounded) {
+        if (status.status === 'STOPPED') return null;
+        return ['RUNNING', 'ADMISSION_CLOSED', 'SETTLING', 'BLOCKED'].includes(status.bounded.lifecycleStatus)
+            ? 'end' : null;
+    }
     if (status.status === 'RUNNING' || status.status === 'STALLED') return 'pause';
     return status.status === 'STOPPED' && status.blockReason !== 'DATA_REVISION_DETECTED'
         ? 'resume'

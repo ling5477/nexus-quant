@@ -1,4 +1,32 @@
 {
+  "boundedSim": {
+    "deadline": "运行截止时间（UTC）",
+    "optionalDeadline": "持续模拟截止时间（UTC，可选）",
+    "inputHelp": "留空可创建开放式运行。设置截止后，该时间在创建时固定。",
+    "invalidDeadline": "请选择未来 90 天内的 UTC 整点，分钟须为 00。",
+    "meaning": "截止后关闭新订单准入，已受理订单按原流程收敛。",
+    "end": "提前结束运行",
+    "endMeaning": "确认后将关闭此运行的新订单准入，已受理订单继续处理。结束后不可恢复。",
+    "finalValuation": "最终估值状态",
+    "lastValuation": "最后可信估值边界（UTC）",
+    "pendingOrders": "未收敛订单数",
+    "observationDeadline": "关联运行截止于 {{endAt}}（UTC）。此目标可在该时间或之前结束。",
+    "beyondDeadline": "观察结束时间超出当前运行的截止时间。",
+    "states": {
+      "RUNNING": "运行中",
+      "ADMISSION_CLOSED": "已关闭新订单准入",
+      "SETTLING": "等待经济事实收敛",
+      "COMPLETED": "运行已完成",
+      "BLOCKED": "运行收敛受阻",
+      "MANUALLY_STOPPED": "已手动结束"
+    },
+    "valuation": {
+      "PENDING": "待核验",
+      "VERIFIED": "已核验",
+      "UNAVAILABLE": "不可用",
+      "NOT_APPLICABLE": "不适用"
+    }
+  },
   "continuousOperationsView": {
     "title": "运行依赖与最近检查",
     "meaning": "调度任务由当前实例共享；任务成功或服务健康不代表该策略游标正常，也不证明绩效可用。此处仅查询，控制操作仍使用原入口。",
@@ -10,7 +38,7 @@
     "cursorReadAt": "游标读取时间",
     "health": "服务聚合健康",
     "healthAt": "服务健康检查时间",
-    "freshness": {"STALE": "轮询时间已过期，请检查调度与运行原因", "RECENT": "最近轮询时间在检查阈值内", "UNKNOWN": "缺少成功轮询或有效调度周期，无法判断时效", "PAUSED": "连续推进已暂停，保留原游标"},
+    "freshness": {"STALE": "轮询时间已过期，请检查调度与运行原因", "RECENT": "最近轮询时间在检查阈值内", "UNKNOWN": "缺少成功轮询或有效调度周期，无法判断时效", "PAUSED": "连续推进已暂停，保留原游标", "ENDED": "此有界运行已停止轮询"},
     "freshnessMeaning": "仅作当前运营提示：最近轮询超过 2 × 有效轮询周期 + 60 秒时提醒检查。业务阻断、最近成功轮询与报价等待仍以原运行状态为准。",
     "jobsFailed": "共享调度状态读取失败",
     "healthFailed": "服务健康读取失败",
@@ -3609,6 +3637,7 @@
     "stale": "上次读取的状态，当前进度待确认"
   },
   "continuousOperations": {
+    "END": "提前结束请求",
     "submitting": "正在提交原操作，请等待结果",
     "unknown": "有一项持续模拟操作待确认",
     "meaning": "原编号和输入已保留。此处先查询该操作的结果，不会因刷新再次创建或改变运行。",

@@ -8,6 +8,7 @@ import com.guidinglight.nexusquant.research.application.paper.service.PaperTradi
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRunStatus;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -75,6 +76,16 @@ public class ContinuousSimRunService {
     /** 正式命令沿用认证主体记录创建归属；调度和既有Java调用保留原两参数入口。 */
     @Transactional(timeout = 30)
     public Status start(String publishId, BigDecimal budget, String actor) {
+        return start(publishId, budget, actor, null);
+    }
+
+    @Transactional(timeout = 30)
+    public Status start(String publishId, BigDecimal budget, String actor, Instant endAt) {
+        Instant start = clock.instant();
+        if (endAt != null && (!endAt.equals(endAt.truncatedTo(ChronoUnit.HOURS))
+                || !endAt.isAfter(start) || endAt.isAfter(start.plus(Duration.ofDays(90))))) {
+            throw new IllegalArgumentException("INVALID_CONTINUOUS_SIM_DEADLINE");
+        }
         progress.requireAdmissionCapacity();
         StrategySimRunService.RunView created = sim.create(publishId, budget, actor);
         StrategySimRunService.ContinuousSeed seed = sim.continuousSeed(created.paperRunId());
@@ -85,7 +96,7 @@ public class ContinuousSimRunService {
                 seed.strategyChecksum(),
                 seed.costSha256(),
                 seed.bars(),
-                clock.instant());
+                start, endAt);
         return status(created.paperRunId());
     }
 
@@ -97,6 +108,7 @@ public class ContinuousSimRunService {
                 runId,
                 false,
                 () -> {
+                    if (progress.get(runId).bounded() != null) throw new IllegalStateException("BOUNDED_RUN_REQUIRES_END");
                     progress.stop(runId, clock.instant());
                     return status(runId);
                 });
@@ -110,6 +122,7 @@ public class ContinuousSimRunService {
                 false,
                 () -> {
                     ContinuousSimRepository.Cursor cursor = progress.get(runId);
+                    if (cursor.bounded() != null) throw new IllegalStateException("BOUNDED_RUN_CANNOT_RESUME");
                     checkBinding(cursor);
                     boolean manualResume = Boolean.TRUE.equals(jdbc.queryForObject(
                             "SELECT requires_manual_resume FROM tenant_execution_controls WHERE tenant_id=nq_current_tenant_id()", Boolean.class));
@@ -129,6 +142,13 @@ public class ContinuousSimRunService {
                     }
                     return status(runId);
                 });
+    }
+
+    @Transactional(timeout = 10)
+    public Status end(String runId) {
+        paperRuns.getById(runId);
+        if (!progress.requestEnd(runId, clock.instant())) throw new IllegalStateException("CONTINUOUS_SIM_NOT_BOUNDED");
+        return status(runId);
     }
 
     public Status status(String runId) {
@@ -156,7 +176,7 @@ public class ContinuousSimRunService {
                 latest == null ? null : latest.decisionId(),
                 latest == null ? null : latest.status(),
                 cursor.blockReason(),
-                cursor.consecutivePollFailures());
+                cursor.consecutivePollFailures(), cursor.bounded());
     }
 
     public boolean has(String runId) {
@@ -180,6 +200,8 @@ public class ContinuousSimRunService {
         ContinuousSimRepository.Cursor cursor = progress.get(runId);
         if ("STOPPED".equals(cursor.status())) return status(runId);
         Instant now = clock.instant();
+        if (cursor.bounded() != null && (!"RUNNING".equals(cursor.bounded().lifecycleStatus())
+                || !now.isBefore(cursor.bounded().endAt()))) return settle(runId, cursor);
         Instant latestAvailable = cursor.lastObservedOpenTime();
         Instant gapStart = null;
         try {
@@ -189,7 +211,10 @@ public class ContinuousSimRunService {
             Instant latestOpen = before.getLast().openTime();
             Instant firstOpen = latestOpen.minus(HOUR);
             ClosedBarMarketFeed.Observation observation = feed.observe(firstOpen, 24);
+            if (cursor.bounded() != null && !clock.instant().isBefore(cursor.bounded().endAt()))
+                return settle(runId, cursor);
             for (HistoricalBar bar : observation.bars()) {
+                if (cursor.bounded() != null && !bar.openTime().isBefore(cursor.bounded().endAt())) break;
                 if (bar.openTime().isAfter(latestAvailable)) latestAvailable = bar.openTime();
             }
             if (observation.serverTime() == null
@@ -220,6 +245,7 @@ public class ContinuousSimRunService {
             }
             Instant expected = firstOpen;
             for (HistoricalBar bar : observation.bars()) {
+                if (cursor.bounded() != null && !bar.openTime().isBefore(cursor.bounded().endAt().minus(HOUR))) break;
                 if (!"OKX".equals(bar.exchangeCode())
                         || !"SPOT".equals(bar.marketType())
                         || !"BTC-USDT".equals(bar.symbol())
@@ -295,12 +321,105 @@ public class ContinuousSimRunService {
             return status(runId);
         } catch (RuntimeException ex) {
             String reason = classify(ex);
+            if (cursor.bounded() != null && "DATA_REVISION_DETECTED".equals(reason)) {
+                progress.recordRevision(runId, clock.instant());
+                return status(runId);
+            }
             String next = "DATA_REVISION_DETECTED".equals(reason) ? "STOPPED" : "STALLED";
             // 修订直到响应校验完成才可知，不能把请求开始时刻当作历史评价已知修订的时间。
             Instant failedAt = "DATA_REVISION_DETECTED".equals(reason) ? clock.instant() : now;
             progress.pollResult(runId, failedAt, latestAvailable, gapStart, next, reason, false);
             return status(runId);
         }
+    }
+
+    /** 到期通道只接收末槽证据、回收原执行；任何异常保留来源与未决状态。 */
+    private Status settle(String runId, ContinuousSimRepository.Cursor cursor) {
+        try {
+            return settleLocked(runId, cursor);
+        } catch (TransientDataAccessException conflict) {
+            // 数据库事务冲突必须让该轮调度失败，下一轮按原身份重读，不把失败写成业务终态。
+            throw conflict;
+        } catch (IllegalStateException failure) {
+            String reason = switch (Objects.toString(failure.getMessage(), "")) {
+                case "SIM_EXECUTION_BINDING_UNKNOWN", "SIM_PREPARED_EXECUTION_UNRESOLVED",
+                     "SIM_CANCEL_FINALITY_UNAVAILABLE", "SIM_CANONICAL_RUN_NOT_TERMINAL",
+                     "CONTINUOUS_SIM_CURSOR_CONFLICT", "SIM_DECISION_RECOVERY_INVALID" -> failure.getMessage();
+                default -> "BOUNDED_SETTLEMENT_UNPROVEN";
+            };
+            var latest = progress.get(runId);
+            progress.recordSettlement(runId, clock.instant(), "BLOCKED", latest.bounded().finalValuationStatus(),
+                    null, reason, false);
+            return status(runId);
+        }
+    }
+
+    private Status settleLocked(String runId, ContinuousSimRepository.Cursor cursor) {
+        progress.closeAdmission(runId, clock.instant());
+        cursor = progress.get(runId);
+        Instant end = cursor.bounded().endAt();
+        String priceIssue = collectFinalPrice(runId, cursor, end);
+        String valuation = priceIssue == null ? "VERIFIED" : "UNAVAILABLE";
+        StrategySimRunService.Settlement economics = sim.settleBounded(runId);
+        String reason = economics.blockingReason();
+        if (reason != null || economics.pendingOrders() != 0) {
+            boolean waiting = "SIM_PREVIOUS_EXECUTION_PENDING".equals(reason)
+                    || "SIM_DECISION_RECOVERY_PENDING".equals(reason) || "SIM_CANONICAL_RUN_NOT_TERMINAL".equals(reason);
+            progress.recordSettlement(runId, clock.instant(), waiting ? "SETTLING" : "BLOCKED",
+                    valuation, economics.pendingOrders(), reason, false);
+            return status(runId);
+        }
+        if (cursor.manualEndAt() != null) {
+            progress.recordSettlement(runId, clock.instant(), "MANUALLY_STOPPED", valuation,0, "MANUAL_END", true);
+            return status(runId);
+        }
+        if (priceIssue != null) {
+            boolean exhausted = cursor.revisionDetectedAt() != null || "DATA_REVISION_DETECTED".equals(priceIssue)
+                    || clock.instant().isAfter(end.plusSeconds(ClosedBarValuation.MAXIMUM_LATENESS_SECONDS));
+            progress.recordSettlement(runId, clock.instant(), exhausted ? "BLOCKED" : "ADMISSION_CLOSED",
+                    valuation,0, priceIssue, exhausted);
+            return status(runId);
+        }
+
+        boolean covered = closeFinalSlot(runId, cursor, end);
+        progress.recordSettlement(runId, clock.instant(), covered ? "COMPLETED" : "BLOCKED", valuation,0,
+                covered ? "DEADLINE_SETTLED" : "FINAL_SLOT_COVERAGE_INCOMPLETE", true);
+        return status(runId);
+    }
+
+    private String collectFinalPrice(String runId, ContinuousSimRepository.Cursor cursor, Instant end) {
+        if (cursor.manualEndAt() != null && cursor.manualEndAt().isBefore(end)) return "MANUAL_END_BEFORE_DEADLINE";
+        String priceIssue = progress.closingPriceFailure(runId, end, clock.instant());
+        if (priceIssue != null && cursor.revisionDetectedAt() == null
+                && !clock.instant().isAfter(end.plusSeconds(ClosedBarValuation.MAXIMUM_LATENESS_SECONDS))) {
+            try {
+                Instant open = end.minus(HOUR);
+                var observation = feed.observeFinalBar(open);
+                for (HistoricalBar bar : observation.bars()) {
+                    if (bar.openTime().equals(open)) progress.insertBar(runId, bar, observation.observedAt());
+                }
+                priceIssue = progress.closingPriceFailure(runId, end, clock.instant());
+            } catch (IllegalStateException failure) {
+                priceIssue = classify(failure);
+                if ("DATA_REVISION_DETECTED".equals(priceIssue)) progress.recordRevision(runId, clock.instant());
+            }
+        }
+        return priceIssue;
+    }
+
+    private boolean closeFinalSlot(String runId, ContinuousSimRepository.Cursor cursor, Instant end) {
+        // 最后一小时仍需真实策略判断才能证明覆盖；缺少先前槽位时不可跳过游标伪造完整运行。
+        Instant lastOpen = end.minus(HOUR);
+        if (cursor.lastProcessedOpenTime().equals(lastOpen.minus(HOUR))) {
+            var bars = progress.recentBars(runId);
+            var last = bars.stream().filter(bar -> bar.openTime().equals(lastOpen)).findFirst().orElseThrow();
+            var decision = sim.advanceContinuous(runId, bars, cursor.lastProcessedOpenTime(), null, null);
+            if (decision != null && lastOpen.equals(decision.signalOpenTime())
+                    && decision.orderId() == null && decision.strategyRunId() == null) {
+                progress.advanceCursor(runId, cursor.lastProcessedOpenTime(), last, clock.instant());
+            }
+        }
+        return progress.get(runId).lastProcessedOpenTime().equals(lastOpen);
     }
 
     private void checkBinding(ContinuousSimRepository.Cursor cursor) {
@@ -404,5 +523,17 @@ public class ContinuousSimRunService {
             String lastDecisionId,
             String lastDecisionStatus,
             String blockReason,
-            int consecutivePollFailures) {}
+            int consecutivePollFailures,
+            @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+            Bounded bounded) {
+        public Status(String paperRunId, String status, Instant startedAt, Instant lastPollAt, Instant lastSuccessfulPollAt,
+                      Instant lastProcessedBar, Instant nextExpectedBar, Instant lastObservedBar, Instant gapStartBar,
+                      String lastDecisionId, String lastDecisionStatus, String blockReason, int consecutivePollFailures) {
+            this(paperRunId, status, startedAt, lastPollAt, lastSuccessfulPollAt, lastProcessedBar, nextExpectedBar,
+                    lastObservedBar, gapStartBar, lastDecisionId, lastDecisionStatus, blockReason, consecutivePollFailures, null);
+        }
+    }
+
+    public record Bounded(Instant endAt, String lifecycleStatus, String finalValuationStatus, Instant lastValuationBoundary,
+                          Integer pendingOrders, String reason, Instant updatedAt, String publishId, String strategyVersionId) {}
 }

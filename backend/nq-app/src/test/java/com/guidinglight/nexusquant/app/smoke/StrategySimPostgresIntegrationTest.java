@@ -2,6 +2,7 @@ package com.guidinglight.nexusquant.app.smoke;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -193,7 +194,15 @@ class StrategySimPostgresIntegrationTest {
         localScope=com.guidinglight.nexusquant.common.tenant.TenantContext.open(localIdentity);
     }
     @org.junit.jupiter.api.AfterEach void closeLocalScope() {
-        try { for(String id:continuousProgress.activeIds()) scheduledContinuous.stop(id); }
+        try {
+            for (String id : continuousProgress.activeIds()) {
+                if (continuousProgress.get(id).bounded() == null) scheduledContinuous.stop(id);
+                else {
+                    scheduledContinuous.end(id);
+                    scheduledContinuous.pollOnce(id);
+                }
+            }
+        }
         finally {if(localScope!=null)localScope.close();}
     }
 
@@ -227,6 +236,117 @@ class StrategySimPostgresIntegrationTest {
     @Autowired private BacktestExecutionService backtestExecution;
     @Autowired private BacktestEvaluationService evaluations;
     @Autowired private BacktestPublishService publishing;
+
+    @Test
+    void boundedEndRecoversAcceptedOrderAfterLostDecisionAcknowledgment() {
+        assertBoundedRecovery(BoundedInterruption.DECISION_ACKNOWLEDGMENT);
+    }
+
+    @Test
+    void boundedEndClosesDecidingWithoutCreatingAnOrder() {
+        assertBoundedRecovery(BoundedInterruption.STRATEGY_ADMISSION);
+    }
+
+    @Test
+    void boundedEndRejectsExistingUnpreparedStrategyWorkOnce() {
+        assertBoundedRecovery(BoundedInterruption.STRATEGY_PREPARATION);
+    }
+
+    private enum BoundedInterruption {
+        STRATEGY_ADMISSION("INSERT", "strategy_runs", ""),
+        STRATEGY_PREPARATION("UPDATE", "strategy_run_dispatch_work", " WHEN (NEW.effective_quantity IS NOT NULL)"),
+        DECISION_ACKNOWLEDGMENT("UPDATE", "strategy_sim_decisions", " WHEN (OLD.reason='DECIDING' AND NEW.status='ACCEPTED')");
+
+        final String operation;
+        final String table;
+        final String condition;
+
+        BoundedInterruption(String operation, String table, String condition) {
+            this.operation = operation;
+            this.table = table;
+            this.condition = condition;
+        }
+    }
+
+    private void assertBoundedRecovery(BoundedInterruption interrupted) {
+        boolean orderAlreadyAccepted = interrupted == BoundedInterruption.DECISION_ACKNOWLEDGMENT;
+        Instant hour = jdbc.queryForObject("SELECT date_trunc('hour',clock_timestamp())", Timestamp.class).toInstant();
+        int index = Math.toIntExact(java.time.temporal.ChronoUnit.HOURS.between(hourBar(0,"100").openTime(), hour));
+        var seedBars = java.util.stream.IntStream.range(0, 5)
+                .mapToObj(n -> hourBar(index - 6 + n, Integer.toString(100+n))).toList();
+        Fixture fixture = seed(seedBars,true);
+        Instant observed = hour.plusSeconds(2);
+        HistoricalBar latest = availableAt(hourBar(index-1, "105"), observed.toString());
+        ClosedBarMarketFeed feed = (firstOpen, max) -> observation(observed, observed.plusSeconds(1),
+                List.of(seedBars.get(3), seedBars.get(4), latest).stream()
+                        .filter(bar -> !bar.openTime().isBefore(firstOpen)).toList());
+        var driver = tenantAware(new ContinuousSimRunService(continuousProgress, sim, runs, feed, jdbc,
+                Clock.fixed(hour, java.time.ZoneOffset.UTC)));
+        String run = driver.start(fixture.publishId(), new BigDecimal("100"), "system", hour.plusSeconds(7200)).paperRunId();
+        long account = runs.getById(run).canonicalAccountId();
+        // 只截断原事务边界的应答；已有订单与账本均由正式组件产生。
+        tenantDatabase.admin.execute("""
+                CREATE FUNCTION bounded_test_lost_ack() RETURNS trigger LANGUAGE plpgsql AS $$
+                BEGIN RAISE EXCEPTION 'synthetic boundary interruption'; END; $$
+                """);
+        try {
+            tenantDatabase.admin.execute("CREATE TRIGGER bounded_test_boundary BEFORE " + interrupted.operation + " ON "
+                    + interrupted.table + " FOR EACH ROW" + interrupted.condition + " EXECUTE FUNCTION bounded_test_lost_ack()");
+            assertEquals("STALLED", driver.pollOnce(run).status());
+        } finally {
+            tenantDatabase.admin.execute("DROP TRIGGER IF EXISTS bounded_test_boundary ON " + interrupted.table);
+            tenantDatabase.admin.execute("DROP FUNCTION bounded_test_lost_ack()");
+        }
+        var before = sim.decisions(run).getFirst();
+        assertEquals("DECIDING", before.reason());
+        assertNull(before.orderId());
+        var original = jdbc.queryForList("SELECT order_id FROM orders WHERE account_id=?", String.class, account);
+        assertEquals(orderAlreadyAccepted ? 1 : 0, original.size());
+        if (interrupted == BoundedInterruption.STRATEGY_PREPARATION) {
+            assertEquals("CREATED", jdbc.queryForObject("SELECT status FROM strategy_runs WHERE account_id=?", String.class, account));
+        }
+        driver.end(run);
+        var pending = sim.settleBounded(run);
+        var after = sim.decisions(run).getFirst();
+        assertEquals(before.decisionId(), after.decisionId());
+        if (orderAlreadyAccepted) {
+            assertEquals(new StrategySimRunService.Settlement(1,"SIM_PREVIOUS_EXECUTION_PENDING"), pending);
+            assertEquals(original.getFirst(), after.orderId());
+            assertEquals(1, matching.matchOnce(100));
+            assertEquals(new StrategySimRunService.Settlement(0,null), sim.settleBounded(run));
+            assertEquals("SUCCEEDED", jdbc.queryForObject("SELECT status FROM strategy_runs WHERE strategy_run_id=?",
+                    String.class, after.strategyRunId()));
+            var transaction = new TransactionTemplate(applicationContext.getBean(
+                    org.springframework.transaction.PlatformTransactionManager.class));
+            transaction.executeWithoutResult(tx -> {
+                // 额外的相同金额分录只在隔离事务中可见，验证重复记账不能伪装成已收敛。
+                jdbc.update("""
+                        INSERT INTO ledger_entries(entry_id,account_id,currency,delta,direction,ref_type,ref_id,
+                                                   idempotency_key,trace_id,ts)
+                        SELECT 'extra-bounded-proof',account_id,currency,delta,direction,ref_type,ref_id,
+                               'extra-bounded-proof',trace_id,ts FROM ledger_entries
+                        WHERE account_id=? AND ref_type='TRADE' LIMIT 1
+                        """, account);
+                assertEquals("SIM_TRADE_LEDGER_MISMATCH", sim.settleBounded(run).blockingReason());
+                tx.setRollbackOnly();
+            });
+        } else {
+            assertEquals("BOUNDED_RUN_ADMISSION_CLOSED", after.reason());
+            assertEquals(new StrategySimRunService.Settlement(0,null), pending);
+            if (interrupted == BoundedInterruption.STRATEGY_PREPARATION) {
+                assertEquals("FAILED", jdbc.queryForObject("SELECT status FROM strategy_runs WHERE account_id=?", String.class, account));
+                assertEquals("BOUNDED_RUN_ADMISSION_CLOSED", jdbc.queryForObject(
+                        "SELECT normalization_rejection FROM strategy_run_dispatch_work WHERE account_id=?", String.class, account));
+            }
+        }
+        assertEquals("MANUALLY_STOPPED", driver.pollOnce(run).bounded().lifecycleStatus());
+        assertEquals(original, jdbc.queryForList("SELECT order_id FROM orders WHERE account_id=?", String.class, account));
+        assertEquals(0, matching.matchOnce(100));
+        assertEquals(orderAlreadyAccepted ? 1 : 0, jdbc.queryForObject("SELECT count(*) FROM trades WHERE account_id=?", Integer.class, account));
+        assertEquals(orderAlreadyAccepted ? 4 : 0, jdbc.queryForObject(
+                "SELECT count(*) FROM ledger_entries WHERE account_id=? AND ref_type='TRADE'", Integer.class, account));
+        assertEquals(1, sim.decisions(run).size());
+    }
 
     @Test
     void continuousClosedBarPersistsCursorAndRecoversLostAcknowledgmentWithoutDuplicateFacts() throws Exception {

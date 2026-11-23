@@ -107,7 +107,8 @@ class OkxClosedBarMarketFeedTest {
                 body = "{\"code\":\"0\",\"data\":[{\"instId\":\"BTC-USDT\",\"last\":\"105\",\"ts\":\""
                         + serverTime.plusSeconds(1).toEpochMilli() + "\"}]}";
             } else {
-                body = "{\"code\":\"0\",\"data\":[" + candle(first.plusSeconds(3600), "1")
+                if (path.endsWith("&limit=1")) body = "{\"code\":\"0\",\"data\":[" + candle(first.plusSeconds(3600), "1") + "]}";
+                else body = "{\"code\":\"0\",\"data\":[" + candle(first.plusSeconds(3600), "1")
                         + "," + candle(first, "1") + "]}";
             }
             byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
@@ -155,6 +156,13 @@ class OkxClosedBarMarketFeedTest {
                     assertFalse(observation.quote().observedAt().isBefore(serverTime.minus(Duration.ofMinutes(2))));
                     assertFalse(observation.quote().observedAt().isAfter(serverTime.plusSeconds(5)));
                     assertEquals(4, calls.get() - before);
+                    paths.clear();
+                    var closing = feed.observeFinalBar(latest.openTime());
+                    assertEquals(List.of(latest), closing.bars());
+                    assertEquals(2, paths.size());
+                    assertTrue(paths.getLast().startsWith("/api/v5/market/history-candles?"));
+                    assertEquals(null, closing.quote());
+                    assertEquals(null, closing.rule());
                     System.out.println("FRESH_OBSERVATION_PROOF close=" + latest.closeTime()
                             + " availableAt=" + latest.availableAt() + " serverTime=" + observation.serverTime()
                             + " ruleObservedAt=" + observation.rule().observedAt()

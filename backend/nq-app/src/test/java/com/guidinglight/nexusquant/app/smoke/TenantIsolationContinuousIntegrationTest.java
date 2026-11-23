@@ -123,6 +123,49 @@ class TenantIsolationContinuousIntegrationTest {
         }
     }
 
+    @Test void expiredRunAndAnotherTenantsActiveRunSharePollingAndMatching() throws Exception {
+        try (var db = TenantIsolationTestDatabase.create(null);
+                var app = ResearchSimComparisonFixture.start(db)) {
+            jdbc = db.jdbc;
+            testDatabase = db;
+            var expiring = db.demo("EXPIRING", "deadline-owner");
+            var continuing = db.demo("CONTINUING", "other-run-owner");
+            Instant start = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.HOURS).minus(Duration.ofHours(5));
+            Instant end = start.plus(Duration.ofHours(6));
+            var series = new ArrayList<HistoricalBar>();
+            for (int hour = 0; hour <= 5; hour++) series.add(PublicDemoTwoUserFlowIntegrationTest.hour(hour, start));
+            var first = db.as(expiring, () -> seed(series.subList(0, 5), true));
+            var second = db.as(continuing, () -> seed(series.subList(0, 5), true));
+            Instant observed = end.plusSeconds(2);
+            var driver = driver(app, (from, limit) -> new ClosedBarMarketFeed.Observation(observed, observed,
+                    series.stream().filter(bar -> !bar.openTime().isBefore(from)).limit(limit).toList(),
+                    new ClosedBarMarketFeed.Rule(observed, "LIVE", new BigDecimal("0.01"),
+                            new BigDecimal("0.0001"), new BigDecimal("0.0001")),
+                    new ClosedBarMarketFeed.Quote(observed, new BigDecimal("105"))));
+            ReflectionTestUtils.setField(driver, "clock", Clock.fixed(end.minusSeconds(1800), ZoneOffset.UTC));
+            var tx = new TransactionTemplate(app.getBean(PlatformTransactionManager.class));
+            String closed = db.as(expiring, () -> tx.execute(ignored -> driver.start(first.publishId(),
+                    new BigDecimal("10000"), "deadline-owner", end))).paperRunId();
+            String open = db.as(continuing, () -> tx.execute(ignored -> driver.start(second.publishId(),
+                    new BigDecimal("10000"), "other-run-owner"))).paperRunId();
+            var control = db.admin.queryForList("SELECT job_key,enabled,version FROM scheduled_job_controls ORDER BY job_key");
+            ReflectionTestUtils.setField(driver, "clock", Clock.fixed(observed, ZoneOffset.UTC));
+            driver.pollActiveOnce();
+            assertNotEquals("RUNNING", db.as(expiring, () -> driver.status(closed)).bounded().lifecycleStatus());
+            assertEquals(1, app.getBean(PaperMatchingService.class).matchOnce(64));
+            assertEquals(0, app.getBean(PaperMatchingService.class).matchOnce(64));
+            assertEquals(List.of(open), db.admin.queryForList("""
+                    SELECT p.paper_run_id FROM orders o JOIN paper_trading_runs p
+                        ON p.canonical_account_id=o.account_id WHERE o.status='FILLED'
+                    """, String.class));
+            assertEquals(0, db.admin.queryForObject("""
+                    SELECT count(*) FROM orders o JOIN paper_trading_runs p ON p.canonical_account_id=o.account_id
+                    WHERE p.paper_run_id=?
+                    """, Integer.class, closed));
+            assertEquals(control, db.admin.queryForList("SELECT job_key,enabled,version FROM scheduled_job_controls ORDER BY job_key"));
+        }
+    }
+
     private ContinuousSimRunService driver(org.springframework.context.ApplicationContext app,ClosedBarMarketFeed feed) {
         var result=new ContinuousSimRunService(app.getBean(ContinuousSimRepository.class),app.getBean(StrategySimRunService.class),
                 app.getBean(PaperTradingRunService.class),feed,app.getBean(JdbcTemplate.class),Clock.fixed(START.plusSeconds(21662),ZoneOffset.UTC));

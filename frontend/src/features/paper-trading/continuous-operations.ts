@@ -3,11 +3,11 @@ import {apiClient} from '@/api/client';
 import {useAuthStore, selectSessionIdentity} from '@/store/auth-store';
 import type {AppApiError} from '@/types/api';
 import type {ContinuousSimStatus} from './types/paper-trading';
-import {parseContinuousSimStatus} from './continuous-state';
+import {isUtcHour, parseContinuousSimStatus} from './continuous-state';
 
 export type ContinuousOperationInput =
-    | {type: 'CREATE'; publishId: string; budget: string}
-    | {type: 'PAUSE' | 'RESUME'; paperRunId: string};
+    | {type: 'CREATE'; publishId: string; budget: string; endAt?: string}
+    | {type: 'PAUSE' | 'RESUME' | 'END'; paperRunId: string};
 export type ContinuousOperationRequest = ContinuousOperationInput & {operationId: string};
 export interface PendingContinuousOperation {
     ownerUserId: number;
@@ -66,14 +66,15 @@ export function validContinuousOperationRequest(
     if (row.type === 'CREATE')
         return (
             Object.keys(row).every((field) =>
-                ['operationId', 'type', 'publishId', 'budget'].includes(field),
+                ['operationId', 'type', 'publishId', 'budget', 'endAt'].includes(field),
             ) &&
             typeof row.publishId === 'string' &&
             identity.test(row.publishId) &&
-            continuousBudget(row.budget) !== null
+            continuousBudget(row.budget) !== null &&
+            (!('endAt' in row) || isUtcHour(row.endAt))
         );
     return (
-        (row.type === 'PAUSE' || row.type === 'RESUME') &&
+        (row.type === 'PAUSE' || row.type === 'RESUME' || row.type === 'END') &&
         Object.keys(row).every((field) => ['operationId', 'type', 'paperRunId'].includes(field)) &&
         typeof row.paperRunId === 'string' &&
         identity.test(row.paperRunId)
@@ -88,6 +89,7 @@ function inputKey(request: ContinuousOperationRequest): string {
                   request.type,
                   request.publishId,
                   continuousBudget(request.budget),
+                  ...(request.endAt ? [request.endAt] : []),
               ]
             : [request.operationId, request.type, request.paperRunId],
     );
@@ -269,8 +271,19 @@ export function confirmContinuousOperation(
         )
             throw new Error();
         const result = parseContinuousSimStatus(row.result, row.paperRunId);
-        if (!result || result.status !== (request.type === 'PAUSE' ? 'STOPPED' : 'RUNNING'))
+        if (!result) throw new Error();
+        if (request.type === 'END') {
+            if (!result.bounded || !['ADMISSION_CLOSED', 'SETTLING', 'BLOCKED', 'MANUALLY_STOPPED', 'COMPLETED'].includes(result.bounded.lifecycleStatus))
+                throw new Error();
+        } else if (result.status !== (request.type === 'PAUSE' ? 'STOPPED' : 'RUNNING')) {
             throw new Error();
+        }
+        if (request.type === 'CREATE' && request.endAt) {
+            if (!result.bounded || result.bounded.publishId !== request.publishId ||
+                Date.parse(result.bounded.endAt) !== Date.parse(request.endAt)) throw new Error();
+        } else if (request.type !== 'END' && result.bounded) {
+            throw new Error();
+        }
         return {
             ownerUserId: pending.ownerUserId,
             operationId: request.operationId,

@@ -229,6 +229,9 @@ public class PaperTradingRunService {
 
     public PaperTradingRun stop(String paperRunId) {
         PaperTradingRun run = getById(paperRunId);
+        if (runRepository.requestBoundedEnd(paperRunId, clock.instant())) {
+            return runRepository.findById(paperRunId).orElseThrow();
+        }
         if (run.status() != PaperTradingRunStatus.RUNNING) {
             throw new IllegalStateException(
                     "paper run can only stop from RUNNING, current: " + run.status());

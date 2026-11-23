@@ -1,4 +1,4 @@
-import {Alert, Button, Collapse, Descriptions, Space, Tag, Typography} from 'antd';
+import {Alert, App, Button, Collapse, Descriptions, Space, Tag, Typography} from 'antd';
 import {useTranslation} from 'react-i18next';
 import {formatDateTime} from '@/utils/formatters';
 import {formatApiError} from '@/api/errors';
@@ -16,12 +16,13 @@ interface Props {
     parentStatus: string;
     busy: boolean;
     onRefresh: () => void;
-    onAction: (action: 'stop' | 'resume') => void;
+    onAction: (action: 'stop' | 'resume' | 'end') => void;
 }
 
 /** 展示原游标与最近轮询事实；不计算假百分比，也不把暂停轮询表述为结束父SIM。 */
 export function ContinuousSimStatusPanel(props: Props) {
     const {t} = useTranslation('pages');
+    const {modal} = App.useApp();
     const {
         status,
         loading,
@@ -35,6 +36,7 @@ export function ContinuousSimStatusPanel(props: Props) {
     } = props;
     const available = !identityMismatch ? status : null;
     const action = available ? continuousAction(available, parentStatus) : null;
+    const bounded = available?.bounded;
     const time = (value: string | null) =>
         value ? (
             <time dateTime={value} title={value}>
@@ -61,9 +63,9 @@ export function ContinuousSimStatusPanel(props: Props) {
                                       ? 'warning'
                                       : 'default'
                             }
-                            title={available.status}
+                            title={bounded?.lifecycleStatus ?? available.status}
                         >
-                            {t(
+                            {bounded ? t(`boundedSim.states.${bounded.lifecycleStatus}`, {defaultValue: bounded.lifecycleStatus}) : t(
                                 `continuousWorkspace.states.${continuousStatusKey(available.status)}`,
                             )}
                         </Tag>
@@ -108,23 +110,40 @@ export function ContinuousSimStatusPanel(props: Props) {
             {available && (
                 <>
                     <Typography.Paragraph type="secondary">
-                        {t('continuousWorkspace.meaning')}
+                        {t(bounded ? 'boundedSim.meaning' : 'continuousWorkspace.meaning')}
                     </Typography.Paragraph>
                     <div className="continuous-workspace__progress">
                         <div>
                             <span>{t('continuousSimLastBar')}</span>
                             {time(available.lastProcessedBar)}
                         </div>
-                        <div>
+                        {!bounded && <div>
                             <span>{t('continuousSimNextBar')}</span>
                             {time(available.nextExpectedBar)}
-                        </div>
+                        </div>}
                         <div>
                             <span>{t('continuousSimLastAvailable')}</span>
                             {time(available.lastObservedBar)}
                         </div>
                     </div>
-                    {available.blockReason && (
+                    {bounded && <Descriptions size="small" column={{xs: 1, md: 2}} styles={{content: {overflowWrap: 'anywhere'}}}>
+                        <Descriptions.Item label={t('boundedSim.deadline')}>
+                            <time dateTime={bounded.endAt}>{bounded.endAt}</time>
+                        </Descriptions.Item>
+                        <Descriptions.Item label={t('boundedSim.finalValuation')}>
+                            {t(`boundedSim.valuation.${bounded.finalValuationStatus}`, {defaultValue: bounded.finalValuationStatus})}
+                        </Descriptions.Item>
+                        <Descriptions.Item label={t('boundedSim.lastValuation')}>
+                            {bounded.lastValuationBoundary ?? t('continuousWorkspace.notRecorded')}
+                        </Descriptions.Item>
+                        <Descriptions.Item label={t('boundedSim.pendingOrders')}>
+                            {bounded.pendingOrders ?? t('continuousOperationsView.unknown')}
+                        </Descriptions.Item>
+                        {bounded.reason && <Descriptions.Item label={t('forwardObservation.reason')}>
+                            <Typography.Text code>{bounded.reason}</Typography.Text>
+                        </Descriptions.Item>}
+                    </Descriptions>}
+                    {available.blockReason && available.blockReason !== bounded?.reason && (
                         <Alert
                             type={available.status === 'STALLED' ? 'warning' : 'info'}
                             showIcon
@@ -156,10 +175,16 @@ export function ContinuousSimStatusPanel(props: Props) {
                                 disabled={
                                     commandsAvailable !== true || busy || loading || Boolean(error)
                                 }
-                                onClick={() => onAction(action === 'pause' ? 'stop' : 'resume')}
+                                danger={action === 'end'}
+                                onClick={() => {
+                                    if (action === 'end') {
+                                        modal.confirm({title: t('boundedSim.end'), content: t('boundedSim.endMeaning'),
+                                            okText: t('boundedSim.end'), cancelText: t('cancel'), onOk: () => onAction('end')});
+                                    } else onAction(action === 'pause' ? 'stop' : 'resume');
+                                }}
                             >
                                 {t(
-                                    action === 'pause'
+                                    action === 'end' ? 'boundedSim.end' : action === 'pause'
                                         ? 'continuousWorkspace.pause'
                                         : 'continuousWorkspace.resume',
                                 )}

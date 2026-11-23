@@ -61,4 +61,18 @@ describe('continuous state boundaries', () => {
         expect(continuousAction({...state, status: 'STOPPED'}, 'STOPPED')).toBeNull();
         expect(continuousAction(state, 'CREATED')).toBeNull();
     });
+    it('keeps bounded completion distinct from a reversible paused cursor', () => {
+        const bounded = {endAt: '2026-10-16T00:00:00Z', lifecycleStatus: 'SETTLING',
+            finalValuationStatus: 'PENDING', lastValuationBoundary: null, pendingOrders: 1,
+            reason: 'ORDER_PENDING', updatedAt: state.startedAt, publishId: 'pub-one', strategyVersionId: 'sv-one'};
+        const status = parseContinuousSimStatus({...state, bounded}, state.paperRunId)!;
+        expect(continuousAction(status, 'RUNNING')).toBe('end');
+        for (const lifecycleStatus of ['COMPLETED', 'MANUALLY_STOPPED', 'UNKNOWN']) {
+            expect(continuousAction({...status, bounded: {...bounded, lifecycleStatus}}, 'RUNNING')).toBeNull();
+        }
+        expect(continuousAction({...status, status: 'STOPPED'}, 'RUNNING')).toBeNull();
+        for (const patch of [{endAt: '2026-02-30T00:00:00Z'}, {endAt: '2026-10-16T00:01:00Z'}, {pendingOrders: -1}]) {
+            expect(() => parseContinuousSimStatus({...state, bounded: {...bounded, ...patch}}, state.paperRunId)).toThrow();
+        }
+    });
 });

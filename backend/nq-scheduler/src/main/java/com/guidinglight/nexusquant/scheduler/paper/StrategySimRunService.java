@@ -453,6 +453,12 @@ public class StrategySimRunService {
         if (run.status() != PaperTradingRunStatus.RUNNING) {
             throw new IllegalStateException("SIM_RUN_NOT_ACTIVE_OR_UNBOUND");
         }
+        var boundary = observedBars == null ? null : decisions.boundary(paperRunId);
+        boolean finalSlot = boundary != null && boundary.closed();
+        if (finalSlot && (boundary.manuallyClosed() || afterOpenTime == null
+                || !afterOpenTime.plus(Duration.ofHours(2)).equals(boundary.endAt()))) {
+            return null;
+        }
         BacktestPublishRecord publish =
                 publishes.findByPublishRecordId(run.publishId()).orElseThrow();
         BacktestRun backtest = boundBacktest(publish);
@@ -519,17 +525,18 @@ public class StrategySimRunService {
             // 当前连续公开feed仅支持原OKX合同；新增BINANCE回放不扩大连续私有/公开来源能力。
             if (directional != null)
                 throw new IllegalStateException("CONTINUOUS_SIM_DIRECTIONAL_SOURCE_UNAVAILABLE");
-            if (liveRule == null || !"LIVE".equals(liveRule.state())) {
+            if (!finalSlot && (liveRule == null || !"LIVE".equals(liveRule.state()))) {
                 throw new IllegalStateException("VENUE_RULE_UNAVAILABLE");
             }
-            rules =
-                    new SpotTargetSizer.Rules(
+            if (!finalSlot) {
+                rules = new SpotTargetSizer.Rules(
                             liveRule.lotSize(),
                             liveRule.tickSize(),
                             liveRule.minimumSize(),
                             frozenRules.minimumNotional(),
                             frozenRules.feeRate(),
                             frozenRules.slippageBps());
+            }
         }
         if (!summary.path("costAndRuleAssumptions")
                 .equals(runConfig.path("costAndRuleAssumptions"))) {
@@ -560,6 +567,11 @@ public class StrategySimRunService {
             HistoricalBar signalBar = bars.get(index);
             boolean cursorConsumed =
                     afterOpenTime != null && !signalBar.openTime().isAfter(afterOpenTime);
+            // 最后一根真实闭合信号只提供观察证明；停止后不遍历旧意图重新发单。
+            if (finalSlot && cursorConsumed) continue;
+            if (boundary != null && !signalBar.openTime().isBefore(boundary.endAt())) return null;
+            if (boundary != null && !finalSlot
+                    && signalBar.openTime().plus(Duration.ofHours(1)).equals(boundary.endAt())) return null;
             StrategySimDecisionRepository.DecisionView decision =
                     observedBars == null
                             ? decisions.findByWindow(paperRunId, signalBar.openTime()).orElse(null)
@@ -594,8 +606,10 @@ public class StrategySimRunService {
                 }
             }
             boolean freshContinuousQuote =
-                    observedBars != null
+                    observedBars != null && !finalSlot
                             && quote != null
+                            && (boundary == null || (!quote.observedAt().isBefore(boundary.startedAt())
+                                && quote.observedAt().isBefore(boundary.endAt())))
                             && signalBar.equals(bars.getLast())
                             && signal.availableAt() != null
                             && quote.observedAt().isAfter(signal.availableAt())
@@ -607,7 +621,7 @@ public class StrategySimRunService {
                             && quote.price() != null
                             && quote.price().signum() > 0;
             boolean staleContinuousSignal =
-                    observedBars != null
+                    observedBars != null && !finalSlot
                             && (signal.availableAt() == null
                                     || signal.availableAt()
                                             .isAfter(
@@ -621,7 +635,7 @@ public class StrategySimRunService {
                                                             .plus(Duration.ofMinutes(15)))
                                     || !signalBar.equals(bars.getLast()));
             // 新信号等待实际可见的公开价格；迟到的补缺只留下不可交易决策。
-            if (observedBars != null && !freshContinuousQuote && !staleContinuousSignal)
+            if (observedBars != null && !finalSlot && !freshContinuousQuote && !staleContinuousSignal)
                 return null;
             String decisionId =
                     sha256(
@@ -657,7 +671,10 @@ public class StrategySimRunService {
             SpotTargetSizer.Result sizing = null;
             FrozenSimFeeCharge frozenPayment = null;
             if (signal.requestsTrade() && !"INSUFFICIENT_HISTORY".equals(signal.reason())) {
-                if (staleContinuousSignal) {
+                if (finalSlot) {
+                    status = "NOT_TRADABLE";
+                    reason = "BOUNDED_RUN_ADMISSION_CLOSED";
+                } else if (staleContinuousSignal) {
                     status = "NOT_TRADABLE";
                     reason = "STALE_DATA";
                 } else if (executionBar == null && !freshContinuousQuote) {
@@ -920,6 +937,10 @@ public class StrategySimRunService {
             throw new IllegalStateException("SIM_DECISION_RECOVERY_INVALID");
         }
         StrategyDefinition definition = simDefinition(run, accountId);
+        var boundary = continuous == null ? null : decisions.boundary(run.paperRunId());
+        if (boundary != null && boundary.closed()) {
+            return recoverClosedDecision(run, decision, accountId);
+        }
         String requestId = "sim-" + decision.decisionId().substring(0, 60);
         var result =
                 trigger.trigger(
@@ -963,6 +984,12 @@ public class StrategySimRunService {
         if (orderId == null || orderStatus == null) {
             throw new IllegalStateException("SIM_ORDER_ADMISSION_INCOMPLETE");
         }
+        return bindCanonicalOrder(decision, strategyRunId, orderId, orderStatus, false);
+    }
+
+    private StrategySimDecisionRepository.DecisionView bindCanonicalOrder(
+            StrategySimDecisionRepository.DecisionView decision, String strategyRunId,
+            String orderId, OrderStatus orderStatus, boolean recovery) {
         String status =
                 orderStatus == OrderStatus.RISK_REJECTED || orderStatus == OrderStatus.REJECTED
                         ? "RISK_REJECTED"
@@ -970,6 +997,8 @@ public class StrategySimRunService {
         if ("ACCEPTED".equals(status)
                 && orderStatus != OrderStatus.ACCEPTED
                 && orderStatus != OrderStatus.ACKED
+                && !(recovery && Set.of(OrderStatus.PARTIALLY_FILLED, OrderStatus.CANCEL_REQUESTED,
+                        OrderStatus.CANCEL_REJECTED, OrderStatus.CANCELLED).contains(orderStatus))
                 && orderStatus != OrderStatus.FILLED) {
             throw new IllegalStateException("SIM_ORDER_NOT_ACCEPTED");
         }
@@ -983,6 +1012,50 @@ public class StrategySimRunService {
                 .findByWindow(decision.paperRunId(), decision.signalOpenTime())
                 .orElseThrow();
     }
+
+    /** 截止后的恢复只读回原工作身份，禁止调用可产生新订单的 trigger 或 execute。 */
+    private StrategySimDecisionRepository.DecisionView recoverClosedDecision(
+            PaperTradingRun run, StrategySimDecisionRepository.DecisionView decision, long accountId) {
+        var work = decisions.closedWork(run.paperRunId(), accountId, decision);
+        if (work != null && work.orderId() != null) {
+            return bindCanonicalOrder(decision, work.strategyRunId(), work.orderId(),
+                    OrderStatus.valueOf(work.orderStatus()), true);
+        }
+        if (work != null) {
+            if ("CREATED".equals(work.runStatus())) {
+                // 与正式 prepare 共用该 strategy_run 行锁、原子拒绝和投影合同；已有有效参数禁止改写。
+                decisions.rejectUnprepared(work.strategyRunId());
+            }
+            work = decisions.closedWork(run.paperRunId(), accountId, decision);
+            if (work == null || !"FAILED".equals(work.runStatus()) || work.orderId() != null
+                    || work.rejection() == null)
+                throw new IllegalStateException("SIM_PREPARED_EXECUTION_UNRESOLVED");
+        }
+        decisions.complete(decision.decisionId(), "NOT_TRADABLE", "BOUNDED_RUN_ADMISSION_CLOSED", null, null);
+        return decisions.findByWindow(run.paperRunId(), decision.signalOpenTime()).orElseThrow();
+    }
+
+    /** 先收敛未物化决策，再核对完整账户事实；原撮合与撤单路径各自拥有经济写入。 */
+    public Settlement settleBounded(String paperRunId) {
+        PaperTradingRun run = paperRuns.getById(paperRunId);
+        Long accountId = run.canonicalAccountId();
+        if (accountId == null || !"SIM".equals(run.tradeEnv())) {
+            throw new IllegalStateException("CONTINUOUS_SIM_SCOPE_INVALID");
+        }
+        return decisions.withAccountMutex(accountId, () -> {
+            var boundary = decisions.boundary(paperRunId);
+            if (boundary == null || !boundary.closed()) {
+                throw new IllegalStateException("BOUNDED_RUN_ADMISSION_OPEN");
+            }
+            for (var decision : decisions.recoverable(paperRunId, accountId)) {
+                if ("DECIDING".equals(decision.reason())) recoverClosedDecision(run, decision, accountId);
+                else settleCanonicalRun(decision, accountId, false);
+            }
+            return decisions.settlement(paperRunId, accountId);
+        });
+    }
+
+    public record Settlement(int pendingOrders, String blockingReason) {}
 
     private StrategyDefinition simDefinition(PaperTradingRun run, long accountId) {
         String identity = "sim-sim-" + run.paperRunId();

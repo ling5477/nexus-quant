@@ -94,6 +94,15 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
 
     @Override
     public Observation observe(Instant firstOpen, int maximumBars) {
+        return observe(firstOpen, maximumBars, true);
+    }
+
+    @Override
+    public Observation observeFinalBar(Instant open) {
+        return observe(open, 1, false);
+    }
+
+    private Observation observe(Instant firstOpen, int maximumBars, boolean includeExecution) {
         if (firstOpen == null || firstOpen.toEpochMilli() % Duration.ofHours(1).toMillis() != 0
                 || maximumBars < 1 || maximumBars > 24) {
             throw new IllegalArgumentException("CONTINUOUS_SIM_WINDOW_INVALID");
@@ -118,42 +127,11 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         }
         Instant pageEnd = firstOpen.plus(Duration.ofHours(maximumBars));
         if (pageEnd.isAfter(endExclusive)) pageEnd = endExclusive;
-        JsonNode instruments = get(RULE_PATH);
-        OkxVenueRuleFact rule;
-        try {
-            rule = OkxVenueRuleFactsReader.parseSnapshot(instruments, Set.of("BTC-USDT"), serverTime)
-                    .facts().getFirst();
-        } catch (RuntimeException ex) {
-            throw new IllegalStateException("VENUE_RULE_UNAVAILABLE", ex);
-        }
-        if (!"LIVE".equals(rule.state()) || rule.tickSize().signum() <= 0
-                || rule.lotSize().signum() <= 0 || rule.minimumSize().signum() <= 0) {
-            throw new IllegalStateException("VENUE_RULE_UNAVAILABLE");
-        }
-        JsonNode ticker = get(TICKER_PATH);
-        if (!"0".equals(ticker.path("code").asText()) || !ticker.path("data").isArray()
-                || ticker.path("data").size() != 1) {
-            throw new IllegalStateException("PUBLIC_MARKET_QUOTE_UNAVAILABLE");
-        }
-        ClosedBarMarketFeed.Quote quote;
-        try {
-            JsonNode row = ticker.path("data").get(0);
-            if (!"BTC-USDT".equals(row.path("instId").asText())) {
-                throw new IllegalArgumentException("wrong instrument");
-            }
-            Instant quoteTime = Instant.ofEpochMilli(Long.parseLong(row.path("ts").asText()));
-            BigDecimal price = new BigDecimal(row.path("last").asText());
-            if (price.signum() <= 0 || quoteTime.isAfter(serverTime.plusSeconds(5))
-                    || quoteTime.isBefore(serverTime.minus(Duration.ofMinutes(2)))) {
-                throw new IllegalArgumentException("stale quote");
-            }
-            quote = new ClosedBarMarketFeed.Quote(quoteTime, price);
-        } catch (RuntimeException ex) {
-            throw new IllegalStateException("PUBLIC_MARKET_QUOTE_UNAVAILABLE", ex);
-        }
+        Rule rule = includeExecution ? currentRule(serverTime) : null;
+        Quote quote = includeExecution ? currentQuote(serverTime) : null;
         if (firstOpen.equals(endExclusive)) {
             return new Observation(serverTime, receivedAt(serverTime), List.of(),
-                    new Rule(serverTime, rule.state(), rule.tickSize(), rule.lotSize(), rule.minimumSize()), quote);
+                    rule, quote);
         }
         String path = "/api/v5/market/history-candles?instId=BTC-USDT&bar=1H&after="
                 + pageEnd.toEpochMilli() + "&before=" + (firstOpen.toEpochMilli() - 1)
@@ -187,7 +165,48 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         }
         bars.sort(Comparator.comparing(HistoricalBar::openTime));
         return new Observation(serverTime, receivedAt, List.copyOf(bars),
-                new Rule(serverTime, rule.state(), rule.tickSize(), rule.lotSize(), rule.minimumSize()), quote);
+                rule, quote);
+    }
+
+    private Rule currentRule(Instant serverTime) {
+        JsonNode instruments = get(RULE_PATH);
+        OkxVenueRuleFact rule;
+        try {
+            rule = OkxVenueRuleFactsReader.parseSnapshot(instruments, Set.of("BTC-USDT"), serverTime)
+                    .facts().getFirst();
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException("VENUE_RULE_UNAVAILABLE", ex);
+        }
+        if (!"LIVE".equals(rule.state()) || rule.tickSize().signum() <= 0
+                || rule.lotSize().signum() <= 0 || rule.minimumSize().signum() <= 0) {
+            throw new IllegalStateException("VENUE_RULE_UNAVAILABLE");
+        }
+        return new Rule(serverTime, rule.state(), rule.tickSize(), rule.lotSize(), rule.minimumSize());
+    }
+
+    private Quote currentQuote(Instant serverTime) {
+        JsonNode ticker = get(TICKER_PATH);
+        if (!"0".equals(ticker.path("code").asText()) || !ticker.path("data").isArray()
+                || ticker.path("data").size() != 1) {
+            throw new IllegalStateException("PUBLIC_MARKET_QUOTE_UNAVAILABLE");
+        }
+        ClosedBarMarketFeed.Quote quote;
+        try {
+            JsonNode row = ticker.path("data").get(0);
+            if (!"BTC-USDT".equals(row.path("instId").asText())) {
+                throw new IllegalArgumentException("wrong instrument");
+            }
+            Instant quoteTime = Instant.ofEpochMilli(Long.parseLong(row.path("ts").asText()));
+            BigDecimal price = new BigDecimal(row.path("last").asText());
+            if (price.signum() <= 0 || quoteTime.isAfter(serverTime.plusSeconds(5))
+                    || quoteTime.isBefore(serverTime.minus(Duration.ofMinutes(2)))) {
+                throw new IllegalArgumentException("stale quote");
+            }
+            quote = new ClosedBarMarketFeed.Quote(quoteTime, price);
+        } catch (RuntimeException ex) {
+            throw new IllegalStateException("PUBLIC_MARKET_QUOTE_UNAVAILABLE", ex);
+        }
+        return quote;
     }
 
     private Instant receivedAt(Instant serverTime) {
