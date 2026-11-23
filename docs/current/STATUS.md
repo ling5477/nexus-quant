@@ -14,10 +14,10 @@ accepted_batch_implementation_commit=f8505f02186a980958fb785bb24ae77c678f5172
 accepted_batch_acceptance_head=f8505f02186a980958fb785bb24ae77c678f5172
 accepted_batch_ci_run=41586151641
 work_batch=NQ-V105-POST-RELEASE-CLOSEOUT
-work_batch_status=IMPLEMENTED|SELF_REVIEWED
-work_batch_commit=NONE
-work_batch_ci_run=NOT_RUN
-next_action=NQ-V105-CLOSEOUT-COMMIT
+work_batch_status=ACCEPTED|CI_GREEN
+work_batch_commit=9ca936725d035758badfe0bcdf46271986096409
+work_batch_ci_run=45096425164
+next_action=NQ-V106-PLAN
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -62,7 +62,7 @@ nq-current-authority:end -->
 
 Self-Hosted 资格覆盖 Windows 11 amd64、Docker Desktop Linux Containers、PostgreSQL 16.15、Flyway V52。普通升级资格仅覆盖 **v1.0.4 / V52 → v1.0.5 / V52**。独立离线 Python Research Companion 资格覆盖 Windows amd64、CPython 3.11.9 和 NumPy 2.3.5。Linux 正式发行资格为 `NOT_QUALIFIED`，阿里云七日运行仅提供 `SCOPED_OPERATIONAL_EVIDENCE`。
 
-原工作批次 `NQ-V105-RELEASE-READINESS / ACCEPTED|CI_GREEN` 的记录为 Qualified Source `eb323eddbf5a81416e623b6ece083026b7dd5f67` 与 CI `44046457785`。原功能接受批次及 GateZ 冻结身份见上方机器区块。本轮文档收口的 PR、合并及相应 CI 由维护者交付报告 `NQ_V105_POST_RELEASE_CLOSEOUT.md` 登记。
+原工作批次 `NQ-V105-RELEASE-READINESS / ACCEPTED|CI_GREEN` 的记录为 Qualified Source `eb323eddbf5a81416e623b6ece083026b7dd5f67` 与 CI `44046457785`。原功能接受批次及 GateZ 冻结身份见上方机器区块。本轮 Authority 的 work pair 指向发行事实文档提交 `9ca936725d035758badfe0bcdf46271986096409` 与 PR #110 的 CI `45096425164` attempt 1，9/9 SUCCESS。最终 PR head 与合并后 CI 另由维护者交付报告 `NQ_V105_POST_RELEASE_CLOSEOUT.md` 登记。
 
 收口后的规划入口为 **`NQ-V106-PLAN / NOT_STARTED`**。运行状态沿用已封存的运营收口：`LIVE=DISABLED`、`KILL_SWITCH=ENGAGED`、`Continuous SIM=STOPPED`、`CONTINUOUS_SIM_POLL=DISABLED`、`PAPER_MATCHING=DISABLED`。
 
