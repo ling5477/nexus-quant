@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
+import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
 import com.guidinglight.nexusquant.strategy.domain.SpotBarIdentity;
 
 import java.math.BigDecimal;
@@ -11,14 +12,17 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /** 连续 SIM 的 run-local 进度与已观察 bar；经济事实仍由 canonical 路径拥有。 */
@@ -66,7 +70,7 @@ public class ContinuousSimRepository {
                        seed_last_open_time,last_processed_open_time,last_processed_close_time,
                        last_processed_sha256,last_observed_open_time,gap_start_open_time,started_at,last_poll_at,
                        last_successful_poll_at,updated_at,block_reason,consecutive_poll_failures,
-                       end_at,manual_end_at,revision_detected_at,lifecycle_status,final_valuation_status,
+                       end_at,manual_end_at,revision_detected_at,overlap_check_pending,lifecycle_status,final_valuation_status,
                        last_valuation_boundary,pending_orders,clock_timestamp()>=end_at AS due,
                        (SELECT p.publish_id FROM paper_trading_runs p WHERE p.paper_run_id=continuous_sim_runs.paper_run_id) AS publish_id
                 FROM (SELECT tr.* FROM continuous_sim_runs tr WHERE nq_entity_tenant('paper',tr.paper_run_id)=nq_current_tenant_id()) continuous_sim_runs WHERE paper_run_id=?
@@ -79,7 +83,7 @@ public class ContinuousSimRepository {
                 instant(rs, "started_at"), instant(rs, "last_poll_at"),
                 instant(rs, "last_successful_poll_at"), instant(rs, "updated_at"),
                 rs.getString("block_reason"), rs.getInt("consecutive_poll_failures"),
-                instant(rs, "manual_end_at"), instant(rs, "revision_detected_at"),
+                instant(rs, "manual_end_at"), instant(rs, "revision_detected_at"), rs.getBoolean("overlap_check_pending"),
                 rs.getTimestamp("end_at") == null ? null : new ContinuousSimRunService.Bounded(
                     instant(rs, "end_at"), rs.getBoolean("due") && "RUNNING".equals(rs.getString("lifecycle_status"))
                             ? "ADMISSION_CLOSED" : rs.getString("lifecycle_status"),
@@ -98,22 +102,101 @@ public class ContinuousSimRepository {
     /** 先取得与订单准入互斥的行锁，再按此刻的数据库时钟裁决，不能沿用请求或事务开始时间。 */
     @Transactional(timeout = 10)
     public boolean closeAdmissionIfDue(String runId) {
-        String state = jdbc.queryForObject("""
-                SELECT lifecycle_status FROM continuous_sim_runs WHERE paper_run_id=? AND end_at IS NOT NULL FOR UPDATE
-                """, String.class, runId);
-        if (!"RUNNING".equals(state)) return true;
+        Cursor latest = lockCursor(runId);
+        if ("STOPPED".equals(latest.status())) return true;
+        if (latest.overlapCheckPending()) {
+            // 先前轮询已退出。保留实际发现时间；若原响应未能落库，则保留未完成核验。
+            jdbc.update("""
+                    UPDATE continuous_sim_runs SET status='STALLED',lifecycle_status='BLOCKED',
+                        block_reason=CASE WHEN pending_revision_detected_at IS NULL THEN 'OVERLAP_CHECK_INCOMPLETE'
+                                          ELSE 'DATA_REVISION_DETECTED' END,
+                        revision_detected_at=coalesce(revision_detected_at,pending_revision_detected_at),
+                        overlap_check_pending=pending_revision_detected_at IS NULL,
+                        pending_revision_detected_at=NULL,updated_at=clock_timestamp()
+                    WHERE paper_run_id=?
+                    """, runId);
+            return true;
+        }
         return jdbc.update("""
                 UPDATE continuous_sim_runs SET lifecycle_status='ADMISSION_CLOSED',block_reason='DEADLINE_REACHED',
-                    updated_at=clock_timestamp() WHERE paper_run_id=? AND end_at<=clock_timestamp()
+                    updated_at=clock_timestamp() WHERE paper_run_id=? AND lifecycle_status='RUNNING'
+                    AND end_at<=clock_timestamp()
+                """, runId) == 1 || Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT lifecycle_status<>'RUNNING' FROM continuous_sim_runs WHERE paper_run_id=?
+                """, Boolean.class, runId));
+    }
+
+    /** 发请求前独立提交，响应或进程丢失后也无法把这次核验当作成功。 */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 10)
+    public boolean beginOverlapCheck(String runId) {
+        lockCursor(runId);
+        return jdbc.update("""
+                UPDATE continuous_sim_runs SET overlap_check_pending=true WHERE paper_run_id=?
+                    AND lifecycle_status='RUNNING' AND NOT overlap_check_pending AND end_at>clock_timestamp()
                 """, runId) == 1;
     }
 
-    public void recordRevision(String runId, Instant now) {
+    /** 原响应的比较与证据写入共享事务，原 bar 永不改写。随后才能推进截止收敛。 */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 10)
+    public void finishOverlapCheck(String runId, Instant firstOpen, Instant latestOpen,
+                                   List<HistoricalBar> bars, Clock clock) {
+        Cursor latest = lockCursor(runId);
+        if (!latest.overlapCheckPending() || "STOPPED".equals(latest.status()))
+            throw new IllegalStateException("CONTINUOUS_SIM_OVERLAP_CHECK_CONFLICT");
+        for (HistoricalBar bar : bars) {
+            Instant open = bar.openTime();
+            if (!open.isBefore(firstOpen) && !open.isAfter(latestOpen)
+                    && open.isBefore(latest.bounded().endAt())
+                    && storedDigest(runId, open).stream().anyMatch(saved -> !saved.equals(contentSha(bar)))) {
+                Instant detectedAt = clock.instant();
+                jdbc.update("""
+                        UPDATE continuous_sim_runs SET pending_revision_detected_at=?,status='STALLED',
+                            lifecycle_status='BLOCKED',block_reason='DATA_REVISION_DETECTED',
+                            final_valuation_status='UNAVAILABLE',last_valuation_boundary=NULL,updated_at=clock_timestamp()
+                        WHERE paper_run_id=? AND pending_revision_detected_at IS NULL
+                        """, Timestamp.from(detectedAt), runId);
+                return;
+            }
+        }
         jdbc.update("""
-            UPDATE continuous_sim_runs SET lifecycle_status='BLOCKED',status='STALLED',block_reason='DATA_REVISION_DETECTED',
-                revision_detected_at=?,updated_at=? WHERE paper_run_id=? AND end_at IS NOT NULL
-                AND revision_detected_at IS NULL AND status<>'STOPPED'
-            """, Timestamp.from(now), Timestamp.from(now), runId);
+                UPDATE continuous_sim_runs SET overlap_check_pending=false
+                WHERE paper_run_id=? AND pending_revision_detected_at IS NULL
+                """, runId);
+    }
+
+    private Cursor lockCursor(String runId) {
+        jdbc.queryForObject("SELECT paper_run_id FROM continuous_sim_runs WHERE paper_run_id=? FOR UPDATE",
+                String.class, runId);
+        return get(runId);
+    }
+
+    /** 同一游标行锁将 END 提交和有限时长的末价请求排序；外部响应另行核验后才可落库。 */
+    @Transactional(timeout = 15)
+    public ClosedBarMarketFeed.Observation observeMissingFinalBar(String runId, Instant end, Clock clock,
+            Supplier<ClosedBarMarketFeed.Observation> observe) {
+        Cursor latest = lockCursor(runId);
+        if (!canCollectFinalBar(latest, end)) return null;
+        Instant now = clock.instant();
+        if (now.isAfter(end.plusSeconds(ClosedBarValuation.MAXIMUM_LATENESS_SECONDS))) return null;
+        return observe.get();
+    }
+
+    @Transactional(timeout = 10)
+    public void saveFinalBar(String runId, Instant end, ClosedBarMarketFeed.Observation observation) {
+        Cursor latest = lockCursor(runId);
+        if (!canCollectFinalBar(latest, end)) return;
+        Instant open = end.minusSeconds(3600);
+        observation.bars().stream().filter(bar -> bar.openTime().equals(open)).findFirst()
+                .ifPresent(bar -> insertBar(runId, bar, observation.observedAt()));
+    }
+
+    private boolean canCollectFinalBar(Cursor cursor, Instant end) {
+        if ("STOPPED".equals(cursor.status()) || cursor.manualEndAt() != null
+                || cursor.revisionDetectedAt() != null || cursor.overlapCheckPending()) return false;
+        // 末价来源事实不可替换。已有 bar 即使尚未达到估值 asOf，也只读回原证据。
+        return !Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS(SELECT 1 FROM continuous_sim_bars WHERE paper_run_id=? AND open_time=?)
+                """, Boolean.class, cursor.runId(), Timestamp.from(end.minusSeconds(3600))));
     }
 
     String closingPriceFailure(String runId, Instant endAt, Instant asOf) {
@@ -122,14 +205,26 @@ public class ContinuousSimRepository {
 
     /** 人工意图优先；父运行与容量槽在同一事务内退出，避免父状态过早取消后台收敛资格。 */
     @Transactional(timeout = 10)
-    public void recordSettlement(String runId, Instant now, String lifecycle, String valuation,
+    public void recordSettlement(String runId, String lifecycle, String valuation,
                                  Integer pending, String reason, boolean terminal) {
-        jdbc.queryForObject("SELECT paper_run_id FROM continuous_sim_runs WHERE paper_run_id=? FOR UPDATE", String.class, runId);
-        Cursor latest = get(runId);
+        Cursor latest = lockCursor(runId);
         if ("STOPPED".equals(latest.status())) return;
-        if (latest.manualEndAt() != null && terminal && pending != null && pending == 0) {
+        Instant now = jdbc.queryForObject("SELECT clock_timestamp()", Timestamp.class).toInstant();
+        if (latest.overlapCheckPending() || latest.revisionDetectedAt() != null) {
+            lifecycle = "BLOCKED";
+            valuation = "UNAVAILABLE";
+            reason = latest.revisionDetectedAt() == null ? "OVERLAP_CHECK_INCOMPLETE" : "DATA_REVISION_DETECTED";
+        }
+        if (latest.manualEndAt() != null && pending != null && pending == 0) {
+            // 人工意图可能在末价读取后提交；在锁内用已保存的价格重新确认终态事实。
+            if (now.isBefore(latest.manualEndAt())) now = latest.manualEndAt();
+            Instant end = latest.bounded().endAt();
+            valuation = !latest.overlapCheckPending() && latest.revisionDetectedAt() == null
+                    && !latest.manualEndAt().isBefore(end) && closingPriceFailure(runId, end, now) == null
+                    ? "VERIFIED" : "UNAVAILABLE";
             lifecycle = "MANUALLY_STOPPED";
             reason = "MANUAL_END";
+            terminal = true;
         }
         Instant boundary = "VERIFIED".equals(valuation) ? latest.bounded().endAt() : null;
         jdbc.update("""
@@ -242,13 +337,17 @@ public class ContinuousSimRepository {
                 Timestamp.from(bar.availableAt()), digest, json, Timestamp.from(observedAt));
     }
 
-    boolean verifyExistingBar(String runId, Instant open, String digest) {
-        var existing = jdbc.query("""
-                SELECT bar_sha256 FROM continuous_sim_bars WHERE paper_run_id=? AND open_time=?
-                """, (rs, row) -> rs.getString(1), runId, Timestamp.from(open));
+    private boolean verifyExistingBar(String runId, Instant open, String digest) {
+        var existing = storedDigest(runId, open);
         if (existing.isEmpty()) return false;
         if (!existing.getFirst().equals(digest)) throw new IllegalStateException("DATA_REVISION_DETECTED");
         return true;
+    }
+
+    private List<String> storedDigest(String runId, Instant open) {
+        return jdbc.query("""
+                SELECT bar_sha256 FROM continuous_sim_bars WHERE paper_run_id=? AND open_time=?
+                """, (rs, row) -> rs.getString(1), runId, Timestamp.from(open));
     }
 
     public List<HistoricalBar> recentBars(String runId) {
@@ -312,6 +411,7 @@ public class ContinuousSimRepository {
                          Instant gapStartOpenTime,
                          Instant startedAt, Instant lastPollAt, Instant lastSuccessfulPollAt,
                          Instant updatedAt, String blockReason, int consecutivePollFailures, Instant manualEndAt, Instant revisionDetectedAt,
+                         boolean overlapCheckPending,
                          ContinuousSimRunService.Bounded bounded) {
         public Cursor(String runId, String status, String strategyVersionId, String strategyChecksum, String costSha256,
                       Instant seedLastOpenTime, Instant lastProcessedOpenTime, Instant lastProcessedCloseTime,
@@ -320,7 +420,7 @@ public class ContinuousSimRepository {
                       String blockReason, int consecutivePollFailures) {
             this(runId, status, strategyVersionId, strategyChecksum, costSha256, seedLastOpenTime, lastProcessedOpenTime,
                  lastProcessedCloseTime, lastProcessedSha256, lastObservedOpenTime, gapStartOpenTime, startedAt,
-                 lastPollAt, lastSuccessfulPollAt, updatedAt, blockReason, consecutivePollFailures, null, null, null);
+                 lastPollAt, lastSuccessfulPollAt, updatedAt, blockReason, consecutivePollFailures, null, null, false, null);
         }
     }
 }

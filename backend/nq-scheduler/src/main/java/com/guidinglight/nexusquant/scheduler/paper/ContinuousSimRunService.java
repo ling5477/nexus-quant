@@ -9,6 +9,7 @@ import com.guidinglight.nexusquant.research.application.paper.service.PaperTradi
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRunStatus;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.TransientDataAccessException;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
@@ -204,23 +205,31 @@ public class ContinuousSimRunService {
         if (cursor.bounded() != null && progress.closeAdmissionIfDue(runId)) return settle(runId);
         Instant latestAvailable = cursor.lastObservedOpenTime();
         Instant gapStart = null;
+        boolean resolvingOverlap = false;
         try {
             checkBinding(cursor);
             List<HistoricalBar> before = progress.recentBars(runId);
             if (before.isEmpty()) throw new IllegalStateException("STRATEGY_INPUT_REJECTED");
             Instant latestOpen = before.getLast().openTime();
             Instant firstOpen = latestOpen.minus(HOUR);
-            ClosedBarMarketFeed.Observation observation = feed.observe(firstOpen, 24);
-            if (cursor.bounded() != null && progress.closeAdmissionIfDue(runId)) {
-                // 跨截止的在途响应仍可能揭示原价格修订；只比对已请求的重叠槽，不用响应补写或推进策略。
-                for (HistoricalBar bar : observation.bars()) {
-                    if (!bar.openTime().isBefore(firstOpen) && !bar.openTime().isAfter(latestOpen)
-                            && bar.openTime().isBefore(cursor.bounded().endAt())) {
-                        progress.verifyExistingBar(runId, bar.openTime(), ContinuousSimRepository.contentSha(bar));
-                    }
-                }
-                return settle(runId);
+            boolean bounded = cursor.bounded() != null;
+            resolvingOverlap = bounded;
+            if (bounded && !progress.beginOverlapCheck(runId))
+                return progress.closeAdmissionIfDue(runId) ? settle(runId) : status(runId);
+            ClosedBarMarketFeed.Observation observation;
+            try {
+                observation = feed.observe(firstOpen, 24);
+            } catch (IllegalStateException failure) {
+                // 适配器明确未交付响应时可结束本次核验；中断留下恢复标记。
+                if (bounded && !Thread.currentThread().isInterrupted())
+                    progress.finishOverlapCheck(runId, firstOpen, latestOpen, List.of(), clock);
+                throw failure;
             }
+            if (bounded) {
+                progress.finishOverlapCheck(runId, firstOpen, latestOpen, observation.bars(), clock);
+                if (progress.closeAdmissionIfDue(runId)) return settle(runId);
+            }
+            resolvingOverlap = false;
             for (HistoricalBar bar : observation.bars()) {
                 if (cursor.bounded() != null && !bar.openTime().isBefore(cursor.bounded().endAt())) break;
                 if (bar.openTime().isAfter(latestAvailable)) latestAvailable = bar.openTime();
@@ -328,12 +337,9 @@ public class ContinuousSimRunService {
                     true);
             return status(runId);
         } catch (RuntimeException ex) {
-            if (cursor.bounded() != null && ex instanceof TransientDataAccessException) throw ex;
+            if ((cursor.bounded() != null && ex instanceof TransientDataAccessException)
+                    || (resolvingOverlap && ex instanceof DataAccessException)) throw ex;
             String reason = classify(ex);
-            if (cursor.bounded() != null && "DATA_REVISION_DETECTED".equals(reason)) {
-                progress.recordRevision(runId, clock.instant());
-                return status(runId);
-            }
             String next = "DATA_REVISION_DETECTED".equals(reason) ? "STOPPED" : "STALLED";
             // 修订直到响应校验完成才可知，不能把请求开始时刻当作历史评价已知修订的时间。
             Instant failedAt = "DATA_REVISION_DETECTED".equals(reason) ? clock.instant() : now;
@@ -357,7 +363,7 @@ public class ContinuousSimRunService {
                 default -> "BOUNDED_SETTLEMENT_UNPROVEN";
             };
             var latest = progress.get(runId);
-            progress.recordSettlement(runId, clock.instant(), "BLOCKED", latest.bounded().finalValuationStatus(),
+            progress.recordSettlement(runId, "BLOCKED", latest.bounded().finalValuationStatus(),
                     null, reason, false);
             return status(runId);
         }
@@ -374,44 +380,42 @@ public class ContinuousSimRunService {
         if (reason != null || economics.pendingOrders() != 0) {
             boolean waiting = "SIM_PREVIOUS_EXECUTION_PENDING".equals(reason)
                     || "SIM_DECISION_RECOVERY_PENDING".equals(reason) || "SIM_CANONICAL_RUN_NOT_TERMINAL".equals(reason);
-            progress.recordSettlement(runId, clock.instant(), waiting ? "SETTLING" : "BLOCKED",
+            progress.recordSettlement(runId, waiting ? "SETTLING" : "BLOCKED",
                     valuation, economics.pendingOrders(), reason, false);
             return status(runId);
         }
         if (cursor.manualEndAt() != null) {
-            progress.recordSettlement(runId, clock.instant(), "MANUALLY_STOPPED", valuation,0, "MANUAL_END", true);
+            progress.recordSettlement(runId, "MANUALLY_STOPPED", valuation,0, "MANUAL_END", true);
             return status(runId);
         }
         if (priceIssue != null) {
-            boolean exhausted = cursor.revisionDetectedAt() != null || "DATA_REVISION_DETECTED".equals(priceIssue)
+            boolean exhausted = cursor.overlapCheckPending() || cursor.revisionDetectedAt() != null
                     || clock.instant().isAfter(end.plusSeconds(ClosedBarValuation.MAXIMUM_LATENESS_SECONDS));
-            progress.recordSettlement(runId, clock.instant(), exhausted ? "BLOCKED" : "ADMISSION_CLOSED",
+            progress.recordSettlement(runId, exhausted ? "BLOCKED" : "ADMISSION_CLOSED",
                     valuation,0, priceIssue, exhausted);
             return status(runId);
         }
 
         boolean covered = closeFinalSlot(runId, cursor, end);
-        progress.recordSettlement(runId, clock.instant(), covered ? "COMPLETED" : "BLOCKED", valuation,0,
+        progress.recordSettlement(runId, covered ? "COMPLETED" : "BLOCKED", valuation,0,
                 covered ? "DEADLINE_SETTLED" : "FINAL_SLOT_COVERAGE_INCOMPLETE", true);
         return status(runId);
     }
 
     private String collectFinalPrice(String runId, ContinuousSimRepository.Cursor cursor, Instant end) {
         if (cursor.revisionDetectedAt() != null) return "DATA_REVISION_DETECTED";
+        if (cursor.overlapCheckPending()) return "OVERLAP_CHECK_INCOMPLETE";
         if (cursor.manualEndAt() != null && cursor.manualEndAt().isBefore(end)) return "MANUAL_END_BEFORE_DEADLINE";
         String priceIssue = progress.closingPriceFailure(runId, end, clock.instant());
         if (priceIssue != null && cursor.manualEndAt() == null
                 && !clock.instant().isAfter(end.plusSeconds(ClosedBarValuation.MAXIMUM_LATENESS_SECONDS))) {
             try {
-                Instant open = end.minus(HOUR);
-                var observation = feed.observeFinalBar(open);
-                for (HistoricalBar bar : observation.bars()) {
-                    if (bar.openTime().equals(open)) progress.insertBar(runId, bar, observation.observedAt());
-                }
+                var observation = progress.observeMissingFinalBar(runId, end, clock,
+                        () -> feed.observeFinalBar(end.minus(HOUR)));
+                if (observation != null) progress.saveFinalBar(runId, end, observation);
                 priceIssue = progress.closingPriceFailure(runId, end, clock.instant());
             } catch (IllegalStateException failure) {
                 priceIssue = classify(failure);
-                if ("DATA_REVISION_DETECTED".equals(priceIssue)) progress.recordRevision(runId, clock.instant());
             }
         }
         return priceIssue;

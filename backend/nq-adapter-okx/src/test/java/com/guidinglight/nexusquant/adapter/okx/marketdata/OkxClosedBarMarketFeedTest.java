@@ -21,16 +21,51 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.time.ZoneId;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.SystemEnvironmentPropertySource;
 
 class OkxClosedBarMarketFeedTest {
+    @Test @Timeout(12)
+    void finalBarRequestTimesOutWhenServerStallsAfterHeaders() throws Exception {
+        AtomicInteger calls = new AtomicInteger();
+        var releaseBody = new CountDownLatch(1);
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/api/v5/public/time", exchange -> {
+            calls.incrementAndGet();
+            try (exchange) {
+                exchange.sendResponseHeaders(200, 0);
+                exchange.getResponseBody().write('{');
+                exchange.getResponseBody().flush();
+                // 响应头和首字节都已发出；必须由客户端的正文截止结束等待。
+                releaseBody.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException failure) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        server.start();
+        try {
+            var feed = new OkxClosedBarMarketFeed("http://127.0.0.1:" + server.getAddress().getPort() + "/");
+            long started = System.nanoTime();
+            var failure = assertThrows(IllegalStateException.class,
+                    () -> feed.observeFinalBar(Instant.now().truncatedTo(ChronoUnit.HOURS).minus(Duration.ofHours(1))));
+            assertEquals("PUBLIC_MARKET_FINAL_BAR_UNAVAILABLE", failure.getMessage());
+            assertTrue(Duration.ofNanos(System.nanoTime() - started).compareTo(Duration.ofSeconds(8)) < 0);
+            assertEquals(1, calls.get());
+        } finally {
+            releaseBody.countDown();
+            server.stop(0);
+        }
+    }
+
     @Test
     void springDefaultOriginRemainsOfficialAndDoesNotMakeRequests() throws Exception {
         try (var context = context(Map.of(), Map.of(), "public-marketdata-manual", "true")) {

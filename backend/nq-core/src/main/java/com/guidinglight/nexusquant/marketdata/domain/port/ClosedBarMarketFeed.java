@@ -10,7 +10,7 @@ import java.util.List;
 public interface ClosedBarMarketFeed {
     Observation observe(Instant firstOpen, int maximumBars);
 
-    /** 末次估值只需要确认收盘事实，不能用可交易报价替代或阻碍该证据。 */
+    /** 末次估值只需要确认收盘事实。生产实现必须为完整响应设置短超时，以免阻塞人工结束。 */
     default Observation observeFinalBar(Instant open) {
         return observe(open, 1);
     }

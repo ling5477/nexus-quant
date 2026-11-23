@@ -34,7 +34,7 @@ final class ClosedBarValuation {
     // 未记录修订影响的具体小时，因此对该run保守拒绝，不用未来检测结果污染更早asOf。
     if (Boolean.TRUE.equals(jdbc.queryForObject("""
         SELECT EXISTS(SELECT 1 FROM continuous_sim_runs WHERE paper_run_id=?
-          AND ((revision_detected_at IS NOT NULL AND revision_detected_at<=?) OR
+          AND ((coalesce(revision_detected_at,pending_revision_detected_at)<=?) OR
             (end_at IS NULL AND block_reason='DATA_REVISION_DETECTED' AND updated_at<=?)))
         """, Boolean.class, runId, Timestamp.from(asOf), Timestamp.from(asOf))))
       return new Result(List.of(), List.of(), "DATA_REVISION_DETECTED");

@@ -1,5 +1,8 @@
 package com.guidinglight.nexusquant.adapter.okx.marketdata;
 
+import com.guidinglight.nexusquant.adapter.okx.error.OkxApiException;
+import com.guidinglight.nexusquant.adapter.okx.http.OkxHttpClient;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
@@ -45,6 +48,7 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
     private final URI origin;
     private final ObjectMapper mapper;
     private final Clock clock;
+    private final OkxHttpClient finalBarHttp;
 
     public OkxClosedBarMarketFeed() {
         this(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build(),
@@ -68,6 +72,8 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         this.http = Objects.requireNonNull(http);
         this.origin = Objects.requireNonNull(origin);
         this.mapper = Objects.requireNonNull(mapper);
+        this.finalBarHttp = new OkxHttpClient(http, mapper, origin.getScheme() + "://" + origin.getRawAuthority(),
+                Duration.ofSeconds(4));
     }
 
     private static URI configuredOrigin(String value) {
@@ -107,7 +113,7 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
                 || maximumBars < 1 || maximumBars > 24) {
             throw new IllegalArgumentException("CONTINUOUS_SIM_WINDOW_INVALID");
         }
-        JsonNode time = get(TIME_PATH);
+        JsonNode time = includeExecution ? get(TIME_PATH) : getForFinalBar(TIME_PATH);
         if (!"0".equals(time.path("code").asText()) || !time.path("data").isArray()
                 || time.path("data").size() != 1) {
             throw new IllegalStateException("PUBLIC_MARKET_TIME_UNAVAILABLE");
@@ -136,7 +142,7 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         String path = "/api/v5/market/history-candles?instId=BTC-USDT&bar=1H&after="
                 + pageEnd.toEpochMilli() + "&before=" + (firstOpen.toEpochMilli() - 1)
                 + "&limit=" + maximumBars;
-        JsonNode candles = get(path);
+        JsonNode candles = includeExecution ? get(path) : getForFinalBar(path);
         if (!"0".equals(candles.path("code").asText()) || !candles.path("data").isArray()
                 || candles.path("data").size() > maximumBars) {
             throw new IllegalStateException("PUBLIC_MARKET_RESPONSE_INVALID");
@@ -226,6 +232,15 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
             return value;
         } catch (RuntimeException ex) {
             throw new IllegalStateException("PUBLIC_MARKET_BAR_INVALID", ex);
+        }
+    }
+
+    private JsonNode getForFinalBar(String path) {
+        try {
+            // 末价采集与人工 END 互斥。仅两次公开请求，每次约束正文完成且无网络重试。
+            return finalBarHttp.getBounded(path, "continuous-sim-final-bar", MAX_RESPONSE_BYTES);
+        } catch (OkxApiException failure) {
+            throw new IllegalStateException("PUBLIC_MARKET_FINAL_BAR_UNAVAILABLE", failure);
         }
     }
 
