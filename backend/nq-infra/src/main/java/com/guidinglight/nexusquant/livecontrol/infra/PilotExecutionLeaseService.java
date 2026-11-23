@@ -1,0 +1,326 @@
+package com.guidinglight.nexusquant.livecontrol.infra;
+
+import com.guidinglight.nexusquant.livecontrol.application.model.AuthenticatedLiveControlActor;
+import com.guidinglight.nexusquant.livecontrol.application.service.LiveSessionControlService;
+import com.guidinglight.nexusquant.livecontrol.application.port.PilotExecutionLeaseControlPlane;
+import com.guidinglight.nexusquant.livecontrol.domain.ExactPilotBinding;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveControlException;
+import com.guidinglight.nexusquant.livecontrol.domain.LiveSessionCommand;
+import com.guidinglight.nexusquant.livecontrol.domain.PilotExecutionLease;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotExecutionLeaseRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository;
+import com.guidinglight.nexusquant.livecontrol.domain.port.PilotPrePlaceRecoveryRepository.Authorization;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchScope;
+import com.guidinglight.nexusquant.risk.service.KillSwitchService;
+import com.guidinglight.nexusquant.risk.domain.model.KillSwitchStatus;
+import com.guidinglight.nexusquant.risk.application.command.PilotKillSwitchDisengageCommand;
+
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.Optional;
+
+/**
+ * Lease、既有LiveSession状态机与global kill的fail-closed编排。
+ *
+ * <p>任何步骤失败都会尽力关闭lease并engage kill；真正send入口仍独立重读三类durable facts，
+ * 因此进程在finally前崩溃也不能仅凭DISENGAGED继续PLACE。</p>
+ */
+public final class PilotExecutionLeaseService implements PilotExecutionLeaseControlPlane {
+
+    private final PilotExecutionLeaseRepository leases;
+    private final PilotPrePlaceRecoveryRepository recoveries;
+    private final LiveSessionControlService sessions;
+    private final KillSwitchService killSwitch;
+    private final Clock clock;
+
+    public PilotExecutionLeaseService(
+            PilotExecutionLeaseRepository leases,
+            PilotPrePlaceRecoveryRepository recoveries,
+            LiveSessionControlService sessions,
+            KillSwitchService killSwitch,
+            Clock clock
+    ) {
+        this.leases = Objects.requireNonNull(leases, "leases must not be null");
+        this.recoveries = Objects.requireNonNull(recoveries, "recoveries must not be null");
+        this.sessions = Objects.requireNonNull(sessions, "sessions must not be null");
+        this.killSwitch = Objects.requireNonNull(killSwitch, "killSwitch must not be null");
+        this.clock = Objects.requireNonNull(clock, "clock must not be null");
+    }
+
+    PilotExecutionLeaseService(
+            PilotExecutionLeaseRepository leases,
+            LiveSessionControlService sessions,
+            KillSwitchService killSwitch,
+            Clock clock
+    ) {
+        this.leases = Objects.requireNonNull(leases, "leases must not be null");
+        this.recoveries = null;
+        this.sessions = Objects.requireNonNull(sessions, "sessions must not be null");
+        this.killSwitch = Objects.requireNonNull(killSwitch, "killSwitch must not be null");
+        this.clock = Objects.requireNonNull(clock, "clock must not be null");
+    }
+
+    @Override
+    public PilotExecutionLease createAndActivate(
+            AuthenticatedLiveControlActor actor,
+            ExactPilotBinding binding,
+            BigDecimal maxNotional,
+            Instant expiresAt,
+            ExactPilotBinding.Correlation correlation
+    ) {
+        return createAndActivate(actor, binding, maxNotional, expiresAt, correlation, null);
+    }
+
+    @Override
+    public PilotExecutionLease createReplacementAndActivate(
+            AuthenticatedLiveControlActor actor,
+            ExactPilotBinding binding,
+            BigDecimal maxNotional,
+            Instant expiresAt,
+            ExactPilotBinding.Correlation correlation,
+            Authorization authorization
+    ) {
+        return createAndActivate(actor, binding, maxNotional, expiresAt, correlation,
+                Objects.requireNonNull(authorization));
+    }
+
+    private PilotExecutionLease createAndActivate(
+            AuthenticatedLiveControlActor actor,
+            ExactPilotBinding binding,
+            BigDecimal maxNotional,
+            Instant expiresAt,
+            ExactPilotBinding.Correlation correlation,
+            Authorization authorization
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(correlation, "correlation must not be null");
+        Instant now = clock.instant();
+        PilotExecutionLease draft = authorization == null
+                ? PilotExecutionLease.created(
+                UUID.randomUUID(), binding, maxNotional, actor.userId(), now, expiresAt)
+                : PilotExecutionLease.createdReplacement(
+                UUID.randomUUID(), binding, maxNotional, actor.userId(), now, expiresAt,
+                authorization.predecessorLeaseId(), authorization.decisionId(),
+                authorization.replacementOrdinal());
+        PilotExecutionLease created = leases.create(draft,
+                correlation.requestId(), correlation.traceId());
+        try {
+            transition(actor, binding.sessionId(), LiveSessionCommand.APPROVE, correlation);
+            transition(actor, binding.sessionId(), LiveSessionCommand.START, correlation);
+            PilotExecutionLease active = leases.activate(
+                    created.id(), created.version(), clock.instant(), correlation.requestId(), correlation.traceId());
+            var kill = killSwitch.snapshot();
+            if (kill.status() != KillSwitchStatus.ENGAGED) {
+                throw new LiveControlException("EXECUTION_KILL_NOT_ENGAGED", "pilot must start from ENGAGED");
+            }
+            killSwitch.disengageForPilot(new PilotKillSwitchDisengageCommand(
+                    KillSwitchScope.GLOBAL_TRADING, kill.version(), active.id(), active.expiresAt(),
+                    "OPERATOR_" + actor.userId(), correlation.traceId(), clock.instant()));
+            transition(actor, binding.sessionId(), LiveSessionCommand.ACTIVATE, correlation);
+            return active;
+        } catch (RuntimeException failure) {
+            recoverLease(actor, created.id(), binding.sessionId(), correlation, "EXECUTION_ACTIVATION_FAILED");
+            throw failure;
+        }
+    }
+
+    @Override
+    public Optional<Authorization> prepareZeroIntentReplacement(
+            AuthenticatedLiveControlActor actor,
+            long exchangeAccountId,
+            long credentialReferenceId,
+            String instrument,
+            BigDecimal maxNotional,
+            ExactPilotBinding.Correlation correlation
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(correlation, "correlation must not be null");
+        if (killSwitch.snapshot().status() != KillSwitchStatus.ENGAGED) {
+            throw new LiveControlException("EXECUTION_KILL_NOT_ENGAGED", "recovery requires ENGAGED kill");
+        }
+        if (recoveries == null) {
+            throw new LiveControlException(
+                    "PRE_PLACE_RECOVERY_UNAVAILABLE", "pre-place recovery repository is unavailable");
+        }
+        Optional<Authorization> authorization = recoveries.decide(
+                actor.userId(), exchangeAccountId, credentialReferenceId, instrument, maxNotional,
+                UUID.randomUUID(), correlation.requestId(), correlation.traceId(), clock.instant());
+        authorization.ifPresent(value -> {
+            sessions.terminalizeMinimalPilotPrePlaceRecovery(
+                    actor, value.predecessorSessionId(), value.decisionId(),
+                    correlation.requestId(), correlation.traceId(), correlation.idempotencyKey());
+            sessions.terminalizeExpiredMinimalPilotPreparation(
+                    actor, exchangeAccountId, credentialReferenceId, instrument, maxNotional,
+                    value.decisionId(), correlation.requestId(), correlation.traceId(),
+                    correlation.idempotencyKey());
+        });
+        return authorization;
+    }
+
+    @Override
+    public PilotExecutionLease bindPlace(
+            AuthenticatedLiveControlActor actor,
+            UUID leaseId,
+            UUID intentId,
+            ExactPilotBinding binding,
+            ExactPilotBinding.Correlation correlation
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        if (binding.account().ownerId() != actor.userId()) {
+            throw new LiveControlException("EXECUTION_LEASE_OWNER_MISMATCH", "binding owner differs from operator");
+        }
+        return leases.bindPlaceAndConsume(
+                leaseId, intentId, binding, clock.instant(), correlation.requestId(), correlation.traceId());
+    }
+
+    @Override
+    public void bindCancel(UUID leaseId, UUID intentId) {
+        leases.bindCancel(leaseId, intentId, clock.instant());
+    }
+
+    @Override
+    public PilotExecutionLease close(
+            AuthenticatedLiveControlActor actor,
+            UUID leaseId,
+            PilotExecutionLease.Status terminal,
+            String reasonCode,
+            ExactPilotBinding.Correlation correlation
+    ) {
+        PilotExecutionLease current = leases.find(leaseId)
+                .orElseThrow(() -> new LiveControlException("EXECUTION_LEASE_NOT_FOUND", "lease was not found"));
+        try {
+            try {
+                if (terminal == PilotExecutionLease.Status.CLOSED) {
+                    sessions.terminalizeMinimalPilotPostExecution(
+                            actor, current.liveSessionId(), current.id(), correlation.requestId(),
+                            correlation.traceId(), correlation.idempotencyKey());
+                } else {
+                    transition(actor, current.liveSessionId(), LiveSessionCommand.STOP, correlation);
+                    transition(actor, current.liveSessionId(), LiveSessionCommand.BEGIN_RECONCILE, correlation);
+                    transition(actor, current.liveSessionId(), LiveSessionCommand.RECONCILE_BLOCK, correlation);
+                }
+            } catch (RuntimeException sessionFailure) {
+                if (terminal == PilotExecutionLease.Status.CLOSED) throw sessionFailure;
+            }
+            return leases.close(leaseId, terminal, clock.instant(), reasonCode,
+                    correlation.requestId(), correlation.traceId());
+        } finally {
+            engageIfRequired(reasonCode, correlation.traceId());
+        }
+    }
+
+    @Override
+    public void recoverAtStartup() {
+        Instant now = clock.instant();
+        for (PilotExecutionLease lease : leases.findRecoverable(now)) {
+            if (lease.status() == PilotExecutionLease.Status.CONSUMED) {
+                continue;
+            }
+            PilotExecutionLease.Status terminal = now.isBefore(lease.expiresAt())
+                    ? PilotExecutionLease.Status.FAILED : PilotExecutionLease.Status.EXPIRED;
+            try {
+                leases.close(lease.id(), terminal, now, "EXECUTION_STARTUP_RECOVERY",
+                        "pilot-startup-recovery", "pilot-startup-recovery");
+            } catch (RuntimeException ignored) {
+                // 继续执行global engage；execution send gate会独立拒绝非ACTIVE/过期lease。
+            }
+        }
+        engageIfRequired("EXECUTION_STARTUP_RECOVERY", "pilot-startup-recovery");
+    }
+
+    @Override
+    public Optional<PilotExecutionLease> findConsumedForRecovery() {
+        return leases.findRecoverable(clock.instant()).stream()
+                .filter(value -> value.status() == PilotExecutionLease.Status.CONSUMED)
+                .findFirst();
+    }
+
+    @Override
+    public PilotExecutionLease resumeConsumed(
+            AuthenticatedLiveControlActor actor,
+            PilotExecutionLease lease,
+            ExactPilotBinding.Correlation correlation
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(lease, "lease must not be null");
+        if (lease.createdBy() != actor.userId() || lease.status() != PilotExecutionLease.Status.CONSUMED) {
+            throw new LiveControlException("EXECUTION_RECOVERY_LEASE_REJECTED", "consumed lease cannot be resumed");
+        }
+        if (!clock.instant().isBefore(lease.expiresAt())) return lease;
+        var kill = killSwitch.snapshot();
+        if (kill.status() != KillSwitchStatus.ENGAGED) {
+            throw new LiveControlException("EXECUTION_KILL_NOT_ENGAGED", "recovery must start from ENGAGED");
+        }
+        killSwitch.disengageForPilot(new PilotKillSwitchDisengageCommand(
+                KillSwitchScope.GLOBAL_TRADING, kill.version(), lease.id(), lease.expiresAt(),
+                "OPERATOR_" + actor.userId(), correlation.traceId(), clock.instant()));
+        return lease;
+    }
+
+    @Override
+    public void suspendConsumedForRecovery(
+            AuthenticatedLiveControlActor actor,
+            PilotExecutionLease lease,
+            String reasonCode,
+            ExactPilotBinding.Correlation correlation
+    ) {
+        Objects.requireNonNull(actor, "actor must not be null");
+        Objects.requireNonNull(lease, "lease must not be null");
+        Objects.requireNonNull(correlation, "correlation must not be null");
+        if (lease.createdBy() != actor.userId() || lease.status() != PilotExecutionLease.Status.CONSUMED) {
+            throw new LiveControlException(
+                    "EXECUTION_RECOVERY_LEASE_REJECTED", "only the exact consumed lease can be suspended");
+        }
+        engageIfRequired(reasonCode, correlation.traceId());
+    }
+
+    private void recoverLease(
+            AuthenticatedLiveControlActor actor,
+            UUID leaseId,
+            UUID sessionId,
+            ExactPilotBinding.Correlation correlation,
+            String reason
+    ) {
+        try {
+            var session = sessions.transitionMinimalPilot(
+                    actor, sessionId, LiveSessionCommand.STOP,
+                    correlation.requestId(), correlation.traceId(), correlation.idempotencyKey());
+            sessions.transitionMinimalPilot(
+                    actor, session.id(), LiveSessionCommand.BEGIN_RECONCILE,
+                    correlation.requestId(), correlation.traceId(), correlation.idempotencyKey());
+        } catch (RuntimeException ignored) {
+            // Lease/kill recovery remains mandatory even if the session is not ACTIVE.
+        }
+        try {
+            PilotExecutionLease lease = leases.find(leaseId).orElse(null);
+            if (lease != null && (lease.status() == PilotExecutionLease.Status.CREATED
+                    || lease.status() == PilotExecutionLease.Status.ACTIVE
+                    || lease.status() == PilotExecutionLease.Status.CONSUMED)) {
+                leases.close(leaseId, PilotExecutionLease.Status.FAILED, clock.instant(), reason,
+                        correlation.requestId(), correlation.traceId());
+            }
+        } finally {
+            engageIfRequired(reason, correlation.traceId());
+        }
+    }
+
+    private void engageIfRequired(String reason, String traceId) {
+        var snapshot = killSwitch.snapshot();
+        if (snapshot.status() == KillSwitchStatus.DISENGAGED) {
+            killSwitch.engage(snapshot.version(), reason, "EXECUTION_RECOVERY", traceId);
+        }
+    }
+
+    private void transition(
+            AuthenticatedLiveControlActor actor,
+            UUID sessionId,
+            LiveSessionCommand command,
+            ExactPilotBinding.Correlation correlation
+    ) {
+        sessions.transitionMinimalPilot(actor, sessionId, command,
+                correlation.requestId(), correlation.traceId(), correlation.idempotencyKey());
+    }
+}

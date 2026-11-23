@@ -1,0 +1,62 @@
+package com.guidinglight.nexusquant.research.api.dto;
+
+import com.guidinglight.nexusquant.research.domain.ResearchConfig;
+
+import java.time.Instant;
+import io.swagger.v3.oas.annotations.media.Schema;
+
+/**
+ * ResearchConfigResponse 描述接口响应体。
+ */
+@Schema(name = "ResearchConfigResponse", description = "接口响应体")
+public record ResearchConfigResponse(
+        @Schema(description = "researchConfigId")
+        String researchConfigId,
+        @Schema(description = "sourceStrategyId")
+        String sourceStrategyId,
+        @Schema(description = "strategySnapshot")
+        String strategySnapshot,
+        @Schema(description = "name")
+        String name,
+        @Schema(description = "description")
+        String description,
+        @Schema(description = "parameterSchema")
+        String parameterSchema,
+        @Schema(description = "parameterDefaults")
+        String parameterDefaults,
+        @Schema(description = "datasetSpec")
+        String datasetSpec,
+        @Schema(description = "createdAt")
+        Instant createdAt,
+        @Schema(description = "updatedAt")
+        Instant updatedAt,
+        @Schema(description = "status")
+        String status,
+        @Schema(description = "archivedAt")
+        Instant archivedAt,
+        @Schema(description = "archivedBy")
+        String archivedBy,
+        @Schema(description = "archiveReason")
+        String archiveReason
+) {
+    public static ResearchConfigResponse from(ResearchConfig researchConfig) {
+        return new ResearchConfigResponse(
+                researchConfig.researchConfigId(),
+                researchConfig.sourceStrategyId(),
+                researchConfig.strategySnapshot(),
+                researchConfig.name(),
+                researchConfig.description(),
+                researchConfig.parameterSchema(),
+                researchConfig.parameterDefaults(),
+                researchConfig.datasetSpec(),
+                researchConfig.createdAt(),
+                researchConfig.updatedAt(),
+                researchConfig.status(),
+                researchConfig.archivedAt(),
+                researchConfig.archivedBy(),
+                researchConfig.archiveReason()
+        );
+    }
+}
+
+

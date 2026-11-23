@@ -1,0 +1,97 @@
+/**
+ * NQ Design System v1 — design tokens (CSS variables)
+ *
+ * 约束：
+ * 1) 深色优先：所有图表、表格、卡片、自研组件必须读取本文件的 CSS variables，
+ *    禁止页面内自定义第二套颜色。
+ * 2) 本文件与 `src/theme/tokens.ts` 互为镜像（命名一致、取值一致）；
+ *    修改任一侧时必须同步另一侧，AntD ConfigProvider 与 ECharts 主题读取 TS 侧。
+ * 3) 语义色规则：
+ *    up = 上涨/盈利（国内习惯红涨），down = 下跌/亏损（绿跌）；
+ *    live 仅作为环境强警示色，LIVE 能力保持 disabled。
+ */
+:root {
+    color-scheme: dark;
+
+    /* ---- color: background layers ---- */
+    --nq-color-bg-page: #050f1b;
+    --nq-color-bg-panel: #081a2a;
+    --nq-color-bg-elevated: #0d2134;
+    --nq-color-bg-sunken: #061727;
+    --nq-color-bg-hover: #102b42;
+    --nq-color-bg-selected: rgba(8, 120, 250, 0.18);
+
+    /* ---- color: border (1px 分割线，低对比) ---- */
+    --nq-color-border: #254863;
+    --nq-color-border-subtle: #19354c;
+
+    /* ---- color: text ---- */
+    --nq-color-text: #edf4fc;
+    --nq-color-text-secondary: #a6bfd7;
+    --nq-color-text-tertiary: #7e9ab5;
+    --nq-color-text-disabled: #49566a;
+
+    /* ---- color: brand / semantic ---- */
+    --nq-color-primary: #0878fa;
+    --nq-color-primary-hover: #409cff;
+    --nq-color-primary-active: #0060d8;
+    --nq-color-primary-bg: rgba(8, 120, 250, 0.12);
+    --nq-color-accent: #00bcf2;
+
+    /* 状态色：RUNNING/ACTIVE/SUCCEEDED=success；PENDING/CREATED=info；
+     PAUSED/SKIPPED=neutral；WARNING/DEGRADED=warning；FAILED/BLOCKED/REJECTED=danger */
+    --nq-color-success: #3dd68c;
+    --nq-color-info: #54a9ff;
+    --nq-color-warning: #e8b339;
+    --nq-color-danger: #e5484d;
+    --nq-color-neutral: #8b98ab;
+    --nq-color-disabled: #49566a;
+
+    /* 涨跌语义：红涨绿跌（国内习惯） */
+    --nq-color-up: #f23645;
+    --nq-color-down: #089981;
+
+    /* 环境语义：PAPER=蓝，DEMO=紫，LIVE=红色强警示（LIVE 能力 disabled） */
+    --nq-color-paper: #54a9ff;
+    --nq-color-demo: #9d7bff;
+    --nq-color-live: #e5484d;
+
+    /* ---- spacing ---- */
+    --nq-space-xs: 4px;
+    --nq-space-sm: 8px;
+    --nq-space-md: 12px;
+    --nq-space-lg: 16px;
+    --nq-space-xl: 24px;
+    --nq-space-xxl: 32px;
+
+    /* ---- radius（小圆角） ---- */
+    --nq-radius-sm: 4px;
+    --nq-radius-md: 6px;
+    --nq-radius-lg: 8px;
+
+    /* ---- typography ---- */
+    --nq-font-family: 'Segoe UI Variable', 'Microsoft YaHei UI', 'PingFang SC', sans-serif;
+    --nq-font-family-mono: 'JetBrains Mono', 'Cascadia Mono', 'Consolas', ui-monospace, monospace;
+    --nq-font-size-xs: 11px;
+    --nq-font-size-sm: 12px;
+    --nq-font-size-md: 13px;
+    --nq-font-size-lg: 15px;
+    --nq-font-size-xl: 18px;
+    --nq-font-size-xxl: 24px;
+    --nq-line-height: 1.5;
+
+    /* ---- shadow（低阴影） ---- */
+    --nq-shadow-low: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --nq-shadow-overlay: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+    /* ---- motion ---- */
+    --nq-motion-fast: 0.1s;
+    --nq-motion-mid: 0.2s;
+    --nq-motion-slow: 0.3s;
+    --nq-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ---- z-index ---- */
+    --nq-z-header: 100;
+    --nq-z-overlay: 1000;
+    --nq-z-toast: 2000;
+}

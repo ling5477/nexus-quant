@@ -1,0 +1,11 @@
+.platform-page { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.platform-page__heading { justify-content: space-between; }
+.platform-page__heading h2 { margin: 0; }
+.platform-page__filters { margin-bottom: 20px; }
+.platform-page .ant-descriptions { overflow-wrap: anywhere; }
+.platform-page .ant-alert { margin-bottom: 4px; }
+@media (max-width: 600px) {
+    .platform-page__filters { display: flex; }
+    .platform-page__filters > .ant-space-item { width: 100%; }
+    .platform-page__filters .ant-input-search, .platform-page__filters .ant-select { width: 100% !important; }
+}

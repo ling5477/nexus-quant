@@ -1,0 +1,16 @@
+.nq-notifications__item {
+    align-items: flex-start;
+    padding-block: 16px;
+}
+.nq-notifications__identity {
+    overflow-wrap: anywhere;
+    font-size: 12px;
+}
+.nq-notifications .ant-drawer-body {
+    min-width: 0;
+}
+@media (max-width: 600px) {
+    .nq-notifications .ant-drawer-body {
+        padding: 16px;
+    }
+}

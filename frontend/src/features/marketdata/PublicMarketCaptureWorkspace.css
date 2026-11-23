@@ -1,0 +1,15 @@
+.public-capture-workspace .ant-form-item-label > label {
+    white-space: nowrap;
+}
+.public-capture-workspace .ant-picker {
+    width: 100%;
+}
+.public-capture-workspace .ant-descriptions-item-content {
+    overflow-wrap: anywhere;
+}
+.public-capture-workspace .capture-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}

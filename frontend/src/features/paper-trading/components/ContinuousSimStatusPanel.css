@@ -1,0 +1,71 @@
+.continuous-workspace {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--nq-border-color, #244457);
+    border-radius: 8px;
+    min-width: 0;
+}
+
+.continuous-workspace__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.continuous-workspace__progress {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.continuous-workspace__progress > div {
+    display: grid;
+    gap: 5px;
+    min-width: 0;
+    padding-inline-start: 10px;
+    border-inline-start: 2px solid var(--nq-color-primary, #2da9ef);
+}
+
+.continuous-workspace__progress span {
+    color: var(--nq-text-secondary, #8eafc3);
+}
+
+.continuous-workspace time {
+    display: inline-block;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.continuous-workspace .ant-typography-copy {
+    flex-shrink: 0;
+}
+
+@media (max-width: 700px) {
+    .continuous-workspace__progress {
+        grid-template-columns: 1fr;
+    }
+
+    /* 窄屏标签与值分行，避免长英文标签把原编号和完整时间挤进极窄的剩余列。 */
+    .continuous-workspace .ant-descriptions-item-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .continuous-workspace .ant-descriptions-item-label {
+        max-width: 100%;
+        white-space: normal;
+    }
+
+    .continuous-workspace .ant-descriptions-item-label::after {
+        display: none;
+    }
+
+    .continuous-workspace .ant-descriptions-item-content {
+        width: 100%;
+        min-width: 0;
+    }
+}

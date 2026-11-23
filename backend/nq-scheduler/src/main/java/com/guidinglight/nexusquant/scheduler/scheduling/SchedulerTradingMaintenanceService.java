@@ -1,0 +1,69 @@
+package com.guidinglight.nexusquant.scheduler.scheduling;
+
+import com.guidinglight.nexusquant.scheduler.recovery.BinanceRecoveryService;
+import com.guidinglight.nexusquant.scheduler.recovery.BinanceRestReconcileService;
+import com.guidinglight.nexusquant.scheduler.recovery.OkxRestReconcileService;
+
+import com.guidinglight.nexusquant.trading.application.model.RecoveryReport;
+import com.guidinglight.nexusquant.trading.application.service.RecoveryService;
+import com.guidinglight.nexusquant.trading.application.maintenance.TradingMaintenanceService;
+
+import com.guidinglight.nexusquant.trading.domain.TradingVenue;
+import java.util.Objects;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
+
+/**
+ * SchedulerTradingMaintenanceService 收口 scheduler 侧的 reconcile / recovery 具体实现。
+ */
+@Component
+@ConditionalOnProperty(
+        prefix = "nq.runtime.trading-components",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
+public class SchedulerTradingMaintenanceService implements TradingMaintenanceService {
+
+    private final OkxRestReconcileService okxRestReconcileService;
+    private final BinanceRestReconcileService binanceRestReconcileService;
+    private final BinanceRecoveryService binanceRecoveryService;
+    private final RecoveryService recoveryService;
+
+    public SchedulerTradingMaintenanceService(
+            OkxRestReconcileService okxRestReconcileService,
+            BinanceRestReconcileService binanceRestReconcileService,
+            BinanceRecoveryService binanceRecoveryService,
+            RecoveryService recoveryService
+    ) {
+        this.okxRestReconcileService = Objects.requireNonNull(okxRestReconcileService, "okxRestReconcileService must not be null");
+        this.binanceRestReconcileService = Objects.requireNonNull(
+                binanceRestReconcileService,
+                "binanceRestReconcileService must not be null"
+        );
+        this.binanceRecoveryService = Objects.requireNonNull(binanceRecoveryService, "binanceRecoveryService must not be null");
+        this.recoveryService = Objects.requireNonNull(recoveryService, "recoveryService must not be null");
+    }
+
+    @Override
+    public int runReconcile(String venue, int limit) {
+        TradingVenue normalizedVenue = TradingVenue.parse(venue == null ? TradingVenue.OKX.name() : venue);
+        return switch (normalizedVenue) {
+            case OKX -> okxRestReconcileService.reconcileOnce(limit);
+            case BINANCE -> binanceRestReconcileService.reconcileOnce(limit);
+            default -> throw new IllegalArgumentException("unsupported reconcile venue: " + normalizedVenue);
+        };
+    }
+
+    @Override
+    public RecoveryReport runRecovery(String venue, String traceId) {
+        TradingVenue normalizedVenue = TradingVenue.parse(venue == null ? TradingVenue.OKX.name() : venue);
+        return switch (normalizedVenue) {
+            case OKX -> recoveryService.rebuild(traceId);
+            case BINANCE -> binanceRecoveryService.rebuild(traceId);
+            default -> throw new IllegalArgumentException("unsupported recovery venue: " + normalizedVenue);
+        };
+    }
+
+}

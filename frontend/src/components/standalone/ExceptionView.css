@@ -1,0 +1,118 @@
+/* ExceptionView.css — 异常页统一卡片作用域样式。
+   约束:命名空间到 .nq-exception,只读 var(--nq-*),不影响 v1 页面。 */
+
+.nq-exception {
+    width: 100%;
+    max-width: 460px;
+    padding: 24px;
+    background: var(--nq-bg-panel);
+    border: 1px solid var(--nq-border-subtle);
+    border-radius: 6px;
+}
+
+.nq-exception__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.nq-exception__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.nq-exception__kicker {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.nq-exception__code {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--nq-text-tertiary);
+}
+
+.nq-exception__title {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--nq-text-primary);
+}
+
+.nq-exception__desc {
+    margin: 0;
+    font-size: 14px;
+    color: var(--nq-text-secondary);
+}
+
+.nq-exception__next {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--nq-border-subtle);
+    font-size: 14px;
+    color: var(--nq-text-secondary);
+}
+
+.nq-exception__next-title {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--nq-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.nq-exception__steps {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* 事实区:label / value 两列,value 等宽对齐 */
+.nq-exception__meta {
+    margin: 16px 0 0;
+    padding: 12px;
+    background: var(--nq-bg-elevated);
+    border: 1px solid var(--nq-border-subtle);
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.nq-exception__meta-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.nq-exception__meta-label {
+    margin: 0;
+    font-size: 12px;
+    color: var(--nq-text-tertiary);
+    white-space: nowrap;
+}
+
+.nq-exception__meta-value {
+    margin: 0;
+    font-size: 12px;
+    color: var(--nq-text-secondary);
+    text-align: right;
+    word-break: break-all;
+}
+
+.nq-exception__actions {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}

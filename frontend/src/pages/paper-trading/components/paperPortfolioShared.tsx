@@ -1,0 +1,92 @@
+import {useTranslation} from 'react-i18next';
+import {t} from '@/i18n';
+import {Button, Space, Tag, Typography} from 'antd';
+import {useState} from 'react';
+import {LegacyAnalysisObjectLink} from './LegacyAnalysisControls';
+import type React from 'react';
+import type {ReactNode} from 'react';
+
+import type {PaperPortfolioRunRef} from '@/features/paper-trading/types/paper-trading';
+
+/**
+ * paperPortfolioShared —— Portfolio / Risk / Strategy Ranking 三个 dashboard 共享的小型展示件。
+ *
+ * K5-A2 行为保持型抽取：`renderRunRefTags`（Portfolio + Risk 共用）与 `ClickableMetricCard`
+ * （Risk + Ranking 共用）来源于旧 all-in-one Paper Trading 页，删除旧页后继续按依赖集中在此局部 shared 文件。
+ * 实现保留原语义，不改变任何渲染或交互行为。
+ */
+
+/** 把 run 引用清单渲染为紧凑 Tag 列表；空清单显示「无」，超过 12 条折叠为「等 N 个」。 */
+export function renderRunRefTags(runs: PaperPortfolioRunRef[]): ReactNode {
+    return <RunRefTags runs={runs} />;
+}
+
+/** 每份清单保持有界；超过首屏12条可展开，不让被截断的身份变成无法访问的数字。 */
+function RunRefTags({runs}: {runs: PaperPortfolioRunRef[]}) {
+    useTranslation('pages');
+    const [expanded, setExpanded] = useState(false);
+    if (!runs.length) return <Typography.Text type="secondary">{t('pages:none')}</Typography.Text>;
+    return (
+        <Space size={[6, 6]} wrap>
+            {(expanded ? runs : runs.slice(0, 12)).map((run) => (
+                <Tag key={run.paperRunId}>
+                    <LegacyAnalysisObjectLink kind="run" id={run.paperRunId} />
+                </Tag>
+            ))}
+            {runs.length > 12 && (
+                <Button size="small" type="link" onClick={() => setExpanded(!expanded)}>
+                    {expanded
+                        ? t('pages:legacyPortfolio.showLess')
+                        : t('pages:legacyPortfolio.showRemaining', {count: runs.length - 12})}
+                </Button>
+            )}
+        </Space>
+    );
+}
+
+/**
+ * 可点击筛选指标卡包装器（Loop-21 统一 affordance）。
+ * - cursor pointer + 键盘可访问（Enter / Space）
+ * - 激活态：2px primary outline，aria-pressed=true
+ * - NqMetricCard 不支持 onClick，通过包装层实现，不修改共享组件
+ */
+export function ClickableMetricCard({
+    children,
+    onClick,
+    ariaLabel,
+    testId,
+    isActive,
+}: {
+    children: ReactNode;
+    onClick: () => void;
+    ariaLabel: string;
+    testId: string;
+    isActive: boolean;
+}) {
+    useTranslation('pages');
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+        }
+    };
+    return (
+        <div
+            role="button"
+            tabIndex={0}
+            aria-label={ariaLabel}
+            aria-pressed={isActive}
+            data-testid={testId}
+            onClick={onClick}
+            onKeyDown={handleKeyDown}
+            style={{
+                cursor: 'pointer',
+                borderRadius: 'var(--nq-radius-lg)',
+                outline: isActive ? '2px solid var(--nq-color-primary)' : '2px solid transparent',
+                outlineOffset: '2px',
+            }}
+        >
+            {children}
+        </div>
+    );
+}

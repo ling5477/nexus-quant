@@ -1,0 +1,37 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    # Production values are externally injected and validated before DataSource/Flyway bean creation.
+    url: ${NQ_PROD_DB_URL}
+    username: ${NQ_PROD_DB_USER}
+    password: ${NQ_PROD_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  flyway:
+    # TODO(2026-02-13): 生产迁移策略占位 -> 完成条件：发布流程确认迁移窗口后开启 -> 风险：误迁移影响线上可用性
+    enabled: false
+    locations: classpath:db/migration
+
+server:
+  port: ${NQ_PROD_APP_PORT:8080}
+
+nq:
+  security:
+    secret: ${NQ_SECURITY_SECRET}
+  account:
+    credentials:
+      master-key: ${NQ_ACCOUNT_CREDENTIALS_MASTER_KEY}
+  runtime:
+    trading-components:
+      enabled: true
+  dh:
+    integration1:
+      runtime:
+        # Why: prod profile 必须保持 NQ-DH Integration-1 runtime disabled；关闭状态不是临时占位，
+        # 而是阻断真实 DH HTTP、provider、交易链路和 LIVE 的生产安全边界。
+        enabled: false
+        client:
+          enabled: false
+        production-enabled: false
+        kill-switch: true

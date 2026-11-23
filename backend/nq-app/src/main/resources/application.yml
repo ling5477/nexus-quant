@@ -1,0 +1,124 @@
+spring:
+  application:
+    name: nexus-quant-app
+  profiles:
+    # 默认启用本地开发环境；测试/生产通过 NQ_PROFILE 切换。
+    active: ${NQ_PROFILE:local}
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+server:
+  port: ${NQ_APP_PORT:18888}
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] trace_id=%X{trace_id} %logger - %msg%n"
+
+nq:
+  runtime:
+    # 业务/交易 consumer 必须显式开启；capability profile 可统一关闭该闭包，缺失时 Bean fail-closed。
+    trading-components:
+      enabled: ${NQ_TRADING_COMPONENTS_ENABLED:false}
+    # 真实只读 provider observation 默认不装配，只允许受控 deployment alias 显式开启。
+    provider-observation:
+      enabled: false
+  dh:
+    integration1:
+      runtime:
+        # 原因：受限运行客户端仅允许 dev/test dry-run fake transport；
+        # 默认关闭且 kill switch 打开，避免误触发真实 DH HTTP、provider、order/execution/risk/ledger/paper/live。
+        enabled: false
+        client:
+          enabled: false
+        source: ${NQ_DH_INTEGRATION1_RUNTIME_SOURCE:NQ_DRYRUN}
+        endpoint-url: ${NQ_DH_INTEGRATION1_RUNTIME_ENDPOINT_URL:}
+        production-enabled: false
+        kill-switch: true
+        timeout-ms: ${NQ_DH_INTEGRATION1_RUNTIME_TIMEOUT_MS:1500}
+        signing-secret: ${NQ_DH_INTEGRATION1_RUNTIME_SIGNING_SECRET:}
+  env-safety:
+    # 原因：CI/test/paper 的安全默认值由启动期 guard 统一校验；local 默认不启 no-outbound，
+    # 但 CI/test/profile 会在 guard 内自动提升为 no-outbound，避免误入真实外联。
+    ci: ${CI:false}
+    live-enabled: ${NQ_LIVE_ENABLED:false}
+    ai-enabled: ${NQ_AI_ENABLED:false}
+    dh-runtime-enabled: ${NQ_DH_RUNTIME_ENABLED:false}
+    real-provider-enabled: ${NQ_REAL_PROVIDER_ENABLED:false}
+    real-client-enabled: ${NQ_REAL_CLIENT_ENABLED:false}
+    real-exchange-enabled: ${NQ_REAL_EXCHANGE_ENABLED:false}
+    no-outbound: ${NQ_NO_OUTBOUND:false}
+  public-marketdata:
+    outbound:
+      # 原因：公开行情出站默认 no-egress。只有 public-marketdata-manual profile 允许读取
+      # NQ_PUBLIC_MARKETDATA_OUTBOUND_ENABLED=true 并构造受 policy 保护的 public REST client。
+      enabled: false
+      fallback-origin: ${NQ_PUBLIC_MARKETDATA_FALLBACK_ORIGIN:LOCAL_DB}
+      # origin 由启动 property 或 NQ_PUBLIC_MARKETDATA_OUTBOUND_BASE_URL 绑定；不向禁外联环境注入地址默认值。
+      connect-timeout: ${NQ_PUBLIC_MARKETDATA_CONNECT_TIMEOUT:PT3S}
+      read-timeout: ${NQ_PUBLIC_MARKETDATA_READ_TIMEOUT:PT5S}
+      total-request-timeout: ${NQ_PUBLIC_MARKETDATA_TOTAL_REQUEST_TIMEOUT:PT8S}
+      max-retries: ${NQ_PUBLIC_MARKETDATA_MAX_RETRIES:2}
+      first-backoff: ${NQ_PUBLIC_MARKETDATA_FIRST_BACKOFF:PT0.5S}
+      second-backoff: ${NQ_PUBLIC_MARKETDATA_SECOND_BACKOFF:PT1S}
+  account:
+    credentials:
+      master-key: ${NQ_ACCOUNT_CREDENTIALS_MASTER_KEY:change-me-account-credentials-master-key-123456}
+      key-version: ${NQ_ACCOUNT_CREDENTIALS_KEY_VERSION:1}
+      verification-mode: ${NQ_ACCOUNT_CREDENTIALS_VERIFICATION_MODE:STRUCTURAL}
+  security:
+    issuer: ${NQ_SECURITY_ISSUER:nexus-quant}
+    secret: ${NQ_SECURITY_SECRET:change-me-change-me-change-me-change-me}
+    access-token-ttl: ${NQ_SECURITY_ACCESS_TOKEN_TTL:PT1H}
+    session-idle-timeout: ${NQ_SECURITY_SESSION_IDLE_TIMEOUT:PT30M}
+    session-max-lifetime: ${NQ_SECURITY_SESSION_MAX_LIFETIME:PT8H}
+    users: []
+  instrument:
+    catalog-sync:
+      # Why: local/dev 默认允许手工刷新 catalog；需要离线或只读隔离的 runtime 必须显式关闭该开关。
+      enabled: ${NQ_INSTRUMENT_CATALOG_SYNC_ENABLED:true}
+  okx:
+    # 原因：dome/real 凭证选择使用统一运行时变量；敏感值仍只从环境变量读取，不写入仓库。
+    env: ${NQ_OKX_ENV:dome}
+    # 原因：CI/test 默认值不得指向真实交易所 endpoint；真实 URL 只能由显式本地/受控环境注入。
+    base-url: ${NQ_OKX_BASE_URL:PLACEHOLDER_ONLY}
+    api-key: ${NQ_OKX_API_KEY:}
+    api-secret: ${NQ_OKX_API_SECRET:}
+    api-passphrase: ${NQ_OKX_API_PASSPHRASE:}
+    ws-url: ${NQ_OKX_WS_URL:PLACEHOLDER_ONLY}
+    ws:
+      # 原因：WS 仅作为可选加速层，默认关闭，避免非预期连私有 WS。
+      enabled: ${NQ_OKX_WS_ENABLED:false}
+      smoke:
+        force-reconnect-ms: ${NQ_OKX_WS_SMOKE_FORCE_RECONNECT_MS:0}
+      degrade:
+        reconcile-limit: ${NQ_OKX_WS_DEGRADE_RECONCILE_LIMIT:100}
+        cooldown-ms: ${NQ_OKX_WS_DEGRADE_COOLDOWN_MS:15000}
+        subscribe-fail-threshold: ${NQ_OKX_WS_DEGRADE_SUBSCRIBE_FAIL_THRESHOLD:3}
+    recovery:
+      # Why: formal 环境默认保留恢复链；local 是否启动由 profile 覆写，避免把交易所恢复任务误下沉到纯前端验收流程。
+      enabled: ${NQ_OKX_RECOVERY_ENABLED:true}
+  binance:
+    dome:
+      base-url: ${NQ_BINANCE_DOME_BASE_URL:PLACEHOLDER_ONLY}
+      ws-url: ${NQ_BINANCE_DOME_WS_URL:PLACEHOLDER_ONLY}
+    real:
+      base-url: ${NQ_BINANCE_REAL_BASE_URL:PLACEHOLDER_ONLY}
+      ws-url: ${NQ_BINANCE_REAL_WS_URL:PLACEHOLDER_ONLY}
+    ws:
+      # 原因：Binance 私有 WS 仅作为可选加速层，默认关闭，避免在未授权环境误连用户数据流。
+      enabled: ${NQ_BINANCE_WS_ENABLED:false}
+      smoke:
+        force-reconnect-ms: ${NQ_BINANCE_WS_SMOKE_FORCE_RECONNECT_MS:0}
+      degrade:
+        reconcile-limit: ${NQ_BINANCE_WS_DEGRADE_RECONCILE_LIMIT:100}
+        cooldown-ms: ${NQ_BINANCE_WS_DEGRADE_COOLDOWN_MS:15000}
+        reconnect-fail-threshold: ${NQ_BINANCE_WS_DEGRADE_RECONNECT_FAIL_THRESHOLD:2}
