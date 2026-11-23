@@ -1,11 +1,15 @@
 import type {ContinuousSimStatus} from './types/paper-trading';
 
-/** 固定 UTC 整点的原始值可用于到期后的回执核对，因此此处不与客户端当前时间比较。 */
-export function isUtcHour(value: unknown): value is string {
-    if (typeof value !== 'string' || !/^\d{4}-\d\d-\d\dT(?:[01]\d|2[0-3]):00:00(?:\.0{1,9})?Z$/.test(value))
+function isUtcInstant(value: unknown): value is string {
+    if (typeof value !== 'string' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?Z$/.test(value))
         return false;
     const instant = Date.parse(value);
     return Number.isFinite(instant) && new Date(instant).toISOString().slice(0, 19) === value.slice(0, 19);
+}
+
+/** 固定 UTC 整点的原始值可用于到期后的回执核对，因此此处不与客户端当前时间比较。 */
+export function isUtcHour(value: unknown): value is string {
+    return isUtcInstant(value) && /:00:00(?:\.0{1,9})?Z$/.test(value);
 }
 
 function validBoundedStatus(value: unknown): boolean {
@@ -14,6 +18,8 @@ function validBoundedStatus(value: unknown): boolean {
     const row = value as Record<string, unknown>;
     const text = (v: unknown) => typeof v === 'string' && v.length > 0 && v.length <= 128;
     return isUtcHour(row.endAt) && text(row.lifecycleStatus) && text(row.finalValuationStatus)
+        && (row.manualEndAt == null || isUtcInstant(row.manualEndAt))
+        && (row.terminatedAt == null || isUtcInstant(row.terminatedAt))
         && (row.lastValuationBoundary === null || isUtcHour(row.lastValuationBoundary))
         && (row.pendingOrders === null || (typeof row.pendingOrders === 'number'
             && Number.isSafeInteger(row.pendingOrders) && row.pendingOrders >= 0))

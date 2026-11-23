@@ -34,6 +34,13 @@ public class StrategySimDecisionRepository {
                         rs.getBoolean(3), rs.getBoolean(4)), run).stream().findFirst().orElse(null);
     }
 
+    /** 有界订单通过撮合条件后才取库时钟；开放式和回放订单保留原报价时点。 */
+    Instant boundedMatchingTime(String paperRunId) {
+        return jdbc.query("""
+                SELECT clock_timestamp() FROM continuous_sim_runs WHERE paper_run_id=? AND end_at IS NOT NULL
+                """, (rs, row) -> rs.getTimestamp(1).toInstant(), paperRunId).stream().findFirst().orElse(null);
+    }
+
     record ClosedWork(String strategyRunId, String runStatus, String rejection, String orderId, String orderStatus) {}
 
     ClosedWork closedWork(String runId, long account, DecisionView decision) {
@@ -117,7 +124,7 @@ public class StrategySimDecisionRepository {
                       WHERE o.order_id IS NULL OR d.order_id IS NULL OR t.trade_env<>'SIM'
                       OR t.exchange_code<>'PAPER' OR t.symbol IS DISTINCT FROM o.symbol
                       OR t.strategy_run_id IS DISTINCT FROM o.strategy_run_id
-                      OR t.price IS DISTINCT FROM d.execution_price OR t.ts IS DISTINCT FROM d.execution_open_time
+                      OR t.price IS DISTINCT FROM d.execution_price OR d.execution_open_time IS NULL OR NOT isfinite(t.ts)
                       OR t.fee_currency IS DISTINCT FROM 'USDT' OR d.fee_rate IS NULL
                       OR t.fee IS DISTINCT FROM round(t.qty*t.price*d.fee_rate,8))
                     THEN 'SIM_TRADE_BINDING_UNKNOWN'

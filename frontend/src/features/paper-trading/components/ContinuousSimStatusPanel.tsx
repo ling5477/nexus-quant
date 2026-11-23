@@ -130,6 +130,12 @@ export function ContinuousSimStatusPanel(props: Props) {
                         <Descriptions.Item label={t('boundedSim.deadline')}>
                             <time dateTime={bounded.endAt}>{bounded.endAt}</time>
                         </Descriptions.Item>
+                        {bounded.manualEndAt && <Descriptions.Item label={t('boundedSim.manualEndAt')}>
+                            <time dateTime={bounded.manualEndAt}>{bounded.manualEndAt}</time>
+                        </Descriptions.Item>}
+                        {bounded.terminatedAt && <Descriptions.Item label={t('boundedSim.terminatedAt')}>
+                            <time dateTime={bounded.terminatedAt}>{bounded.terminatedAt}</time>
+                        </Descriptions.Item>}
                         <Descriptions.Item label={t('boundedSim.finalValuation')}>
                             {t(`boundedSim.valuation.${bounded.finalValuationStatus}`, {defaultValue: bounded.finalValuationStatus})}
                         </Descriptions.Item>

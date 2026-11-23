@@ -1,6 +1,8 @@
 {
   "boundedSim": {
     "deadline": "Run deadline (UTC)",
+    "manualEndAt": "Manual end requested at (UTC)",
+    "terminatedAt": "Run ended at (UTC)",
     "optionalDeadline": "Continuous SIM deadline (UTC, optional)",
     "inputHelp": "Leave empty for an open-ended run. A deadline is fixed at creation.",
     "invalidDeadline": "Select a future UTC hour within 90 days, with minutes set to 00.",
@@ -16,7 +18,7 @@
       "RUNNING": "Running",
       "ADMISSION_CLOSED": "New order admission closed",
       "SETTLING": "Settling",
-      "COMPLETED": "Completed",
+      "COMPLETED": "Settled after expiry",
       "BLOCKED": "Settlement blocked",
       "MANUALLY_STOPPED": "Manually ended"
     },

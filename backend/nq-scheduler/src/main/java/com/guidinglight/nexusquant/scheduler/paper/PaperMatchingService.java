@@ -262,18 +262,10 @@ public class PaperMatchingService {
         }
 
         Optional<PaperTradeRecord> existingTrade = tradeRepository.findByOrderId(order.orderId());
+        Instant boundedFillTime = decision == null ? null : strategySimDecisions.boundedMatchingTime(decision.paperRunId());
+        // 重试沿用首笔已提交成交的时间；有界订单的报价只用于定价及核验冻结费用。
         PaperTradeRecord trade =
-                existingTrade.orElseGet(
-                        () ->
-                                createTrade(
-                                        order,
-                                        marketPrice,
-                                        decision == null ? BigDecimal.ZERO : decision.feeRate(),
-                                        decision == null ? null : decision.feeModelJson(),
-                                        decision == null ? null : decision.feeChargeJson(),
-                                        decision == null
-                                                ? clock.instant()
-                                                : decision.executionOpenTime()));
+                existingTrade.orElseGet(() -> createTrade(order, marketPrice, decision, boundedFillTime));
         if (decision != null && decision.feeModelJson() != null) {
             // 恢复已存在的Trade也要核对原冻结合同；不因幂等命中而悄悄消费另一币种或旧标量费用。
             Charge expected =
@@ -289,7 +281,7 @@ public class PaperMatchingService {
                     || expected.amount().compareTo(trade.fee()) != 0
                     || decision.quantity().compareTo(trade.qty()) != 0
                     || decision.executionPrice().compareTo(trade.price()) != 0
-                    || !decision.executionOpenTime().equals(trade.ts())) {
+                    || (boundedFillTime == null && !decision.executionOpenTime().equals(trade.ts()))) {
                 throw new IllegalStateException("STRATEGY_SIM_TRADE_FEE_IDENTITY_MISMATCH");
             }
         }
@@ -348,26 +340,26 @@ public class PaperMatchingService {
     private PaperTradeRecord createTrade(
             OrderRecord order,
             BigDecimal marketPrice,
-            BigDecimal feeRate,
-            String feeModelJson,
-            String feeChargeJson,
-            Instant executionTime) {
+            StrategySimDecisionRepository.DecisionView decision,
+            Instant boundedFillTime) {
         BigDecimal price =
                 NumericPolicy.normalize(
                         NumericType.PRICE, resolveExecutionPrice(order, marketPrice));
         BigDecimal qty = NumericPolicy.normalize(NumericType.QTY, order.qty());
         // 普通PAPER订单沿用既有零费用和品种解析；新增冻结费用合同仅适用于正式策略SIM决策。
         Charge charge =
-                order.clientOrderId().startsWith("coid-sim-")
+                decision != null
                         ? frozenCharge(
                                 order,
-                                feeRate,
-                                feeModelJson,
-                                feeChargeJson,
+                                decision.feeRate(),
+                                decision.feeModelJson(),
+                                decision.feeChargeJson(),
                                 qty,
                                 price,
-                                executionTime)
+                                decision.executionOpenTime())
                         : null;
+        Instant executionTime = decision == null ? clock.instant()
+                : Objects.requireNonNullElse(boundedFillTime, decision.executionOpenTime());
         BigDecimal fee =
                 NumericPolicy.normalize(
                         NumericType.FEE, charge == null ? BigDecimal.ZERO : charge.amount());

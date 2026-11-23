@@ -19,6 +19,7 @@ test.afterEach(async ({page}, info) => {
 const runId = 'ptr-11111111-1111-4111-8111-111111111111';
 const operationId = '22222222-2222-4222-8222-222222222222';
 const publishId = 'pub-continuous-original';
+const manualEndAt = '2026-10-15T00:02:01.123456Z';
 const progress = (status = 'RUNNING', bounded?: ContinuousSimStatus['bounded']) => ({
     paperRunId: runId,
     status,
@@ -67,7 +68,8 @@ async function fixture(
             ? {endAt: request.endAt, lifecycleStatus: 'RUNNING', finalValuationStatus: 'PENDING', lastValuationBoundary: null,
                 pendingOrders: null, reason: null, updatedAt: '2026-10-15T00:02:00Z', publishId, strategyVersionId: 'sv-continuous'}
             : request.type === 'END' && state.cursor?.bounded
-              ? {...state.cursor.bounded, lifecycleStatus: 'SETTLING', pendingOrders: 1, reason: 'ORDER_PENDING'}
+              ? {...state.cursor.bounded, manualEndAt, terminatedAt: null, updatedAt: '2026-10-15T00:02:07Z',
+                  lifecycleStatus: 'SETTLING', pendingOrders: 1, reason: 'ORDER_PENDING'}
               : undefined;
         return {
             operationId: request.operationId,
@@ -252,6 +254,8 @@ test('恢复只GET原结果，原创建快照不覆盖当前已暂停进度', as
     await expect(page.getByText('创建持续模拟已确认完成', {exact: true})).toBeVisible();
     const panel = page.getByTestId('continuous-sim-status');
     await expect(panel.getByText('连续处理已暂停', {exact: true})).toBeVisible();
+    await expect(panel.getByText('人工结束请求时间（UTC）')).toHaveCount(0);
+    await expect(panel.getByText('运行终止时间（UTC）')).toHaveCount(0);
     await expect(page.getByTestId('continuous-operation-recovery')).toHaveCount(0);
     expect(
         await page.evaluate(() => localStorage.getItem('nq:continuous-operation:v1:17')),
@@ -288,16 +292,41 @@ test('有界创建固定 UTC 期限，提前结束后展示待收敛事实', asy
     expect(h.posts[0]).toMatchObject({type: 'CREATE', publishId, endAt, budget: '100'});
     const panel = page.getByTestId('continuous-sim-status');
     await expect(panel.getByText(endAt, {exact: true})).toBeVisible();
+    await expect(panel.getByText('人工结束请求时间（UTC）')).toHaveCount(0);
     await panel.getByRole('button', {name: '提前结束运行'}).click();
     await page.getByRole('dialog').getByRole('button', {name: '提前结束运行'}).click();
     await expect.poll(() => h.posts.length).toBe(2);
     expect(h.posts[1]).toMatchObject({type: 'END', paperRunId: runId});
     await expect(panel.getByText('等待经济事实收敛', {exact: true})).toBeVisible();
     await expect(panel.getByText('ORDER_PENDING', {exact: true})).toBeVisible();
-    h.state.cursor = progress('STOPPED', {...h.state.cursor!.bounded!, lifecycleStatus: 'MANUALLY_STOPPED', pendingOrders: 0, reason: null});
+    await expect(panel.getByText('人工结束请求时间（UTC）')).toBeVisible();
+    await expect(panel.getByText(manualEndAt, {exact: true})).toHaveAttribute('datetime', manualEndAt);
+    await expect(panel.getByText('运行终止时间（UTC）')).toHaveCount(0);
+    const terminatedAt = '2026-10-15T00:03:13.654321Z';
+    h.state.cursor = progress('STOPPED', {...h.state.cursor!.bounded!, updatedAt: terminatedAt, terminatedAt,
+        lifecycleStatus: 'MANUALLY_STOPPED', pendingOrders: 0, reason: null});
     await panel.getByRole('button', {name: /刷新/}).click();
     await expect(panel.getByText('已手动结束', {exact: true})).toBeVisible();
+    await expect(panel.getByText(manualEndAt, {exact: true})).toBeVisible();
+    await expect(panel.getByText('运行终止时间（UTC）')).toBeVisible();
+    await expect(panel.getByText(terminatedAt, {exact: true})).toHaveAttribute('datetime', terminatedAt);
     await expect(panel.getByRole('button', {name: /恢复|提前结束/})).toHaveCount(0);
+});
+
+test('自动到期仅展示服务端终止时间', async ({page, context}) => {
+    const h = await fixture(context, {locale: 'en-US'});
+    const endAt = '2026-10-16T00:00:00Z';
+    const terminatedAt = '2026-10-16T00:02:25.987654Z';
+    h.state.cursor = progress('STOPPED', {endAt, manualEndAt: null, terminatedAt,
+        lifecycleStatus: 'COMPLETED', finalValuationStatus: 'VERIFIED', lastValuationBoundary: endAt,
+        pendingOrders: 0, reason: 'DEADLINE_SETTLED', updatedAt: terminatedAt, publishId, strategyVersionId: 'sv-continuous'});
+    await page.goto(`/paper-trading/runs?paperRunId=${runId}`);
+    const panel = page.getByTestId('continuous-sim-status');
+    await expect(panel.getByText('Settled after expiry', {exact: true})).toBeVisible();
+    await expect(panel.getByText('Manual end requested at (UTC)')).toHaveCount(0);
+    await expect(panel.getByText('Run ended at (UTC)')).toBeVisible();
+    await expect(panel.getByText(terminatedAt, {exact: true})).toHaveAttribute('datetime', terminatedAt);
+    expect(h.posts).toHaveLength(0);
 });
 
 test('404显式同编号继续，丢响应和503刷新保持未知且不重发', async ({page, context}) => {

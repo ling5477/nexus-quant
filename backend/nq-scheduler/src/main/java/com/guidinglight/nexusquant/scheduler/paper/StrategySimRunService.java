@@ -1051,7 +1051,11 @@ public class StrategySimRunService {
                 if ("DECIDING".equals(decision.reason())) recoverClosedDecision(run, decision, accountId);
                 else settleCanonicalRun(decision, accountId, false);
             }
-            return decisions.settlement(paperRunId, accountId);
+            Settlement result = decisions.settlement(paperRunId, accountId);
+            if (result.pendingOrders() == 0 && result.blockingReason() == null) {
+                continuous.recoverPenultimateCursor(paperRunId, accountId);
+            }
+            return result;
         });
     }
 

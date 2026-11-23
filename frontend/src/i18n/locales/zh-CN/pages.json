@@ -1,6 +1,8 @@
 {
   "boundedSim": {
     "deadline": "运行截止时间（UTC）",
+    "manualEndAt": "人工结束请求时间（UTC）",
+    "terminatedAt": "运行终止时间（UTC）",
     "optionalDeadline": "持续模拟截止时间（UTC，可选）",
     "inputHelp": "留空可创建开放式运行。设置截止后，该时间在创建时固定。",
     "invalidDeadline": "请选择未来 90 天内的 UTC 整点，分钟须为 00。",
@@ -16,7 +18,7 @@
       "RUNNING": "运行中",
       "ADMISSION_CLOSED": "已关闭新订单准入",
       "SETTLING": "等待经济事实收敛",
-      "COMPLETED": "运行已完成",
+      "COMPLETED": "已到期并完成收敛",
       "BLOCKED": "运行收敛受阻",
       "MANUALLY_STOPPED": "已手动结束"
     },

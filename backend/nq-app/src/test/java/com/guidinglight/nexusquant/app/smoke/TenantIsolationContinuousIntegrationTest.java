@@ -125,13 +125,14 @@ class TenantIsolationContinuousIntegrationTest {
 
     @Test void expiredRunAndAnotherTenantsActiveRunSharePollingAndMatching() throws Exception {
         try (var db = TenantIsolationTestDatabase.create(null);
-                var app = ResearchSimComparisonFixture.start(db)) {
+                var app = BoundedContinuousSimPostgresIntegrationTest.startWithDatabaseClock(db)) {
             jdbc = db.jdbc;
             testDatabase = db;
             var expiring = db.demo("EXPIRING", "deadline-owner");
             var continuing = db.demo("CONTINUING", "other-run-owner");
             Instant start = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.HOURS).minus(Duration.ofHours(5));
             Instant end = start.plus(Duration.ofHours(6));
+            BoundedContinuousSimPostgresIntegrationTest.setDatabaseTime(db, end.minusSeconds(1800));
             var series = new ArrayList<HistoricalBar>();
             for (int hour = 0; hour <= 5; hour++) series.add(PublicDemoTwoUserFlowIntegrationTest.hour(hour, start));
             var first = db.as(expiring, () -> seed(series.subList(0, 5), true));
@@ -150,6 +151,7 @@ class TenantIsolationContinuousIntegrationTest {
                     new BigDecimal("10000"), "other-run-owner"))).paperRunId();
             var control = db.admin.queryForList("SELECT job_key,enabled,version FROM scheduled_job_controls ORDER BY job_key");
             ReflectionTestUtils.setField(driver, "clock", Clock.fixed(observed, ZoneOffset.UTC));
+            BoundedContinuousSimPostgresIntegrationTest.setDatabaseTime(db, observed);
             driver.pollActiveOnce();
             assertNotEquals("RUNNING", db.as(expiring, () -> driver.status(closed)).bounded().lifecycleStatus());
             assertEquals(1, app.getBean(PaperMatchingService.class).matchOnce(64));

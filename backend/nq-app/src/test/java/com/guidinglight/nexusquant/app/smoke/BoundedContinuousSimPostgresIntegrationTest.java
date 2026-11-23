@@ -9,7 +9,12 @@ import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
 import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRepository;
 import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRunService;
 import com.guidinglight.nexusquant.scheduler.paper.PaperMatchingService;
+import com.guidinglight.nexusquant.adapter.okx.marketdata.OkxClosedBarMarketFeed;
+import com.sun.net.httpserver.HttpExchange;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -23,7 +28,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.TimeUnit;
 import org.flywaydb.core.api.FlywayException;
 import org.junit.jupiter.api.Test;
@@ -139,6 +146,12 @@ class BoundedContinuousSimPostgresIntegrationTest {
                     """,stalledAccount)));
             assertTrue(rejected.getMostSpecificCause().getMessage().contains("CONTINUOUS_SIM_ADMISSION_CLOSED"));
             assertEquals(0,countOrders(db,stalledAccount));
+            // 本例没有安装测试时钟，直接用 PG 实际时钟核对延迟调度也能关闭准入。
+            var repository = new ContinuousSimRepository(db.jdbc,ForwardSimEvaluationFixture.JSON);
+            assertEquals(Boolean.TRUE, db.as(owner, () -> new TransactionTemplate(db.manager)
+                    .execute(tx -> repository.closeAdmissionIfDue("stalled-paper"))));
+            assertEquals("ADMISSION_CLOSED",db.admin.queryForObject(
+                    "SELECT lifecycle_status FROM continuous_sim_runs WHERE paper_run_id='stalled-paper'",String.class));
         }
     }
 
@@ -154,7 +167,7 @@ class BoundedContinuousSimPostgresIntegrationTest {
             JsonNode receipt;
             int orders;
             String pendingOrder;
-            try (var app = ResearchSimComparisonFixture.start(db);
+            try (var app = startWithDatabaseClock(db);
                     var http = new TenantIsolationHttpIntegrationTest.Http(app.getWebServer().getPort())) {
                 var binding = ResearchSimComparisonFixture.seed(app, db, owner);
                 var server = app.getBean(ResearchSimComparisonFixture.MarketServer.class);
@@ -192,7 +205,22 @@ class BoundedContinuousSimPostgresIntegrationTest {
                     requests.add(observation.path("observation").path("observationId").asText());
                 }
                 var controls = controls(db);
+                long account = ForwardSimEvaluationFixture.account(db, run);
                 for (Instant at = server.end().plus(HOUR); at.isBefore(end); at = at.plus(HOUR)) {
+                    boolean interruptAcknowledgment = at.equals(end.minus(HOUR));
+                    // 原报价遵守闭合槽的及时性合同；单独控制真正准入时的数据库时刻。
+                    setDatabaseTime(db, interruptAcknowledgment ? end.minusSeconds(60) : at.plusSeconds(5));
+                    if (interruptAcknowledgment) {
+                        assertEquals(0, db.admin.queryForObject("SELECT count(*) FROM orders WHERE account_id=? AND status='ACCEPTED'",
+                                Integer.class, account));
+                        // 在真正的游标更新处中断事务，保留此前正式准入已提交的 Order 和决策。
+                        db.admin.execute("""
+                                CREATE FUNCTION interrupt_cursor_ack() RETURNS trigger LANGUAGE plpgsql AS $$
+                                BEGIN RAISE EXCEPTION 'fixture cursor acknowledgement interrupted'; END; $$
+                                """);
+                        db.admin.execute("CREATE TRIGGER interrupt_cursor BEFORE UPDATE OF last_processed_open_time ON continuous_sim_runs "
+                                + "FOR EACH ROW EXECUTE FUNCTION interrupt_cursor_ack()");
+                    }
                     configure(app, db, owner, run, at, end, true);
                     db.as(owner, () -> driver.pollOnce(run));
                     if (at.isBefore(end.minus(HOUR))) {
@@ -200,27 +228,27 @@ class BoundedContinuousSimPostgresIntegrationTest {
                         db.as(owner, () -> driver.pollOnce(run));
                     }
                 }
-                long account = ForwardSimEvaluationFixture.account(db, run);
+                db.admin.execute("DROP TRIGGER interrupt_cursor ON continuous_sim_runs");
+                assertEquals(end.minus(HOUR.multipliedBy(3)), db.admin.queryForObject(
+                        "SELECT last_processed_open_time FROM continuous_sim_runs WHERE paper_run_id=?", Timestamp.class, run).toInstant());
+                assertEquals(end.minusSeconds(60), db.as(owner, () -> db.jdbc.queryForObject(
+                        "SELECT clock_timestamp()", Timestamp.class).toInstant()));
                 pendingOrder = db.admin.queryForObject("SELECT order_id FROM orders WHERE account_id=? AND status='ACCEPTED'", String.class, account);
                 orders = countOrders(db, account);
-                configure(app, db, owner, run, end, end, true);
-                try (var pool = Executors.newFixedThreadPool(2)) {
-                    var a = pool.submit(() -> db.as(owner, () -> driver.pollOnce(run)));
-                    var b = pool.submit(() -> db.as(owner, () -> driver.pollOnce(run)));
-                    a.get(20, TimeUnit.SECONDS);
-                    b.get(20, TimeUnit.SECONDS);
-                }
-                JsonNode pending = status(http, token, run);
-                assertEquals("SETTLING", pending.path("lifecycleStatus").asText(), pending.toString());
-                assertTrue(pending.path("pendingOrders").asInt() > 0);
-                assertEquals(orders, countOrders(db, account));
+                assertEquals(end.minus(HOUR.multipliedBy(2)), db.admin.queryForObject(
+                        "SELECT signal_open_time FROM strategy_sim_decisions WHERE order_id=?", Timestamp.class, pendingOrder).toInstant());
+                // 关闭持有旧游标的应用。截止轮询和撮合均交给下一 JVM，恢复不能依赖进程内状态。
                 assertEquals(409, http.send("POST", RUNS + run + "/advance", token, null).statusCode());
                 assertEquals(409, http.send("POST", OPS, token, operation("RESUME", run)).statusCode());
+                assertEquals(orders, countOrders(db, account));
                 assertEquals(controls, controls(db));
                 for (String id : requests)
                     assertEquals("OPEN", http.ok("GET", ForwardSimEvaluationFixture.ROOT + "/" + id, token, null).path("observation").path("status").asText());
                 assertEquals(0, db.admin.queryForObject("SELECT count(*) FROM strategy_observation_reviews", Integer.class));
             }
+            setDatabaseTime(db, end.plusSeconds(1));
+            assertEquals("RUNNING", db.admin.queryForObject(
+                    "SELECT lifecycle_status FROM continuous_sim_runs WHERE paper_run_id=?",String.class,run));
             restart(db, owner, run, end);
             long account = ForwardSimEvaluationFixture.account(db, run);
             assertEquals(orders, countOrders(db, account));
@@ -228,6 +256,15 @@ class BoundedContinuousSimPostgresIntegrationTest {
             assertEquals(1, db.admin.queryForObject("SELECT count(*) FROM trades WHERE order_id=?", Integer.class, pendingOrder));
             assertEquals(4, db.admin.queryForObject("SELECT count(DISTINCT l.idempotency_key) FROM ledger_entries l JOIN trades t ON l.ref_id=t.trade_id WHERE t.order_id=?", Integer.class, pendingOrder));
             assertEquals(0, db.admin.queryForObject("SELECT count(*) FROM strategy_sim_decisions WHERE paper_run_id=? AND signal_open_time>=?", Integer.class, run, java.sql.Timestamp.from(end)));
+            assertEquals(end.plusSeconds(1), db.admin.queryForObject(
+                    "SELECT ts FROM trades WHERE order_id=?", Timestamp.class, pendingOrder).toInstant());
+            assertTrue(db.admin.queryForObject("""
+                    SELECT bool_and(l.ts=t.ts AND t.ts>d.execution_open_time)
+                    FROM trades t JOIN ledger_entries l ON l.ref_id=t.trade_id JOIN strategy_sim_decisions d ON d.order_id=t.order_id
+                    WHERE t.order_id=? AND l.ref_type='TRADE'
+                    """, Boolean.class, pendingOrder));
+            assertEquals(end.minus(HOUR), db.admin.queryForObject(
+                    "SELECT last_processed_open_time FROM continuous_sim_runs WHERE paper_run_id=?", Timestamp.class, run).toInstant());
             try (var app = ResearchSimComparisonFixture.start(db);
                     var http = new TenantIsolationHttpIntegrationTest.Http(app.getWebServer().getPort())) {
                 String token = http.login(USER);
@@ -243,6 +280,29 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 assertEquals("AVAILABLE", report.path("status").asText(), report.path("reason").asText());
                 assertEquals(168, report.path("samples").path("observed").asInt());
                 assertEquals(169, report.path("methodDetails").path("closedBarValuation").path("gridPointCount").asInt());
+                var inWindow = db.admin.queryForMap("""
+                        SELECT count(*) AS n, coalesce(sum(fee),0) AS fees FROM trades
+                        WHERE account_id=? AND ts>=? AND ts<?
+                        """, account, Timestamp.from(end.minus(Duration.ofDays(7))), Timestamp.from(end));
+                assertEquals(((Number) inWindow.get("n")).longValue(), report.path("metrics").required("tradeCount").longValue());
+                BigDecimal fees = BigDecimal.ZERO;
+                for (JsonNode fee : report.path("metrics").required("fees"))
+                    fees = fees.add(new BigDecimal(fee.required("totalFee").asText()));
+                assertEquals(0, fees.compareTo((BigDecimal) inWindow.get("fees")));
+                BigDecimal finalEquity = db.admin.queryForObject("""
+                        SELECT (SELECT sum(delta) FROM ledger_entries WHERE account_id=? AND currency='USDT'
+                                  AND (ref_type='SIM_FUNDING_CASH' OR (ref_type='TRADE' AND ts<?
+                                      AND idempotency_key IN (ref_id||':LEDGER:1',ref_id||':LEDGER:FEE_1'))))
+                             + (SELECT coalesce(sum(CASE WHEN o.side='BUY' THEN t.qty ELSE -t.qty END),0)
+                                  FROM trades t JOIN orders o USING(order_id) WHERE t.account_id=? AND t.ts<?)
+                               * (SELECT (bar_json->0->>'closePrice')::numeric FROM continuous_sim_bars
+                                  WHERE paper_run_id=? AND open_time=?)
+                        """, BigDecimal.class,account,Timestamp.from(end),account,Timestamp.from(end),run,Timestamp.from(end.minus(HOUR)));
+                assertEquals(0, finalEquity.compareTo(new BigDecimal(report.required("performance").required("finalEquity").asText())));
+                assertEquals(1, db.admin.queryForObject("SELECT count(*) FROM trades WHERE account_id=? AND ts>=?",
+                        Integer.class, account, Timestamp.from(end)));
+                assertFalse(terminal.hasNonNull("manualEndAt"));
+                assertTrue(terminal.hasNonNull("terminatedAt"));
                 assertEquals(report.path("checksum"), http.ok("GET",evaluation,token,null).path("checksum"));
                 var facts = ForwardSimEvaluationFixture.allFacts(db);
                 for (int repeat=0; repeat<2; repeat++) {
@@ -260,7 +320,7 @@ class BoundedContinuousSimPostgresIntegrationTest {
     void manualEndWinsBeforeDeadlineAndMissingCloseCannotBecomeSuccess() throws Exception {
         try (var db = TenantIsolationTestDatabase.create(null)) {
             var owner = db.local(USER);
-            try (var app = ResearchSimComparisonFixture.start(db);
+            try (var app = startWithDatabaseClock(db);
                     var http = new TenantIsolationHttpIntegrationTest.Http(app.getWebServer().getPort())) {
                 var binding = ResearchSimComparisonFixture.seed(app, db, owner);
                 var driver = app.getBean(ContinuousSimRunService.class);
@@ -291,7 +351,50 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 assertEquals(intent,http.ok("POST", OPS, token, finish));
                 assertEquals(409,http.send("POST", OPS, token, operation("RESUME",manual)).statusCode());
 
+                for (boolean hasFinalMark : List.of(false,true)) {
+                    ReflectionTestUtils.setField(driver,"clock",Clock.fixed(now,ZoneOffset.UTC));
+                    setDatabaseTime(db,now);
+                    String late = http.ok("POST", OPS, token, create(binding.publishId(),end)).path("paperRunId").asText();
+                    assertFalse(status(http,token,late).hasNonNull("manualEndAt"));
+                    assertFalse(status(http,token,late).hasNonNull("terminatedAt"));
+                    Instant requested = end.plusSeconds(5);
+                    setDatabaseTime(db,requested);
+                    ReflectionTestUtils.setField(driver,"clock",Clock.fixed(requested,ZoneOffset.UTC));
+                    if (hasFinalMark) {
+                        var stored = ClosedBarForwardEvaluationFixture.bar(end.minus(HOUR),new BigDecimal("52300"),
+                                end.plusSeconds(2),requested);
+                        db.as(owner, () -> {
+                            app.getBean(ContinuousSimRepository.class).insertBar(late,stored,requested);
+                            return null;
+                        });
+                    }
+                    var reads = new AtomicInteger();
+                    ReflectionTestUtils.setField(driver, "feed", (ClosedBarMarketFeed) (first,limit) -> {
+                        reads.incrementAndGet();
+                        return new ClosedBarMarketFeed.Observation(requested,requested,List.of(),null,null);
+                    });
+                    http.ok("POST",OPS,token,operation("END",late));
+                    var ending = status(http,token,late);
+                    assertEquals(requested,Instant.parse(ending.required("manualEndAt").asText()));
+                    assertFalse(ending.hasNonNull("terminatedAt"));
+                    Instant completed = requested.plusSeconds(2);
+                    setDatabaseTime(db,completed);
+                    ReflectionTestUtils.setField(driver,"clock",Clock.fixed(completed,ZoneOffset.UTC));
+                    db.as(owner, () -> driver.pollOnce(late));
+                    var stopped = status(http,token,late);
+                    assertEquals("MANUALLY_STOPPED",stopped.path("lifecycleStatus").asText());
+                    assertEquals(hasFinalMark ? "VERIFIED" : "UNAVAILABLE",stopped.path("finalValuationStatus").asText());
+                    assertEquals(requested,Instant.parse(stopped.required("manualEndAt").asText()));
+                    assertEquals(completed,Instant.parse(stopped.required("terminatedAt").asText()));
+                    db.as(owner, () -> driver.pollOnce(late));
+                    assertEquals(stopped,status(http,token,late));
+                    assertEquals(0,reads.get());
+                }
+
+                ReflectionTestUtils.setField(driver,"clock",Clock.fixed(now,ZoneOffset.UTC));
+                setDatabaseTime(db,now);
                 String missed = http.ok("POST", OPS, token, create(binding.publishId(),end)).path("paperRunId").asText();
+                setDatabaseTime(db, end);
                 var before = ForwardSimEvaluationFixture.allFacts(db);
                 configure(app,db,owner,missed,end,end,false);
                 // 截止轮询与另一个已持有游标行锁的事务冲突；该轮超时应完整回滚，下一次仍可从原状态收敛。
@@ -313,6 +416,7 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 assertEquals(before, ForwardSimEvaluationFixture.allFacts(db));
                 db.as(owner, () -> driver.pollOnce(missed));
                 assertEquals("UNAVAILABLE",status(http,token,missed).path("finalValuationStatus").asText());
+                setDatabaseTime(db, end.plusSeconds(901));
                 ReflectionTestUtils.setField(driver,"clock",Clock.fixed(end.plusSeconds(901),ZoneOffset.UTC));
                 db.as(owner, () -> driver.pollOnce(missed));
                 var result = status(http,token,missed);
@@ -325,6 +429,162 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 assertEquals(409,http.send("POST", OPS, token, operation("RESUME",missed)).statusCode());
             }
         }
+    }
+
+    @Test @Timeout(180)
+    void clockOrderAndInFlightCandleRevisionUseTheDeadlineTransaction() throws Exception {
+        try (var db = TenantIsolationTestDatabase.create(null)) {
+            var owner = db.local(USER);
+            try (var app = startWithDatabaseClock(db);
+                    var http = new TenantIsolationHttpIntegrationTest.Http(app.getWebServer().getPort())) {
+                var binding = ResearchSimComparisonFixture.seed(app, db, owner);
+                var driver = app.getBean(ContinuousSimRunService.class);
+                db.as(owner, () -> driver.stop(binding.paperRunId()));
+                String token = http.login(USER);
+                var market = app.getBean(ResearchSimComparisonFixture.MarketServer.class);
+                Instant end = market.end().plus(HOUR.multipliedBy(3));
+                Instant before = end.minusSeconds(1), after = end.plusSeconds(4);
+                var tick = new java.util.concurrent.atomic.AtomicReference<>(before);
+                Clock clock = org.mockito.Mockito.mock(Clock.class);
+                org.mockito.Mockito.when(clock.instant()).thenAnswer(call -> tick.get());
+                var feed = new OkxClosedBarMarketFeed("http://127.0.0.1:" + market.server.getAddress().getPort());
+                ReflectionTestUtils.setField(feed, "clock", clock);
+                market.server.createContext("/api/v5/public/time", ex -> reply(ex,
+                        "{\"code\":\"0\",\"data\":[{\"ts\":\"" + tick.get().toEpochMilli() + "\"}]}"));
+                market.server.createContext("/api/v5/market/ticker", ex -> reply(ex,
+                        "{\"code\":\"0\",\"data\":[{\"instId\":\"BTC-USDT\",\"last\":\"50000\",\"ts\":\"" + tick.get().toEpochMilli() + "\"}]}"));
+                for (boolean revised : List.of(false, true)) {
+                    tick.set(before);
+                    setDatabaseTime(db, before);
+                    ReflectionTestUtils.setField(driver, "clock", Clock.fixed(market.end(), ZoneOffset.UTC));
+                    String run = http.ok("POST", OPS, token, create(binding.publishId(),end)).path("paperRunId").asText();
+                    var rows = db.as(owner, () -> app.getBean(ContinuousSimRepository.class).recentBars(run));
+                    var response = ForwardSimEvaluationFixture.JSON.createObjectNode().put("code","0");
+                    var data = response.putArray("data");
+                    var overlap = rows.getLast();
+                    for (HistoricalBar bar : rows.subList(rows.size()-2, rows.size())) {
+                        BigDecimal close = revised && bar.equals(overlap) ? bar.closePrice().add(new BigDecimal("0.01")) : bar.closePrice();
+                        data.addArray().add(Long.toString(bar.openTime().toEpochMilli())).add(bar.openPrice().toPlainString())
+                                .add(bar.highPrice().toPlainString()).add(bar.lowPrice().toPlainString()).add(close.toPlainString())
+                                .add(bar.volume().toPlainString()).add("1").add(bar.quoteVolume().toPlainString()).add("1");
+                    }
+                    String digest = ContinuousSimRepository.contentSha(overlap);
+                    var crossed = new AtomicInteger();
+                    market.server.removeContext("/api/v5/market/history-candles");
+                    market.server.createContext("/api/v5/market/history-candles", ex -> {
+                        if (ex.getRequestURI().getQuery().endsWith("limit=24")) {
+                            crossed.incrementAndGet();
+                            setDatabaseTime(db, after);
+                            tick.set(after);
+                            reply(ex, response.toString());
+                        } else {
+                            reply(ex, "{\"code\":\"0\",\"data\":[]}");
+                        }
+                    });
+                    // JVM 已跨 T 但数据库仍在 T 前时，正式轮询必须仍发出普通行情请求。
+                    Clock ahead = org.mockito.Mockito.mock(Clock.class);
+                    org.mockito.Mockito.when(ahead.instant()).thenAnswer(call -> tick.get().equals(before) ? end : tick.get());
+                    ReflectionTestUtils.setField(driver, "clock", ahead);
+                    ReflectionTestUtils.setField(driver, "feed", feed);
+                    var result = db.as(owner, () -> driver.pollOnce(run));
+                    assertEquals(1, crossed.get(), "JVM ahead must not close the admission before the DB deadline");
+                    assertNotEquals("COMPLETED",result.bounded().lifecycleStatus());
+                    Timestamp detected = db.admin.queryForObject(
+                            "SELECT revision_detected_at FROM continuous_sim_runs WHERE paper_run_id=?",Timestamp.class,run);
+                    assertEquals(revised ? after : null, detected == null ? null : detected.toInstant());
+                    assertEquals(digest, db.admin.queryForObject("SELECT bar_sha256 FROM continuous_sim_bars WHERE paper_run_id=? AND open_time=?",
+                            String.class,run,Timestamp.from(overlap.openTime())));
+                    assertEquals(0,countOrders(db,ForwardSimEvaluationFixture.account(db,run)));
+                    assertEquals(0, db.admin.queryForObject("SELECT count(*) FROM strategy_sim_decisions WHERE paper_run_id=?",Integer.class,run));
+                    // 让缺末价或已修订的运行由原生命周期释放租户唯一容量，再创建下一独立对照。
+                    Instant exhausted = end.plusSeconds(901);
+                    setDatabaseTime(db,exhausted);
+                    tick.set(exhausted);
+                    var terminal = db.as(owner, () -> driver.pollOnce(run));
+                    assertEquals("STOPPED",terminal.status());
+                    assertEquals("BLOCKED",terminal.bounded().lifecycleStatus());
+                }
+                // 数据库先到 T，JVM 尚未到 T：禁止进入普通行情/策略推进，原始订单准入也应被拒绝。
+                ReflectionTestUtils.setField(driver, "clock", Clock.fixed(market.end(), ZoneOffset.UTC));
+                setDatabaseTime(db,before);
+                String slow = http.ok("POST", OPS, token, create(binding.publishId(),end)).path("paperRunId").asText();
+                assertAdmissionWaitsAndRejectsAtDeadline(db,owner,slow,end);
+                ReflectionTestUtils.setField(driver, "clock", Clock.fixed(before, ZoneOffset.UTC));
+                ReflectionTestUtils.setField(driver, "feed", new ClosedBarMarketFeed() {
+                    public Observation observe(Instant first,int limit) { throw new AssertionError("late ordinary poll"); }
+                    public Observation observeFinalBar(Instant first) { return new Observation(end,end,List.of(),null,null); }
+                });
+                var closed = db.as(owner, () -> driver.pollOnce(slow));
+                assertEquals("ADMISSION_CLOSED",closed.bounded().lifecycleStatus());
+                assertEquals(0,countOrders(db,ForwardSimEvaluationFixture.account(db,slow)));
+            }
+        }
+    }
+
+    private static void reply(HttpExchange exchange, String json) throws IOException {
+        byte[] data = json.getBytes(StandardCharsets.UTF_8);
+        exchange.sendResponseHeaders(200,data.length);
+        try (var out = exchange.getResponseBody()) { out.write(data); }
+    }
+
+    private static void assertAdmissionWaitsAndRejectsAtDeadline(TenantIsolationTestDatabase db,
+            TenantIdentity owner,String run,Instant end) throws Exception {
+        long account = ForwardSimEvaluationFixture.account(db,run);
+        try (var holding = db.database.source().getConnection(); var pool = Executors.newSingleThreadExecutor()) {
+            holding.setAutoCommit(false);
+            try (var lock=holding.prepareStatement("SELECT * FROM continuous_sim_runs WHERE paper_run_id=? FOR UPDATE")) {
+                lock.setString(1,run);
+                try (var result=lock.executeQuery()) { assertTrue(result.next()); }
+            }
+            try {
+                var pid = new CompletableFuture<Integer>();
+                var admission = pool.submit(() -> assertThrows(DataAccessException.class, () -> db.as(owner, () ->
+                        new TransactionTemplate(db.manager).execute(tx -> {
+                            db.jdbc.execute("SET LOCAL lock_timeout='8s'");
+                            pid.complete(db.jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                            return db.jdbc.update("""
+                                    INSERT INTO orders(order_id,account_id,symbol,client_order_id,side,type,price,qty,status,trace_id,venue,exchange_code,trade_env)
+                                    VALUES('race-order',?,'BTC-USDT','race-client','BUY','LIMIT',100,1,'ACCEPTED','race','PAPER','PAPER','SIM')
+                                    """,account);
+                        }))));
+                int backend = pid.get(3,TimeUnit.SECONDS);
+                long until = System.nanoTime()+TimeUnit.SECONDS.toNanos(4);
+                while (!db.admin.queryForObject("SELECT cardinality(pg_blocking_pids(?))>0",Boolean.class,backend)) {
+                    if (System.nanoTime() >= until) fail("order admission did not reach the cursor lock");
+                    Thread.sleep(15);
+                }
+                setDatabaseTime(db,end);
+                holding.commit();
+                assertTrue(admission.get(5,TimeUnit.SECONDS).getMostSpecificCause().getMessage().contains("CONTINUOUS_SIM_ADMISSION_CLOSED"));
+            } finally { holding.rollback(); }
+        }
+    }
+
+    /** 仅让临时库的专属运行角色看到受控时钟；真实 PG 对照仍在 V52 升级用例中执行。 */
+    static ServletWebServerApplicationContext startWithDatabaseClock(TenantIsolationTestDatabase db) {
+        String name = db.admin.queryForObject("SELECT current_database()", String.class);
+        assertTrue(name.matches("nq_baseline_test_[a-f0-9]{32}"));
+        db.admin.execute("CREATE SCHEMA bounded_test_clock");
+        db.admin.execute("CREATE TABLE bounded_test_clock.tick(at_time timestamptz NOT NULL)");
+        db.admin.execute("INSERT INTO bounded_test_clock.tick VALUES (pg_catalog.clock_timestamp())");
+        db.admin.execute("""
+                CREATE FUNCTION bounded_test_clock.clock_timestamp() RETURNS timestamptz
+                LANGUAGE sql VOLATILE AS 'SELECT at_time FROM bounded_test_clock.tick'
+                """);
+        db.admin.execute("GRANT USAGE ON SCHEMA bounded_test_clock TO " + db.runtime);
+        db.admin.execute("GRANT SELECT ON bounded_test_clock.tick TO " + db.runtime);
+        db.admin.execute("ALTER ROLE " + db.runtime + " IN DATABASE " + name
+                + " SET search_path TO bounded_test_clock, pg_catalog, public");
+        // Hikari 可能尚未建立连接；角色设置只在新连接上生效。
+        if (db.pool.getHikariPoolMXBean() != null) db.pool.getHikariPoolMXBean().softEvictConnections();
+        assertEquals("bounded_test_clock", db.jdbc.queryForObject("SELECT current_schema()", String.class));
+        assertEquals(db.admin.queryForObject("SELECT at_time FROM bounded_test_clock.tick",Timestamp.class),
+                db.jdbc.queryForObject("SELECT clock_timestamp()",Timestamp.class));
+        return ResearchSimComparisonFixture.start(db);
+    }
+
+    static void setDatabaseTime(TenantIsolationTestDatabase db, Instant time) {
+        assertEquals(1, db.admin.update("UPDATE bounded_test_clock.tick SET at_time=?", Timestamp.from(time)));
     }
 
     private static int countOrders(TenantIsolationTestDatabase db, long account) {
@@ -358,7 +618,8 @@ class BoundedContinuousSimPostgresIntegrationTest {
 
     static void configure(ContinuousSimRunService driver, Map<Instant,HistoricalBar> saved,
             Instant boundary, Instant end, boolean complete) {
-        Instant server = boundary.plusSeconds(2), received = boundary.plusSeconds(5);
+        Instant server = boundary.equals(end) ? end : boundary.plusSeconds(2);
+        Instant received = boundary.equals(end) ? end.plusSeconds(1) : boundary.plusSeconds(5);
         Clock clock = Clock.fixed(received, ZoneOffset.UTC);
         ClosedBarMarketFeed feed = (first, limit) -> {
             List<HistoricalBar> bars = new ArrayList<>();

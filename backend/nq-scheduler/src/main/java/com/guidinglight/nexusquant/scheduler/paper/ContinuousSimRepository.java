@@ -85,7 +85,8 @@ public class ContinuousSimRepository {
                             ? "ADMISSION_CLOSED" : rs.getString("lifecycle_status"),
                     rs.getString("final_valuation_status"), instant(rs, "last_valuation_boundary"),
                     rs.getObject("pending_orders", Integer.class), rs.getString("block_reason"),
-                    instant(rs, "updated_at"), rs.getString("publish_id"), rs.getString("strategy_version_id"))), runId)
+                    instant(rs, "updated_at"), rs.getString("publish_id"), rs.getString("strategy_version_id"),
+                    instant(rs, "manual_end_at"), "STOPPED".equals(rs.getString("status")) ? instant(rs, "updated_at") : null)), runId)
                 .stream().findFirst().orElseThrow(() -> new IllegalArgumentException("CONTINUOUS_SIM_RUN_NOT_FOUND"));
     }
 
@@ -94,11 +95,17 @@ public class ContinuousSimRepository {
                 Boolean.class, runId, Timestamp.from(now)));
     }
 
-    public void closeAdmission(String runId, Instant now) {
-        jdbc.update("""
-            UPDATE continuous_sim_runs SET lifecycle_status='ADMISSION_CLOSED',block_reason='DEADLINE_REACHED',updated_at=?
-            WHERE paper_run_id=? AND end_at IS NOT NULL AND lifecycle_status='RUNNING'
-            """, Timestamp.from(now), runId);
+    /** 先取得与订单准入互斥的行锁，再按此刻的数据库时钟裁决，不能沿用请求或事务开始时间。 */
+    @Transactional(timeout = 10)
+    public boolean closeAdmissionIfDue(String runId) {
+        String state = jdbc.queryForObject("""
+                SELECT lifecycle_status FROM continuous_sim_runs WHERE paper_run_id=? AND end_at IS NOT NULL FOR UPDATE
+                """, String.class, runId);
+        if (!"RUNNING".equals(state)) return true;
+        return jdbc.update("""
+                UPDATE continuous_sim_runs SET lifecycle_status='ADMISSION_CLOSED',block_reason='DEADLINE_REACHED',
+                    updated_at=clock_timestamp() WHERE paper_run_id=? AND end_at<=clock_timestamp()
+                """, runId) == 1;
     }
 
     public void recordRevision(String runId, Instant now) {
@@ -207,23 +214,41 @@ public class ContinuousSimRepository {
         }
     }
 
+    /** 经济收敛已经在账户锁内证实，只能重放紧邻游标且有原始决策、原始信号 bar 的确认。 */
+    void recoverPenultimateCursor(String runId, long accountId) {
+        jdbc.update("""
+                UPDATE continuous_sim_runs c SET last_processed_open_time=b.open_time,last_processed_close_time=b.close_time,
+                    last_processed_sha256=b.bar_sha256,last_observed_open_time=GREATEST(c.last_observed_open_time,b.open_time),
+                    updated_at=clock_timestamp()
+                FROM continuous_sim_bars b JOIN strategy_sim_decisions d
+                    ON d.paper_run_id=b.paper_run_id AND d.signal_open_time=b.open_time
+                WHERE c.paper_run_id=? AND b.paper_run_id=c.paper_run_id AND d.canonical_account_id=?
+                    AND c.status<>'STOPPED' AND c.manual_end_at IS NULL AND c.revision_detected_at IS NULL
+                    AND c.lifecycle_status<>'RUNNING' AND b.open_time=c.end_at-interval '2 hours'
+                    AND b.open_time=c.last_processed_open_time+interval '1 hour'
+                    AND d.strategy_version_id=c.strategy_version_id AND d.strategy_checksum=c.strategy_checksum
+                    AND d.reason<>'DECIDING' AND (d.input_snapshot_json->'signalBars'->-1)=(b.bar_json->0)
+                """, runId, accountId);
+    }
+
     public void insertBar(String runId, HistoricalBar bar, Instant observedAt) {
         String digest = contentSha(bar);
-        var existing = jdbc.query("""
-                SELECT bar_sha256 FROM continuous_sim_bars WHERE paper_run_id=? AND open_time=?
-                """, (rs, row) -> rs.getString(1), runId, Timestamp.from(bar.openTime()));
-        if (!existing.isEmpty()) {
-            if (!existing.getFirst().equals(digest)) {
-                throw new IllegalStateException("DATA_REVISION_DETECTED");
-            }
-            return;
-        }
+        if (verifyExistingBar(runId, bar.openTime(), digest)) return;
         String json = SpotBarIdentity.capture(List.of(bar), mapper).canonicalJson();
         jdbc.update("""
                 INSERT INTO continuous_sim_bars(paper_run_id,open_time,close_time,available_at,
                     bar_sha256,bar_json,observed_at) VALUES (?,?,?,?,?,?::jsonb,?)
                 """, runId, Timestamp.from(bar.openTime()), Timestamp.from(bar.closeTime()),
                 Timestamp.from(bar.availableAt()), digest, json, Timestamp.from(observedAt));
+    }
+
+    boolean verifyExistingBar(String runId, Instant open, String digest) {
+        var existing = jdbc.query("""
+                SELECT bar_sha256 FROM continuous_sim_bars WHERE paper_run_id=? AND open_time=?
+                """, (rs, row) -> rs.getString(1), runId, Timestamp.from(open));
+        if (existing.isEmpty()) return false;
+        if (!existing.getFirst().equals(digest)) throw new IllegalStateException("DATA_REVISION_DETECTED");
+        return true;
     }
 
     public List<HistoricalBar> recentBars(String runId) {

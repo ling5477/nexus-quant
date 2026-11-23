@@ -46,6 +46,8 @@ export interface ContinuousSimStatus {
     consecutivePollFailures: number;
     bounded?: {
         endAt: string;
+        manualEndAt?: string | null;
+        terminatedAt?: string | null;
         lifecycleStatus: string;
         finalValuationStatus: string;
         lastValuationBoundary: string | null;

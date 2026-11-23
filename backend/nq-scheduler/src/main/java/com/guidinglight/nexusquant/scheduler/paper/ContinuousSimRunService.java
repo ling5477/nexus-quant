@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.scheduler.paper;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.guidinglight.nexusquant.common.tenant.TenantWorkAccess;
 import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
@@ -200,8 +201,7 @@ public class ContinuousSimRunService {
         ContinuousSimRepository.Cursor cursor = progress.get(runId);
         if ("STOPPED".equals(cursor.status())) return status(runId);
         Instant now = clock.instant();
-        if (cursor.bounded() != null && (!"RUNNING".equals(cursor.bounded().lifecycleStatus())
-                || !now.isBefore(cursor.bounded().endAt()))) return settle(runId, cursor);
+        if (cursor.bounded() != null && progress.closeAdmissionIfDue(runId)) return settle(runId);
         Instant latestAvailable = cursor.lastObservedOpenTime();
         Instant gapStart = null;
         try {
@@ -211,8 +211,16 @@ public class ContinuousSimRunService {
             Instant latestOpen = before.getLast().openTime();
             Instant firstOpen = latestOpen.minus(HOUR);
             ClosedBarMarketFeed.Observation observation = feed.observe(firstOpen, 24);
-            if (cursor.bounded() != null && !clock.instant().isBefore(cursor.bounded().endAt()))
-                return settle(runId, cursor);
+            if (cursor.bounded() != null && progress.closeAdmissionIfDue(runId)) {
+                // 跨截止的在途响应仍可能揭示原价格修订；只比对已请求的重叠槽，不用响应补写或推进策略。
+                for (HistoricalBar bar : observation.bars()) {
+                    if (!bar.openTime().isBefore(firstOpen) && !bar.openTime().isAfter(latestOpen)
+                            && bar.openTime().isBefore(cursor.bounded().endAt())) {
+                        progress.verifyExistingBar(runId, bar.openTime(), ContinuousSimRepository.contentSha(bar));
+                    }
+                }
+                return settle(runId);
+            }
             for (HistoricalBar bar : observation.bars()) {
                 if (cursor.bounded() != null && !bar.openTime().isBefore(cursor.bounded().endAt())) break;
                 if (bar.openTime().isAfter(latestAvailable)) latestAvailable = bar.openTime();
@@ -320,6 +328,7 @@ public class ContinuousSimRunService {
                     true);
             return status(runId);
         } catch (RuntimeException ex) {
+            if (cursor.bounded() != null && ex instanceof TransientDataAccessException) throw ex;
             String reason = classify(ex);
             if (cursor.bounded() != null && "DATA_REVISION_DETECTED".equals(reason)) {
                 progress.recordRevision(runId, clock.instant());
@@ -334,9 +343,9 @@ public class ContinuousSimRunService {
     }
 
     /** 到期通道只接收末槽证据、回收原执行；任何异常保留来源与未决状态。 */
-    private Status settle(String runId, ContinuousSimRepository.Cursor cursor) {
+    private Status settle(String runId) {
         try {
-            return settleLocked(runId, cursor);
+            return settleLocked(runId);
         } catch (TransientDataAccessException conflict) {
             // 数据库事务冲突必须让该轮调度失败，下一轮按原身份重读，不把失败写成业务终态。
             throw conflict;
@@ -354,13 +363,13 @@ public class ContinuousSimRunService {
         }
     }
 
-    private Status settleLocked(String runId, ContinuousSimRepository.Cursor cursor) {
-        progress.closeAdmission(runId, clock.instant());
-        cursor = progress.get(runId);
+    private Status settleLocked(String runId) {
+        var cursor = progress.get(runId);
         Instant end = cursor.bounded().endAt();
         String priceIssue = collectFinalPrice(runId, cursor, end);
         String valuation = priceIssue == null ? "VERIFIED" : "UNAVAILABLE";
         StrategySimRunService.Settlement economics = sim.settleBounded(runId);
+        cursor = progress.get(runId);
         String reason = economics.blockingReason();
         if (reason != null || economics.pendingOrders() != 0) {
             boolean waiting = "SIM_PREVIOUS_EXECUTION_PENDING".equals(reason)
@@ -388,9 +397,10 @@ public class ContinuousSimRunService {
     }
 
     private String collectFinalPrice(String runId, ContinuousSimRepository.Cursor cursor, Instant end) {
+        if (cursor.revisionDetectedAt() != null) return "DATA_REVISION_DETECTED";
         if (cursor.manualEndAt() != null && cursor.manualEndAt().isBefore(end)) return "MANUAL_END_BEFORE_DEADLINE";
         String priceIssue = progress.closingPriceFailure(runId, end, clock.instant());
-        if (priceIssue != null && cursor.revisionDetectedAt() == null
+        if (priceIssue != null && cursor.manualEndAt() == null
                 && !clock.instant().isAfter(end.plusSeconds(ClosedBarValuation.MAXIMUM_LATENESS_SECONDS))) {
             try {
                 Instant open = end.minus(HOUR);
@@ -524,7 +534,7 @@ public class ContinuousSimRunService {
             String lastDecisionStatus,
             String blockReason,
             int consecutivePollFailures,
-            @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+            @JsonInclude(JsonInclude.Include.NON_NULL)
             Bounded bounded) {
         public Status(String paperRunId, String status, Instant startedAt, Instant lastPollAt, Instant lastSuccessfulPollAt,
                       Instant lastProcessedBar, Instant nextExpectedBar, Instant lastObservedBar, Instant gapStartBar,
@@ -535,5 +545,7 @@ public class ContinuousSimRunService {
     }
 
     public record Bounded(Instant endAt, String lifecycleStatus, String finalValuationStatus, Instant lastValuationBoundary,
-                          Integer pendingOrders, String reason, Instant updatedAt, String publishId, String strategyVersionId) {}
+                          Integer pendingOrders, String reason, Instant updatedAt, String publishId, String strategyVersionId,
+                          @JsonInclude(JsonInclude.Include.NON_NULL) Instant manualEndAt,
+                          @JsonInclude(JsonInclude.Include.NON_NULL) Instant terminatedAt) {}
 }
