@@ -312,6 +312,11 @@ class StrategySimPostgresIntegrationTest {
         if (orderAlreadyAccepted) {
             assertEquals(new StrategySimRunService.Settlement(1,"SIM_PREVIOUS_EXECUTION_PENDING"), pending);
             assertEquals(original.getFirst(), after.orderId());
+            var waiting = driver.pollOnce(run).bounded();
+            assertEquals("SETTLING", waiting.lifecycleStatus());
+            assertEquals(1, waiting.pendingOrders());
+            assertNull(waiting.terminatedAt());
+            assertNull(runs.getById(run).stoppedAt());
             assertEquals(1, matching.matchOnce(100));
             assertEquals(new StrategySimRunService.Settlement(0,null), sim.settleBounded(run));
             assertEquals("SUCCEEDED", jdbc.queryForObject("SELECT status FROM strategy_runs WHERE strategy_run_id=?",
@@ -328,6 +333,11 @@ class StrategySimPostgresIntegrationTest {
                         WHERE account_id=? AND ref_type='TRADE' LIMIT 1
                         """, account);
                 assertEquals("SIM_TRADE_LEDGER_MISMATCH", sim.settleBounded(run).blockingReason());
+                var blocked = driver.pollOnce(run).bounded();
+                assertEquals(0, blocked.pendingOrders());
+                assertEquals("SIM_TRADE_LEDGER_MISMATCH", blocked.reason());
+                assertNull(blocked.terminatedAt());
+                assertNull(runs.getById(run).stoppedAt());
                 tx.setRollbackOnly();
             });
         } else {

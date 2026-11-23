@@ -219,14 +219,18 @@ public class ContinuousSimRunService {
             ClosedBarMarketFeed.Observation observation;
             try {
                 observation = feed.observe(firstOpen, 24);
-            } catch (IllegalStateException failure) {
-                // 适配器明确未交付响应时可结束本次核验；中断留下恢复标记。
-                if (bounded && !Thread.currentThread().isInterrupted())
-                    progress.finishOverlapCheck(runId, firstOpen, latestOpen, List.of(), clock);
+            } catch (ClosedBarMarketFeed.IncompleteObservation failure) {
+                if (bounded) {
+                    progress.finishOverlapCheck(runId, firstOpen, latestOpen, failure.verifiedBars(), false, clock);
+                }
                 throw failure;
             }
             if (bounded) {
-                progress.finishOverlapCheck(runId, firstOpen, latestOpen, observation.bars(), clock);
+                var verifiedBars = observation.bars().stream()
+                        .filter(bar -> isClosedBar(bar, observation.serverTime())).toList();
+                boolean complete = verifiedBars.size() == observation.bars().size()
+                        && coversRequestedPage(firstOpen, latestOpen, observation.serverTime(), verifiedBars);
+                progress.finishOverlapCheck(runId, firstOpen, latestOpen, verifiedBars, complete, clock);
                 if (progress.closeAdmissionIfDue(runId)) return settle(runId);
             }
             resolvingOverlap = false;
@@ -263,12 +267,7 @@ public class ContinuousSimRunService {
             Instant expected = firstOpen;
             for (HistoricalBar bar : observation.bars()) {
                 if (cursor.bounded() != null && !bar.openTime().isBefore(cursor.bounded().endAt().minus(HOUR))) break;
-                if (!"OKX".equals(bar.exchangeCode())
-                        || !"SPOT".equals(bar.marketType())
-                        || !"BTC-USDT".equals(bar.symbol())
-                        || !"1h".equals(bar.interval().wireValue())
-                        || bar.closeTime().isAfter(observation.serverTime())
-                        || bar.availableAt().isBefore(bar.closeTime())) {
+                if (!isClosedBar(bar, observation.serverTime())) {
                     throw new IllegalStateException("EXPECTED_BAR_MISSING");
                 }
                 if (!bar.openTime().equals(expected)) {
@@ -348,6 +347,29 @@ public class ContinuousSimRunService {
         }
     }
 
+    private static boolean isClosedBar(HistoricalBar bar, Instant serverTime) {
+        return serverTime != null && "OKX".equals(bar.exchangeCode()) && "SPOT".equals(bar.marketType())
+                && "BTC-USDT".equals(bar.symbol()) && "1h".equals(bar.interval().wireValue())
+                && !bar.closeTime().isAfter(serverTime) && !bar.availableAt().isBefore(bar.closeTime());
+    }
+
+    /** 每个请求范围内已收盘的小时必须恰好出现一次，且覆盖已存的两个重叠槽。 */
+    private static boolean coversRequestedPage(
+            Instant firstOpen, Instant latestOpen, Instant serverTime, List<HistoricalBar> bars) {
+        if (serverTime == null) return false;
+        Instant boundary = serverTime.truncatedTo(ChronoUnit.HOURS);
+        Instant maximum = firstOpen.plus(HOUR.multipliedBy(24));
+        Instant endExclusive = boundary.isBefore(maximum) ? boundary : maximum;
+        Instant expected = firstOpen;
+        for (HistoricalBar bar : bars) {
+            if (!bar.openTime().equals(expected) || !bar.closeTime().equals(expected.plus(HOUR).minusMillis(1))) {
+                return false;
+            }
+            expected = expected.plus(HOUR);
+        }
+        return expected.equals(endExclusive) && latestOpen.isBefore(endExclusive);
+    }
+
     /** 到期通道只接收末槽证据、回收原执行；任何异常保留来源与未决状态。 */
     private Status settle(String runId) {
         try {
@@ -362,9 +384,7 @@ public class ContinuousSimRunService {
                      "CONTINUOUS_SIM_CURSOR_CONFLICT", "SIM_DECISION_RECOVERY_INVALID" -> failure.getMessage();
                 default -> "BOUNDED_SETTLEMENT_UNPROVEN";
             };
-            var latest = progress.get(runId);
-            progress.recordSettlement(runId, "BLOCKED", latest.bounded().finalValuationStatus(),
-                    null, reason, false);
+            progress.recordSettlement(runId, "BLOCKED", "UNAVAILABLE", null, reason, false);
             return status(runId);
         }
     }
@@ -380,8 +400,9 @@ public class ContinuousSimRunService {
         if (reason != null || economics.pendingOrders() != 0) {
             boolean waiting = "SIM_PREVIOUS_EXECUTION_PENDING".equals(reason)
                     || "SIM_DECISION_RECOVERY_PENDING".equals(reason) || "SIM_CANONICAL_RUN_NOT_TERMINAL".equals(reason);
+            // 末价可用仍不足以验证未完成经济核验的终态估值。
             progress.recordSettlement(runId, waiting ? "SETTLING" : "BLOCKED",
-                    valuation, economics.pendingOrders(), reason, false);
+                    "UNAVAILABLE", economics.pendingOrders(), reason, false);
             return status(runId);
         }
         if (cursor.manualEndAt() != null) {

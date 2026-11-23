@@ -108,7 +108,8 @@ public class ContinuousSimRepository {
             // 先前轮询已退出。保留实际发现时间；若原响应未能落库，则保留未完成核验。
             jdbc.update("""
                     UPDATE continuous_sim_runs SET status='STALLED',lifecycle_status='BLOCKED',
-                        block_reason=CASE WHEN pending_revision_detected_at IS NULL THEN 'OVERLAP_CHECK_INCOMPLETE'
+                        block_reason=CASE WHEN coalesce(revision_detected_at,pending_revision_detected_at) IS NULL
+                                          THEN 'OVERLAP_CHECK_INCOMPLETE'
                                           ELSE 'DATA_REVISION_DETECTED' END,
                         revision_detected_at=coalesce(revision_detected_at,pending_revision_detected_at),
                         overlap_check_pending=pending_revision_detected_at IS NULL,
@@ -139,29 +140,40 @@ public class ContinuousSimRepository {
     /** 原响应的比较与证据写入共享事务，原 bar 永不改写。随后才能推进截止收敛。 */
     @Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 10)
     public void finishOverlapCheck(String runId, Instant firstOpen, Instant latestOpen,
-                                   List<HistoricalBar> bars, Clock clock) {
+                                   List<HistoricalBar> bars, boolean windowVerified, Clock clock) {
         Cursor latest = lockCursor(runId);
         if (!latest.overlapCheckPending() || "STOPPED".equals(latest.status()))
             throw new IllegalStateException("CONTINUOUS_SIM_OVERLAP_CHECK_CONFLICT");
+        if (latest.revisionDetectedAt() != null) return;
+        Instant detectedAt = null;
+        boolean storedOverlapComplete = true;
         for (HistoricalBar bar : bars) {
             Instant open = bar.openTime();
-            if (!open.isBefore(firstOpen) && !open.isAfter(latestOpen)
-                    && open.isBefore(latest.bounded().endAt())
-                    && storedDigest(runId, open).stream().anyMatch(saved -> !saved.equals(contentSha(bar)))) {
-                Instant detectedAt = clock.instant();
-                jdbc.update("""
-                        UPDATE continuous_sim_runs SET pending_revision_detected_at=?,status='STALLED',
-                            lifecycle_status='BLOCKED',block_reason='DATA_REVISION_DETECTED',
-                            final_valuation_status='UNAVAILABLE',last_valuation_boundary=NULL,updated_at=clock_timestamp()
-                        WHERE paper_run_id=? AND pending_revision_detected_at IS NULL
-                        """, Timestamp.from(detectedAt), runId);
-                return;
+            if (!open.isBefore(firstOpen) && !open.isAfter(latestOpen) && open.isBefore(latest.bounded().endAt())) {
+                var stored = storedDigest(runId, open);
+                if (stored.isEmpty()) {
+                    storedOverlapComplete = false;
+                } else if (!stored.getFirst().equals(contentSha(bar)) && detectedAt == null) {
+                    detectedAt = clock.instant();
+                }
             }
         }
-        jdbc.update("""
-                UPDATE continuous_sim_runs SET overlap_check_pending=false
-                WHERE paper_run_id=? AND pending_revision_detected_at IS NULL
-                """, runId);
+        boolean complete = windowVerified && storedOverlapComplete;
+        if (detectedAt != null) {
+            Timestamp revision = Timestamp.from(detectedAt);
+            // 部分响应已证实的修订直接保留，未核验的其余行继续由待核验标记阻断。
+            jdbc.update("""
+                    UPDATE continuous_sim_runs SET pending_revision_detected_at=?,revision_detected_at=?,
+                        status='STALLED',lifecycle_status='BLOCKED',block_reason='DATA_REVISION_DETECTED',
+                        final_valuation_status='UNAVAILABLE',last_valuation_boundary=NULL,updated_at=clock_timestamp()
+                    WHERE paper_run_id=? AND pending_revision_detected_at IS NULL
+                    """, complete ? revision : null, complete ? null : revision, runId);
+        } else if (complete) {
+            jdbc.update("""
+                    UPDATE continuous_sim_runs SET overlap_check_pending=false
+                    WHERE paper_run_id=? AND pending_revision_detected_at IS NULL
+                    """, runId);
+        }
     }
 
     private Cursor lockCursor(String runId) {
@@ -213,9 +225,11 @@ public class ContinuousSimRepository {
         if (latest.overlapCheckPending() || latest.revisionDetectedAt() != null) {
             lifecycle = "BLOCKED";
             valuation = "UNAVAILABLE";
-            reason = latest.revisionDetectedAt() == null ? "OVERLAP_CHECK_INCOMPLETE" : "DATA_REVISION_DETECTED";
+            if (terminal || reason == null) {
+                reason = latest.revisionDetectedAt() == null ? "OVERLAP_CHECK_INCOMPLETE" : "DATA_REVISION_DETECTED";
+            }
         }
-        if (latest.manualEndAt() != null && pending != null && pending == 0) {
+        if (terminal && latest.manualEndAt() != null && pending != null && pending == 0) {
             // 人工意图可能在末价读取后提交；在锁内用已保存的价格重新确认终态事实。
             if (now.isBefore(latest.manualEndAt())) now = latest.manualEndAt();
             Instant end = latest.bounded().endAt();
@@ -224,7 +238,6 @@ public class ContinuousSimRepository {
                     ? "VERIFIED" : "UNAVAILABLE";
             lifecycle = "MANUALLY_STOPPED";
             reason = "MANUAL_END";
-            terminal = true;
         }
         Instant boundary = "VERIFIED".equals(valuation) ? latest.bounded().endAt() : null;
         jdbc.update("""

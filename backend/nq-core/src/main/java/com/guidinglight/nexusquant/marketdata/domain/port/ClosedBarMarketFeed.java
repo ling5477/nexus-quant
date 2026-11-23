@@ -18,6 +18,20 @@ public interface ClosedBarMarketFeed {
     record Observation(Instant serverTime, Instant observedAt, List<HistoricalBar> bars,
                        Rule rule, Quote quote) { }
 
+    /** 响应未能完整解析。已验证的闭合行仅用于比对修订，不能作为可推进策略的行情页。 */
+    final class IncompleteObservation extends IllegalStateException {
+        private final List<HistoricalBar> verifiedBars;
+
+        public IncompleteObservation(List<HistoricalBar> verifiedBars, IllegalStateException cause) {
+            super(cause.getMessage(), cause);
+            this.verifiedBars = List.copyOf(verifiedBars);
+        }
+
+        public List<HistoricalBar> verifiedBars() {
+            return verifiedBars;
+        }
+    }
+
     /** 当前公开成交价只用于下一可交易时点；它不是已收盘策略输入 bar。 */
     record Quote(Instant observedAt, BigDecimal price) { }
 

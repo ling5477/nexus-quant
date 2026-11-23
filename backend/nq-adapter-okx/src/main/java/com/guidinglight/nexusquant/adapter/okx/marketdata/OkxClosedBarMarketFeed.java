@@ -150,28 +150,45 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         // 接收时刻在完整响应读取与解析之后取得，不把请求前的venue时间当作已经收到行情。
         Instant receivedAt = receivedAt(serverTime);
         List<HistoricalBar> bars = new ArrayList<>();
+        IllegalStateException invalid = null;
         for (JsonNode row : candles.path("data")) {
-            if (!row.isArray() || row.size() < 9) {
-                throw new IllegalStateException("PUBLIC_MARKET_BAR_INVALID");
+            try {
+                HistoricalBar bar = parseBar(row, serverTime, receivedAt);
+                if ("1".equals(row.get(8).asText()) && !bar.openTime().isBefore(firstOpen)
+                        && bar.openTime().isBefore(pageEnd)) {
+                    bars.add(bar);
+                }
+            } catch (IllegalStateException failure) {
+                if (invalid == null) invalid = failure;
             }
-            Instant open = Instant.ofEpochMilli(row.get(0).asLong());
-            if (!"1".equals(row.get(8).asText()) || open.isBefore(firstOpen)
-                    || !open.isBefore(pageEnd)
-                    || open.toEpochMilli() % Duration.ofHours(1).toMillis() != 0) {
-                continue;
-            }
-            bars.add(new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_HOUR,
-                    open, open.plus(Duration.ofHours(1)).minusMillis(1),
-                    decimal(row, 1), decimal(row, 2), decimal(row, 3), decimal(row, 4),
-                    decimal(row, 5), row.get(7).isNull() ? null : decimal(row, 7),
-                    null, "OK", mapper.createObjectNode()
-                            .put("collectionMethod", "RESPONSE_COMPLETED_UTC_V1")
-                            .put("receivedAt", receivedAt.toString()).put("serverTime", serverTime.toString())
-                            .set("candle", row).toString(), serverTime));
         }
         bars.sort(Comparator.comparing(HistoricalBar::openTime));
+        if (invalid != null) throw new IncompleteObservation(bars, invalid);
         return new Observation(serverTime, receivedAt, List.copyOf(bars),
                 rule, quote);
+    }
+
+    private HistoricalBar parseBar(JsonNode row, Instant serverTime, Instant receivedAt) {
+        if (!row.isArray() || row.size() < 9 || !Set.of("0", "1").contains(row.get(8).asText())) {
+            throw new IllegalStateException("PUBLIC_MARKET_BAR_INVALID");
+        }
+        Instant open;
+        try {
+            open = Instant.ofEpochMilli(Long.parseLong(row.get(0).asText()));
+        } catch (NumberFormatException failure) {
+            throw new IllegalStateException("PUBLIC_MARKET_BAR_INVALID", failure);
+        }
+        if (open.toEpochMilli() % Duration.ofHours(1).toMillis() != 0) {
+            throw new IllegalStateException("PUBLIC_MARKET_BAR_INVALID");
+        }
+        return new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_HOUR,
+                open, open.plus(Duration.ofHours(1)).minusMillis(1),
+                decimal(row, 1), decimal(row, 2), decimal(row, 3), decimal(row, 4),
+                decimal(row, 5), row.get(7).isNull() ? null : decimal(row, 7),
+                null, "OK", mapper.createObjectNode()
+                        .put("collectionMethod", "RESPONSE_COMPLETED_UTC_V1")
+                        .put("receivedAt", receivedAt.toString()).put("serverTime", serverTime.toString())
+                        .set("candle", row).toString(), serverTime);
     }
 
     private Rule currentRule(Instant serverTime) {

@@ -47,7 +47,13 @@ public final class BoundedContinuousSimRestartProbeMain {
                         throw new AssertionError("terminal poll changed persisted history " + committed);
                 }
                 var terminal = BoundedContinuousSimPostgresIntegrationTest.status(http, token, run);
-                if (!args[3].equals(terminal.path("lifecycleStatus").asText()) || !terminal.hasNonNull("terminatedAt"))
+                boolean accountingBlocked = "SIM_TRADE_LEDGER_MISMATCH".equals(args[3]);
+                boolean recovered = accountingBlocked
+                        ? "BLOCKED".equals(terminal.path("lifecycleStatus").asText())
+                                && args[3].equals(terminal.path("reason").asText())
+                                && !terminal.hasNonNull("terminatedAt")
+                        : args[3].equals(terminal.path("lifecycleStatus").asText()) && terminal.hasNonNull("terminatedAt");
+                if (!recovered)
                     throw new AssertionError("unexpected recovered lifecycle " + terminal);
                 System.out.println("BOUNDED_RESTART_" + args[3] + " pid=" + ProcessHandle.current().pid());
                 return;
