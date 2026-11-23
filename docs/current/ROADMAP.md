@@ -1,4 +1,12 @@
-## 当前v1.0.5发行候选资格（2026-11-17）
+## v1.0.5 已发行与下一规划入口
+
+NexusQuant **v1.0.5 / RELEASED** 于 2026-11-23 08:51:51（北京时间）发布，Release ID `454867217`，Flyway V52。正式 Snapshot 为 `d64e8810dde605ca56c0c770e8b41eb4b7100667`，六项资产摘要及 Windows Self-Hosted、独立 Python Companion、普通升级限定范围见 [STATUS](STATUS.md)。 [GitHub Release](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.5)
+
+`NQ-V106-PLAN / NOT_STARTED` 是收口后的规划入口。七日运营验证通过，策略盈利能力仍为 `NOT_ESTABLISHED`，人工复盘结论为 `RETURN_TO_RESEARCH / CLOSED`。运营与安全状态以 [STATUS](STATUS.md) 记录为准。
+
+## 历史记录：v1.0.5 发行候选资格（2026-11-17）
+
+下节保留发行前的原记录，当前发行状态见上方。
 
 唯一authority见[STATUS](STATUS.md)。NQ_V105_RELEASE_READINESS_QUALIFIED，Source eb323eddbf5a81416e623b6ece083026b7dd5f67 / PR108 / Source CI44046457785与merge CI44050203113各9/9。Windows11 amd64、Docker Desktop Linux Containers、PG16/V52安装/非空1.0.4升级/备份恢复/核心页面/主动回滚/一次真实失败自动恢复及独立Python离线资格完成，限定QUALIFIED_FOR_VERIFIED_SCOPE。三个原driver FAILED、原故障update FAILED、raw DIFFERENT和旧CI根因UNRESOLVED保留。候选包及具体证据由STATUS登记；这四份current文档不进入固定发行投影。
 

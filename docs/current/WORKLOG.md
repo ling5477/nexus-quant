@@ -20199,3 +20199,10 @@ Historical CI Root Cause=UNRESOLVED：PR101首次41317985113 attempt1/job1248819
 GateZ冻结和最近功能接受pair保持：NQ-V104-03 / 46159c1e687d4ec1089b8d10cac61f532897f512 / CI41317985113。下一仅登记NQ-V105-PLANNING / NOT_STARTED / NONE / NOT_RUN，next_action=NQ-V105-PLAN；本轮不制定或实施v1.0.5。LIVE=DISABLED、Kill Switch=ENGAGED，Java仍是唯一canonical交易authority，Python无交易权限。
 
 本次五项文档校验、准确文档commit/PR/merge/CI与精确清理结果单列于仓库外E:/Project/NQ_V104_POST_RELEASE_CLOSEOUT.md，不预填未来CI/合并，也不替代正式Source身份。
+
+
+## NQ-V105-POST-RELEASE-CLOSEOUT
+
+在 current 文档登记 v1.0.5 正式发行、Release ID `454867217`、固定 Qualified Source、无父 Snapshot、Annotated Tag 和六项资产摘要。Windows Self-Hosted、独立 Python Companion 及 v1.0.4/V52 → v1.0.5/V52 的限定升级资格见 [STATUS](STATUS.md)。原工作批次 `NQ-V105-RELEASE-READINESS` 与对应准确 CI 继续收录在 STATUS 的发行记录。收口后的入口为 `NQ-V106-PLAN / NOT_STARTED`。 [GitHub Release](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.5)
+
+七日净收益 -356.51 USDT、收益率 -3.557%、最大小时回撤 4.899%，策略盈利能力 `NOT_ESTABLISHED`，复盘 `RETURN_TO_RESEARCH / CLOSED`，窗后 41 笔成交单独保留。运行状态采用原收口证据。精确 PR、CI 和 Git 清理记录见维护者报告 `NQ_V105_POST_RELEASE_CLOSEOUT.md`。

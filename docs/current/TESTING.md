@@ -15392,3 +15392,10 @@ Historical CI Root Cause=UNRESOLVED：PR101首次41317985113 attempt1/job1248819
 GateZ冻结和最近功能接受pair保持：NQ-V104-03 / 46159c1e687d4ec1089b8d10cac61f532897f512 / CI41317985113。下一仅登记NQ-V105-PLANNING / NOT_STARTED / NONE / NOT_RUN，next_action=NQ-V105-PLAN；本轮不制定或实施v1.0.5。LIVE=DISABLED、Kill Switch=ENGAGED，Java仍是唯一canonical交易authority，Python无交易权限。
 
 本次五项文档校验、准确文档commit/PR/merge/CI与精确清理结果单列于仓库外E:/Project/NQ_V104_POST_RELEASE_CLOSEOUT.md，不预填未来CI/合并，也不替代正式Source身份。
+
+
+## NQ-V105-POST-RELEASE-CLOSEOUT
+
+发行事实核验覆盖 GitHub Release `454867217` 的正式状态、Annotated Tag、Peeled Target、无父 Snapshot、全部 2238 个远端 blob 及六项资产的 ID、大小和 digest。当前摘要登记见 [STATUS](STATUS.md)。原发布前认证完整下载和发布后匿名完整下载均为 6/6 PASS，本轮按同一资产身份复用。候选安装、升级、恢复资格及七日自然观察沿用原证据。
+
+收口的交付范围为四份 current 文档。Authority、链接、Git diff 和两套发行投影排除检查覆盖该范围。准确文档候选与合并后的 CI 及清理结果登记在维护者报告 `NQ_V105_POST_RELEASE_CLOSEOUT.md`。历史 `FAILED`、`raw DIFFERENT`、条件 `SKIP` 和历史 CI 根因 `UNRESOLVED` 保留原结论。

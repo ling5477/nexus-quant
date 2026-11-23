@@ -13,11 +13,11 @@ accepted_batch_status=ACCEPTED|CI_GREEN
 accepted_batch_implementation_commit=f8505f02186a980958fb785bb24ae77c678f5172
 accepted_batch_acceptance_head=f8505f02186a980958fb785bb24ae77c678f5172
 accepted_batch_ci_run=41586151641
-work_batch=NQ-V105-RELEASE-READINESS
+work_batch=NQ-V105-POST-RELEASE-CLOSEOUT
 work_batch_status=ACCEPTED|CI_GREEN
-work_batch_commit=eb323eddbf5a81416e623b6ece083026b7dd5f67
-work_batch_ci_run=44046457785
-next_action=NQ-V105-RELEASE-PUBLICATION
+work_batch_commit=9ca936725d035758badfe0bcdf46271986096409
+work_batch_ci_run=45096425164
+next_action=NQ-V106-PLAN
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,7 +31,44 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
-## v1.0.5功能收口与候选资格（2026-11-17）
+## v1.0.5 正式发行（2026-11-23）
+
+**v1.0.5 / RELEASED**，Release ID `454867217`，`draft=false`、`prerelease=false`。发布时间为 2026-11-23 08:51:51（北京时间，UTC `2026-11-23T00:51:51Z`）。发布 Schema 为 Flyway V52。 [GitHub Release](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.5)
+
+| 身份 | 固定值 |
+| --- | --- |
+| Qualified Source / Tree | `eb323eddbf5a81416e623b6ece083026b7dd5f67` / `4f224e7ee9de35b128b27eed34a0d1ca43fd6830` |
+| Source PR / CI | #108 / `44046457785` attempt 1，9/9 SUCCESS |
+| Source Merge / CI | `dc9e6bcae1c3e4f25d2285ce65bca0fc7c8a3631` / `44050203113` attempt 1，9/9 SUCCESS |
+| Readiness 文档收口 PR / Merge / CI | #109 / `a6f4fe1f602ae5ba67ae2fe6d2cf00430177dd37` / `44066919771` attempt 2，9/9 SUCCESS。PR head `68caf21768a3c27e22d673a964c202d37a5e7f50` 的 CI 为 `44061461203` attempt 2，9/9 SUCCESS |
+| Release Branch / Snapshot Commit | `release/1.0.5` → `d64e8810dde605ca56c0c770e8b41eb4b7100667`，无父提交 |
+| Snapshot Tree | `a4cd3ab5510d5c3d005d4cce1b34ff9777f68904`，2237 个白名单文件与 `.release-source.json`，合计 2238 个 blob |
+| Annotated Tag Object / Peeled Target | `42e0b4f54a0e960cff0511b604f9db6ab058ae47` / `d64e8810dde605ca56c0c770e8b41eb4b7100667` |
+| Source Manifest SHA256 | `f2bc531550121a619a7358d7ab18da9d3c8a695c0cea1fe59be896a1bd2e70e7` |
+| Release Source Hash | `73681b3d02a8affc4f182a089427f11ffea2e80bb6267f63630da65e816dd038` |
+| Self-Hosted Package Manifest SHA256 | `2c2d17e4b41767b00e16c267e072a3b219925858ec5a578952c5d9f1aa682572` |
+| Companion Manifest SHA256 | `9697b1b6487d3b57f3f4e02797c6330e27a587fd2f56f0de2a34fb8fbf2340f8` |
+
+| 正式资产 | GitHub ID | 字节 | GitHub Digest |
+| --- | ---: | ---: | --- |
+| NexusQuant-1.0.5-windows-amd64.zip | 780992369 | 321001153 | `sha256:ebc70939723432dd8ebf08c8b7f4a16a94f1ce374472c126dde816df6969b8a4` |
+| NexusQuant-1.0.5-windows-amd64.zip.sha256 | 780995552 | 101 | `sha256:331441b4e0a11fe3da9400572cff12abe1c2ce8b65572d4693bd251964a13f04` |
+| NexusQuant-Python-Research-Companion-1.0.5-windows-amd64-py311.zip | 780995705 | 13108157 | `sha256:78c0ae843905f22090bc1b3a0c13c508b07ce0ec3ad9eb80ae1bed7b4c28f7a9` |
+| NexusQuant-Python-Research-Companion-1.0.5-windows-amd64-py311.zip.sha256 | 780995971 | 133 | `sha256:e9c9b856eacc898d7893194afd8bd9842142d3cd336c487708777cfcfeaed5c2` |
+| NexusQuant-1.0.5-provenance.json | 780996158 | 5956 | `sha256:1ca340db05fc0f565768bd1c59b770f12a6f048ac61637af17bb2d79e3c99339` |
+| NexusQuant-1.0.5-provenance.json.sha256 | 780996365 | 99 | `sha256:f8c8e68f29335d1aae95ef0becdd1433c26f2b13964ca511348661f6e952d1d5` |
+
+发布前认证完整下载与发布后匿名完整下载均为 6/6 PASS。本轮通过只读 GitHub API 重新核对六资产的 ID、名称、大小和 digest，以及 Annotated Tag、Peeled Target 和远端 Snapshot 的全部 2238 个 blob。来源映射类型为 `UNSIGNED_RELEASE_SOURCE_MAPPING`。 [正式资产与来源映射](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.5)
+
+Self-Hosted 资格覆盖 Windows 11 amd64、Docker Desktop Linux Containers、PostgreSQL 16.15、Flyway V52。普通升级资格仅覆盖 **v1.0.4 / V52 → v1.0.5 / V52**。独立离线 Python Research Companion 资格覆盖 Windows amd64、CPython 3.11.9 和 NumPy 2.3.5。Linux 正式发行资格为 `NOT_QUALIFIED`，阿里云七日运行仅提供 `SCOPED_OPERATIONAL_EVIDENCE`。
+
+原工作批次 `NQ-V105-RELEASE-READINESS / ACCEPTED|CI_GREEN` 的记录为 Qualified Source `eb323eddbf5a81416e623b6ece083026b7dd5f67` 与 CI `44046457785`。原功能接受批次及 GateZ 冻结身份见上方机器区块。本轮 Authority 的 work pair 指向发行事实文档提交 `9ca936725d035758badfe0bcdf46271986096409` 与 PR #110 的 CI `45096425164` attempt 1，9/9 SUCCESS。最终 PR head 与合并后 CI 另由维护者交付报告 `NQ_V105_POST_RELEASE_CLOSEOUT.md` 登记。
+
+收口后的规划入口为 **`NQ-V106-PLAN / NOT_STARTED`**。运行状态沿用已封存的运营收口：`LIVE=DISABLED`、`KILL_SWITCH=ENGAGED`、`Continuous SIM=STOPPED`、`CONTINUOUS_SIM_POLL=DISABLED`、`PAPER_MATCHING=DISABLED`。
+
+## 历史记录：v1.0.5功能收口与候选资格（2026-11-17）
+
+下节保留正式发行前的候选资格记录。时间相关状态以本页上方的正式发行记录及机器区块为准。
 
 当前正式Release仍v1.0.4；GateZ固定身份及以下全部已发布和历史接受记录保留。V105-01/02功能已接受，最新功能accepted pair绑定V105-02真实候选/CI；本次固定源码已通过一次有界独立检查、准确Source/merge CI与下述包级资格；运营证据、源码CI和正式发行身份分别记录。尚未创建v1.0.5 Tag或GitHub Release。
 
