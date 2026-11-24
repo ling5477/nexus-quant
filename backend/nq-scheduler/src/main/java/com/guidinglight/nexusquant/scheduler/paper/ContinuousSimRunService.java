@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /** 单线程轮询受限 OKX 公开小时 bar；数据库会话锁保护同一 run 的跨实例推进。 */
@@ -149,8 +150,14 @@ public class ContinuousSimRunService {
 
     @Transactional(timeout = 10)
     public Status end(String runId) {
+        return end(runId, null);
+    }
+
+    @Transactional(timeout = 10)
+    public Status end(String runId, UUID operationId) {
         paperRuns.getById(runId);
-        if (!progress.requestEnd(runId, clock.instant())) throw new IllegalStateException("CONTINUOUS_SIM_NOT_BOUNDED");
+        if (!progress.requestEnd(runId, clock.instant(), operationId))
+            throw new IllegalStateException("CONTINUOUS_SIM_NOT_BOUNDED");
         return status(runId);
     }
 
@@ -232,13 +239,15 @@ public class ContinuousSimRunService {
                 if (bounded) {
                     String reason = "INCOMPLETE_HTTP_RESPONSE".equals(failure.getMessage())
                             ? failure.getMessage() : "OVERLAP_CHECK_INCOMPLETE";
-                    progress.finishOverlapCheck(runId, check, failure.verifiedBars(), false, reason, clock);
+                    progress.captureOverlapResponse(runId, check, failure.verifiedBars(), false, reason,
+                            failure.kind(), failure.receivedPrefix(), null, clock);
+                    progress.finishOverlapCheck(runId, check);
                     if ("INCOMPLETE_HTTP_RESPONSE".equals(reason) || check.retry()) return status(runId);
                 }
                 throw failure;
             } catch (IllegalStateException failure) {
                 if (check != null && check.retry()) {
-                    progress.finishOverlapCheck(runId, check, List.of(), false, "OVERLAP_CHECK_INCOMPLETE", clock);
+                    // 请求已登记但没有可信响应，保留未完成的原尝试供后续判定。
                     return status(runId);
                 }
                 throw failure;
@@ -248,7 +257,9 @@ public class ContinuousSimRunService {
                         .filter(bar -> isClosedBar(bar, observation.serverTime())).toList();
                 boolean complete = verifiedBars.size() == observation.bars().size()
                         && coversRequestedPage(firstOpen, latestOpen, observation.serverTime(), verifiedBars);
-                progress.finishOverlapCheck(runId, check, verifiedBars, complete, "OVERLAP_CHECK_INCOMPLETE", clock);
+                progress.captureOverlapResponse(runId, check, verifiedBars, complete, "OVERLAP_CHECK_INCOMPLETE",
+                        ClosedBarMarketFeed.ResponseKind.COMPLETE_RESPONSE, new byte[0], observation.responseBodySha256(), clock);
+                progress.finishOverlapCheck(runId, check);
                 if (check.retry() && progress.recoverableOverlapCheck(runId) != null) return status(runId);
                 if (progress.closeAdmissionIfDue(runId)) return settle(runId);
             }

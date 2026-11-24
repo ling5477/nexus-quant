@@ -1,11 +1,13 @@
 package com.guidinglight.nexusquant.adapter.okx.marketdata;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
 import com.sun.net.httpserver.HttpServer;
 
 import java.net.InetSocketAddress;
@@ -62,6 +64,38 @@ class OkxClosedBarMarketFeedTest {
             assertEquals(1, calls.get());
         } finally {
             releaseBody.countDown();
+            server.stop(0);
+        }
+    }
+
+    @Test @Timeout(15)
+    void ordinaryGetDeadlinePreservesReceivedPrefixWithoutRetry() throws Exception {
+        var calls = new AtomicInteger();
+        var release = new CountDownLatch(1);
+        byte[] prefix = "{\"code\":\"0\",\"data\":[".getBytes(StandardCharsets.UTF_8);
+        var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/api/v5/public/time", exchange -> {
+            calls.incrementAndGet();
+            try (exchange) {
+                exchange.sendResponseHeaders(200, 0);
+                exchange.getResponseBody().write(prefix);
+                exchange.getResponseBody().flush();
+                release.await(12, TimeUnit.SECONDS);
+            } catch (InterruptedException failure) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        server.start();
+        try {
+            var feed = new OkxClosedBarMarketFeed("http://127.0.0.1:" + server.getAddress().getPort());
+            var failure = assertThrows(ClosedBarMarketFeed.IncompleteObservation.class,
+                    () -> feed.observe(Instant.now().truncatedTo(ChronoUnit.HOURS).minus(Duration.ofHours(1)), 24));
+            assertEquals(ClosedBarMarketFeed.ResponseKind.TRANSPORT_INTERRUPTED, failure.kind());
+            assertArrayEquals(prefix, failure.receivedPrefix());
+            assertTrue(failure.verifiedBars().isEmpty());
+            assertEquals(1, calls.get());
+        } finally {
+            release.countDown();
             server.stop(0);
         }
     }

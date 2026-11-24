@@ -16,16 +16,41 @@ public interface ClosedBarMarketFeed {
     }
 
     record Observation(Instant serverTime, Instant observedAt, List<HistoricalBar> bars,
-                       Rule rule, Quote quote) { }
+                       Rule rule, Quote quote, String responseBodySha256) {
+        public Observation(Instant serverTime, Instant observedAt, List<HistoricalBar> bars,
+                           Rule rule, Quote quote) {
+            this(serverTime, observedAt, bars, rule, quote, null);
+        }
+    }
+
+    int MAX_RESPONSE_BYTES = 128_000;
+
+    enum ResponseKind { COMPLETE_RESPONSE, INCOMPLETE_RESPONSE, TRANSPORT_INTERRUPTED, PARSE_FAILED }
 
     /** 响应未能完整解析。已验证的闭合行仅用于比对修订，不能作为可推进策略的行情页。 */
     final class IncompleteObservation extends IllegalStateException {
         private final List<HistoricalBar> verifiedBars;
+        private final ResponseKind kind;
+        private final byte[] receivedPrefix;
 
         public IncompleteObservation(List<HistoricalBar> verifiedBars, IllegalStateException cause) {
-            super(cause.getMessage(), cause);
-            this.verifiedBars = List.copyOf(verifiedBars);
+            this(verifiedBars, ResponseKind.INCOMPLETE_RESPONSE, new byte[0], cause);
         }
+
+        public IncompleteObservation(List<HistoricalBar> verifiedBars, ResponseKind kind,
+                                     byte[] receivedPrefix, IllegalStateException cause) {
+            super(cause.getMessage(), cause);
+            if (kind == ResponseKind.COMPLETE_RESPONSE || receivedPrefix.length > MAX_RESPONSE_BYTES) {
+                throw new IllegalArgumentException("INVALID_INCOMPLETE_RESPONSE_EVIDENCE");
+            }
+            this.verifiedBars = List.copyOf(verifiedBars);
+            this.kind = kind;
+            this.receivedPrefix = receivedPrefix.clone();
+        }
+
+        public ResponseKind kind() { return kind; }
+
+        public byte[] receivedPrefix() { return receivedPrefix.clone(); }
 
         public List<HistoricalBar> verifiedBars() {
             return verifiedBars;

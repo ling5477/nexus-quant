@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -79,7 +80,11 @@ public class ContinuousSimRepository {
                        seed_last_open_time,last_processed_open_time,last_processed_close_time,
                        last_processed_sha256,last_observed_open_time,gap_start_open_time,started_at,last_poll_at,
                        last_successful_poll_at,updated_at,block_reason,consecutive_poll_failures,
-                       end_at,manual_end_at,revision_detected_at,overlap_check_pending,lifecycle_status,final_valuation_status,
+                       end_at,manual_end_at,revision_detected_at,
+                       (overlap_check_pending OR EXISTS (
+                           SELECT 1 FROM continuous_sim_overlap_checks c
+                           WHERE c.paper_run_id=continuous_sim_runs.paper_run_id AND c.finished_at IS NULL
+                       )) AS overlap_check_pending,lifecycle_status,final_valuation_status,
                        last_valuation_boundary,pending_orders,clock_timestamp()>=end_at AS due,
                        (SELECT p.publish_id FROM paper_trading_runs p WHERE p.paper_run_id=continuous_sim_runs.paper_run_id) AS publish_id
                 FROM (SELECT tr.* FROM continuous_sim_runs tr WHERE nq_entity_tenant('paper',tr.paper_run_id)=nq_current_tenant_id()) continuous_sim_runs WHERE paper_run_id=?
@@ -103,9 +108,9 @@ public class ContinuousSimRepository {
                 .stream().findFirst().orElseThrow(() -> new IllegalArgumentException("CONTINUOUS_SIM_RUN_NOT_FOUND"));
     }
 
-    public boolean requestEnd(String runId, Instant now) {
-        return Boolean.TRUE.equals(jdbc.queryForObject("SELECT nq_request_continuous_end(?,?)",
-                Boolean.class, runId, Timestamp.from(now)));
+    public boolean requestEnd(String runId, Instant now, UUID operationId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("SELECT nq_request_continuous_end(?,?,?)",
+                Boolean.class, runId, Timestamp.from(now), operationId));
     }
 
     /** 先取得与订单准入互斥的行锁，再按此刻的数据库时钟裁决，不能沿用请求或事务开始时间。 */
@@ -121,7 +126,11 @@ public class ContinuousSimRepository {
                                           THEN 'OVERLAP_CHECK_INCOMPLETE'
                                           ELSE 'DATA_REVISION_DETECTED' END,
                         revision_detected_at=coalesce(revision_detected_at,pending_revision_detected_at),
-                        overlap_check_pending=pending_revision_detected_at IS NULL,
+                        overlap_check_pending=pending_revision_detected_at IS NULL OR EXISTS (
+                            SELECT 1 FROM continuous_sim_overlap_checks c
+                            WHERE c.paper_run_id=continuous_sim_runs.paper_run_id
+                              AND c.finished_at IS NULL
+                        ),
                         pending_revision_detected_at=NULL,updated_at=clock_timestamp()
                     WHERE paper_run_id=?
                     """, runId);
@@ -167,69 +176,145 @@ public class ContinuousSimRepository {
                 SELECT check_id,first_open_time,last_open_time,retry
                 FROM (SELECT * FROM continuous_sim_overlap_checks WHERE paper_run_id=?
                       ORDER BY check_id DESC LIMIT 1) latest
-                WHERE (failure_reason='INCOMPLETE_HTTP_RESPONSE' AND result='INCOMPLETE'
-                       OR retry AND (result IS NULL OR result='INCOMPLETE'))
+                WHERE result='INCOMPLETE' AND response_retryable
+                   AND NOT EXISTS (SELECT 1 FROM continuous_sim_overlap_checks c
+                       WHERE c.paper_run_id=latest.paper_run_id AND c.finished_at IS NULL)
                    AND first_open_time>=date_trunc('hour',clock_timestamp())-interval '168 hours'
                 """, (rs, row) -> new OverlapCheck(rs.getLong(1), instant(rs, "first_open_time"),
                 instant(rs, "last_open_time"), rs.getBoolean("retry")), runId).stream().findFirst().orElse(null);
     }
 
-    record OverlapCheck(long id, Instant firstOpen, Instant latestOpen, boolean retry) {}
+    public record OverlapCheck(long id, Instant firstOpen, Instant latestOpen, boolean retry) {}
 
-    /** 原响应的比较与证据写入共享事务，原 bar 永不改写。随后才能推进截止收敛。 */
+    /** 完成事务之前保存实际响应及摘要比对，进程中断后仍保留原尝试身份。 */
     @Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 10)
-    public void finishOverlapCheck(String runId, OverlapCheck check,
-                                   List<HistoricalBar> bars, boolean windowVerified, String failureReason, Clock clock) {
+    public void captureOverlapResponse(String runId, OverlapCheck check, List<HistoricalBar> bars,
+            boolean windowVerified, String failureReason, ClosedBarMarketFeed.ResponseKind kind,
+            byte[] prefix, String responseBodySha256, Clock clock) {
         Cursor latest = lockCursor(runId);
-        if (!latest.overlapCheckPending() || "STOPPED".equals(latest.status()))
+        var observedDigests = bars.stream().map(ContinuousSimRepository::contentSha).toList();
+        String fingerprint = responseFingerprint(kind, prefix, observedDigests, windowVerified, failureReason,
+                responseBodySha256);
+        Capture previous = capturedResponse(runId, check);
+        if (previous.fingerprint() != null) {
+            if (!previous.fingerprint().equals(fingerprint))
+                throw new IllegalStateException("CONTINUOUS_SIM_OVERLAP_CHECK_CONFLICT");
+            return;
+        }
+        if (!latest.overlapCheckPending() || latest.revisionDetectedAt() != null || "STOPPED".equals(latest.status()))
             throw new IllegalStateException("CONTINUOUS_SIM_OVERLAP_CHECK_CONFLICT");
-        if (latest.revisionDetectedAt() != null) return;
-        Instant detectedAt = null;
         boolean storedOverlapComplete = true;
-        for (HistoricalBar bar : bars) {
-            Instant open = bar.openTime();
-            if (!open.isBefore(check.firstOpen()) && !open.isAfter(check.latestOpen())
-                    && open.isBefore(latest.bounded().endAt())) {
-                var stored = storedDigest(runId, open);
-                if (stored.isEmpty()) {
-                    storedOverlapComplete = false;
-                } else if (!stored.getFirst().equals(contentSha(bar)) && detectedAt == null) {
-                    detectedAt = clock.instant();
+        boolean comparedOverlap = false;
+        String originalDigest = null;
+        String revisedDigest = null;
+        Instant revisedOpen = null;
+        for (int i = 0; i < bars.size(); i++) {
+            Instant open = bars.get(i).openTime();
+            if (open.isBefore(check.firstOpen()) || open.isAfter(check.latestOpen())
+                    || !open.isBefore(latest.bounded().endAt())) continue;
+            var stored = storedDigest(runId, open);
+            if (stored.isEmpty()) {
+                storedOverlapComplete = false;
+            } else {
+                comparedOverlap = true;
+                if (revisedOpen == null && !stored.getFirst().equals(observedDigests.get(i))) {
+                    originalDigest = stored.getFirst();
+                    revisedDigest = observedDigests.get(i);
+                    revisedOpen = open;
                 }
             }
         }
         boolean complete = windowVerified && storedOverlapComplete;
+        Instant detectedAt = revisedOpen == null ? null : clock.instant();
         String result = detectedAt != null ? "REVISED" : complete ? "VERIFIED" : "INCOMPLETE";
         String reason = complete ? (detectedAt == null ? null : "DATA_REVISION_DETECTED") : failureReason;
+        // 传输没有完成时无法证明剩余正文，任何后续页都不能替代这个响应。
+        boolean retryable = detectedAt == null && !complete && (kind == ClosedBarMarketFeed.ResponseKind.PARSE_FAILED
+                && comparedOverlap && storedOverlapComplete
+                || kind == ClosedBarMarketFeed.ResponseKind.COMPLETE_RESPONSE && check.retry());
         if (jdbc.update("""
-                UPDATE continuous_sim_overlap_checks SET result=?,failure_reason=?,finished_at=clock_timestamp()
+                UPDATE continuous_sim_overlap_checks SET response_kind=?,response_fingerprint=?,response_prefix=?,
+                    response_body_sha256=?,
+                    response_captured_at=clock_timestamp(),captured_result=?,captured_failure_reason=?,
+                    response_retryable=?,captured_revision_at=?,revised_open_time=?,original_bar_sha256=?,revised_bar_sha256=?
+                WHERE paper_run_id=? AND check_id=? AND response_captured_at IS NULL AND finished_at IS NULL
+                    AND check_id=(SELECT max(check_id) FROM continuous_sim_overlap_checks WHERE paper_run_id=?)
+                """, kind.name(), fingerprint, prefix, responseBodySha256, result, reason, retryable, timestamp(detectedAt),
+                timestamp(revisedOpen), originalDigest, revisedDigest, runId, check.id(), runId) != 1)
+            throw new IllegalStateException("CONTINUOUS_SIM_OVERLAP_CHECK_CONFLICT");
+        if (detectedAt != null && jdbc.update("""
+                UPDATE continuous_sim_runs SET pending_revision_detected_at=?
+                WHERE paper_run_id=? AND pending_revision_detected_at IS NULL
+                """, timestamp(detectedAt), runId) != 1)
+            throw new IllegalStateException("CONTINUOUS_SIM_OVERLAP_CHECK_CONFLICT");
+    }
+
+    private static String responseFingerprint(ClosedBarMarketFeed.ResponseKind kind, byte[] prefix,
+            List<String> digests, boolean complete, String reason, String responseBodySha256) {
+        try {
+            var digest = MessageDigest.getInstance("SHA-256");
+            digest.update((kind.name() + "/" + complete + "/" + reason + "/" + responseBodySha256
+                    + "/" + String.join(",", digests) + "\n").getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest.digest(prefix));
+        } catch (NoSuchAlgorithmException unavailable) {
+            throw new IllegalStateException(unavailable);
+        }
+    }
+
+    private Capture capturedResponse(String runId, OverlapCheck check) {
+        return jdbc.queryForObject("""
+                SELECT response_fingerprint,captured_result,captured_failure_reason,captured_revision_at,finished_at
+                FROM continuous_sim_overlap_checks WHERE paper_run_id=? AND check_id=?
+                    AND first_open_time=? AND last_open_time=? AND retry=?
+                """, (rs, row) -> new Capture(rs.getString(1), rs.getString(2), rs.getString(3),
+                instant(rs, "captured_revision_at"), rs.getTimestamp("finished_at") != null),
+                runId, check.id(), Timestamp.from(check.firstOpen()), Timestamp.from(check.latestOpen()), check.retry());
+    }
+
+    private record Capture(String fingerprint, String result, String reason, Instant detectedAt, boolean finished) {}
+
+    /** 只依据已经提交的响应证据完成同一尝试。完成写入失败时，下一次轮询仍受原证据约束。 */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 10)
+    public void finishOverlapCheck(String runId, OverlapCheck check) {
+        Cursor latest = lockCursor(runId);
+        Capture capture = capturedResponse(runId, check);
+        if (capture.finished()) return;
+        if (capture.fingerprint() == null || !latest.overlapCheckPending() || "STOPPED".equals(latest.status()))
+            throw new IllegalStateException("CONTINUOUS_SIM_OVERLAP_CHECK_CONFLICT");
+        if (jdbc.update("""
+                UPDATE continuous_sim_overlap_checks SET result=captured_result,
+                    failure_reason=captured_failure_reason,finished_at=clock_timestamp()
                 WHERE paper_run_id=? AND check_id=? AND finished_at IS NULL
                     AND check_id=(SELECT max(check_id) FROM continuous_sim_overlap_checks WHERE paper_run_id=?)
-                """, result, reason, runId, check.id(), runId) != 1)
+                """, runId, check.id(), runId) != 1)
             throw new IllegalStateException("CONTINUOUS_SIM_OVERLAP_CHECK_CONFLICT");
-        if (detectedAt != null) {
-            Timestamp revision = Timestamp.from(detectedAt);
-            // 部分响应已证实的修订直接保留，未核验的其余行继续由待核验标记阻断。
+        if (capture.detectedAt() != null) {
+            boolean complete = "DATA_REVISION_DETECTED".equals(capture.reason());
             jdbc.update("""
                     UPDATE continuous_sim_runs SET pending_revision_detected_at=?,revision_detected_at=?,
                         status='STALLED',lifecycle_status='BLOCKED',block_reason='DATA_REVISION_DETECTED',
                         final_valuation_status='UNAVAILABLE',last_valuation_boundary=NULL,updated_at=clock_timestamp()
-                    WHERE paper_run_id=? AND pending_revision_detected_at IS NULL
-                    """, complete ? revision : null, complete ? null : revision, runId);
-        } else if (complete) {
+                    WHERE paper_run_id=? AND revision_detected_at IS NULL
+                    """, complete ? timestamp(capture.detectedAt()) : null,
+                    complete ? null : timestamp(capture.detectedAt()), runId);
+        } else if ("VERIFIED".equals(capture.result())) {
             jdbc.update("""
                     UPDATE continuous_sim_runs SET overlap_check_pending=false
-                    WHERE paper_run_id=? AND pending_revision_detected_at IS NULL
+                    WHERE paper_run_id=? AND pending_revision_detected_at IS NULL AND revision_detected_at IS NULL
                     """, runId);
-        } else if ("INCOMPLETE_HTTP_RESPONSE".equals(reason) || check.retry()) {
+        } else if ("INCOMPLETE_HTTP_RESPONSE".equals(capture.reason()) || check.retry()) {
             jdbc.update("""
                     UPDATE continuous_sim_runs SET status='STALLED',block_reason=?,final_valuation_status='UNAVAILABLE',
                         last_valuation_boundary=NULL, updated_at=clock_timestamp(),
                         lifecycle_status=CASE WHEN end_at<=clock_timestamp() OR lifecycle_status<>'RUNNING'
                             THEN 'BLOCKED' ELSE lifecycle_status END
                     WHERE paper_run_id=?
-                    """, reason, runId);
+                    """, capture.reason(), runId);
         }
+    }
+
+    private static Timestamp timestamp(Instant value) {
+        return value == null ? null : Timestamp.from(value);
     }
 
     Cursor lockCursor(String runId) {
@@ -303,8 +388,7 @@ public class ContinuousSimRepository {
                 accountingFailure = decisions.projectionFailure(runId, account, ledger.currentBalance(account, "USDT", "SIM"));
             }
             if (accountingFailure == null && Boolean.TRUE.equals(jdbc.queryForObject("""
-                    SELECT EXISTS (SELECT 1 FROM sim_account_projection_operations
-                        WHERE paper_run_id=? AND recovery_operation_id IS NULL)
+                    SELECT nq_sim_projection_recheck_required(?)
                     """, Boolean.class, runId))) {
                 accountingFailure = "SIM_PROJECTION_FINALIZATION_REQUIRED";
             }
@@ -353,10 +437,16 @@ public class ContinuousSimRepository {
         Instant boundary = "VERIFIED".equals(valuation) ? latest.bounded().endAt() : null;
         jdbc.update("""
             UPDATE continuous_sim_runs SET lifecycle_status=?,final_valuation_status=?,last_valuation_boundary=?,
-                pending_orders=?,block_reason=?,status=?,updated_at=?,last_poll_at=?
+                pending_orders=?,block_reason=?,status=?,updated_at=?,last_poll_at=?,
+                terminal_intent_id=CASE WHEN ? AND manual_end_at IS NULL AND terminal_intent_id IS NULL
+                    THEN gen_random_uuid() ELSE terminal_intent_id END,
+                terminal_intent_source=CASE WHEN ? AND manual_end_at IS NULL AND terminal_intent_id IS NULL
+                    THEN CASE WHEN ?::timestamptz>=end_at THEN 'AUTOMATIC_DEADLINE' ELSE 'AUTOMATIC_BLOCK' END
+                    ELSE terminal_intent_source END
             WHERE paper_run_id=? AND end_at IS NOT NULL
             """, lifecycle, valuation, boundary == null ? null : Timestamp.from(boundary), pending, reason,
-                terminal ? "STOPPED" : "STALLED", Timestamp.from(now), Timestamp.from(now), runId);
+                terminal ? "STOPPED" : "STALLED", Timestamp.from(now), Timestamp.from(now),
+                terminal, terminal, Timestamp.from(now), runId);
         if (terminal && jdbc.update("""
             UPDATE paper_trading_runs SET status='STOPPED',stopped_at=?,updated_at=?
             WHERE paper_run_id=? AND status='RUNNING'

@@ -153,20 +153,25 @@ public class SimAccountProjectionRecoveryService {
         if (cursor.manualEndAt() == null || "STOPPED".equals(cursor.status())) {
             throw new IllegalStateException("SIM_PROJECTION_REQUIRES_PENDING_MANUAL_END");
         }
+        var original = jdbc.queryForList("""
+                SELECT e.operation_id FROM continuous_sim_runs c JOIN continuous_sim_operations e
+                    ON e.operation_id=c.terminal_intent_id AND e.terminal_intent_id=c.terminal_intent_id
+                    AND e.paper_run_id=c.paper_run_id
+                WHERE c.paper_run_id=? AND c.terminal_intent_source='MANUAL_END'
+                    AND e.operation_type='END' AND e.owner_user_id=? AND e.actor=?
+                """, UUID.class, owner.run(), owner.user(), owner.actor());
+        if (!original.isEmpty()) return original.getFirst();
+
+        // 迁移前已经提交的恢复回执保留原绑定。对没有绑定的旧意图不按人工时间推断来源。
         var linked = jdbc.queryForList("""
-                SELECT end_operation_id FROM sim_account_projection_operations
-                WHERE tenant_id=? AND owner_user_id=? AND account_id=? AND paper_run_id=? AND recovery_operation_id IS NULL
-                ORDER BY recorded_at,operation_id LIMIT 1
+                SELECT r.end_operation_id FROM sim_account_projection_operations r
+                JOIN continuous_sim_runs c ON c.paper_run_id=r.paper_run_id AND c.terminal_intent_id IS NULL
+                WHERE r.tenant_id=? AND r.owner_user_id=? AND r.account_id=? AND r.paper_run_id=?
+                    AND r.recovery_operation_id IS NULL
+                ORDER BY r.recorded_at,r.operation_id LIMIT 1
                 """, UUID.class, owner.tenantId(), owner.user(), owner.accountId(), owner.run());
-        if (!linked.isEmpty()) return linked.getFirst();
-        var ids = jdbc.queryForList("""
-                SELECT operation_id FROM continuous_sim_operations
-                WHERE paper_run_id=? AND owner_user_id=? AND actor=? AND operation_type='END'
-                    AND (result_json#>>'{bounded,manualEndAt}')::timestamptz=?
-                LIMIT 2
-                """, UUID.class, owner.run(), owner.user(), owner.actor(), Timestamp.from(cursor.manualEndAt()));
-        if (ids.size() != 1) throw new IllegalStateException("SIM_PROJECTION_END_INTENT_UNPROVEN");
-        return ids.getFirst();
+        if (linked.isEmpty()) throw new IllegalStateException("SIM_PROJECTION_END_INTENT_UNPROVEN");
+        return linked.getFirst();
     }
 
     private void lockOperation(UUID operation) {

@@ -12,6 +12,7 @@ import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxVenueRuleFact;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -19,15 +20,23 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,8 +49,8 @@ import org.springframework.stereotype.Component;
 @Profile("public-marketdata-manual")
 @ConditionalOnProperty(prefix = "nq.public-marketdata.outbound", name = "enabled", havingValue = "true")
 public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
-    private static final int MAX_RESPONSE_BYTES = 128_000;
     private static final int MAX_CATCH_UP_BARS = 168;
+    private static final int MAX_DECIMAL_DIGITS = 128;
     private static final URI OKX_ORIGIN = URI.create("https://www.okx.com");
     private static final String TIME_PATH = "/api/v5/public/time";
     private static final String RULE_PATH = "/api/v5/public/instruments?instType=SPOT&instId=BTC-USDT";
@@ -107,7 +116,7 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
             return observe(firstOpen, maximumBars, true);
         } catch (IncompleteHttpResponse failure) {
             // 时间、规则或成交价响应不完整时还没有可用的 K 线证据。
-            throw new IncompleteObservation(List.of(), failure);
+            throw new IncompleteObservation(List.of(), failure.kind, failure.body, failure);
         }
     }
 
@@ -151,11 +160,14 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
                 + pageEnd.toEpochMilli() + "&before=" + (firstOpen.toEpochMilli() - 1)
                 + "&limit=" + maximumBars;
         JsonNode candles;
+        byte[] body;
         try {
-            candles = includeExecution ? get(path) : getForFinalBar(path);
+            var response = includeExecution ? getResponse(path) : new DecodedResponse(getForFinalBar(path), null);
+            candles = response.json();
+            body = response.body();
         } catch (IncompleteHttpResponse failure) {
             throw new IncompleteObservation(readConfirmedPrefix(failure.body, firstOpen, pageEnd,
-                    maximumBars, serverTime), failure);
+                    maximumBars, serverTime), failure.kind, failure.body, failure);
         }
         if (!"0".equals(candles.path("code").asText()) || !candles.path("data").isArray()
                 || candles.path("data").size() > maximumBars) {
@@ -177,9 +189,10 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
             }
         }
         bars.sort(Comparator.comparing(HistoricalBar::openTime));
-        if (invalid != null) throw new IncompleteObservation(bars, invalid);
+        if (invalid != null) throw new IncompleteObservation(bars, ResponseKind.INCOMPLETE_RESPONSE,
+                body == null ? new byte[0] : body, invalid);
         return new Observation(serverTime, receivedAt, List.copyOf(bars),
-                rule, quote);
+                rule, quote, body == null ? null : responseSha256(body));
     }
 
     /** 只采纳已结束的 data 行。截断、无成功码或超界的剩余正文始终保留为不完整。 */
@@ -296,7 +309,10 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
     private BigDecimal decimal(JsonNode row, int index) {
         try {
             BigDecimal value = new BigDecimal(row.get(index).asText());
-            if (value.signum() < 0 || (index != 5 && index != 7 && value.signum() == 0)) {
+            // 限制科学计数法展开后的摘要长度，短正文也可能携带极大的指数。
+            if (value.precision() > MAX_DECIMAL_DIGITS || value.scale() < -MAX_DECIMAL_DIGITS
+                    || value.scale() > MAX_DECIMAL_DIGITS || value.signum() < 0
+                    || (index != 5 && index != 7 && value.signum() == 0)) {
                 throw new IllegalStateException("PUBLIC_MARKET_BAR_INVALID");
             }
             return value;
@@ -315,34 +331,28 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
     }
 
     private JsonNode get(String path) {
+        return getResponse(path).json();
+    }
+
+    private DecodedResponse getResponse(String path) {
         HttpRequest request = HttpRequest.newBuilder(origin.resolve(path))
                 .timeout(Duration.ofSeconds(8)).GET().build();
         for (int attempt = 0; attempt < 3; attempt++) {
             try {
+                long deadline = System.nanoTime() + request.timeout().orElseThrow().toNanos();
                 HttpResponse<InputStream> response = http.send(request, HttpResponse.BodyHandlers.ofInputStream());
                 try (InputStream body = response.body()) {
-                    byte[] bytes;
-                    try {
-                        bytes = body.readNBytes(MAX_RESPONSE_BYTES + 1);
-                    } catch (IOException failure) {
-                        if (response.statusCode() == 200) throw new IncompleteHttpResponse(new byte[0], failure);
-                        throw failure;
-                    }
-                    if (bytes.length > MAX_RESPONSE_BYTES) {
-                        if (response.statusCode() == 200)
-                            throw new IncompleteHttpResponse(new byte[0], null);
-                        throw new IllegalStateException("PUBLIC_MARKET_RESPONSE_TOO_LARGE");
-                    }
+                    byte[] bytes = readResponse(body, response.statusCode(), deadline);
                     if (response.statusCode() == 200) {
                         try {
                             var decoded = mapper.reader().with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS,
                                             DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY)
                                     .readTree(bytes);
                             if (decoded == null || decoded.isMissingNode() || !decoded.isObject())
-                                throw new IncompleteHttpResponse(bytes, null);
-                            return decoded;
+                                throw new IncompleteHttpResponse(ResponseKind.PARSE_FAILED, bytes, null);
+                            return new DecodedResponse(decoded, bytes);
                         } catch (IOException failure) {
-                            throw new IncompleteHttpResponse(bytes, failure);
+                            throw new IncompleteHttpResponse(ResponseKind.PARSE_FAILED, bytes, failure);
                         }
                     }
                     if (response.statusCode() < 500 || attempt == 2) {
@@ -364,11 +374,68 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         throw new IllegalStateException("PUBLIC_MARKET_UNAVAILABLE");
     }
 
+    private record DecodedResponse(JsonNode json, byte[] body) {}
+
+    private static String responseSha256(byte[] body) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(body));
+        } catch (NoSuchAlgorithmException unavailable) {
+            throw new IllegalStateException(unavailable);
+        }
+    }
+
+    private static byte[] readResponse(InputStream body, int status, long deadline)
+            throws IOException, InterruptedException {
+        var received = new ByteArrayOutputStream();
+        // JDK 的请求超时只约束响应头。正文停止流动时也要结束等待并保留已读数据。
+        var task = new FutureTask<>(() -> readBounded(body, status, received));
+        Thread.startVirtualThread(task);
+        try {
+            return task.get(Math.max(1L, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+        } catch (TimeoutException failure) {
+            var timeout = new HttpTimeoutException("public response deadline exceeded");
+            if (status == 200) {
+                throw new IncompleteHttpResponse(ResponseKind.TRANSPORT_INTERRUPTED, received.toByteArray(), timeout);
+            }
+            throw timeout;
+        } catch (ExecutionException failure) {
+            if (failure.getCause() instanceof IOException io) throw io;
+            if (failure.getCause() instanceof RuntimeException runtime) throw runtime;
+            if (failure.getCause() instanceof Error error) throw error;
+            throw new IOException("public response failed", failure.getCause());
+        } finally {
+            task.cancel(true);
+        }
+    }
+
+    private static byte[] readBounded(InputStream body, int status, ByteArrayOutputStream received) throws IOException {
+        byte[] buffer = new byte[8192];
+        try {
+            while (received.size() < MAX_RESPONSE_BYTES) {
+                int count = body.read(buffer, 0, Math.min(buffer.length, MAX_RESPONSE_BYTES - received.size()));
+                if (count < 0) return received.toByteArray();
+                received.write(buffer, 0, count);
+            }
+            if (body.read() < 0) return received.toByteArray();
+        } catch (IOException failure) {
+            if (status == 200) {
+                throw new IncompleteHttpResponse(ResponseKind.TRANSPORT_INTERRUPTED, received.toByteArray(), failure);
+            }
+            throw failure;
+        }
+        if (status == 200) {
+            throw new IncompleteHttpResponse(ResponseKind.INCOMPLETE_RESPONSE, received.toByteArray(), null);
+        }
+        throw new IllegalStateException("PUBLIC_MARKET_RESPONSE_TOO_LARGE");
+    }
+
     private static final class IncompleteHttpResponse extends IllegalStateException {
+        private final ResponseKind kind;
         private final byte[] body;
 
-        private IncompleteHttpResponse(byte[] body, IOException cause) {
+        private IncompleteHttpResponse(ResponseKind kind, byte[] body, IOException cause) {
             super("INCOMPLETE_HTTP_RESPONSE", cause);
+            this.kind = kind;
             this.body = body;
         }
     }

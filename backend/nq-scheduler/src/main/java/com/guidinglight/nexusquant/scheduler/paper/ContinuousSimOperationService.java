@@ -62,7 +62,7 @@ public class ContinuousSimOperationService {
                     case CREATE -> request.endAt() == null
                             ? available.start(request.publishId(), request.budget(), actor)
                             : available.start(request.publishId(), request.budget(), actor, request.endAt());
-                    case END -> available.end(request.paperRunId());
+                    case END -> available.end(request.paperRunId(), request.operationId());
                     case PAUSE -> available.stop(request.paperRunId());
                     case RESUME -> available.resume(request.paperRunId());
                 };

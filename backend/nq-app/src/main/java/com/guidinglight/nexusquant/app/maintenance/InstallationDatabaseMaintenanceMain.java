@@ -30,7 +30,8 @@ public final class InstallationDatabaseMaintenanceMain {
     private static final Set<String> EXECUTABLE = Set.of("nq_admit_strategy_work", "nq_begin_strategy_dispatch",
             "nq_project_strategy_run", "nq_bind_strategy_effective", "nq_create_ordinary_place_order",
             "nq_decide_ordinary_place", "nq_finish_strategy_cancel", "nq_require_continuous_capacity",
-            "nq_resume_tenant_execution", "nq_poll_tenant_work", "nq_restore_tenant_work", "nq_require_tenant_execution");
+            "nq_resume_tenant_execution", "nq_poll_tenant_work", "nq_restore_tenant_work", "nq_require_tenant_execution",
+            "nq_sim_projection_recheck_required");
 
     private InstallationDatabaseMaintenanceMain() {}
 

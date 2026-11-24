@@ -16,6 +16,17 @@ public final class SimProjectionRecoveryProbeMain {
                      System.getenv("TASK_BOUNDED_DB_USER"), System.getenv("TASK_BOUNDED_DB_PASSWORD"));
                 var http = new TenantIsolationHttpIntegrationTest.Http(app.getWebServer().getPort())) {
             String token = http.login(BoundedContinuousSimPostgresIntegrationTest.USER);
+            if ("end-receipt".equals(args[1])) {
+                String operation = command.required("operationId").asText();
+                var receipt = http.ok("GET", BoundedContinuousSimPostgresIntegrationTest.OPS + "/" + operation,
+                        token, null);
+                if (!operation.equals(receipt.required("operationId").asText())
+                        || !command.required("manualEndAt").equals(receipt.required("result").required("bounded").required("manualEndAt"))) {
+                    throw new AssertionError("original END receipt changed across process restart");
+                }
+                System.out.println("TERMINAL_INTENT_RESTART_VERIFIED pid=" + ProcessHandle.current().pid());
+                return;
+            }
             if ("recover".equals(args[1])) {
                 http.ok("POST", path, token, command);
                 return;
