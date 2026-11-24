@@ -244,6 +244,7 @@ public class JdbcLedgerPostingRepository implements LedgerPostingRepository {
                         DO UPDATE SET
                             qty = EXCLUDED.qty,
                             available_qty = EXCLUDED.available_qty,
+                            frozen_qty = EXCLUDED.frozen_qty,
                             avg_price = EXCLUDED.avg_price,
                             trace_id = EXCLUDED.trace_id,
                             updated_at = EXCLUDED.updated_at

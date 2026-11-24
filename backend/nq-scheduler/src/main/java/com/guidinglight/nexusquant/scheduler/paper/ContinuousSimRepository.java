@@ -33,13 +33,16 @@ public class ContinuousSimRepository {
     private final ObjectMapper mapper;
     private final StrategySimDecisionRepository decisions;
     private final LedgerPostingRepository ledger;
+    private final SimAccountProjectionRepository projections;
 
     public ContinuousSimRepository(JdbcTemplate jdbc, ObjectMapper mapper,
-                                   StrategySimDecisionRepository decisions, LedgerPostingRepository ledger) {
+                                   StrategySimDecisionRepository decisions, LedgerPostingRepository ledger,
+                                   SimAccountProjectionRepository projections) {
         this.jdbc = Objects.requireNonNull(jdbc);
         this.mapper = Objects.requireNonNull(mapper);
         this.decisions = Objects.requireNonNull(decisions);
         this.ledger = Objects.requireNonNull(ledger);
+        this.projections = Objects.requireNonNull(projections);
     }
 
     public boolean exists(String runId) {
@@ -229,7 +232,7 @@ public class ContinuousSimRepository {
         }
     }
 
-    private Cursor lockCursor(String runId) {
+    Cursor lockCursor(String runId) {
         jdbc.queryForObject("SELECT paper_run_id FROM continuous_sim_runs WHERE paper_run_id=? FOR UPDATE",
                 String.class, runId);
         return get(runId);
@@ -299,6 +302,15 @@ public class ContinuousSimRepository {
             if (accountingFailure == null && accounting.pendingOrders() == 0) {
                 accountingFailure = decisions.projectionFailure(runId, account, ledger.currentBalance(account, "USDT", "SIM"));
             }
+            if (accountingFailure == null && Boolean.TRUE.equals(jdbc.queryForObject("""
+                    SELECT EXISTS (SELECT 1 FROM sim_account_projection_operations
+                        WHERE paper_run_id=? AND recovery_operation_id IS NULL)
+                    """, Boolean.class, runId))) {
+                accountingFailure = "SIM_PROJECTION_FINALIZATION_REQUIRED";
+            }
+            if (accountingFailure == null && accounting.pendingOrders() == 0) {
+                accountingFailure = projections.verifyLocalProjection(runId, account);
+            }
             if (accountingFailure != null || accounting.pendingOrders() != 0) {
                 pending = accounting.pendingOrders();
                 lifecycle = "BLOCKED";
@@ -308,14 +320,36 @@ public class ContinuousSimRepository {
             } else {
                 // 人工意图可能在末价读取后提交；在锁内用已保存的价格重新确认终态事实。
                 if (now.isBefore(latest.manualEndAt())) now = latest.manualEndAt();
-                Instant end = latest.bounded().endAt();
-                valuation = !latest.overlapCheckPending() && latest.revisionDetectedAt() == null
-                        && !latest.manualEndAt().isBefore(end) && closingPriceFailure(runId, end, now) == null
-                        ? "VERIFIED" : "UNAVAILABLE";
+                valuation = manualValuation(latest, now);
                 lifecycle = "MANUALLY_STOPPED";
                 reason = "MANUAL_END";
             }
         }
+        writeSettlement(latest, lifecycle, valuation, pending, reason, terminal, now);
+    }
+
+    /** 恢复之后仍需原终态条件；调用方在同一账户、账务及游标锁下完成经济事实核验。 */
+    Instant finalizeRecovered(Cursor cursor, long account) {
+        Instant now = jdbc.queryForObject("SELECT clock_timestamp()", Timestamp.class).toInstant();
+        if (now.isBefore(cursor.manualEndAt())) now = cursor.manualEndAt();
+        String failure = decisions.projectionFailure(cursor.runId(), account, ledger.currentBalance(account, "USDT", "SIM"));
+        if (failure != null || !"VERIFIED".equals(manualValuation(cursor, now))) {
+            throw new IllegalStateException("SIM_PROJECTION_FINALIZATION_UNPROVEN");
+        }
+        writeSettlement(cursor, "MANUALLY_STOPPED", "VERIFIED", 0, "MANUAL_END", true, now);
+        return now;
+    }
+
+    private String manualValuation(Cursor cursor, Instant now) {
+        Instant end = cursor.bounded().endAt();
+        return !cursor.overlapCheckPending() && cursor.revisionDetectedAt() == null
+                && !cursor.manualEndAt().isBefore(end) && closingPriceFailure(cursor.runId(), end, now) == null
+                ? "VERIFIED" : "UNAVAILABLE";
+    }
+
+    private void writeSettlement(Cursor latest, String lifecycle, String valuation,
+                                 Integer pending, String reason, boolean terminal, Instant now) {
+        String runId = latest.runId();
         Instant boundary = "VERIFIED".equals(valuation) ? latest.bounded().endAt() : null;
         jdbc.update("""
             UPDATE continuous_sim_runs SET lifecycle_status=?,final_valuation_status=?,last_valuation_boundary=?,

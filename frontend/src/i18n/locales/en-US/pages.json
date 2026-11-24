@@ -1,4 +1,21 @@
 {
+  "projectionRecovery": {
+    "preview": "Preview account projection differences",
+    "authorize": "Authorize SIM projection recovery",
+    "confirm": "Rebuild the derived projections for account {{account}} from the ledger and trades.",
+    "account": "SIM account",
+    "cash": "USDT actual → expected",
+    "holding": "BTC position actual → expected",
+    "average": "Average entry price actual → expected",
+    "watermark": "Ledger posting watermark",
+    "difference": "Reconciliation",
+    "cashConsistent": "Cash consistent",
+    "cashMismatch": "Cash differs",
+    "positionConsistent": "Position consistent",
+    "positionMismatch": "Position differs",
+    "finalize": "Recheck original manual end",
+    "verified": "Original manual end verified at final valuation"
+  },
   "boundedSim": {
     "deadline": "Run deadline (UTC)",
     "manualEndAt": "Manual end requested at (UTC)",

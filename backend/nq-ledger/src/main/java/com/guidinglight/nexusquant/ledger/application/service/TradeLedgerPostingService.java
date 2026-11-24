@@ -28,7 +28,6 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -305,25 +304,8 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
                                         BigDecimal.ZERO,
                                         BigDecimal.ZERO,
                                         request.traceId()));
-        BigDecimal qtyChange =
-                request.side() == OrderSide.BUY ? request.qty() : request.qty().negate();
-        String baseCurrency = resolveBaseCurrency(request.symbol());
-        if (signedFee(request).signum() != 0
-                && request.feeCurrency() != null
-                && request.feeCurrency().equalsIgnoreCase(baseCurrency)) {
-            // base币种收费减持仓、返佣加持仓；与分录使用同一舍入值，避免精度差造成资产不守恒。
-            qtyChange = qtyChange.subtract(signedFee(request));
-        }
-        BigDecimal nextQty = NumericPolicy.normalize(NumericType.QTY, current.qty().add(qtyChange));
-        BigDecimal nextAvgPrice = calculateNextAvgPrice(current, request, nextQty);
         PositionProjection projection =
-                new PositionProjection(
-                        request.accountId(),
-                        request.symbol(),
-                        nextQty,
-                        nextQty,
-                        nextAvgPrice,
-                        request.traceId());
+                current.afterTrade(request, resolveBaseCurrency(request.symbol()), signedFee(request));
         ledgerPostingRepository.upsertPosition(projection, Instant.now(clock));
         return projection;
     }
@@ -404,32 +386,6 @@ public class TradeLedgerPostingService implements TradeLedgerPort {
                         traceId,
                         tradeEnv,
                         AccountBalanceBasis.LEDGER_CASH_PROJECTION));
-    }
-
-    private BigDecimal calculateNextAvgPrice(
-            PositionProjection current, TradeLedgerRequest request, BigDecimal nextQty) {
-        if (request.side() == OrderSide.SELL) {
-            if (nextQty.compareTo(BigDecimal.ZERO) <= 0) {
-                return BigDecimal.ZERO.setScale(8);
-            }
-            return NumericPolicy.normalize(NumericType.PRICE, current.avgPrice());
-        }
-        BigDecimal currentQty = current.qty();
-        if (currentQty.compareTo(BigDecimal.ZERO) <= 0) {
-            // 首次买入也必须按扣费或返佣后的实际base数量分摊本金，否则返佣会虚增持仓成本。
-            if (nextQty.signum() <= 0) return BigDecimal.ZERO.setScale(8);
-            return NumericPolicy.normalize(
-                    NumericType.PRICE,
-                    request.price()
-                            .multiply(request.qty())
-                            .divide(nextQty, 8, RoundingMode.HALF_UP));
-        }
-        BigDecimal weightedAmount =
-                current.avgPrice()
-                        .multiply(currentQty)
-                        .add(request.price().multiply(request.qty()));
-        return NumericPolicy.normalize(
-                NumericType.PRICE, weightedAmount.divide(nextQty, 8, RoundingMode.HALF_UP));
     }
 
     private void publishEvent(String topic, String key, String traceId, Object payload) {

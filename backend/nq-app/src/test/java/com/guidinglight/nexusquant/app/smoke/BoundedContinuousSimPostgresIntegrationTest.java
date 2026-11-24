@@ -146,6 +146,14 @@ class BoundedContinuousSimPostgresIntegrationTest {
             assertEquals(0, v55.migrate().migrationsExecuted);
             assertEquals(v54History, db.admin.queryForList("SELECT version,checksum FROM flyway_schema_history WHERE version::int<=54 ORDER BY installed_rank"));
             assertEquals(0, db.admin.queryForObject("SELECT count(*) FROM continuous_sim_overlap_checks", Integer.class));
+            var v55History = db.admin.queryForList("SELECT version,checksum FROM flyway_schema_history ORDER BY installed_rank");
+            var v56 = db.migration("56");
+            assertEquals(1, v56.migrate().migrationsExecuted);
+            v56.validate();
+            assertEquals(0, v56.migrate().migrationsExecuted);
+            assertEquals(v55History, db.admin.queryForList(
+                    "SELECT version,checksum FROM flyway_schema_history WHERE version::int<=55 ORDER BY installed_rank"));
+            assertEquals(0, db.admin.queryForObject("SELECT count(*) FROM sim_account_projection_operations", Integer.class));
             // 模拟调度器停机越过整点，此时游标仍是 RUNNING。独立新订单事务直接验证数据库时钟守卫。
             db.runtime();
             var owner = db.local("historical-local");
@@ -178,9 +186,11 @@ class BoundedContinuousSimPostgresIntegrationTest {
             assertTrue(rejected.getMostSpecificCause().getMessage().contains("CONTINUOUS_SIM_ADMISSION_CLOSED"));
             assertEquals(0,countOrders(db,stalledAccount));
             // 本例没有安装测试时钟，直接用 PG 实际时钟核对延迟调度也能关闭准入。
+            var decisions = new com.guidinglight.nexusquant.scheduler.paper.StrategySimDecisionRepository(db.jdbc);
+            var ledger = new com.guidinglight.nexusquant.ledger.infra.jdbc.JdbcLedgerPostingRepository(db.jdbc);
             var repository = new ContinuousSimRepository(db.jdbc, ForwardSimEvaluationFixture.JSON,
-                    new com.guidinglight.nexusquant.scheduler.paper.StrategySimDecisionRepository(db.jdbc),
-                    new com.guidinglight.nexusquant.ledger.infra.jdbc.JdbcLedgerPostingRepository(db.jdbc));
+                    decisions, ledger, new com.guidinglight.nexusquant.scheduler.paper.SimAccountProjectionRepository(
+                            db.jdbc, ledger, decisions));
             assertEquals(Boolean.TRUE, db.as(owner, () -> new TransactionTemplate(db.manager)
                     .execute(tx -> repository.closeAdmissionIfDue("stalled-paper"))));
             assertEquals("ADMISSION_CLOSED",db.admin.queryForObject(
@@ -896,7 +906,7 @@ class BoundedContinuousSimPostgresIntegrationTest {
         }
     }
 
-    @ParameterizedTest @ValueSource(strings = {"cash", "position", "both", "none"}) @Timeout(150)
+    @ParameterizedTest @ValueSource(strings = {"cash", "position", "both", "none", "average"}) @Timeout(300)
     void manualEndRequiresConsistentCashAndPositionProjections(String fault) throws Exception {
         try (var db = TenantIsolationTestDatabase.create(null)) {
             var owner = db.local(USER);
@@ -914,6 +924,8 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 ReflectionTestUtils.setField(driver, "clock", Clock.fixed(before, ZoneOffset.UTC));
                 String run = http.ok("POST", OPS, token, create(binding.publishId(), end)).required("paperRunId").asText();
                 long account = ForwardSimEvaluationFixture.account(db, run);
+                String recoveryPath = RUNS + run + "/projection-recovery";
+                var preTrade = http.ok("GET", recoveryPath, token, null);
                 var matching = app.getBean(PaperMatchingService.class);
                 int fills = 0;
                 boolean consistent = "none".equals(fault);
@@ -951,6 +963,10 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 var economics = app.getBean(StrategySimRunService.class);
                 assertNull(db.as(owner, () -> economics.settleBounded(run)).blockingReason());
                 var original = ForwardSimEvaluationFixture.allFacts(db);
+                var originalLedgerEvents = db.admin.queryForList("""
+                        SELECT to_jsonb(v)::text FROM ledger_events v JOIN ledger_entries e USING(entry_id)
+                        WHERE e.account_id=? ORDER BY v.ledger_event_id
+                        """, String.class, account);
                 var positions = db.admin.queryForList("SELECT * FROM positions WHERE account_id=? ORDER BY symbol", account);
                 assertFalse(positions.isEmpty());
                 // 仅损坏隔离库的派生投影，保留正式撮合的 Order、Trade、Ledger 与原现金快照。
@@ -966,7 +982,12 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 }
                 if ("position".equals(fault) || "both".equals(fault)) {
                     assertEquals(1, db.as(owner, () -> db.jdbc.update("""
-                            UPDATE positions SET qty=qty+0.001 WHERE account_id=? AND symbol='BTC-USDT'
+                            UPDATE positions SET qty=qty+0.001,avg_price=avg_price+1,frozen_qty=0.001 WHERE account_id=? AND symbol='BTC-USDT'
+                            """, account)));
+                }
+                if ("average".equals(fault)) {
+                    assertEquals(1, db.as(owner, () -> db.jdbc.update("""
+                            UPDATE positions SET avg_price=avg_price+1 WHERE account_id=? AND symbol='BTC-USDT'
                             """, account)));
                 }
                 var settlement = db.as(owner, () -> economics.settleBounded(run));
@@ -975,7 +996,7 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 if (!consistent) {
                     String reason = switch (fault) {
                         case "cash" -> "SIM_CASH_PROJECTION_MISMATCH";
-                        case "position" -> "SIM_POSITION_PROJECTION_MISMATCH";
+                        case "position", "average" -> "SIM_POSITION_PROJECTION_MISMATCH";
                         default -> "SIM_ACCOUNT_PROJECTIONS_MISMATCH";
                     };
                     var damagedPositions = db.admin.queryForList("SELECT * FROM positions WHERE account_id=?", account);
@@ -1010,6 +1031,106 @@ class BoundedContinuousSimPostgresIntegrationTest {
                             SELECT * FROM account_snapshots WHERE account_id=? AND currency='USDT' AND trade_env='SIM'
                             ORDER BY snapshot_id DESC LIMIT 1
                             """, account));
+                    var beforePreview = ForwardSimEvaluationFixture.allFacts(db);
+                    var beforePreviewProjections = projectionRows(db, account);
+                    var preview = http.ok("GET", recoveryPath, token, null);
+                    assertEquals(beforePreview, ForwardSimEvaluationFixture.allFacts(db));
+                    assertEquals(beforePreviewProjections, projectionRows(db, account));
+                    assertEquals(account, preview.required("accountId").asLong());
+                    assertEquals(command.get("operationId").toString(), preview.required("endOperationId").asText());
+                    var differences = preview.required("differences");
+                    assertEquals("position".equals(fault) || "average".equals(fault),
+                            differences.required("cashConsistent").asBoolean());
+                    assertEquals("cash".equals(fault), differences.required("positionConsistent").asBoolean());
+                    var recoverRequest = projectionRecoveryRequest(preview);
+                    var stale = new HashMap<String, String>(recoverRequest);
+                    stale.put("ledgerWatermark", preTrade.required("ledgerWatermark").required("sha256").asText());
+                    assertConflict(http, recoveryPath, token, stale, "SIM_PROJECTION_PREVIEW_EXPIRED");
+
+                    if ("both".equals(fault)) {
+                        db.local("projection-other-owner");
+                        db.user("projection-viewer", "VIEWER");
+                        var otherTenant = db.demo("PROJECTION_OTHER_TENANT", "projection-demo");
+                        assertEquals(0, db.as(otherTenant, () -> db.jdbc.queryForObject(
+                                "SELECT count(*) FROM sim_account_projection_operations WHERE account_id=?", Integer.class, account)));
+                        String other = http.login("projection-other-owner");
+                        assertEquals(404, http.send("GET", recoveryPath, other, null).statusCode());
+                        assertEquals(404, http.send("POST", recoveryPath, other, recoverRequest).statusCode());
+                        assertEquals(403, http.send("POST", recoveryPath, http.login("projection-viewer"), recoverRequest).statusCode());
+                        assertEquals(403, http.send("POST", recoveryPath, http.login("projection-demo"), recoverRequest).statusCode());
+                        assertEquals(401, http.send("GET", recoveryPath, null, null).statusCode());
+                    }
+
+                    JsonNode recovery;
+                    if ("both".equals(fault)) {
+                        assertRecoveryRequiresCanonicalFacts(db, http, recoveryPath, token, recoverRequest);
+                        assertProjectionRollbackAndJvmDeath(db, http, recoveryPath, token, recoverRequest, run, account);
+                        recovery = recoverWithContenders(db, app, owner, http, recoveryPath, token, recoverRequest, account);
+                    } else {
+                        recovery = http.ok("POST", recoveryPath, token, recoverRequest);
+                    }
+                    assertEquals("CONSISTENT", recovery.required("cash").asText());
+                    assertEquals("CONSISTENT", recovery.required("position").asText());
+                    assertEquals("UNCHANGED", recovery.required("ledger").asText());
+                    assertEquals(differences, recovery.required("before"));
+                    assertEquals(preview.required("ledgerWatermark"), recovery.required("ledgerWatermark"));
+                    assertEquals(recovery, http.ok("POST", recoveryPath, token, recoverRequest));
+                    assertEquals(recovery, http.ok("GET", recoveryPath + "/operations/" + recoverRequest.get("operationId"), token, null));
+                    assertConflict(http, recoveryPath, token, stale, "SIM_PROJECTION_OPERATION_ID_CONFLICT");
+                    assertEquals(1, db.admin.queryForObject("""
+                            SELECT count(*) FROM audit_logs WHERE action='SIM_ACCOUNT_PROJECTION_RECOVERED'
+                            """, Integer.class));
+
+                    db.as(owner, () -> driver.pollOnce(run));
+                    assertEquals("SIM_PROJECTION_FINALIZATION_REQUIRED", status(http, token, run).required("reason").asText());
+                    var finalRequest = Map.of("operationId", UUID.randomUUID().toString(),
+                            "endOperationId", recoverRequest.get("endOperationId"),
+                            "recoveryOperationId", recoverRequest.get("operationId"));
+                    if ("both".equals(fault)) {
+                        db.admin.execute("""
+                                CREATE POLICY test_projection_missing_mark ON continuous_sim_bars AS RESTRICTIVE FOR SELECT
+                                USING (false)
+                                """);
+                        try {
+                            assertConflict(http, recoveryPath + "/finalization", token, finalRequest,
+                                    "SIM_PROJECTION_FINALIZATION_UNPROVEN");
+                            assertFalse(status(http, token, run).hasNonNull("terminatedAt"));
+                        } finally {
+                            db.admin.execute("DROP POLICY test_projection_missing_mark ON continuous_sim_bars");
+                        }
+                        var probe = projectionProcess(db, run, "recheck", finalRequest);
+                        try {
+                            assertTrue(probe.process().waitFor(75, TimeUnit.SECONDS), Files.readString(probe.log()));
+                            assertEquals(0, probe.process().exitValue(), Files.readString(probe.log()));
+                            assertTrue(Files.readString(probe.log()).contains("PROJECTION_RECHECK_RESTART_VERIFIED"));
+                        } finally {
+                            if (probe.process().isAlive()) probe.process().destroyForcibly().waitFor(10, TimeUnit.SECONDS);
+                        }
+                    }
+                    var finalized = http.ok("POST", recoveryPath + "/finalization", token, finalRequest);
+                    assertEquals(recovery.required("operationId"), finalized.required("recoveryOperationId"));
+                    var stopped = status(http, token, run);
+                    assertEquals("MANUALLY_STOPPED", stopped.required("lifecycleStatus").asText());
+                    assertEquals("VERIFIED", stopped.required("finalValuationStatus").asText());
+                    assertEquals(0, stopped.required("pendingOrders").asInt());
+                    assertEquals(requestAt, readTime(db, "manual_end_at", run));
+                    assertEquals(stopped.required("terminatedAt"), finalized.required("finalization").required("terminatedAt"));
+                    assertEquals(finalized, http.ok("POST", recoveryPath + "/finalization", token, finalRequest));
+                    assertEquals(receipt, http.ok("GET", OPS + "/" + command.get("operationId"), token, null));
+                    assertEquals(2, db.admin.queryForObject(
+                            "SELECT count(*) FROM sim_account_projection_operations WHERE account_id=?", Integer.class, account));
+                    if ("both".equals(fault)) {
+                        String resultPath = recoveryPath + "/operations/" + recoverRequest.get("operationId");
+                        assertEquals(404, http.send("GET", resultPath, http.login("projection-other-owner"), null).statusCode());
+                        assertEquals(403, http.send("GET", resultPath, http.login("projection-demo"), null).statusCode());
+                    }
+                    System.out.printf("SIM_PROJECTION_PROOF fault=%s account=%d end=%s recovery=%s finalization=%s "
+                                    + "ledger=%s cash=%s position=%s lifecycle=%s valuation=%s terminatedAt=%s%n",
+                            fault, account, recovery.required("endOperationId").asText(), recovery.required("operationId").asText(),
+                            finalized.required("operationId").asText(), recovery.required("ledgerWatermark").required("sha256").asText(),
+                            recovery.required("cash").asText(), recovery.required("position").asText(),
+                            stopped.required("lifecycleStatus").asText(), stopped.required("finalValuationStatus").asText(),
+                            stopped.required("terminatedAt").asText());
                 } else {
                     db.as(owner, () -> driver.pollOnce(run));
                     var stopped = status(http, token, run);
@@ -1021,6 +1142,10 @@ class BoundedContinuousSimPostgresIntegrationTest {
                             Timestamp.class, run).toInstant());
                 }
                 var finalFacts = ForwardSimEvaluationFixture.allFacts(db);
+                assertEquals(originalLedgerEvents, db.admin.queryForList("""
+                        SELECT to_jsonb(v)::text FROM ledger_events v JOIN ledger_entries e USING(entry_id)
+                        WHERE e.account_id=? ORDER BY v.ledger_event_id
+                        """, String.class, account));
                 for (String table : List.of("orders", "trades", "ledger_entries", "continuous_sim_bars")) {
                     assertEquals(original.get(table), finalFacts.get(table), table);
                 }
@@ -1093,6 +1218,217 @@ class BoundedContinuousSimPostgresIntegrationTest {
                         + " terminatedAt=" + terminated + " stoppedAt=" + terminated);
             }
         }
+    }
+
+    private static Map<String, List<String>> projectionRows(TenantIsolationTestDatabase db, long account) {
+        return Map.of(
+                "cash-and-assets", db.admin.queryForList("""
+                        SELECT to_jsonb(s)::text FROM account_snapshots s WHERE account_id=? ORDER BY snapshot_id
+                        """, String.class, account),
+                "positions", db.admin.queryForList("""
+                        SELECT to_jsonb(p)::text FROM positions p WHERE account_id=? ORDER BY symbol
+                        """, String.class, account),
+                "operations", db.admin.queryForList("""
+                        SELECT to_jsonb(r)::text FROM sim_account_projection_operations r WHERE account_id=? ORDER BY operation_id
+                        """, String.class, account));
+    }
+
+    private static void assertRecoveryRequiresCanonicalFacts(TenantIsolationTestDatabase db,
+            TenantIsolationHttpIntegrationTest.Http http, String path, String token, Map<String, String> request)
+            throws Exception {
+        // 只模拟读链缺失，经济事实在数据库中逐字保留。
+        var before = ForwardSimEvaluationFixture.allFacts(db);
+        db.admin.execute("""
+                CREATE POLICY test_projection_missing_trade_leg ON ledger_entries AS RESTRICTIVE FOR SELECT
+                USING (NOT (ref_type='TRADE' AND right(idempotency_key,9)=':LEDGER:2'))
+                """);
+        try {
+            assertConflict(http, path, token, request, "SIM_TRADE_LEDGER_MISMATCH");
+        } finally {
+            db.admin.execute("DROP POLICY test_projection_missing_trade_leg ON ledger_entries");
+        }
+        db.admin.execute("""
+                CREATE POLICY test_projection_missing_posted ON ledger_events AS RESTRICTIVE FOR SELECT
+                USING (event_type<>'POSTED')
+                """);
+        try {
+            assertConflict(http, path, token, request, "SIM_LEDGER_POSTED_FACT_UNPROVEN");
+        } finally {
+            db.admin.execute("DROP POLICY test_projection_missing_posted ON ledger_events");
+        }
+        assertEquals(before, ForwardSimEvaluationFixture.allFacts(db));
+        assertEquals(0, db.admin.queryForObject("SELECT count(*) FROM sim_account_projection_operations", Integer.class));
+    }
+
+    private static void assertProjectionRollbackAndJvmDeath(TenantIsolationTestDatabase db,
+            TenantIsolationHttpIntegrationTest.Http http, String path, String token,
+            Map<String, String> request, String run, long account) throws Exception {
+        var before = ForwardSimEvaluationFixture.allFacts(db);
+        var beforeProjections = projectionRows(db, account);
+        db.admin.execute("""
+                CREATE FUNCTION test_abort_projection_receipt() RETURNS trigger LANGUAGE plpgsql AS $$
+                BEGIN RAISE EXCEPTION 'injected projection receipt failure' USING ERRCODE='23514'; END;
+                $$;
+                CREATE TRIGGER test_abort_projection_receipt BEFORE INSERT ON sim_account_projection_operations
+                FOR EACH ROW EXECUTE FUNCTION test_abort_projection_receipt()
+                """);
+        try {
+            assertTrue(http.send("POST", path, token, request).statusCode() >= 400);
+            assertEquals(before, ForwardSimEvaluationFixture.allFacts(db));
+            assertEquals(beforeProjections, projectionRows(db, account));
+        } finally {
+            db.admin.execute("DROP TRIGGER test_abort_projection_receipt ON sim_account_projection_operations");
+        }
+
+        installProjectionReceiptGate(db);
+        try (var gate = db.database.source().getConnection(); var sql = gate.createStatement()) {
+            gate.setAutoCommit(false);
+            sql.execute("SELECT pg_advisory_xact_lock(851005::bigint)");
+            var probe = projectionProcess(db, run, "recover", request);
+            try {
+                waitForProjectionReceiptGate(db);
+                assertEquals(before, ForwardSimEvaluationFixture.allFacts(db));
+            assertEquals(beforeProjections, projectionRows(db, account));
+                assertTrue(probe.process().destroyForcibly().waitFor(10, TimeUnit.SECONDS));
+            } finally {
+                if (probe.process().isAlive()) probe.process().destroyForcibly().waitFor(10, TimeUnit.SECONDS);
+                gate.rollback();
+            }
+        } finally {
+            db.admin.execute("DROP TRIGGER test_projection_receipt_gate ON sim_account_projection_operations");
+        }
+        assertEquals(before, ForwardSimEvaluationFixture.allFacts(db));
+        assertEquals(beforeProjections, projectionRows(db, account));
+        assertEquals(404, http.send("GET", path + "/operations/" + request.get("operationId"), token, null).statusCode());
+    }
+
+    private static JsonNode recoverWithContenders(TenantIsolationTestDatabase db,
+            ServletWebServerApplicationContext app, TenantIdentity owner, TenantIsolationHttpIntegrationTest.Http http,
+            String path, String token, Map<String, String> request, long account) throws Exception {
+        var original = ForwardSimEvaluationFixture.allFacts(db);
+        var replayTrade = db.admin.query("""
+                SELECT t.*,o.side FROM trades t JOIN orders o USING(order_id)
+                WHERE t.account_id=? ORDER BY t.trade_id LIMIT 1
+                """, (rs, n) -> new com.guidinglight.nexusquant.ledger.contracts.model.TradeLedgerRequest(
+                rs.getString("trade_id"), rs.getString("order_id"), account, rs.getString("symbol"),
+                com.guidinglight.nexusquant.contracts.model.OrderSide.valueOf(rs.getString("side")),
+                rs.getBigDecimal("price"), rs.getBigDecimal("qty"), rs.getBigDecimal("fee"), rs.getString("fee_currency"),
+                rs.getString("trace_id"), rs.getTimestamp("ts").toInstant(), "SIM"), account).getFirst();
+        installProjectionReceiptGate(db);
+        try (var gate = db.database.source().getConnection(); var sql = gate.createStatement();
+                var accountLock = db.database.source().getConnection(); var accountSql = accountLock.createStatement();
+                var workers = Executors.newFixedThreadPool(4)) {
+            gate.setAutoCommit(false);
+            sql.execute("SELECT pg_advisory_xact_lock(851005::bigint)");
+            accountLock.setAutoCommit(false);
+            int backend;
+            try (var pid = accountSql.executeQuery("SELECT pg_backend_pid()")) {
+                assertTrue(pid.next());
+                backend = pid.getInt(1);
+            }
+            accountSql.execute("SELECT account_id FROM accounts WHERE account_id=" + account + " FOR NO KEY UPDATE");
+            try {
+                var responseLost = workers.submit(() -> {
+                    var call = java.net.http.HttpRequest.newBuilder(java.net.URI.create(http.base + path))
+                            .timeout(Duration.ofSeconds(35)).header("Content-Type", "application/json")
+                            .header("Authorization", "Bearer " + token).POST(java.net.http.HttpRequest.BodyPublishers
+                                    .ofString(ForwardSimEvaluationFixture.JSON.writeValueAsString(request))).build();
+                    return http.client.send(call, java.net.http.HttpResponse.BodyHandlers.discarding()).statusCode();
+                });
+                assertTrue(awaitProjection(() -> db.admin.queryForObject("""
+                        SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE ?=ANY(pg_blocking_pids(pid)))
+                        """, Boolean.class, backend)), "recovery did not wait for the account row");
+                assertEquals(original, ForwardSimEvaluationFixture.allFacts(db));
+                accountLock.commit();
+                waitForProjectionReceiptGate(db);
+
+                var other = new HashMap<String, String>(request);
+                other.put("operationId", UUID.randomUUID().toString());
+                var sameRequest = workers.submit(() -> http.ok("POST", path, token, request));
+                var otherRequest = workers.submit(() -> http.send("POST", path, token, other));
+                var ledgerReplay = workers.submit(() -> db.as(owner, () ->
+                        app.getBean(com.guidinglight.nexusquant.ledger.service.port.TradeLedgerPort.class).postTrade(replayTrade)));
+                assertTrue(awaitProjection(() -> db.admin.queryForObject("""
+                        SELECT EXISTS(SELECT 1 FROM pg_locks waiting JOIN pg_locks holder ON holder.locktype=waiting.locktype
+                            AND holder.classid=waiting.classid AND holder.objid=waiting.objid AND holder.objsubid=waiting.objsubid
+                        WHERE waiting.locktype='advisory' AND NOT waiting.granted
+                            AND holder.granted AND holder.pid IN (
+                                SELECT pid FROM pg_locks WHERE locktype='advisory' AND NOT granted AND objid=851005::oid)
+                            AND waiting.objid=(hashtextextended(?,0) & 4294967295)::text::oid)
+                        """, Boolean.class, "nq:account-environment:" + account)), "ledger writer did not wait on the account advisory lock");
+                assertFalse(ledgerReplay.isDone(), "ledger posting must wait for projection recovery");
+                gate.commit();
+                assertEquals(200, responseLost.get(25, TimeUnit.SECONDS));
+                var replay = sameRequest.get(25, TimeUnit.SECONDS);
+                var stale = otherRequest.get(25, TimeUnit.SECONDS);
+                assertEquals(409, stale.statusCode(), stale.body());
+                assertTrue(stale.body().contains("SIM_PROJECTION_PREVIEW_EXPIRED"), stale.body());
+                assertTrue(ledgerReplay.get(25, TimeUnit.SECONDS).idempotentHit());
+                return replay;
+            } finally {
+                accountLock.rollback();
+                gate.rollback();
+            }
+        } finally {
+            db.admin.execute("DROP TRIGGER test_projection_receipt_gate ON sim_account_projection_operations");
+        }
+    }
+
+    private static boolean awaitProjection(java.util.function.BooleanSupplier condition) throws InterruptedException {
+        for (int i = 0; i < 200; i++) {
+            if (condition.getAsBoolean()) return true;
+            Thread.sleep(25);
+        }
+        return false;
+    }
+
+    private static void installProjectionReceiptGate(TenantIsolationTestDatabase db) {
+        db.admin.execute("""
+                CREATE OR REPLACE FUNCTION test_projection_receipt_gate() RETURNS trigger LANGUAGE plpgsql AS $$
+                BEGIN PERFORM pg_advisory_xact_lock(851005::bigint); RETURN NEW; END;
+                $$;
+                CREATE TRIGGER test_projection_receipt_gate BEFORE INSERT ON sim_account_projection_operations
+                FOR EACH ROW EXECUTE FUNCTION test_projection_receipt_gate()
+                """);
+    }
+
+    private static void waitForProjectionReceiptGate(TenantIsolationTestDatabase db) throws InterruptedException {
+        for (int attempt = 0; attempt < 450; attempt++) {
+            if (Boolean.TRUE.equals(db.admin.queryForObject("""
+                    SELECT EXISTS(SELECT 1 FROM pg_locks
+                        WHERE locktype='advisory' AND objid=851005::oid AND NOT granted)
+                    """, Boolean.class))) return;
+            Thread.sleep(100);
+        }
+        fail("recovery did not reach its uncommitted receipt insert");
+    }
+
+    private static ProjectionProbe projectionProcess(TenantIsolationTestDatabase db, String run, String mode,
+            Map<String, String> input) throws Exception {
+        Path log = Files.createTempFile("sim-projection-restart-", ".log");
+        var builder = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-cp", System.getProperty("java.class.path"), SimProjectionRecoveryProbeMain.class.getName(),
+                run, mode, java.util.Base64.getEncoder().encodeToString(
+                        ForwardSimEvaluationFixture.JSON.writeValueAsBytes(input)));
+        builder.environment().put("TASK_BOUNDED_DB_URL", db.url());
+        builder.environment().put("TASK_BOUNDED_DB_USER", db.runtime);
+        builder.environment().put("TASK_BOUNDED_DB_PASSWORD", db.runtimePassword);
+        return new ProjectionProbe(builder.redirectErrorStream(true).redirectOutput(log.toFile()).start(), log);
+    }
+
+    private record ProjectionProbe(Process process, Path log) {}
+
+    private static Map<String, String> projectionRecoveryRequest(JsonNode preview) {
+        return Map.of("operationId", UUID.randomUUID().toString(), "endOperationId", preview.required("endOperationId").asText(),
+                "ledgerWatermark", preview.required("ledgerWatermark").required("sha256").asText(),
+                "projectionVersion", preview.required("projectionVersion").asText());
+    }
+
+    private static void assertConflict(TenantIsolationHttpIntegrationTest.Http http, String path,
+            String token, Object body, String reason) throws Exception {
+        var conflict = http.send("POST", path, token, body);
+        assertEquals(409, conflict.statusCode(), conflict.body());
+        assertTrue(conflict.body().contains(reason), conflict.body());
     }
 
     private static void await(CountDownLatch latch) {

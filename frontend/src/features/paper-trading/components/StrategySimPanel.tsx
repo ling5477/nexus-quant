@@ -7,6 +7,7 @@ import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {paperTradingQueryKeys, publishesQueryKeys} from '@/api/query-keys';
 import {CanonicalSimFacts} from './CanonicalSimFacts';
 import {ContinuousSimStatusPanel} from './ContinuousSimStatusPanel';
+import {SimAccountProjectionRecovery} from './SimAccountProjectionRecovery';
 import {continuousStateMatches, isUtcHour} from '../continuous-state';
 import {
     ContinuousOperationRecovery,
@@ -445,6 +446,21 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
                             }}
                             onAction={(action) => void changeContinuous(action)}
                         />
+                        {continuousActionsAvailable === true && !isPublicDemo
+                            && currentUser?.username === selectedRun?.createdBy && (
+                            <SimAccountProjectionRecovery
+                                key={`projection/${currentUser?.userId}/${session}/${selectedId}`}
+                                run={selectedId}
+                                owner={currentUser?.userId}
+                                session={session}
+                                eligible={!continuousQuery.isError && Boolean(continuous?.bounded?.manualEndAt)
+                                    && continuous?.bounded?.lifecycleStatus === 'BLOCKED'
+                                    && ['SIM_CASH_PROJECTION_MISMATCH', 'SIM_POSITION_PROJECTION_MISMATCH',
+                                        'SIM_ACCOUNT_PROJECTIONS_MISMATCH', 'SIM_PROJECTION_FINALIZATION_REQUIRED']
+                                        .includes(continuous?.bounded?.reason ?? '')}
+                                onUpdated={() => void refresh(selectedId)}
+                            />
+                        )}
                         <ContinuousSimOperationsPanel key={`${currentUser?.userId}/${session}/${selectedId}`}
                             run={selectedId} status={continuousQuery.isError || identityMismatch ? null : continuous} readable={!continuousQuery.isError && !identityMismatch}
                             parentStatus={selectedRun?.status ?? ''} checkedAt={continuousQuery.dataUpdatedAt}

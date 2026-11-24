@@ -500,3 +500,74 @@ test('损坏的通知响应只显示读取失败，不让运行工作区崩溃�
     await expect(page.getByRole('heading', {name: '控制台遇到一个错误'})).toHaveCount(0);
     expect(h.posts).toHaveLength(0);
 });
+
+test('OWNER 预览投影、确认授权、重放原编号并独立复核结束', async ({page, context}) => {
+    const h = await fixture(context);
+    const endAt = '2026-10-15T01:00:00Z';
+    const intentAt = '2026-10-15T01:00:05Z';
+    const terminatedAt = '2026-10-15T01:00:10Z';
+    h.state.cursor = progress('STALLED', {
+        endAt, manualEndAt: intentAt, terminatedAt: null, lifecycleStatus: 'BLOCKED', finalValuationStatus: 'UNAVAILABLE',
+        lastValuationBoundary: null, pendingOrders: 0, reason: 'SIM_ACCOUNT_PROJECTIONS_MISMATCH',
+        updatedAt: intentAt, publishId, strategyVersionId: 'sv-continuous',
+    });
+    const ledgerWatermark = {postedThrough: 5, sha256: 'a'.repeat(64)};
+    const projectionVersion = 'b'.repeat(64);
+    const expectedCash = {balance: '101.00000001', available: '101.00000001', frozen: '0',
+        tradeEnv: 'SIM', basis: 'LEDGER_CASH_PROJECTION', scope: 'NQ_MANAGED_ACCOUNT'};
+    const holding = {qty: '0.01234567', available: '0.01234567', frozen: '0', avgPrice: '50000'};
+    const requests: Record<string, unknown>[] = [];
+    let recovered: string | null = null;
+    await page.route('**/projection-recovery', async (route) => {
+        if (route.request().method() === 'GET') {
+            return route.fulfill({json: {accountId: 2, tenantId: 'local', endOperationId: operationId,
+                ledgerWatermark, projectionVersion, recoveryOperationId: recovered,
+                differences: {actualCash: recovered ? expectedCash : {...expectedCash, balance: '102.00000001'},
+                    expectedCash, actualPosition: holding, expectedPosition: holding, actualAsset: null,
+                    expectedAsset: null, cashConsistent: Boolean(recovered), positionConsistent: true}}});
+        }
+        const request = route.request().postDataJSON() as Record<string, unknown>;
+        requests.push(request);
+        if (requests.length === 1) return route.abort('failed');
+        recovered = String(request.operationId);
+        await route.fulfill({json: {operationId: recovered, endOperationId: operationId, finalization: null}});
+    });
+    await page.route('**/projection-recovery/finalization', async (route) => {
+        const request = route.request().postDataJSON() as Record<string, unknown>;
+        requests.push(request);
+        h.state.parent = 'STOPPED';
+        h.state.cursor = progress('STOPPED', {...h.state.cursor?.bounded!, lifecycleStatus: 'MANUALLY_STOPPED',
+            finalValuationStatus: 'VERIFIED', lastValuationBoundary: endAt, terminatedAt, updatedAt: terminatedAt});
+        await route.fulfill({json: {...request, finalization: {lifecycleStatus: 'MANUALLY_STOPPED', finalValuationStatus: 'VERIFIED'}}});
+    });
+
+    await page.setViewportSize({width: 390, height: 844});
+    await page.goto(`/paper-trading/runs?paperRunId=${runId}`);
+    const preview = page.getByRole('button', {name: '预览账户投影差异'});
+    await expect(preview).toBeVisible();
+    await preview.click();
+    await expect(page.getByText('102.00000001 → 101.00000001', {exact: true})).toBeVisible();
+
+    const recoveryPanel = page.getByRole('group', {name: '预览账户投影差异'});
+    const authorize = recoveryPanel.getByRole('button', {name: '授权恢复 SIM 投影'});
+    await authorize.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('将按账本和成交重建账户 2 的派生投影。')).toBeVisible();
+    await dialog.getByRole('button', {name: '授权恢复 SIM 投影'}).click();
+    await expect.poll(() => requests.length).toBe(1);
+    await expect(dialog).toBeHidden();
+    await expect(authorize).toBeEnabled();
+    await authorize.click();
+    await dialog.getByRole('button', {name: '授权恢复 SIM 投影'}).click();
+
+    const recheck = page.getByRole('button', {name: '复核原人工结束'});
+    await expect(recheck).toBeVisible();
+    await recheck.click();
+    await expect(page.getByRole('alert').filter({hasText: '原人工结束已通过最终估值核验'})).toBeVisible();
+    expect(requests).toHaveLength(3);
+    expect(requests[0]).toEqual(requests[1]);
+    expect(requests[0]).toEqual({operationId: recovered, endOperationId: operationId,
+        ledgerWatermark: ledgerWatermark.sha256, projectionVersion});
+    expect(requests[2]).toEqual({operationId: expect.any(String), endOperationId: operationId, recoveryOperationId: recovered});
+    expect(requests[2].operationId).not.toBe(recovered);
+});

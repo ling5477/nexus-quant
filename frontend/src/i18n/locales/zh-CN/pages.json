@@ -1,4 +1,21 @@
 {
+  "projectionRecovery": {
+    "preview": "预览账户投影差异",
+    "authorize": "授权恢复 SIM 投影",
+    "confirm": "将按账本和成交重建账户 {{account}} 的派生投影。",
+    "account": "SIM 账户",
+    "cash": "USDT 当前 → 预期",
+    "holding": "BTC 持仓当前 → 预期",
+    "average": "持仓均价当前 → 预期",
+    "watermark": "账本入账水位",
+    "difference": "对账结果",
+    "cashConsistent": "现金一致",
+    "cashMismatch": "现金有差异",
+    "positionConsistent": "持仓一致",
+    "positionMismatch": "持仓有差异",
+    "finalize": "复核原人工结束",
+    "verified": "原人工结束已通过最终估值核验"
+  },
   "boundedSim": {
     "deadline": "运行截止时间（UTC）",
     "manualEndAt": "人工结束请求时间（UTC）",
