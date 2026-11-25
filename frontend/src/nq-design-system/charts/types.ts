@@ -13,6 +13,7 @@ export interface NqKlineBar {
     closeTime?: string | null;
     availableAt?: string | null;
     status?: 'FORMING' | 'CLOSED';
+    formingExpiresAt?: number;
     source?: string | null;
     comparedSource?: string | null;
     exact?: Partial<Record<'open' | 'high' | 'low' | 'close' | 'volume', string>>;

@@ -1,5 +1,10 @@
 package com.guidinglight.nexusquant.marketdata.api.web;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.guidinglight.nexusquant.api.web.dto.ApiErrorResponse;
 import com.guidinglight.nexusquant.marketdata.api.dto.CreateMarketdataDatasetRequest;
 import com.guidinglight.nexusquant.marketdata.api.dto.CreateMarketdataIngestionJobRequest;
@@ -52,6 +57,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +77,8 @@ import java.util.UUID;
 @RequestMapping("/api/marketdata")
 @Tag(name = "Marketdata API", description = "historical bars ingest/query API.")
 public class MarketdataController {
+    private static final ObjectReader OKX_HISTORY_ROW = new ObjectMapper().reader()
+            .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
 
     private final MarketdataBarIngestService marketdataBarIngestService;
     private final HistoricalMarketDataPort historicalMarketDataPort;
@@ -264,8 +273,40 @@ public class MarketdataController {
                                                 : null,
                                         provenance.containsKey(bar.openTime())
                                                 ? provenance.get(bar.openTime()).priceEventTimes()
-                                                : PriceEventTimes.unavailable("NOT_PROVIDED")))
+                                                : PriceEventTimes.unavailable("NOT_PROVIDED"),
+                                        provenance.containsKey(bar.openTime())
+                                                && venueCloseConfirmed(bar, provenance.get(bar.openTime()).source())))
                 .toList();
+    }
+
+    /** 只对正式入库的 OKX 现货历史行读出明确且与持久化事实一致的收盘确认。 */
+    private static boolean venueCloseConfirmed(HistoricalBar bar, String source) {
+        String raw = bar.rawPayloadJson();
+        if (!"EXCHANGE_HISTORICAL".equals(source) || !"OKX".equals(bar.exchangeCode())
+                || !"SPOT".equals(bar.marketType()) || !"OK".equals(bar.qualityStatus())
+                || raw == null || raw.length() > 4096) return false;
+        long period = bar.interval().duration().toMillis();
+        long offset = bar.interval() == BarInterval.ONE_DAY ? 28_800_000 : 0;
+        if (Math.floorMod(bar.openTime().toEpochMilli() + offset, period) != 0
+                || !bar.closeTime().equals(bar.openTime().plusMillis(period - 1))) return false;
+        try {
+            JsonNode row = OKX_HISTORY_ROW.readTree(raw);
+            return row != null && row.isArray() && row.size() >= 9 && "1".equals(row.path(8).asText())
+                    && Long.toString(bar.openTime().toEpochMilli()).equals(row.path(0).asText())
+                    && matchesDecimal(row.path(1), bar.openPrice()) && matchesDecimal(row.path(2), bar.highPrice())
+                    && matchesDecimal(row.path(3), bar.lowPrice()) && matchesDecimal(row.path(4), bar.closePrice())
+                    && matchesDecimal(row.path(5), bar.volume());
+        } catch (JsonProcessingException | NumberFormatException invalid) {
+            return false;
+        }
+    }
+
+    private static boolean matchesDecimal(JsonNode value, BigDecimal stored) {
+        if (stored == null || !(value.isTextual() || value.isNumber())) return false;
+        BigDecimal original = new BigDecimal(value.asText());
+        // JDBC 返回列的实际精度，按 PostgreSQL numeric 的舍入方式核对已入库值。
+        return original.scale() >= -100 && original.scale() <= 100
+                && stored.compareTo(original.setScale(stored.scale(), RoundingMode.HALF_UP)) == 0;
     }
 
     @PostMapping("/ingestion-jobs")

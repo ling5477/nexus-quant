@@ -364,6 +364,8 @@
       "INCOMPLETE_RESPONSE": "公开来源响应不完整",
       "BUSY": "公开行情读取繁忙",
       "conflict": "{{count}} 根 K 线与公开来源有差异，保留已入库历史",
+      "historyError": "本地历史读取失败",
+      "unconfirmedHistory": "{{count}} 根 K 线的本地历史缺少交易所收盘证明，保留公开行情",
       "conflictSource": "存在差异的来源 {{source}}"
     },
     "fixtureData": "受控测试行情"

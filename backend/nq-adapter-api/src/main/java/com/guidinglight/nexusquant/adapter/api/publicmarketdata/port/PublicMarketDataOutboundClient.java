@@ -27,6 +27,16 @@ public interface PublicMarketDataOutboundClient {
         return new SnapshotResponse(PublicMarketDataOutboundErrorCategory.DISABLED, null, null, null);
     }
 
+    /** 当前所有展示分量共用的冷却截止时间。 */
+    default Instant snapshotRetryAt() {
+        return Instant.EPOCH;
+    }
+
+    /** 将协议层识别的限流合并到 transport 的重试门禁。 */
+    default Instant deferSnapshotUntil(Instant retryAt) {
+        return retryAt;
+    }
+
     record SnapshotResponse(
             PublicMarketDataOutboundErrorCategory error,
             byte[] body,

@@ -23,7 +23,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.DateTimeException;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 
 import static com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundErrorCategory.*;
@@ -57,7 +57,8 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
     private final HttpClient httpClient;
     private final Clock clock;
     private final BackoffSleeper sleeper;
-    private final AtomicReference<Instant> snapshotRetryAt = new AtomicReference<>(Instant.EPOCH);
+    private final BooleanSupplier outboundAllowed;
+    private Instant snapshotRetryAt = Instant.EPOCH;
 
     /**
      * 生产构造器；只应由 `public-marketdata-manual` profile + enabled=true 装配。
@@ -71,13 +72,16 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
             PublicMarketDataOutboundPolicy policy,
             PublicMarketDataOutboundSettings settings
     ) {
-        this(
-                baseUri,
-                policy,
-                settings,
+        this(baseUri, policy, settings, () -> true);
+    }
+
+    public JdkPublicMarketDataOutboundClient(
+            URI baseUri, PublicMarketDataOutboundPolicy policy,
+            PublicMarketDataOutboundSettings settings, BooleanSupplier outboundAllowed
+    ) {
+        this(baseUri, policy, settings,
                 HttpClient.newBuilder().connectTimeout(settings.connectTimeout()).build(),
-                Clock.systemUTC(),
-                backoff -> Thread.sleep(backoff.toMillis()));
+                Clock.systemUTC(), backoff -> Thread.sleep(backoff.toMillis()), outboundAllowed);
     }
 
     JdkPublicMarketDataOutboundClient(
@@ -88,12 +92,20 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
             Clock clock,
             BackoffSleeper sleeper
     ) {
+        this(baseUri, policy, settings, httpClient, clock, sleeper, () -> true);
+    }
+
+    private JdkPublicMarketDataOutboundClient(
+            URI baseUri, PublicMarketDataOutboundPolicy policy, PublicMarketDataOutboundSettings settings,
+            HttpClient httpClient, Clock clock, BackoffSleeper sleeper, BooleanSupplier outboundAllowed
+    ) {
         this.baseUri = validateBaseUri(baseUri);
         this.policy = Objects.requireNonNull(policy, "policy must not be null");
         this.settings = Objects.requireNonNull(settings, "settings must not be null");
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
         this.sleeper = Objects.requireNonNull(sleeper, "sleeper must not be null");
+        this.outboundAllowed = Objects.requireNonNull(outboundAllowed);
     }
 
     @Override
@@ -113,14 +125,8 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
                 ? SNAPSHOT_MAX_TIMEOUT : settings.totalRequestTimeout();
         long deadline = System.nanoTime() + timeout.toNanos();
         for (int attempt = 1; ; attempt++) {
-            Instant cooldown = snapshotRetryAt.get();
-            if (clock.instant().isBefore(cooldown)) {
-                return new SnapshotResponse(RATE_LIMITED, null, null, cooldown);
-            }
-            long remaining = deadline - System.nanoTime();
-            if (remaining <= 0) return snapshotFailure(TIMEOUT);
             if (!policy.evaluate(request).allowed()) return snapshotFailure(DENIED);
-            SnapshotResponse result = readSnapshot(path, Duration.ofNanos(remaining));
+            SnapshotResponse result = readSnapshot(path, deadline);
             // 限流按上游冷却时间处理；超时已经耗尽本次请求预算。
             if ((result.error() != TEMPORARY_FAILURE && result.error() != TRANSPORT_ERROR)
                     || attempt >= settings.maxAttempts()) return result;
@@ -137,18 +143,40 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
         }
     }
 
-    private SnapshotResponse readSnapshot(String path, Duration timeout) {
-        var request = HttpRequest.newBuilder(resolve(path)).timeout(timeout).GET().build();
+    @Override
+    public synchronized Instant snapshotRetryAt() {
+        return snapshotRetryAt;
+    }
+
+    @Override
+    public synchronized Instant deferSnapshotUntil(Instant retryAt) {
+        if (retryAt.isAfter(snapshotRetryAt)) snapshotRetryAt = retryAt;
+        return snapshotRetryAt;
+    }
+
+    private SnapshotResponse readSnapshot(String path, long deadline) {
+        BoundedPublicResponseReader.SnapshotRead read;
+        synchronized (this) {
+            // 限流登记与启动请求使用同一把锁。等待响应和退避均在锁外。
+            if (!outboundAllowed.getAsBoolean()) return snapshotFailure(DISABLED);
+            if (clock.instant().isBefore(snapshotRetryAt)) {
+                return new SnapshotResponse(RATE_LIMITED, null, null, snapshotRetryAt);
+            }
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0) return snapshotFailure(TIMEOUT);
+            var request = HttpRequest.newBuilder(resolve(path)).timeout(Duration.ofNanos(remaining)).GET().build();
+            read = BoundedPublicResponseReader.startSnapshot(httpClient, request, headers -> {
+                if (headers.statusCode() == 429) {
+                    deferSnapshotUntil(retryAfter(headers.headers().firstValue("Retry-After").orElse(""),
+                            clock.instant()));
+                }
+            });
+        }
         try {
-            var response = BoundedPublicResponseReader.read(httpClient, request, timeout, status -> status == 200);
+            var response = read.awaitBody(Duration.ofNanos(deadline - System.nanoTime()));
             int status = response.statusCode();
             Instant receivedAt = clock.instant();
-            if (status == 429) {
-                Instant retryAt = retryAfter(response.headers().firstValue("Retry-After").orElse(""), receivedAt);
-                Instant cooldown = snapshotRetryAt.accumulateAndGet(retryAt,
-                        (previous, next) -> previous.isAfter(next) ? previous : next);
-                return new SnapshotResponse(RATE_LIMITED, null, null, cooldown);
-            }
+            if (status == 429) return new SnapshotResponse(RATE_LIMITED, null, null, snapshotRetryAt());
             if (status >= 500) return snapshotFailure(TEMPORARY_FAILURE);
             return status == 200
                     ? new SnapshotResponse(NONE, response.body(), receivedAt, null)
@@ -170,7 +198,7 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
             Instant retryAt = value.matches("[0-9]{1,10}")
                     ? receivedAt.plusSeconds(Long.parseLong(value))
                     : ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant();
-            if (retryAt.isAfter(receivedAt)) return retryAt;
+            if (!retryAt.isBefore(receivedAt)) return retryAt;
         } catch (DateTimeException ignored) {
             // 请求端至少等待一个刷新周期，避免无有效 Retry-After 时立即重试。
         }
@@ -195,6 +223,7 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
     @Override
     public PublicMarketDataOutboundResult fetch(PublicMarketDataOutboundRequest request) {
         Objects.requireNonNull(request, "request must not be null");
+        if (!outboundAllowed.getAsBoolean()) return disabledFallback(request);
         PublicMarketDataOutboundDecision decision = policy.evaluate(request);
         if (!decision.allowed()) {
             return PublicMarketDataOutboundResult.denied(request, decision);
@@ -207,6 +236,7 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
         Instant startedAt = Instant.now(clock);
         PublicMarketDataOutboundResult latest = null;
         for (int attempt = 1; attempt <= settings.maxAttempts(); attempt++) {
+            if (!outboundAllowed.getAsBoolean()) return disabledFallback(request);
             PublicMarketDataOutboundDecision retryDecision = policy.evaluate(request);
             if (!retryDecision.allowed()) {
                 return PublicMarketDataOutboundResult.denied(request, retryDecision);

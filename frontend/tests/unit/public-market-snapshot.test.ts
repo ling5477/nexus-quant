@@ -28,7 +28,7 @@ const snapshot = (overrides: Partial<PublicMarketSnapshot> = {}): PublicMarketSn
     ...overrides,
 });
 const stored = (bar: PublicMarketBar, overrides: Partial<MarketdataBar> = {}): MarketdataBar => ({
-    ...market, ...bar, qualityStatus: 'OK', source: 'OKX_PUBLIC_HISTORY', ...overrides,
+    ...market, ...bar, qualityStatus: 'OK', source: 'EXCHANGE_HISTORICAL', venueCloseConfirmed: true, ...overrides,
 });
 
 describe('公开行情快照展示', () => {
@@ -40,8 +40,90 @@ describe('公开行情快照展示', () => {
             [forming.openTime, '103', 'FORMING'],
         ]);
         const closed = retainSnapshot(snapshot({bars: [tail, forming]}), first);
-        expect(closed.bars.at(-1)).toEqual(tail);
-        expect(retainSnapshot(snapshot({bars: [forming]}), closed).bars.at(-1)).toEqual(tail);
+        expect(closed.bars.at(-1)).toMatchObject(tail);
+        expect(retainSnapshot(snapshot({bars: [forming]}), closed).bars.at(-1)).toMatchObject(tail);
+    });
+
+    it('乱序及缺尾的成功响应保留原形成中观测，夹具重叠时显示差异', () => {
+        const forming = {...tail, status: 'FORMING', closePrice: '104'} as const;
+        const current = retainSnapshot(snapshot({bars: [prior, forming]}));
+        const older = retainSnapshot(snapshot({
+            bars: [prior, {...forming, closePrice: '101'}],
+            barsObservedAt: '2026-11-25T00:58:10Z',
+        }), current);
+        const incomplete = retainSnapshot(snapshot({
+            bars: [prior], barsObservedAt: '2026-11-25T01:00:50Z',
+        }), older);
+        expect(incomplete.bars).toHaveLength(2);
+        expect(incomplete.bars.at(-1)).toMatchObject({...forming, observedAt});
+        expect(snapshotExpiry(incomplete).candles).toBe(Date.parse(forming.closeTime));
+        const chart = mergeMarketChart(market, [
+            stored(tail, {source: 'STORED_OKX_FIXTURE', closePrice: '105'}),
+        ], incomplete, now);
+        expect(chart.unconfirmedHistoryCount).toBe(1);
+        expect(chart.bars).toHaveLength(2);
+        expect(chart.bars.at(-1)).toMatchObject({
+            status: 'FORMING', source: 'OKX_PUBLIC_CANDLES', comparedSource: 'STORED_OKX_FIXTURE',
+            exact: {close: '104'},
+        });
+    });
+
+    it('同桶更新遵循该桶观测时间，较新的确认才能由形成中推进为闭合', () => {
+        const forming = {...tail, status: 'FORMING'} as const;
+        const initial = retainSnapshot(snapshot({bars: [forming]}));
+        const updated = retainSnapshot(snapshot({
+            bars: [{...forming, closePrice: '104'}], barsObservedAt: '2026-11-25T01:00:50Z',
+        }), initial);
+        expect(updated.bars.at(-1)?.closePrice).toBe('104');
+        expect(retainSnapshot(snapshot({bars: [tail]}), updated).bars.at(-1)?.status).toBe('FORMING');
+        const closed = retainSnapshot(snapshot({
+            bars: [tail], barsObservedAt: '2026-11-25T01:01:00Z',
+        }), updated);
+        expect(closed.bars.at(-1)?.status).toBe('CLOSED');
+        expect(retainSnapshot(snapshot({
+            bars: [forming], barsObservedAt: '2026-11-25T01:01:10Z',
+        }), closed).bars.at(-1)?.observedAt).toBe('2026-11-25T01:01:00Z');
+        expect(retainSnapshot(snapshot({symbol: 'ETH-USDT', bars: [prior]}), closed).bars).toHaveLength(1);
+    });
+
+    it('较新时间桶出现后仍保留旧形成中事实及其原始过期点', () => {
+        const forming = {...tail, status: 'FORMING'} as const;
+        const next = {
+            ...forming,
+            openTime: '2026-11-25T01:00:00Z',
+            closeTime: '2026-11-25T01:59:59.999Z',
+        };
+        const previous = retainSnapshot(snapshot({bars: [forming], barsObservedAt: '2026-11-25T00:59:45Z'}));
+        const view = retainSnapshot(snapshot({bars: [next]}), previous);
+        expect(view.bars.map((bar) => bar.openTime)).toEqual([forming.openTime, next.openTime]);
+        expect(mergeMarketChart(market, [], view, now).bars[0]).toMatchObject({
+            status: 'FORMING', formingExpiresAt: Date.parse(forming.closeTime),
+        });
+        expect(snapshotExpiry(view).candles).toBe(now + 90_000);
+    });
+
+    it('缺失尾桶的批次不能给之前读到的闭合行情续期', () => {
+        const initial = retainSnapshot(snapshot({bars: [tail, prior]}));
+        const newer = retainSnapshot(snapshot({
+            bars: [prior], barsObservedAt: '2026-11-25T01:02:00Z',
+        }), initial);
+        expect(snapshotExpiry(newer).candles).toBe(now + 90_000);
+    });
+
+    it('历史缺少来源或原始收盘证明时不能取得闭合展示权', () => {
+        const publicBar = {...tail, status: 'FORMING'} as const;
+        const view = retainSnapshot(snapshot({bars: [publicBar]}));
+        for (const bar of [
+            stored(tail, {source: 'UNKNOWN'}),
+            stored(tail, {venueCloseConfirmed: undefined}),
+            stored(tail, {venueCloseConfirmed: false}),
+        ]) {
+            const merged = mergeMarketChart(market, [bar], view, now);
+            expect(merged.bars.at(-1)?.status).toBe('FORMING');
+            expect(merged.unconfirmedHistoryCount).toBe(1);
+            expect(mergeMarketChart(market, [bar], undefined, now).bars.at(-1)?.status).toBeUndefined();
+        }
+        expect(mergeMarketChart(market, [stored(tail)], view, now).bars.at(-1)?.status).toBe('CLOSED');
     });
 
     it('可信历史接管同一桶，并在精确十进制有差异时保留两个来源', () => {
@@ -53,7 +135,7 @@ describe('公开行情快照展示', () => {
         expect(merged.bars).toHaveLength(2);
         expect(merged.conflictCount).toBe(1);
         expect(merged.bars.at(-1)).toMatchObject({
-            status: 'CLOSED', source: 'OKX_PUBLIC_HISTORY', comparedSource: 'OKX_PUBLIC_CANDLES',
+            status: 'CLOSED', source: 'EXCHANGE_HISTORICAL', comparedSource: 'OKX_PUBLIC_CANDLES',
             exact: {close: '100.000000000000000002'},
         });
     });

@@ -14,6 +14,8 @@
 
 每根 K 线包含 `openTime`、`closeTime`、`openPrice`、`highPrice`、`lowPrice`、`closePrice`、`volume` 和 `status`。时间为 UTC Instant，`closeTime` 是周期末最后一毫秒，OKX `1D` 按 UTC+8 零点分桶。所有价格和成交量以十进制字符串传输。仅 OKX `confirm=0` 产生 `FORMING`，仅 `confirm=1` 产生 `CLOSED`。ticker 来源时间或接收时间超过 90 秒即过期。形成中 K 线越过所属桶或最近接收超过 90 秒即过期。
 
+固定历史 K 线查询保留原有记录和来源字段。历史响应的 `venueCloseConfirmed` 仅在 OKX SPOT 正式历史入库行的存档报文明确确认闭合，且开盘时间、周期边界及按数据库列精度核对的 OHLCV 与入库行一致时为 true。跟随最新仅用同一市场和时间桶内符合该证明的历史 K 线接管公开行情；未证实的重叠行保留公开 K 线并显示差异。可见且在线时，支持标的的本地历史每 30 秒独立更新。
+
 上游失败通过 HTTP 200 的部分状态表达，可用部分仍返回本次事实。状态包括 `AVAILABLE`、`DISABLED`、`DENIED`、`RATE_LIMITED`、`TIMEOUT`、`SOURCE_UNAVAILABLE`、`INVALID_RESPONSE`、`INCOMPLETE_RESPONSE` 和 `BUSY`。不可用 ticker 的金额与时间为 null，不可用 K 线为 `[]`。现有手动公开出站 profile、开关和 no-outbound／CI 守卫共同控制实际读取，默认返回 `DISABLED`。网络端点限于经现有 policy 审核的 OKX 公开 ticker 和 candles GET。该接口只供展示，历史入库、运行行情、策略、订单、成交、账务与估值均在其调用链之外。
 
 ## 离线 Python 因子研究

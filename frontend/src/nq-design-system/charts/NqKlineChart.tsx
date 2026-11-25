@@ -272,7 +272,11 @@ export function NqKlineChart({
                                 </strong>
                             </span>
                             {inspected.status && (
-                                <span>{t(inspected.status === 'FORMING' ? 'markets.forming' : 'markets.snapshot.closed')}</span>
+                                <span>
+                                    {t(inspected.status === 'FORMING' ? 'markets.forming' : 'markets.snapshot.closed')}
+                                    {inspected.formingExpiresAt !== undefined && inspected.formingExpiresAt < Date.now()
+                                        && ' · ' + t('markets.snapshot.stale')}
+                                </span>
                             )}
                             {inspected.source && <span>{inspected.source}</span>}
                             {inspected.comparedSource && (

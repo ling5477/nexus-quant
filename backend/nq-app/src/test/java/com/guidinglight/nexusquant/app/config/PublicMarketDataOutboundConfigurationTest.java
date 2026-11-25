@@ -20,6 +20,8 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.env.YamlPropertySourceLoader;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.env.SystemEnvironmentPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -33,7 +35,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 class PublicMarketDataOutboundConfigurationTest {
 
     private ApplicationContextRunner configuredFeedRunner(Map<String, Object> environment) {
-        return new ApplicationContextRunner()
+        return isolatedRunner(Map.of())
                 .withUserConfiguration(PublicMarketDataOutboundConfiguration.class, OkxClosedBarMarketFeed.class)
                 .withInitializer(context -> {
                     context.getEnvironment().setActiveProfiles("public-marketdata-manual");
@@ -96,7 +98,20 @@ class PublicMarketDataOutboundConfigurationTest {
                 });
     }
 
-    private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+    private static ApplicationContextRunner isolatedRunner(Map<String, Object> processEnvironment) {
+        return new ApplicationContextRunner(() -> {
+            var context = new AnnotationConfigApplicationContext();
+            context.setEnvironment(new StandardEnvironment() {
+                @Override
+                public Map<String, Object> getSystemEnvironment() {
+                    return processEnvironment;
+                }
+            });
+            return context;
+        });
+    }
+
+    private final ApplicationContextRunner contextRunner = isolatedRunner(Map.of())
             .withUserConfiguration(PublicMarketDataOutboundConfiguration.class);
 
     @Test
@@ -131,6 +146,20 @@ class PublicMarketDataOutboundConfigurationTest {
                 .run(context -> assertThrows(
                         NoSuchBeanDefinitionException.class,
                         () -> context.getBean(PublicMarketDataOutboundClient.class)));
+    }
+
+    @Test
+    void processVetoPreventsAssemblyEvenWhenSpringSettingsEnableOutbound() {
+        for (var process : java.util.List.<Map<String, Object>>of(
+                Map.of("CI", "true"), Map.of("NQ_NO_OUTBOUND", "true"),
+                Map.of("CI", "true", "NQ_NO_OUTBOUND", "true"))) {
+            isolatedRunner(process).withUserConfiguration(PublicMarketDataOutboundConfiguration.class)
+                    .withInitializer(context -> context.getEnvironment().setActiveProfiles("local", "public-marketdata-manual"))
+                    .withPropertyValues("nq.public-marketdata.outbound.enabled=true",
+                            "nq.env-safety.ci=false", "nq.env-safety.no-outbound=false")
+                    .run(context -> assertInstanceOf(DisabledPublicMarketDataOutboundClient.class,
+                            context.getBean(PublicMarketDataOutboundClient.class)));
+        }
     }
 
     @Test

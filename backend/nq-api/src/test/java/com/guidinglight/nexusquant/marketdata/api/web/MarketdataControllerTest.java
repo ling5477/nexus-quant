@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.marketdata.api.web;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -21,6 +22,7 @@ import com.guidinglight.nexusquant.marketdata.application.service.MarketdataInge
 import com.guidinglight.nexusquant.marketdata.application.service.MarketdataQualityOverviewService;
 import com.guidinglight.nexusquant.marketdata.application.service.MarketdataReadinessService;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
+import com.guidinglight.nexusquant.marketdata.domain.BarProvenance;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalMarketDataQuery;
 import com.guidinglight.nexusquant.marketdata.domain.MarketdataDataset;
@@ -95,6 +97,53 @@ class MarketdataControllerTest {
                 .addFilters(new TestTraceIdFilter())
                 .setControllerAdvice(new ApiExceptionHandler())
                 .build();
+    }
+
+    @Test
+    void historicalTakeoverRequiresTheVenueConfirmationForThePersistedBucket() throws Exception {
+        Instant start = Instant.parse("2026-11-25T10:00:00Z");
+        var confirmed = storedOkxBar(start, "1", "103.000000000000000001", start);
+        var forming = storedOkxBar(start.plusSeconds(60), "0", "103", start.plusSeconds(60));
+        var mismatchedPrice = storedOkxBar(start.plusSeconds(120), "1", "105", start.plusSeconds(120));
+        var fixture = storedOkxBar(start.plusSeconds(180), "1", "103", start.plusSeconds(180));
+        var unknown = storedOkxBar(start.plusSeconds(240), "1", "103", start.plusSeconds(240));
+        var wrongBucket = storedOkxBar(start.plusSeconds(300), "1", "103", start.plusSeconds(240));
+        when(historicalMarketDataPort.loadBars(any())).thenReturn(
+                List.of(confirmed, forming, mismatchedPrice, fixture, unknown, wrongBucket));
+        var mvc = MockMvcBuilders.standaloneSetup(new MarketdataController(marketdataBarIngestService,
+                historicalMarketDataPort, marketdataIngestionService, marketdataDatasetService,
+                marketdataReadinessService, marketdataQualityOverviewService,
+                (exchange, market, symbol, interval, times) -> Map.of(
+                        confirmed.openTime(), new BarProvenance(confirmed.openTime(), "EXCHANGE_HISTORICAL", start),
+                        forming.openTime(), new BarProvenance(forming.openTime(), "EXCHANGE_HISTORICAL", start),
+                        mismatchedPrice.openTime(), new BarProvenance(mismatchedPrice.openTime(), "EXCHANGE_HISTORICAL", start),
+                        fixture.openTime(), new BarProvenance(fixture.openTime(), "FIXTURE_SYNC", start),
+                        wrongBucket.openTime(), new BarProvenance(wrongBucket.openTime(), "EXCHANGE_HISTORICAL", start))))
+                .build();
+        mvc.perform(get("/api/marketdata/bars")
+                        .param("exchangeCode", "OKX").param("marketType", "SPOT").param("symbol", "BTC-USDT")
+                        .param("interval", "1m").param("startTime", start.toString())
+                        .param("endTime", start.plusSeconds(360).toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].venueCloseConfirmed").value(true))
+                .andExpect(jsonPath("$[1].venueCloseConfirmed").value(false))
+                .andExpect(jsonPath("$[2].venueCloseConfirmed").value(false))
+                .andExpect(jsonPath("$[3].source").value("FIXTURE_SYNC"))
+                .andExpect(jsonPath("$[3].venueCloseConfirmed").value(false))
+                .andExpect(jsonPath("$[4].source").value("UNKNOWN"))
+                .andExpect(jsonPath("$[4].venueCloseConfirmed").value(false))
+                .andExpect(jsonPath("$[5].venueCloseConfirmed").value(false));
+        verifyNoInteractions(marketdataBarIngestService, marketdataIngestionService);
+    }
+
+    private static HistoricalBar storedOkxBar(Instant start, String confirm, String close, Instant sourceStart) {
+        String raw = """
+                ["%s","100","110","99","%s","2","2","206","%s"]
+                """.formatted(sourceStart.toEpochMilli(), close, confirm);
+        return new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_MINUTE,
+                start, start.plusMillis(59_999), new BigDecimal("100"), new BigDecimal("110"),
+                new BigDecimal("99"), new BigDecimal("103.00000000"), new BigDecimal("2"),
+                new BigDecimal("206"), null, "OK", raw);
     }
 
     @Test

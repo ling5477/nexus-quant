@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -47,7 +46,6 @@ final class PublicMarketSnapshotService implements PublicMarketSnapshotReadPort 
     private final OkxPublicSnapshotParser parser;
     private final ExecutorService tickerExecutor = Executors.newVirtualThreadPerTaskExecutor();
     private final Map<Selection, CompletableFuture<PublicMarketSnapshot>> inFlight = new HashMap<>();
-    private final AtomicReference<Instant> retryAt = new AtomicReference<>(Instant.EPOCH);
 
     @Autowired
     PublicMarketSnapshotService(InstrumentCatalogReadPort catalog,
@@ -89,7 +87,7 @@ final class PublicMarketSnapshotService implements PublicMarketSnapshotReadPort 
         if (!outboundAllowed.getAsBoolean()) return unavailable(selection, SourceStatus.DISABLED, null);
         PublicMarketDataOutboundClient outbound = client.get();
         if (outbound == null) return unavailable(selection, SourceStatus.DISABLED, null);
-        Instant cooldown = retryAt.get();
+        Instant cooldown = outbound.snapshotRetryAt();
         if (clock.instant().isBefore(cooldown)) return unavailable(selection, SourceStatus.RATE_LIMITED, cooldown);
 
         CompletableFuture<PublicMarketSnapshot> existing;
@@ -127,21 +125,22 @@ final class PublicMarketSnapshotService implements PublicMarketSnapshotReadPort 
                 response -> parser.ticker(response.body(), symbol, response.observedAt())), tickerExecutor);
         var bars = readPart(outbound, PublicMarketDataEndpointCategory.OHLCV, candlePath,
                 response -> parser.candles(response.body(), selection.interval(), response.observedAt()));
-        return compose(selection, ticker.join(), bars);
+        var observedTicker = ticker.join();
+        Instant cooldown = outbound.snapshotRetryAt();
+        return compose(selection, observedTicker, bars, clock.instant().isBefore(cooldown) ? cooldown : null);
     }
 
     private <T> Part<T> readPart(PublicMarketDataOutboundClient outbound,
                                  PublicMarketDataEndpointCategory category, String path,
                                  Function<SnapshotResponse, T> parse) {
         SnapshotResponse response = outbound.fetchSnapshot(PublicMarketDataOutboundRequest.publicGet("OKX", category, path));
-        if (response.retryAt() != null) rememberCooldown(response.retryAt());
         return switch (response.error()) {
             case NONE -> {
                 try {
                     yield new Part<>(parse.apply(response), response.observedAt(), SourceStatus.AVAILABLE, null);
                 } catch (OkxPublicSnapshotParser.SourceFailure ex) {
                     Instant cooldown = ex.status() == SourceStatus.RATE_LIMITED
-                            ? rememberCooldown(clock.instant().plusSeconds(30)) : null;
+                            ? outbound.deferSnapshotUntil(response.observedAt().plusSeconds(30)) : null;
                     yield Part.failed(ex.status(), cooldown);
                 }
             }
@@ -154,12 +153,8 @@ final class PublicMarketSnapshotService implements PublicMarketSnapshotReadPort 
         };
     }
 
-    private Instant rememberCooldown(Instant next) {
-        return retryAt.accumulateAndGet(next, PublicMarketSnapshotService::latest);
-    }
-
     private PublicMarketSnapshot compose(Selection selection, Part<OkxPublicSnapshotParser.Ticker> ticker,
-                                          Part<List<PublicMarketSnapshot.Bar>> bars) {
+                                         Part<List<PublicMarketSnapshot.Bar>> bars, Instant cooldown) {
         Instant now = clock.instant();
         Freshness tickerFreshness = ticker.data() == null ? Freshness.UNAVAILABLE
                 : freshness(now, ticker.data().venueTime().plusSeconds(OkxPublicSnapshotParser.FRESH_SECONDS));
@@ -183,7 +178,7 @@ final class PublicMarketSnapshotService implements PublicMarketSnapshotReadPort 
                 ticker.data() == null ? null : ticker.data().venueTime(), ticker.observedAt(),
                 "OKX_PUBLIC_TICKER", candles, bars.observedAt(), "OKX_PUBLIC_CANDLES",
                 latest(ticker.observedAt(), bars.observedAt()), snapshotFreshness, tickerFreshness, barsFreshness,
-                ticker.status(), bars.status(), latest(ticker.retryAt(), bars.retryAt()));
+                ticker.status(), bars.status(), latest(cooldown, latest(ticker.retryAt(), bars.retryAt())));
     }
 
     private static boolean observedStale(Part<?> part, Instant now) {
@@ -196,7 +191,7 @@ final class PublicMarketSnapshotService implements PublicMarketSnapshotReadPort 
     }
 
     private PublicMarketSnapshot unavailable(Selection selection, SourceStatus status, Instant cooldown) {
-        return compose(selection, Part.failed(status, cooldown), Part.failed(status, cooldown));
+        return compose(selection, Part.failed(status, cooldown), Part.failed(status, cooldown), cooldown);
     }
 
     private static Instant latest(Instant a, Instant b) {

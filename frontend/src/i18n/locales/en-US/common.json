@@ -364,6 +364,8 @@
       "INCOMPLETE_RESPONSE": "Incomplete public source response",
       "BUSY": "Public market read busy",
       "conflict": "{{count}} candles differ from the public source. Stored history is shown.",
+      "historyError": "Local history could not be loaded",
+      "unconfirmedHistory": "{{count}} local candles lack venue close confirmation. Public candles are shown.",
       "conflictSource": "Conflicting source {{source}}"
     },
     "fixtureData": "Controlled fixture data"

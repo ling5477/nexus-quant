@@ -15,9 +15,9 @@ interface Props {
 export function PublicMarketSnapshotStatus({market, quoteAsset, priceClassName = 'nq-num'}: Props) {
     const {t} = useTranslation();
     if (!market.active) return null;
-    const {snapshot, view, chart} = market;
+    const {snapshot, history, view, chart} = market;
     const ticker = view?.ticker;
-    const candles = view?.candles;
+    const candleObservedAt = view?.bars.at(-1)?.observedAt;
     const tail = chart.bars.at(-1);
     const error = snapshot.error;
     const httpStatus = (error as AppApiError | null)?.status;
@@ -57,14 +57,18 @@ export function PublicMarketSnapshotStatus({market, quoteAsset, priceClassName =
                 </Tag>
             )}
             {candleState && (
-                <Typography.Text type="secondary" title={candles?.source}>
+                <Typography.Text type="secondary" title={view?.candles?.source}>
                     {t('markets.snapshot.candles', {status: t(`markets.snapshot.${candleState}`)})}
-                    {candles?.barsObservedAt && ' · ' + t('markets.snapshot.receivedAt', {
-                        time: formatDateTime(candles.barsObservedAt),
+                    {candleObservedAt && ' · ' + t('markets.snapshot.receivedAt', {
+                        time: formatDateTime(candleObservedAt),
                     })}
                 </Typography.Text>
             )}
             {snapshot.isFetching && <Tag>{t('markets.snapshot.refreshing')}</Tag>}
+            {history.isError && <Tag color="warning">{t('markets.snapshot.historyError')}</Tag>}
+            {chart.unconfirmedHistoryCount > 0 && (
+                <Tag color="warning">{t('markets.snapshot.unconfirmedHistory', {count: chart.unconfirmedHistoryCount})}</Tag>
+            )}
             {chart.conflictCount > 0 && (
                 <Tag color="warning">{t('markets.snapshot.conflict', {count: chart.conflictCount})}</Tag>
             )}

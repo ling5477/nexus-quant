@@ -53,7 +53,8 @@ export function usePublicMarketSnapshot(selection: PublicMarketSelection | null,
             const previous = client.getQueryData<MarketSnapshotView>(key);
             if (previous && cooldown(previous) > 0) return previous;
             const next = validateSnapshot(await marketdataApi.getPublicSnapshot(active!, signal), active!);
-            return retainSnapshot(next, previous);
+            signal.throwIfAborted();
+            return retainSnapshot(next, client.getQueryData<MarketSnapshotView>(key));
         },
         enabled: (query) => supported && ready && !permanentFailure(query.state.data, query.state.error),
         retry: false,
@@ -79,8 +80,8 @@ export function usePublicMarketSnapshot(selection: PublicMarketSelection | null,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
         refetchIntervalInBackground: false,
-        refetchInterval: ready && supported && !permanentFailure(snapshot.data, snapshot.error)
-            && snapshot.data !== undefined && cooldown(snapshot.data) === 0 ? MARKET_POLL_MS : false,
+        // 本地历史的准入与公开快照的故障及限流独立。
+        refetchInterval: ready && supported ? MARKET_POLL_MS : false,
     });
 
     const [, updateFreshness] = useReducer((revision: number) => revision + 1, 0);
@@ -101,7 +102,9 @@ export function usePublicMarketSnapshot(selection: PublicMarketSelection | null,
     const olderTicker = Date.parse(view?.latest.lastPriceObservedAt ?? '')
         < Date.parse(view?.ticker?.lastPriceObservedAt ?? '');
     const staleTicker = expiry.ticker < now || view?.ticker?.tickerFreshness === 'STALE' || olderTicker;
-    const staleCandles = expiry.candles < now || view?.candles?.barsFreshness === 'STALE';
+    const candleObservation = view?.bars.at(-1)?.observedAt;
+    const staleCandles = expiry.candles < now || (candleObservation === view?.candles?.barsObservedAt
+        && view?.candles?.barsFreshness === 'STALE');
     const cooling = cooldown(view) > 0;
     return {
         active, supported, online, ready, history, snapshot, view, chart, staleTicker, staleCandles,

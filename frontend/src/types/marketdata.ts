@@ -18,6 +18,7 @@ export interface MarketdataBar {
     barId?: string | null;
     barIdentitySha256?: string | null;
     priceEventTimes?: PriceEventTimes;
+    venueCloseConfirmed?: boolean;
 }
 
 export type PublicMarketSelection = Pick<MarketdataBar, 'exchangeCode' | 'marketType' | 'symbol' | 'interval'>;

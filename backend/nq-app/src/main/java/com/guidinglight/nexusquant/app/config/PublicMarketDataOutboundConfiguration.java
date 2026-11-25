@@ -7,6 +7,8 @@ import com.guidinglight.nexusquant.adapter.api.publicmarketdata.policy.PublicMar
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.config.PublicMarketDataOutboundSettings;
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataQualitySummary;
 
+import com.guidinglight.nexusquant.app.marketdata.ManualPublicMarketRead;
+
 import java.net.URI;
 import java.time.Duration;
 import java.util.Locale;
@@ -18,6 +20,7 @@ import org.springframework.boot.convert.DurationStyle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
 
 /**
  * PublicMarketDataOutboundConfiguration 是公开行情出站策略 public outbound 的 Spring 装配边界。
@@ -54,6 +57,7 @@ public class PublicMarketDataOutboundConfiguration {
      * <p>边界：该 Bean 只消费 public outbound 配置，不读取任何 exchange credential；policy 仍会在
      * 每次请求前拒绝 private/signed/credential-like endpoint，retry 也不会绕过 policy。</p>
      *
+     * @param environment         当前公开出站许可的配置来源
      * @param baseUrl             public marketdata base URL；O-1 测试只使用 localhost fake server
      * @param connectTimeout      connect timeout，默认 3s
      * @param readTimeout         read timeout 语义，默认 5s
@@ -70,6 +74,8 @@ public class PublicMarketDataOutboundConfiguration {
             name = "enabled",
             havingValue = "true")
     public PublicMarketDataOutboundClient publicMarketDataOutboundClient(
+            Environment environment,
+            @Value("${nq.public-marketdata.outbound.fallback-origin:LOCAL_DB}") String fallbackOrigin,
             @Value("${nq.public-marketdata.outbound.base-url:${NQ_PUBLIC_MARKETDATA_BASE_URL:http://127.0.0.1:0}}") String baseUrl,
             @Value("${nq.public-marketdata.outbound.connect-timeout:PT3S}") String connectTimeout,
             @Value("${nq.public-marketdata.outbound.read-timeout:PT5S}") String readTimeout,
@@ -77,6 +83,9 @@ public class PublicMarketDataOutboundConfiguration {
             @Value("${nq.public-marketdata.outbound.max-retries:2}") int maxRetries,
             @Value("${nq.public-marketdata.outbound.first-backoff:PT0.5S}") String firstBackoff,
             @Value("${nq.public-marketdata.outbound.second-backoff:PT1S}") String secondBackoff) {
+        if (!ManualPublicMarketRead.allowed(environment)) {
+            return new DisabledPublicMarketDataOutboundClient(parseFallbackOrigin(fallbackOrigin));
+        }
         URI origin;
         try {
             origin = URI.create(baseUrl);
@@ -93,7 +102,8 @@ public class PublicMarketDataOutboundConfiguration {
                         parseDuration(totalRequestTimeout),
                         maxRetries,
                         parseDuration(firstBackoff),
-                        parseDuration(secondBackoff)));
+                        parseDuration(secondBackoff)),
+                () -> ManualPublicMarketRead.allowed(environment));
     }
 
     private static PublicMarketDataQualitySummary.DataOrigin parseFallbackOrigin(String value) {

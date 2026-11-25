@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.config.PublicMarketDataOutboundSettings;
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.policy.PublicMarketDataOutboundPolicy;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataEndpointCategory;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundRequest;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundErrorCategory;
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.JdkPublicMarketDataOutboundClient;
 import com.guidinglight.nexusquant.adapter.okx.marketdata.OkxHistoricalKlineAdapter;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
@@ -30,7 +33,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.function.BooleanSupplier;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,6 +63,7 @@ class PublicMarketSnapshotTest {
     private volatile Response ticker;
     private volatile Response candles;
     private PublicMarketSnapshotService snapshots;
+    private volatile CountDownLatch firstRequests;
 
     @BeforeEach
     void start() throws Exception {
@@ -154,7 +162,7 @@ class PublicMarketSnapshotTest {
         assertEquals(0, tickerCalls.get());
         assertEquals(0, candleCalls.get());
 
-        var environment = new MockEnvironment();
+        var environment = environment(Map.of());
         assertFalse(ManualPublicMarketRead.allowed(environment));
         environment.setActiveProfiles("local", "public-marketdata-manual");
         environment.setProperty("nq.public-marketdata.outbound.enabled", "true");
@@ -167,6 +175,105 @@ class PublicMarketSnapshotTest {
         environment.setProperty("nq.env-safety.ci", "false");
         environment.setActiveProfiles("test", "public-marketdata-manual");
         assertFalse(ManualPublicMarketRead.allowed(environment));
+    }
+
+    @Test
+    void processVetoBlocksBothSnapshotAndDirectTransportWhenSpringExplicitlyAllows() throws Exception {
+        var request = PublicMarketDataOutboundRequest.publicGet("OKX", PublicMarketDataEndpointCategory.TICKER,
+                "/api/v5/market/ticker?instId=BTC-USDT");
+        for (var process : List.<Map<String, Object>>of(
+                Map.of("CI", "true"), Map.of("NQ_NO_OUTBOUND", "TRUE"),
+                Map.of("CI", "true", "NQ_NO_OUTBOUND", "true"))) {
+            var environment = environment(process);
+            environment.setActiveProfiles("local", "public-marketdata-manual");
+            environment.setProperty("nq.public-marketdata.outbound.enabled", "true");
+            environment.setProperty("nq.env-safety.ci", "false");
+            environment.setProperty("nq.env-safety.no-outbound", "false");
+            BooleanSupplier allowed = () -> ManualPublicMarketRead.allowed(environment);
+            var client = setup(allowed, allowed, Duration.ofSeconds(2), origin(), Duration.ofMillis(1));
+            try {
+                mvc().perform(get("/api/marketdata/public-snapshot")
+                                .param("exchangeCode", "OKX").param("marketType", "SPOT")
+                                .param("symbol", "BTC-USDT").param("interval", "1m"))
+                        .andExpect(status().isOk()).andExpect(jsonPath("$.tickerStatus").value("DISABLED"))
+                        .andExpect(jsonPath("$.barsStatus").value("DISABLED"));
+                assertEquals(PublicMarketDataOutboundErrorCategory.DISABLED, client.fetchSnapshot(request).error());
+                assertEquals(0, tickerCalls.get() + candleCalls.get());
+            } finally {
+                snapshots.stop();
+            }
+        }
+    }
+
+    @Test
+    void slowHttp429BodyDoesNotLoseRetryAfterOrReleaseTheOtherRetry() {
+        setup(() -> true, () -> true, Duration.ofSeconds(2), origin(), Duration.ofMillis(1000));
+        firstRequests = new CountDownLatch(2);
+        ticker = new Response(429, "rate limited", 4500, "75", 100);
+        candles = new Response(503, "backoff");
+        var result = read();
+        assertEquals(RATE_LIMITED, result.tickerStatus());
+        assertEquals(RATE_LIMITED, result.barsStatus());
+        assertTrue(result.retryAt().isAfter(now.plusSeconds(70)));
+        assertEquals(1, tickerCalls.get());
+        assertEquals(1, candleCalls.get());
+        assertEquals(result.retryAt(), read().retryAt());
+        assertEquals(2, tickerCalls.get() + candleCalls.get());
+    }
+
+    @Test
+    void businessRateLimitFromTickerStopsScheduledCandleRetry() {
+        assertBusinessRateLimit(true);
+    }
+
+    @Test
+    void businessRateLimitFromCandlesStopsScheduledTickerRetry() {
+        assertBusinessRateLimit(false);
+    }
+
+    private void assertBusinessRateLimit(boolean tickerLimits) {
+        setup(() -> true, () -> true, Duration.ofSeconds(2), origin(), Duration.ofMillis(1000));
+        firstRequests = new CountDownLatch(2);
+        var rejected = new Response(200, "{\"code\":\"" + (tickerLimits ? "50011" : "50040") + "\"}",
+                0, null, 100);
+        var retryable = new Response(503, "backoff");
+        ticker = tickerLimits ? rejected : retryable;
+        candles = tickerLimits ? retryable : rejected;
+        var result = read();
+        assertEquals(RATE_LIMITED, result.tickerStatus());
+        assertEquals(RATE_LIMITED, result.barsStatus());
+        assertTrue(result.retryAt().isAfter(now.plusSeconds(25)));
+        assertEquals(1, tickerCalls.get());
+        assertEquals(1, candleCalls.get());
+        assertEquals(result.retryAt(), read().retryAt());
+        assertEquals(2, tickerCalls.get() + candleCalls.get());
+    }
+
+    @Test
+    void concurrentLimitsKeepLongestDeadlineWithInvalidRetryAfterFallback() {
+        setup(true, Duration.ofSeconds(2));
+        firstRequests = new CountDownLatch(2);
+        ticker = new Response(429, "ignored", 0, "75");
+        candles = new Response(429, "ignored", 0, "invalid", 100);
+        var result = read();
+        assertEquals(RATE_LIMITED, result.tickerStatus());
+        assertEquals(RATE_LIMITED, result.barsStatus());
+        assertTrue(result.retryAt().isAfter(now.plusSeconds(70)));
+        assertEquals(result.retryAt(), read().retryAt());
+        assertEquals(2, tickerCalls.get() + candleCalls.get());
+    }
+
+    @Test
+    void invalidRetryAfterStartsDefaultCooldown() {
+        setup(true, Duration.ofSeconds(2));
+        ticker = new Response(429, "ignored", 0, "invalid");
+        var result = read();
+        assertEquals(RATE_LIMITED, result.tickerStatus());
+        assertTrue(result.retryAt().isAfter(now.plusSeconds(25)));
+        assertTrue(result.retryAt().isBefore(Instant.now().plusSeconds(31)));
+        int requests = tickerCalls.get() + candleCalls.get();
+        assertEquals(result.retryAt(), read().retryAt());
+        assertEquals(requests, tickerCalls.get() + candleCalls.get());
     }
 
     @Test
@@ -229,20 +336,40 @@ class PublicMarketSnapshotTest {
         assertEquals(opened.plusSeconds(86400).minusMillis(1), parsed.getFirst().closeTime());
     }
 
+    private MockEnvironment environment(Map<String, Object> processEnvironment) {
+        return new MockEnvironment() {
+            @Override
+            public Map<String, Object> getSystemEnvironment() {
+                return processEnvironment;
+            }
+        };
+    }
+
+    private URI origin() {
+        return URI.create("http://127.0.0.1:" + upstream.getAddress().getPort());
+    }
+
     private void setup(boolean enabled, Duration timeout) {
-        setup(enabled, timeout, URI.create("http://127.0.0.1:" + upstream.getAddress().getPort()));
+        setup(enabled, timeout, origin());
     }
 
     private void setup(boolean enabled, Duration timeout, URI origin) {
+        setup(() -> enabled, () -> true, timeout, origin, Duration.ofMillis(1));
+    }
+
+    private JdkPublicMarketDataOutboundClient setup(BooleanSupplier enabled, BooleanSupplier transportAllowed,
+                                                    Duration timeout, URI origin, Duration backoff) {
         var settings = new PublicMarketDataOutboundSettings(Duration.ofMillis(150), timeout, timeout, 2,
-                Duration.ofMillis(1), Duration.ofMillis(1));
-        var outbound = new JdkPublicMarketDataOutboundClient(origin, new PublicMarketDataOutboundPolicy(), settings);
+                backoff, backoff);
+        var outbound = new JdkPublicMarketDataOutboundClient(origin, new PublicMarketDataOutboundPolicy(),
+                settings, transportAllowed);
         snapshots = new PublicMarketSnapshotService((exchange, symbols) -> {
             catalogReads.incrementAndGet();
             return "OKX".equals(exchange) && List.of("BTC-USDT").equals(symbols)
                     ? List.of(new InstrumentCatalogItem("OKX", "SPOT", "BTC-USDT", "BTC-USDT", "BTC", "USDT",
                             "LIVE", null, null, null, "FIXTURE")) : List.of();
-        }, () -> outbound, mapper, () -> enabled, Clock.systemUTC());
+        }, () -> outbound, mapper, enabled, Clock.systemUTC());
+        return outbound;
     }
 
     private PublicMarketSnapshot read() {
@@ -276,6 +403,16 @@ class PublicMarketSnapshotTest {
                 exchange.sendResponseHeaders(404, -1);
                 return;
             }
+            if (firstRequests != null) {
+                firstRequests.countDown();
+                try {
+                    if (!firstRequests.await(1, TimeUnit.SECONDS)) throw new IOException("夹具请求未并发到达");
+                    Thread.sleep(response.headerDelayMs());
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
             if (response.retryAfter() != null) exchange.getResponseHeaders().set("Retry-After", response.retryAfter());
             byte[] body = response.body().getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(response.status(), body.length);
@@ -307,7 +444,10 @@ class PublicMarketSnapshotTest {
                 """.formatted(open.toEpochMilli(), confirm);
     }
 
-    private record Response(int status, String body, int delayMs, String retryAfter) {
+    private record Response(int status, String body, int delayMs, String retryAfter, int headerDelayMs) {
         private Response(int status, String body) { this(status, body, 0, null); }
+        private Response(int status, String body, int delayMs, String retryAfter) {
+            this(status, body, delayMs, retryAfter, 0);
+        }
     }
 }
