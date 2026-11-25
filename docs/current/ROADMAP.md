@@ -1,8 +1,16 @@
-## v1.0.5 已发行与下一规划入口
+## v1.0.6 当前开发路线与正式发行
 
 NexusQuant **v1.0.5 / RELEASED** 于 2026-11-23 08:51:51（北京时间）发布，Release ID `454867217`，Flyway V52。正式 Snapshot 为 `d64e8810dde605ca56c0c770e8b41eb4b7100667`，六项资产摘要及 Windows Self-Hosted、独立 Python Companion、普通升级限定范围见 [STATUS](STATUS.md)。 [GitHub Release](https://github.com/ling5477/nexus-quant/releases/tag/v1.0.5)
 
-`NQ-V106-PLAN / NOT_STARTED` 是收口后的规划入口。七日运营验证通过，策略盈利能力仍为 `NOT_ESTABLISHED`，人工复盘结论为 `RETURN_TO_RESEARCH / CLOSED`。运营与安全状态以 [STATUS](STATUS.md) 记录为准。
+| 阶段 | 状态 | 范围 |
+| --- | --- | --- |
+| V106-01 | `ACCEPTED` | 有界 Continuous SIM 已交付。功能验收、PR CI 与合并后 CI 身份见 [STATUS](STATUS.md)。 |
+| V106-02 | `NEXT / NOT_STARTED` | 首页和行情页共用 OKX SPOT 只读行情快照，显示最新公开成交价、近期 K 线及形成中／已闭合状态。 |
+| V106-03 | `NOT_STARTED` | OKX Demo 账户余额只读展示，范围限获准 Demo 账户的所有者。 |
+
+V106-02 复用现有可见标的目录、历史 K 线与公开 OKX 读取。首页和行情页在可见且在线的「跟随最新」模式每 30 秒刷新，保留固定历史区间查询。以市场、周期和开盘时间合并同一桶，核验形成中转闭合、历史接管、数据源冲突、断网及限流。展示快照与历史入库、策略闭合行情、运行估值和交易写入隔离，计划内无数据库变更。
+
+v1.0.5 七日运营验证通过，策略盈利能力为 `NOT_ESTABLISHED`，人工复盘结论为 `RETURN_TO_RESEARCH / CLOSED`。当前阶段、安全状态及下一项以 [STATUS](STATUS.md) 的机器区块为准。
 
 ## 历史记录：v1.0.5 发行候选资格（2026-11-17）
 
