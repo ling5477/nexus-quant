@@ -27,11 +27,14 @@ public interface ClosedBarMarketFeed {
 
     enum ResponseKind { COMPLETE_RESPONSE, INCOMPLETE_RESPONSE, TRANSPORT_INTERRUPTED, PARSE_FAILED }
 
+    record RowParseFailure(int index, String reason) {}
+
     /** 响应未能完整解析。已验证的闭合行仅用于比对修订，不能作为可推进策略的行情页。 */
     final class IncompleteObservation extends IllegalStateException {
         private final List<HistoricalBar> verifiedBars;
         private final ResponseKind kind;
         private final byte[] receivedPrefix;
+        private final List<RowParseFailure> rowFailures;
 
         public IncompleteObservation(List<HistoricalBar> verifiedBars, IllegalStateException cause) {
             this(verifiedBars, ResponseKind.INCOMPLETE_RESPONSE, new byte[0], cause);
@@ -39,6 +42,12 @@ public interface ClosedBarMarketFeed {
 
         public IncompleteObservation(List<HistoricalBar> verifiedBars, ResponseKind kind,
                                      byte[] receivedPrefix, IllegalStateException cause) {
+            this(verifiedBars, kind, receivedPrefix, List.of(), cause);
+        }
+
+        public IncompleteObservation(List<HistoricalBar> verifiedBars, ResponseKind kind,
+                                     byte[] receivedPrefix, List<RowParseFailure> rowFailures,
+                                     IllegalStateException cause) {
             super(cause.getMessage(), cause);
             if (kind == ResponseKind.COMPLETE_RESPONSE || receivedPrefix.length > MAX_RESPONSE_BYTES) {
                 throw new IllegalArgumentException("INVALID_INCOMPLETE_RESPONSE_EVIDENCE");
@@ -46,11 +55,14 @@ public interface ClosedBarMarketFeed {
             this.verifiedBars = List.copyOf(verifiedBars);
             this.kind = kind;
             this.receivedPrefix = receivedPrefix.clone();
+            this.rowFailures = List.copyOf(rowFailures);
         }
 
         public ResponseKind kind() { return kind; }
 
         public byte[] receivedPrefix() { return receivedPrefix.clone(); }
+
+        public List<RowParseFailure> rowFailures() { return rowFailures; }
 
         public List<HistoricalBar> verifiedBars() {
             return verifiedBars;

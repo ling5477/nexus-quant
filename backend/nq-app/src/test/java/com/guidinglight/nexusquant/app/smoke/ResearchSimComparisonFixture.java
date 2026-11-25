@@ -82,6 +82,23 @@ final class ResearchSimComparisonFixture {
 
     static Binding seed(ServletWebServerApplicationContext app, TenantIsolationTestDatabase db, TenantIdentity owner,
             boolean revealHoldout, String strategyType) {
+        var publication = seedPublication(app, db, owner, revealHoldout, strategyType);
+        var server = app.getBean(MarketServer.class);
+        var driver = new ContinuousSimRunService(app.getBean(ContinuousSimRepository.class),
+                app.getBean(StrategySimRunService.class), app.getBean(PaperTradingRunService.class),
+                server::observation, app.getBean(JdbcTemplate.class), Clock.fixed(server.forwardTime(), ZoneOffset.UTC));
+        ReflectionTestUtils.setField(driver, "tenantWork", app.getBean(TenantWorkAccess.class));
+        String run = db.as(owner, () -> app.getBean(ContinuousSimRunService.class)
+                .start(publication.publishId(), new BigDecimal("10000"), "experiment-owner").paperRunId());
+        db.as(owner, () -> driver.pollOnce(run));
+        db.as(owner, () -> app.getBean(PaperMatchingService.class).matchOnce(100));
+        db.as(owner, () -> driver.pollOnce(run));
+        return new Binding(publication.sourceExperimentId(), publication.validationId(), publication.selectedTrialId(),
+                publication.strategyVersionId(), publication.publishId(), run, driver);
+    }
+
+    static Publication seedPublication(ServletWebServerApplicationContext app, TenantIsolationTestDatabase db,
+            TenantIdentity owner, boolean revealHoldout, String strategyType) {
         if (!List.of("SPOT_SMA_TARGET_V1", "SPOT_CHANNEL_BREAKOUT_V1").contains(strategyType))
             throw new IllegalArgumentException("bounded comparison strategy fixture required");
         db.admin.update("UPDATE scheduled_job_controls SET enabled=false,next_run_at=NULL");
@@ -104,17 +121,7 @@ final class ResearchSimComparisonFixture {
         db.as(owner, () -> app.getBean(SelectedStrategyVersionService.class)
                 .activate(validation.validationId(), owner.userId()));
         String publication = db.as(owner, () -> publish(app, source, version));
-        var server = app.getBean(MarketServer.class);
-        var driver = new ContinuousSimRunService(app.getBean(ContinuousSimRepository.class),
-                app.getBean(StrategySimRunService.class), app.getBean(PaperTradingRunService.class),
-                server::observation, app.getBean(JdbcTemplate.class), Clock.fixed(server.forwardTime(), ZoneOffset.UTC));
-        ReflectionTestUtils.setField(driver, "tenantWork", app.getBean(TenantWorkAccess.class));
-        String run = db.as(owner, () -> app.getBean(ContinuousSimRunService.class)
-                .start(publication, new BigDecimal("10000"), "experiment-owner").paperRunId());
-        db.as(owner, () -> driver.pollOnce(run));
-        db.as(owner, () -> app.getBean(PaperMatchingService.class).matchOnce(100));
-        db.as(owner, () -> driver.pollOnce(run));
-        return new Binding(source.experimentId(), validation.validationId(), trial, version, publication, run, driver);
+        return new Publication(source.experimentId(), validation.validationId(), trial, version, publication);
     }
 
     static String publish(ServletWebServerApplicationContext app, StrategyExperimentService.View source, String version) {
@@ -144,6 +151,9 @@ final class ResearchSimComparisonFixture {
         return app.getBean(BacktestPublishService.class).publish(new BacktestPublishRequest(run.backtestRunId(),
                 "Selected version public replay", version)).publishRecordId();
     }
+
+    record Publication(UUID sourceExperimentId, UUID validationId, UUID selectedTrialId, String strategyVersionId,
+            String publishId) {}
 
     record Binding(UUID sourceExperimentId, UUID validationId, UUID selectedTrialId, String strategyVersionId,
             String publishId, String paperRunId, ContinuousSimRunService driver) {

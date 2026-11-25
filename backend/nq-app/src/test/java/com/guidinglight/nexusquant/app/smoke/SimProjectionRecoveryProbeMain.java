@@ -36,6 +36,17 @@ public final class SimProjectionRecoveryProbeMain {
             if (!"UNCHANGED".equals(recovery.required("ledger").asText())) {
                 throw new AssertionError("projection receipt lacks verified unchanged ledger");
             }
+            if ("legacy-unproven".equals(args[1])) {
+                var refused = http.send("POST", path + "/finalization", token, command);
+                var status = BoundedContinuousSimPostgresIntegrationTest.status(http, token, args[0]);
+                if (refused.statusCode() != 409 || !refused.body().contains("SIM_PROJECTION_END_INTENT_UNPROVEN")
+                        || !"BLOCKED".equals(status.required("lifecycleStatus").asText())
+                        || status.hasNonNull("terminatedAt")) {
+                    throw new AssertionError("legacy receipt authorized finalization after restart: " + refused.body());
+                }
+                System.out.println("LEGACY_END_RESTART_UNPROVEN pid=" + ProcessHandle.current().pid());
+                return;
+            }
             var finalized = http.ok("POST", path + "/finalization", token, command).required("finalization");
             if (!"VERIFIED".equals(finalized.required("finalValuationStatus").asText())) {
                 throw new AssertionError("finalization did not recover in a new process");

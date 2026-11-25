@@ -6,11 +6,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.guidinglight.nexusquant.common.tenant.TenantIdentity;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
+import com.guidinglight.nexusquant.research.application.paper.service.PaperTradingRunService;
 import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimOperationRequest;
 import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimOperationService;
 import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRepository;
 import com.guidinglight.nexusquant.scheduler.paper.ContinuousSimRunService;
 import com.guidinglight.nexusquant.scheduler.paper.PaperMatchingService;
+import com.guidinglight.nexusquant.scheduler.paper.SimAccountProjectionRecoveryService;
+import com.guidinglight.nexusquant.scheduler.paper.SimAccountProjectionRepository;
 import com.guidinglight.nexusquant.scheduler.paper.StrategySimRunService;
 import com.guidinglight.nexusquant.adapter.okx.marketdata.OkxClosedBarMarketFeed;
 import com.sun.net.httpserver.HttpExchange;
@@ -56,6 +59,271 @@ class BoundedContinuousSimPostgresIntegrationTest {
     static final String RUNS = "/api/paper-trading/strategy-sim/runs/";
     static final String USER = "experiment-owner";
     static final Duration HOUR = Duration.ofHours(1);
+
+    @ParameterizedTest @ValueSource(booleans = {true, false}) @Timeout(180)
+    void upgradesV56RunWithoutInferringAnOriginalEndFromReceipts(boolean historicalEnd) throws Exception {
+        try (var db = TenantIsolationTestDatabase.create("56")) {
+            db.runtime();
+            var owner = db.local(USER);
+            String run;
+            Instant end;
+            UUID endId = UUID.randomUUID();
+            LegacyRecovery legacy = null;
+            try (var app = startWithDatabaseClock(db)) {
+                Instant start = app.getBean(ResearchSimComparisonFixture.MarketServer.class).end();
+                end = start.plus(HOUR);
+                setDatabaseTime(db, start);
+                var paper = app.getBean(PaperTradingRunService.class);
+                var runs = app.getBean(ContinuousSimRepository.class);
+                run = seedBoundedHistory(db, app, owner, start, end);
+                Instant requestAt = end.plusSeconds(5);
+                setDatabaseTime(db, requestAt);
+                db.as(owner, () -> {
+                    runs.insertBar(run, ClosedBarForwardEvaluationFixture.bar(end.minus(HOUR), new BigDecimal("52300"), end, requestAt),
+                            requestAt);
+                    return null;
+                });
+                if (historicalEnd) {
+                    // 父 stop 首先写入人工时间，后续 V56 END 返回同一时间，但没有改变原意图。
+                    assertEquals("RUNNING", db.as(owner, () -> paper.stop(run)).status().name());
+                    assertEquals(requestAt, readTime(db, "manual_end_at", run));
+                    legacy = saveV56MisassociatedRecovery(db, app, owner, run, endId, requestAt);
+                }
+            }
+            var history = db.admin.queryForList("SELECT version,checksum FROM flyway_schema_history ORDER BY installed_rank");
+            var before = historicalEconomics(db);
+            var v57 = db.migration("57");
+            assertEquals(1, v57.migrate().migrationsExecuted);
+            v57.validate();
+            assertNull(db.admin.queryForObject("SELECT terminal_intent_id FROM continuous_sim_runs WHERE paper_run_id=?", UUID.class, run));
+            if (historicalEnd) assertEquals(legacy.row(), recoveryRow(db, legacy.operationId()));
+            db.migrate("58");
+            assertEquals(history, db.admin.queryForList(
+                    "SELECT version,checksum FROM flyway_schema_history WHERE version::int<=56 ORDER BY installed_rank"));
+            assertEquals(before, historicalEconomics(db));
+            db.grantRuntimePrivileges(db.runtime);
+
+            String path = RUNS + run + "/projection-recovery";
+            Map<String, String> recheck;
+            try (var app = ResearchSimComparisonFixture.start(db);
+                    var http = new TenantIsolationHttpIntegrationTest.Http(app.getWebServer().getPort())) {
+                String token = http.login(USER);
+                var endCommand = Map.of("operationId", endId, "type", "END", "paperRunId", run);
+                long account = ForwardSimEvaluationFixture.account(db, run);
+                var projections = projectionRows(db, account);
+                var endReceipt = http.ok("POST", OPS, token, endCommand);
+                assertEquals(endReceipt, http.ok("GET", OPS + "/" + endId, token, null));
+                assertEquals(end.plusSeconds(5).toString(), endReceipt.required("result").required("bounded").required("manualEndAt").asText());
+                var driver = app.getBean(ContinuousSimRunService.class);
+                ReflectionTestUtils.setField(driver, "clock", Clock.fixed(end.plusSeconds(6), ZoneOffset.UTC));
+                if (historicalEnd) {
+                    assertEquals(legacy.endRow(), historicalEndRow(db, endId));
+                    var additionalEnd = http.ok("POST", OPS, token, operation("END", run));
+                    assertEquals(endReceipt.required("result").required("bounded").required("manualEndAt"),
+                            additionalEnd.required("result").required("bounded").required("manualEndAt"));
+                    var refusedPreview = http.send("GET", path, token, null);
+                    assertEquals(409, refusedPreview.statusCode(), refusedPreview.body());
+                    assertTrue(refusedPreview.body().contains("SIM_PROJECTION_END_INTENT_UNPROVEN"), refusedPreview.body());
+                    var replay = http.ok("POST", path, token, legacy.request());
+                    assertEquals(replay, http.ok("GET", path + "/operations/" + legacy.operationId(), token, null));
+                    var fresh = new HashMap<>(legacy.request());
+                    fresh.put("operationId", UUID.randomUUID().toString());
+                    assertConflict(http, path, token, fresh, "SIM_PROJECTION_END_INTENT_UNPROVEN");
+                    recheck = Map.of("operationId", UUID.randomUUID().toString(), "endOperationId", endId.toString(),
+                            "recoveryOperationId", legacy.operationId().toString());
+                    assertConflict(http, path + "/finalization", token, recheck, "SIM_PROJECTION_END_INTENT_UNPROVEN");
+                    db.as(owner, () -> driver.pollOnce(run));
+                    var blocked = status(http, token, run);
+                    assertEquals("BLOCKED", blocked.required("lifecycleStatus").asText());
+                    assertEquals("UNAVAILABLE", blocked.required("finalValuationStatus").asText());
+                    assertEquals("SIM_PROJECTION_END_INTENT_UNPROVEN", blocked.required("reason").asText());
+                    assertFalse(blocked.hasNonNull("terminatedAt"));
+                    assertEquals(projections, projectionRows(db, account));
+                    assertEquals(before, historicalEconomics(db));
+                } else {
+                    assertEquals(endId, db.admin.queryForObject("""
+                            SELECT c.terminal_intent_id FROM continuous_sim_runs c JOIN continuous_sim_operations e
+                                ON c.paper_run_id=e.paper_run_id AND c.terminal_intent_id=e.terminal_intent_id
+                            WHERE c.paper_run_id=? AND c.terminal_intent_source='MANUAL_END' AND e.operation_id=c.terminal_intent_id
+                            """, UUID.class, run));
+                    damageCashProjection(db, owner, account);
+                    db.as(owner, () -> driver.pollOnce(run));
+                    var preview = http.ok("GET", path, token, null);
+                    assertEquals(endId.toString(), preview.required("endOperationId").asText());
+                    var recovered = http.ok("POST", path, token, projectionRecoveryRequest(preview));
+                    recheck = Map.of("operationId", UUID.randomUUID().toString(), "endOperationId", endId.toString(),
+                            "recoveryOperationId", recovered.required("operationId").asText());
+                    var finalized = http.ok("POST", path + "/finalization", token, recheck).required("finalization");
+                    assertEquals("MANUALLY_STOPPED", finalized.required("lifecycleStatus").asText());
+                    assertEquals("VERIFIED", finalized.required("finalValuationStatus").asText());
+                }
+            }
+            if (historicalEnd) {
+                var child = projectionProcess(db, run, "legacy-unproven", recheck);
+                try {
+                    assertTrue(child.process().waitFor(75, TimeUnit.SECONDS));
+                    String output = Files.readString(child.log());
+                    assertEquals(0, child.process().exitValue(), output);
+                    assertTrue(output.contains("LEGACY_END_RESTART_UNPROVEN"), output);
+                    System.out.println(output.lines().filter(line -> line.startsWith("LEGACY_END_RESTART_UNPROVEN")).findFirst().orElseThrow());
+                } finally { if (child.process().isAlive()) child.process().destroyForcibly(); }
+                assertEquals(legacy.row(), recoveryRow(db, legacy.operationId()));
+                assertEquals(1, db.admin.queryForObject("SELECT count(*) FROM sim_account_projection_operations", Integer.class));
+                assertNull(db.admin.queryForObject("SELECT terminal_intent_id FROM continuous_sim_runs WHERE paper_run_id=?", UUID.class, run));
+                assertEquals("RUNNING", db.admin.queryForObject("SELECT status FROM paper_trading_runs WHERE paper_run_id=?", String.class, run));
+                assertEquals(before, historicalEconomics(db));
+            }
+        }
+    }
+
+    private static LegacyRecovery saveV56MisassociatedRecovery(TenantIsolationTestDatabase db,
+            ServletWebServerApplicationContext app, TenantIdentity owner, String run, UUID endId, Instant at) {
+        long account = ForwardSimEvaluationFixture.account(db, run);
+        UUID operationId = UUID.randomUUID();
+        var command = new ContinuousSimOperationRequest(endId, ContinuousSimOperationRequest.Type.END, null, null, run);
+        var json = app.getBean(com.fasterxml.jackson.databind.ObjectMapper.class);
+        db.as(owner, () -> new TransactionTemplate(db.manager).execute(tx -> {
+            assertTrue(db.jdbc.queryForObject("SELECT nq_request_continuous_end(?,?)", Boolean.class, run, Timestamp.from(at)));
+            var bounded = new ContinuousSimRunService.Bounded(at.minusSeconds(5), "ADMISSION_CLOSED", "PENDING",
+                    null, null, null, at, null, null, at, null);
+            var status = new ContinuousSimRunService.Status(run, "RUNNING", at.minus(HOUR), null, null, null,
+                    null, null, null, null, null, null, 0, bounded);
+            assertEquals(1, db.jdbc.update("""
+                    INSERT INTO continuous_sim_operations(operation_id,owner_user_id,actor,operation_type,paper_run_id,
+                        input_sha256,trace_id,result_json,completed_at)
+                    VALUES(?,?,?,'END',?,?,'v56-end',?::jsonb,?)
+                    """, endId, owner.userId(), USER, run, command.fingerprint(owner.userId()),
+                    json.valueToTree(status).toString(), Timestamp.from(at)));
+            return null;
+        }));
+        assertEquals(at, readTime(db, "manual_end_at", run));
+        damageCashProjection(db, owner, account);
+        db.as(owner, () -> db.jdbc.update("""
+                UPDATE continuous_sim_runs SET status='STALLED',lifecycle_status='BLOCKED',
+                    final_valuation_status='UNAVAILABLE',pending_orders=0,block_reason='SIM_CASH_PROJECTION_MISMATCH'
+                WHERE paper_run_id=?
+                """, run));
+        // 按 V56 的锁、投影恢复和回执约束提交；原 END UUID 是当时可被误认的唯一同时间回执。
+        var request = db.as(owner, () -> new TransactionTemplate(db.manager).execute(tx -> {
+            var projections = app.getBean(SimAccountProjectionRepository.class);
+            ReflectionTestUtils.invokeMethod(projections, "lock", account);
+            var expected = ReflectionTestUtils.invokeMethod(projections, "expected", run, account, new BigDecimal("10000"));
+            var actual = ReflectionTestUtils.invokeMethod(projections, "actual", account, false);
+            String version = ReflectionTestUtils.invokeMethod(actual, "version");
+            SimAccountProjectionRepository.Watermark watermark = ReflectionTestUtils.invokeMethod(expected, "watermark");
+            SimAccountProjectionRecoveryService.Differences before = ReflectionTestUtils.invokeMethod(
+                    SimAccountProjectionRecoveryService.class, "compare", expected, actual);
+            assertFalse(before.cashConsistent());
+            ReflectionTestUtils.invokeMethod(projections, "restore", account, expected, actual, at, "v56-recovery");
+            SimAccountProjectionRecoveryService.Differences after = ReflectionTestUtils.invokeMethod(
+                    SimAccountProjectionRecoveryService.class, "compare", expected,
+                    ReflectionTestUtils.invokeMethod(projections, "actual", account, false));
+            assertTrue(after.cashConsistent() && after.positionConsistent());
+            var receipt = new SimAccountProjectionRecoveryService.Receipt(operationId, endId, null, account,
+                    watermark, before, after, "CONSISTENT", "CONSISTENT", "UNCHANGED", null, at);
+            String identity = owner.tenantId().value() + "/" + account + "/" + owner.userId();
+            String input = identity + "/recover/" + endId + "/" + watermark.sha256() + "/" + version;
+            String hash = db.jdbc.queryForObject("SELECT encode(sha256(convert_to(?,'UTF8')),'hex')", String.class, input);
+            assertEquals(1, db.jdbc.update("""
+                    INSERT INTO sim_account_projection_operations(operation_id,tenant_id,account_id,paper_run_id,
+                        owner_user_id,actor,trace_id,end_operation_id,request_sha256,ledger_watermark,result_json,recorded_at)
+                    VALUES(?,?,?,?,?,?,'v56-recovery',?,?,?,?::jsonb,?)
+                    """, operationId, owner.tenantId().value(), account, run, owner.userId(), USER, endId, hash,
+                    watermark.sha256(), json.valueToTree(receipt).toString(), Timestamp.from(at)));
+            return Map.of("operationId", operationId.toString(), "endOperationId", endId.toString(),
+                    "ledgerWatermark", watermark.sha256(), "projectionVersion", version);
+        }));
+        return new LegacyRecovery(operationId, request, recoveryRow(db, operationId), historicalEndRow(db, endId));
+    }
+
+    private static Map<String, String> historicalEconomics(TenantIsolationTestDatabase db) {
+        var facts = ForwardSimEvaluationFixture.allFacts(db);
+        facts.remove("continuous_sim_runs");
+        return facts;
+    }
+
+    private static String historicalEndRow(TenantIsolationTestDatabase db, UUID operationId) {
+        return db.admin.queryForObject("""
+                SELECT (to_jsonb(e)-'terminal_intent_id')::text FROM continuous_sim_operations e WHERE operation_id=?
+                """, String.class, operationId);
+    }
+
+    private static String recoveryRow(TenantIsolationTestDatabase db, UUID operationId) {
+        return db.admin.queryForObject("SELECT to_jsonb(r)::text FROM sim_account_projection_operations r WHERE operation_id=?",
+                String.class, operationId);
+    }
+
+    private record LegacyRecovery(UUID operationId, Map<String, String> request, String row, String endRow) {}
+
+    private static String seedBoundedHistory(TenantIsolationTestDatabase db, ServletWebServerApplicationContext app,
+            TenantIdentity owner, Instant start, Instant end) {
+        var publication = ResearchSimComparisonFixture.seedPublication(app, db, owner, true, "SPOT_SMA_TARGET_V1");
+        var sim = app.getBean(StrategySimRunService.class);
+        var paper = app.getBean(PaperTradingRunService.class);
+        var runs = app.getBean(ContinuousSimRepository.class);
+        // 使用正式发布、创建和注资服务，同时允许夹具运行在当前操作回执 schema 之前。
+        return db.as(owner, () -> new TransactionTemplate(db.manager).execute(tx -> {
+            var created = sim.create(publication.publishId(), new BigDecimal("10000"), USER).paperRunId();
+            var seed = sim.continuousSeed(created);
+            paper.start(created);
+            runs.create(created, seed.strategyVersionId(), seed.strategyChecksum(), seed.costSha256(), seed.bars(), start, end);
+            return created;
+        }));
+    }
+
+    @Test @Timeout(75)
+    void v57RetryWithoutRowScanEvidenceRemainsBlockedAfterMigration() throws Exception {
+        try (var db = TenantIsolationTestDatabase.create("57")) {
+            db.runtime();
+            var owner = db.local(USER);
+            String run;
+            HistoricalBar earlier;
+            HistoricalBar last;
+            try (var app = ResearchSimComparisonFixture.start(db)) {
+                Instant start = app.getBean(ResearchSimComparisonFixture.MarketServer.class).end();
+                run = seedBoundedHistory(db, app, owner, start, start.plus(HOUR));
+                var bars = db.as(owner, () -> app.getBean(ContinuousSimRepository.class).recentBars(run));
+                earlier = bars.get(bars.size() - 2);
+                last = bars.getLast();
+            }
+            Instant first = earlier.openTime(), latest = last.openTime();
+            assertEquals(1, db.as(owner, () -> db.jdbc.update("""
+                    UPDATE continuous_sim_runs SET status='STALLED',lifecycle_status='BLOCKED',
+                        final_valuation_status='UNAVAILABLE',overlap_check_pending=true WHERE paper_run_id=?
+                    """, run)));
+            long id = db.admin.queryForObject("""
+                    INSERT INTO continuous_sim_overlap_checks(paper_run_id,first_open_time,last_open_time,retry)
+                    VALUES (?,?,?,false) RETURNING check_id
+                    """, Long.class, run, Timestamp.from(first), Timestamp.from(latest));
+            byte[] prefix = ("{\"code\":\"0\",\"data\":["
+                    + httpCandle(earlier, earlier.closePrice())
+                    + ",false," + httpCandle(last, last.closePrice().add(new BigDecimal("0.01")))
+                    + ",[\"truncated").getBytes(StandardCharsets.UTF_8);
+            db.admin.update("""
+                    UPDATE continuous_sim_overlap_checks SET response_kind='PARSE_FAILED',response_fingerprint=repeat('a',64),
+                        response_prefix=?,response_captured_at=clock_timestamp(),captured_result='INCOMPLETE',
+                        captured_failure_reason='INCOMPLETE_HTTP_RESPONSE',response_retryable=true WHERE check_id=?
+                    """, prefix, id);
+            db.admin.update("""
+                    UPDATE continuous_sim_overlap_checks SET result=captured_result, failure_reason=captured_failure_reason,
+                        finished_at=clock_timestamp() WHERE check_id=?
+                    """, id);
+            String row = db.admin.queryForObject("SELECT to_jsonb(c)::text FROM continuous_sim_overlap_checks c WHERE check_id=?",
+                    String.class, id);
+            db.migrate("58");
+            try (var app = ResearchSimComparisonFixture.start(db)) {
+                var repository = app.getBean(ContinuousSimRepository.class);
+                var previous = new ContinuousSimRepository.OverlapCheck(id, first, latest, false);
+                assertNull(db.as(owner, () -> repository.beginOverlapCheck(run, first, latest, previous)));
+                assertTrue(db.as(owner, () -> repository.get(run)).overlapCheckPending());
+            }
+            assertEquals(1, db.admin.queryForObject("SELECT count(*) FROM continuous_sim_overlap_checks WHERE paper_run_id=?", Integer.class, run));
+            assertEquals(row, db.admin.queryForObject("""
+                    SELECT (to_jsonb(c)-'response_row_failures')::text FROM continuous_sim_overlap_checks c
+                    WHERE check_id=? AND response_row_failures IS NULL
+                    """, String.class, id));
+        }
+    }
 
     @Test @Timeout(135)
     void upgradesNonemptyV52AndRetriesAfterConflictingPostgresTransaction() throws Exception {
@@ -161,6 +429,13 @@ class BoundedContinuousSimPostgresIntegrationTest {
             assertEquals(0, v57.migrate().migrationsExecuted);
             assertEquals(v56History, db.admin.queryForList(
                     "SELECT version,checksum FROM flyway_schema_history WHERE version::int<=56 ORDER BY installed_rank"));
+            var v57History = db.admin.queryForList("SELECT version,checksum FROM flyway_schema_history ORDER BY installed_rank");
+            var v58 = db.migration("58");
+            assertEquals(1, v58.migrate().migrationsExecuted);
+            v58.validate();
+            assertEquals(0, v58.migrate().migrationsExecuted);
+            assertEquals(v57History, db.admin.queryForList(
+                    "SELECT version,checksum FROM flyway_schema_history WHERE version::int<=57 ORDER BY installed_rank"));
             // 模拟调度器停机越过整点，此时游标仍是 RUNNING。独立新订单事务直接验证数据库时钟守卫。
             db.runtime();
             var owner = db.local("historical-local");
@@ -604,7 +879,7 @@ class BoundedContinuousSimPostgresIntegrationTest {
         }
     }
 
-    @Test @Timeout(210)
+    @Test @Timeout(300)
     void truncatedHttpResponseRequiresANewDurableOverlapCheck() throws Exception {
         try (var db = TenantIsolationTestDatabase.create(null)) {
             var owner = db.local(USER);
@@ -630,7 +905,7 @@ class BoundedContinuousSimPostgresIntegrationTest {
                         "{\"code\":\"0\",\"data\":[{\"instId\":\"BTC-USDT\",\"last\":\"50000\",\"ts\":\""
                                 + tick.get().toEpochMilli() + "\"}]}"));
                 for (String mode : List.of("retry", "commit-failure", "revised", "retry-commit-failure",
-                        "transport-revised", "transport-empty")) {
+                        "transport-revised", "transport-empty", "mixed-revised-truncated", "mixed-revised-json", "mixed-matching")) {
                     tick.set(before);
                     setDatabaseTime(db, before);
                     ReflectionTestUtils.setField(driver, "clock", Clock.fixed(market.end(), ZoneOffset.UTC));
@@ -648,7 +923,13 @@ class BoundedContinuousSimPostgresIntegrationTest {
                             end.minus(HOUR), new BigDecimal("52300"), end, after), new BigDecimal("52300"));
                     String complete = "{\"code\":\"0\",\"data\":[" + httpCandle(earlier, earlier.closePrice())
                             + "," + original + "," + closing + "]}";
-                    String incomplete = "{\"code\":\"0\",\"data\":[" + prefix + ",[\"truncated";
+                    boolean mixed = mode.startsWith("mixed-");
+                    boolean mixedMatching = "mixed-matching".equals(mode);
+                    boolean mixedJson = mixedMatching || "mixed-revised-json".equals(mode);
+                    String incomplete = "{\"code\":\"0\",\"data\":[" + (mixed
+                            ? httpCandle(earlier, earlier.closePrice()) + ",\"invalid-element\","
+                                + (mixedMatching ? original : revised) + (mixedJson ? "," + closing + "]}" : ",[\"truncated")
+                            : prefix + ",[\"truncated");
                     var calls = new AtomicInteger();
                     var allowComplete = new java.util.concurrent.atomic.AtomicBoolean(true);
                     var closingCalls = new AtomicInteger();
@@ -688,17 +969,25 @@ class BoundedContinuousSimPostgresIntegrationTest {
                     assertEquals(1, calls.get());
                     assertEquals(0, closingCalls.get());
                     assertNull(readTime(db, "pending_revision_detected_at", run));
-                    boolean firstRevised = List.of("revised", "transport-revised").contains(mode);
+                    boolean firstRevised = List.of("revised", "transport-revised").contains(mode) || mixed && !mixedMatching;
                     assertEquals(firstRevised ? after : null, readTime(db, "revision_detected_at", run));
                     assertTrue(db.admin.queryForObject(
                             "SELECT overlap_check_pending FROM continuous_sim_runs WHERE paper_run_id=?", Boolean.class, run));
                     var first = overlapAttempts(db, run).getFirst();
-                    assertEquals("commit-failure".equals(mode) ? null : "INCOMPLETE_HTTP_RESPONSE", first.get("failure_reason"));
+                    assertEquals("commit-failure".equals(mode) ? null
+                            : mixedJson ? "OVERLAP_CHECK_INCOMPLETE" : "INCOMPLETE_HTTP_RESPONSE", first.get("failure_reason"));
                     assertEquals("commit-failure".equals(mode) ? null : firstRevised ? "REVISED" : "INCOMPLETE", first.get("result"));
                     assertEquals(transport ? "TRANSPORT_INTERRUPTED" : "PARSE_FAILED", first.get("response_kind"));
                     assertArrayEquals(("transport-empty".equals(mode) ? "{\"code\":\"0\",\"data\":[" : incomplete)
                             .getBytes(StandardCharsets.UTF_8), overlapPrefix(db, run));
                     if (firstRevised) assertEquals(digest, first.get("original_bar_sha256"));
+                    var rowFailures = ForwardSimEvaluationFixture.JSON.readTree((String) first.get("response_row_failures"));
+                    assertEquals(mixed ? 1 : 0, rowFailures.size());
+                    if (mixed) {
+                        assertEquals(1, rowFailures.get(0).required("index").asInt());
+                        assertEquals("PUBLIC_MARKET_BAR_INVALID_SHAPE", rowFailures.get(0).required("reason").asText());
+                        assertEquals(mixedMatching, first.get("response_retryable"));
+                    }
                     assertEquals(firstRevised ? after : null, first.get("captured_revision_at") == null
                             ? null : ((Timestamp) first.get("captured_revision_at")).toInstant());
                     if ("transport-empty".equals(mode)) {
@@ -707,21 +996,30 @@ class BoundedContinuousSimPostgresIntegrationTest {
                         var prefixBytes = overlapPrefix(db, run);
                         db.as(owner, () -> {
                             repository.captureOverlapResponse(run, check, List.of(), false, "INCOMPLETE_HTTP_RESPONSE",
-                                    ClosedBarMarketFeed.ResponseKind.TRANSPORT_INTERRUPTED, prefixBytes, null, clock);
+                                    ClosedBarMarketFeed.ResponseKind.TRANSPORT_INTERRUPTED, prefixBytes, null, List.of(), clock);
                             repository.finishOverlapCheck(run, check);
                             return null;
                         });
                         assertEquals(first, overlapAttempts(db, run).getFirst());
                         assertThrows(IllegalStateException.class, () -> db.as(owner, () -> {
                             repository.captureOverlapResponse(run, check, List.of(), false, "INCOMPLETE_HTTP_RESPONSE",
-                                    ClosedBarMarketFeed.ResponseKind.TRANSPORT_INTERRUPTED, new byte[0], null, clock);
+                                    ClosedBarMarketFeed.ResponseKind.TRANSPORT_INTERRUPTED, new byte[0], null, List.of(), clock);
                             return null;
                         }));
                     }
                     assertEquals(0, db.as(anotherTenant, () -> db.jdbc.queryForObject(
                             "SELECT count(*) FROM continuous_sim_overlap_checks WHERE paper_run_id=?", Integer.class, run)));
                     assertFalse(status(http, token, run).hasNonNull("terminatedAt"));
-                    if ("retry".equals(mode)) {
+                    if (mixedMatching) {
+                        db.as(owner, () -> driver.pollOnce(run));
+                        var attempts = overlapAttempts(db, run);
+                        assertEquals(2, calls.get());
+                        assertEquals(2, attempts.size());
+                        assertEquals(first, attempts.getFirst());
+                        assertNotEquals(first.get("check_id"), attempts.getLast().get("check_id"));
+                        assertEquals("VERIFIED", attempts.getLast().get("result"));
+                        assertEquals("COMPLETED", status(http, token, run).required("lifecycleStatus").asText());
+                    } else if ("retry".equals(mode)) {
                         allowComplete.set(false);
                         db.as(owner, () -> driver.pollOnce(run));
                         assertEquals(2, calls.get());
@@ -806,7 +1104,8 @@ class BoundedContinuousSimPostgresIntegrationTest {
     private static List<Map<String, Object>> overlapAttempts(TenantIsolationTestDatabase db, String run) {
         return db.admin.queryForList("""
                 SELECT check_id,result,failure_reason,started_at,finished_at,response_kind,captured_result,
-                    captured_revision_at,original_bar_sha256,response_body_sha256
+                    captured_revision_at,original_bar_sha256,response_body_sha256,response_retryable,
+                    response_row_failures::text AS response_row_failures
                 FROM continuous_sim_overlap_checks WHERE paper_run_id=? ORDER BY check_id
                 """, run);
     }
@@ -1053,14 +1352,7 @@ class BoundedContinuousSimPostgresIntegrationTest {
                 assertFalse(positions.isEmpty());
                 // 仅损坏隔离库的派生投影，保留正式撮合的 Order、Trade、Ledger 与原现金快照。
                 if ("cash".equals(fault) || "both".equals(fault)) {
-                    assertEquals(1, db.as(owner, () -> db.jdbc.update("""
-                            INSERT INTO account_snapshots(account_id,currency,balance,available,frozen,ts,trace_id,
-                                trade_env,balance_basis,balance_scope,recorded_at)
-                            SELECT account_id,currency,balance+1,available+1,frozen,ts,'fixture-cash-projection',
-                                trade_env,balance_basis,balance_scope,clock_timestamp()
-                            FROM account_snapshots WHERE account_id=? AND currency='USDT' AND trade_env='SIM'
-                            ORDER BY snapshot_id DESC LIMIT 1
-                            """, account)));
+                    damageCashProjection(db, owner, account);
                 }
                 if ("position".equals(fault) || "both".equals(fault)) {
                     assertEquals(1, db.as(owner, () -> db.jdbc.update("""
@@ -1759,6 +2051,17 @@ class BoundedContinuousSimPostgresIntegrationTest {
 
     private static int countOrders(TenantIsolationTestDatabase db, long account) {
         return db.admin.queryForObject("SELECT count(*) FROM orders WHERE account_id=?", Integer.class, account);
+    }
+
+    private static void damageCashProjection(TenantIsolationTestDatabase db, TenantIdentity owner, long account) {
+        assertEquals(1, db.as(owner, () -> db.jdbc.update("""
+                INSERT INTO account_snapshots(account_id,currency,balance,available,frozen,ts,trace_id,
+                    trade_env,balance_basis,balance_scope,recorded_at)
+                SELECT account_id,currency,balance+1,available+1,frozen,ts,'fixture-cash-projection',
+                    trade_env,balance_basis,balance_scope,clock_timestamp()
+                FROM account_snapshots WHERE account_id=? AND currency='USDT' AND trade_env='SIM'
+                ORDER BY snapshot_id DESC LIMIT 1
+                """, account)));
     }
 
     private static List<Map<String,Object>> controls(TenantIsolationTestDatabase db) {

@@ -5,6 +5,7 @@ import com.guidinglight.nexusquant.adapter.okx.http.OkxHttpClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
@@ -166,73 +167,101 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
             candles = response.json();
             body = response.body();
         } catch (IncompleteHttpResponse failure) {
-            throw new IncompleteObservation(readConfirmedPrefix(failure.body, firstOpen, pageEnd,
-                    maximumBars, serverTime), failure.kind, failure.body, failure);
+            var prefix = readConfirmedPrefix(failure.body, firstOpen, pageEnd, maximumBars, serverTime);
+            var kind = failure.kind == ResponseKind.PARSE_FAILED && !prefix.cleanlyTruncated()
+                    ? ResponseKind.INCOMPLETE_RESPONSE : failure.kind;
+            throw new IncompleteObservation(prefix.bars(), kind, failure.body, prefix.failures(), failure);
         }
-        if (!"0".equals(candles.path("code").asText()) || !candles.path("data").isArray()
-                || candles.path("data").size() > maximumBars) {
+        var rows = candles.path("data");
+        if (!"0".equals(candles.path("code").asText()) || !rows.isArray()) {
             throw new IllegalStateException("PUBLIC_MARKET_RESPONSE_INVALID");
         }
         // 接收时刻在完整响应读取与解析之后取得，不把请求前的venue时间当作已经收到行情。
         Instant receivedAt = receivedAt(serverTime);
         List<HistoricalBar> bars = new ArrayList<>();
-        IllegalStateException invalid = null;
-        for (JsonNode row : candles.path("data")) {
-            try {
-                HistoricalBar bar = parseBar(row, serverTime, receivedAt);
-                if ("1".equals(row.get(8).asText()) && !bar.openTime().isBefore(firstOpen)
-                        && bar.openTime().isBefore(pageEnd)) {
-                    bars.add(bar);
-                }
-            } catch (IllegalStateException failure) {
-                if (invalid == null) invalid = failure;
-            }
+        List<RowParseFailure> failures = new ArrayList<>();
+        for (int index = 0; index < Math.min(rows.size(), maximumBars); index++) {
+            collectBar(rows.get(index), index, firstOpen, pageEnd, serverTime, receivedAt, bars, failures);
         }
         bars.sort(Comparator.comparing(HistoricalBar::openTime));
-        if (invalid != null) throw new IncompleteObservation(bars, ResponseKind.INCOMPLETE_RESPONSE,
-                body == null ? new byte[0] : body, invalid);
+        if (rows.size() > maximumBars || !failures.isEmpty()) {
+            var kind = rows.size() > maximumBars ? ResponseKind.INCOMPLETE_RESPONSE : ResponseKind.PARSE_FAILED;
+            throw new IncompleteObservation(bars, kind, body == null ? new byte[0] : body, failures,
+                    new IllegalStateException("PUBLIC_MARKET_RESPONSE_INVALID"));
+        }
         return new Observation(serverTime, receivedAt, List.copyOf(bars),
                 rule, quote, body == null ? null : responseSha256(body));
     }
 
     /** 只采纳已结束的 data 行。截断、无成功码或超界的剩余正文始终保留为不完整。 */
-    private List<HistoricalBar> readConfirmedPrefix(byte[] body, Instant firstOpen, Instant pageEnd,
+    private CandlePrefix readConfirmedPrefix(byte[] body, Instant firstOpen, Instant pageEnd,
             int maximumBars, Instant serverTime) {
         Instant received = clock.instant().truncatedTo(ChronoUnit.MICROS);
         if (received.isBefore(serverTime.minusSeconds(5)) || received.isAfter(serverTime.plusSeconds(120))) {
-            return List.of();
+            return new CandlePrefix(List.of(), List.of(), false);
         }
         List<HistoricalBar> found = new ArrayList<>();
+        List<RowParseFailure> failures = new ArrayList<>();
+        boolean codeSeen = false;
+        boolean dataSeen = false;
         boolean successful = false;
+        boolean cleanlyTruncated = false;
         try (var json = mapper.createParser(body)) {
-            if (json.nextToken() != JsonToken.START_OBJECT) return List.of();
-            while (json.nextToken() == JsonToken.FIELD_NAME) {
+            if (json.nextToken() != JsonToken.START_OBJECT) return new CandlePrefix(List.of(), List.of(), false);
+            envelope: while (json.nextToken() == JsonToken.FIELD_NAME) {
                 String field = json.currentName();
                 var value = json.nextToken();
                 if ("code".equals(field)) {
+                    if (codeSeen) return new CandlePrefix(List.of(), failures, false);
+                    codeSeen = true;
                     successful = value != null && value.isScalarValue() && "0".equals(json.getValueAsString());
-                } else if ("data".equals(field) && value == JsonToken.START_ARRAY) {
-                    for (int index = 0; index < maximumBars && json.nextToken() == JsonToken.START_ARRAY; index++) {
-                        JsonNode row = mapper.readTree(json);
-                        try {
-                            HistoricalBar bar = parseBar(row, serverTime, received);
-                            if ("1".equals(row.get(8).asText()) && !bar.openTime().isBefore(firstOpen)
-                                    && bar.openTime().isBefore(pageEnd)) {
-                                found.add(bar);
-                            }
-                        } catch (IllegalStateException invalidRow) {
-                            // 无效行不参与摘要核验，后续完整行仍可提供修订证据。
+                    json.skipChildren();
+                } else if ("data".equals(field)) {
+                    if (dataSeen || value != JsonToken.START_ARRAY) break;
+                    dataSeen = true;
+                    int index = 0;
+                    for (var token = json.nextToken(); token != JsonToken.END_ARRAY; token = json.nextToken()) {
+                        if (token == null || index == maximumBars) break envelope;
+                        if (token == JsonToken.START_ARRAY) {
+                            collectBar(mapper.readTree(json), index, firstOpen, pageEnd, serverTime, received, found, failures);
+                        } else {
+                            json.skipChildren();
+                            json.finishToken();
+                            failures.add(new RowParseFailure(index, "PUBLIC_MARKET_BAR_INVALID_SHAPE"));
                         }
+                        index++;
                     }
                 } else {
                     json.skipChildren();
                 }
             }
+        } catch (JsonEOFException truncated) {
+            // 只有正文尾部耗尽才可补读；中途语法错误可能还有无法定位的完整行。
+            cleanlyTruncated = successful && dataSeen;
         } catch (IOException truncated) {
             // 保留已独立解出的行，异常结论由上层按核验尝试持久化。
         }
-        return successful ? List.copyOf(found) : List.of();
+        return new CandlePrefix(successful ? found : List.of(), failures, cleanlyTruncated);
     }
+
+    private void collectBar(JsonNode row, int index, Instant firstOpen, Instant pageEnd, Instant serverTime,
+                            Instant receivedAt, List<HistoricalBar> bars, List<RowParseFailure> failures) {
+        if (!row.isArray()) {
+            failures.add(new RowParseFailure(index, "PUBLIC_MARKET_BAR_INVALID_SHAPE"));
+            return;
+        }
+        try {
+            HistoricalBar bar = parseBar(row, serverTime, receivedAt);
+            if ("1".equals(row.get(8).asText()) && !bar.openTime().isBefore(firstOpen)
+                    && bar.openTime().isBefore(pageEnd)) {
+                bars.add(bar);
+            }
+        } catch (IllegalStateException failure) {
+            failures.add(new RowParseFailure(index, failure.getMessage()));
+        }
+    }
+
+    private record CandlePrefix(List<HistoricalBar> bars, List<RowParseFailure> failures, boolean cleanlyTruncated) {}
 
     private HistoricalBar parseBar(JsonNode row, Instant serverTime, Instant receivedAt) {
         if (!row.isArray() || row.size() < 9 || !Set.of("0", "1").contains(row.get(8).asText())) {

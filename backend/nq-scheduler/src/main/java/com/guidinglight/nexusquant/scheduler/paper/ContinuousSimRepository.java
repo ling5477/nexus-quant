@@ -80,7 +80,7 @@ public class ContinuousSimRepository {
                        seed_last_open_time,last_processed_open_time,last_processed_close_time,
                        last_processed_sha256,last_observed_open_time,gap_start_open_time,started_at,last_poll_at,
                        last_successful_poll_at,updated_at,block_reason,consecutive_poll_failures,
-                       end_at,manual_end_at,revision_detected_at,
+                       end_at,manual_end_at,revision_detected_at,terminal_intent_id,
                        (overlap_check_pending OR EXISTS (
                            SELECT 1 FROM continuous_sim_overlap_checks c
                            WHERE c.paper_run_id=continuous_sim_runs.paper_run_id AND c.finished_at IS NULL
@@ -98,6 +98,7 @@ public class ContinuousSimRepository {
                 instant(rs, "last_successful_poll_at"), instant(rs, "updated_at"),
                 rs.getString("block_reason"), rs.getInt("consecutive_poll_failures"),
                 instant(rs, "manual_end_at"), instant(rs, "revision_detected_at"), rs.getBoolean("overlap_check_pending"),
+                rs.getObject("terminal_intent_id", UUID.class),
                 rs.getTimestamp("end_at") == null ? null : new ContinuousSimRunService.Bounded(
                     instant(rs, "end_at"), rs.getBoolean("due") && "RUNNING".equals(rs.getString("lifecycle_status"))
                             ? "ADMISSION_CLOSED" : rs.getString("lifecycle_status"),
@@ -176,7 +177,7 @@ public class ContinuousSimRepository {
                 SELECT check_id,first_open_time,last_open_time,retry
                 FROM (SELECT * FROM continuous_sim_overlap_checks WHERE paper_run_id=?
                       ORDER BY check_id DESC LIMIT 1) latest
-                WHERE result='INCOMPLETE' AND response_retryable
+                WHERE result='INCOMPLETE' AND response_retryable AND response_row_failures IS NOT NULL
                    AND NOT EXISTS (SELECT 1 FROM continuous_sim_overlap_checks c
                        WHERE c.paper_run_id=latest.paper_run_id AND c.finished_at IS NULL)
                    AND first_open_time>=date_trunc('hour',clock_timestamp())-interval '168 hours'
@@ -190,11 +191,13 @@ public class ContinuousSimRepository {
     @Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 10)
     public void captureOverlapResponse(String runId, OverlapCheck check, List<HistoricalBar> bars,
             boolean windowVerified, String failureReason, ClosedBarMarketFeed.ResponseKind kind,
-            byte[] prefix, String responseBodySha256, Clock clock) {
+            byte[] prefix, String responseBodySha256, List<ClosedBarMarketFeed.RowParseFailure> rowFailures, Clock clock) {
         Cursor latest = lockCursor(runId);
         var observedDigests = bars.stream().map(ContinuousSimRepository::contentSha).toList();
-        String fingerprint = responseFingerprint(kind, prefix, observedDigests, windowVerified, failureReason,
-                responseBodySha256);
+        String failuresJson = mapper.valueToTree(rowFailures).toString();
+        boolean checkedWindow = windowVerified && rowFailures.isEmpty();
+        String fingerprint = responseFingerprint(kind, prefix, observedDigests, checkedWindow, failureReason,
+                responseBodySha256, failuresJson);
         Capture previous = capturedResponse(runId, check);
         if (previous.fingerprint() != null) {
             if (!previous.fingerprint().equals(fingerprint))
@@ -224,7 +227,7 @@ public class ContinuousSimRepository {
                 }
             }
         }
-        boolean complete = windowVerified && storedOverlapComplete;
+        boolean complete = checkedWindow && storedOverlapComplete;
         Instant detectedAt = revisedOpen == null ? null : clock.instant();
         String result = detectedAt != null ? "REVISED" : complete ? "VERIFIED" : "INCOMPLETE";
         String reason = complete ? (detectedAt == null ? null : "DATA_REVISION_DETECTED") : failureReason;
@@ -234,12 +237,12 @@ public class ContinuousSimRepository {
                 || kind == ClosedBarMarketFeed.ResponseKind.COMPLETE_RESPONSE && check.retry());
         if (jdbc.update("""
                 UPDATE continuous_sim_overlap_checks SET response_kind=?,response_fingerprint=?,response_prefix=?,
-                    response_body_sha256=?,
+                    response_body_sha256=?,response_row_failures=?::jsonb,
                     response_captured_at=clock_timestamp(),captured_result=?,captured_failure_reason=?,
                     response_retryable=?,captured_revision_at=?,revised_open_time=?,original_bar_sha256=?,revised_bar_sha256=?
                 WHERE paper_run_id=? AND check_id=? AND response_captured_at IS NULL AND finished_at IS NULL
                     AND check_id=(SELECT max(check_id) FROM continuous_sim_overlap_checks WHERE paper_run_id=?)
-                """, kind.name(), fingerprint, prefix, responseBodySha256, result, reason, retryable, timestamp(detectedAt),
+                """, kind.name(), fingerprint, prefix, responseBodySha256, failuresJson, result, reason, retryable, timestamp(detectedAt),
                 timestamp(revisedOpen), originalDigest, revisedDigest, runId, check.id(), runId) != 1)
             throw new IllegalStateException("CONTINUOUS_SIM_OVERLAP_CHECK_CONFLICT");
         if (detectedAt != null && jdbc.update("""
@@ -250,11 +253,11 @@ public class ContinuousSimRepository {
     }
 
     private static String responseFingerprint(ClosedBarMarketFeed.ResponseKind kind, byte[] prefix,
-            List<String> digests, boolean complete, String reason, String responseBodySha256) {
+            List<String> digests, boolean complete, String reason, String responseBodySha256, String failuresJson) {
         try {
             var digest = MessageDigest.getInstance("SHA-256");
             digest.update((kind.name() + "/" + complete + "/" + reason + "/" + responseBodySha256
-                    + "/" + String.join(",", digests) + "\n").getBytes(StandardCharsets.UTF_8));
+                    + "/" + String.join(",", digests) + "/" + failuresJson + "\n").getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(digest.digest(prefix));
         } catch (NoSuchAlgorithmException unavailable) {
             throw new IllegalStateException(unavailable);
@@ -384,6 +387,10 @@ public class ContinuousSimRepository {
         if (terminal && latest.manualEndAt() != null && pending != null && pending == 0) {
             var accounting = decisions.settlement(runId, account);
             String accountingFailure = accounting.blockingReason();
+            if (accountingFailure == null && latest.terminalIntentId() == null) {
+                // 历史人工时间无法证明首次停止来源，后台也必须保留待核验状态。
+                accountingFailure = "SIM_PROJECTION_END_INTENT_UNPROVEN";
+            }
             if (accountingFailure == null && accounting.pendingOrders() == 0) {
                 accountingFailure = decisions.projectionFailure(runId, account, ledger.currentBalance(account, "USDT", "SIM"));
             }
@@ -625,7 +632,7 @@ public class ContinuousSimRepository {
                          Instant gapStartOpenTime,
                          Instant startedAt, Instant lastPollAt, Instant lastSuccessfulPollAt,
                          Instant updatedAt, String blockReason, int consecutivePollFailures, Instant manualEndAt, Instant revisionDetectedAt,
-                         boolean overlapCheckPending,
+                         boolean overlapCheckPending, UUID terminalIntentId,
                          ContinuousSimRunService.Bounded bounded) {
         public Cursor(String runId, String status, String strategyVersionId, String strategyChecksum, String costSha256,
                       Instant seedLastOpenTime, Instant lastProcessedOpenTime, Instant lastProcessedCloseTime,
@@ -634,7 +641,7 @@ public class ContinuousSimRepository {
                       String blockReason, int consecutivePollFailures) {
             this(runId, status, strategyVersionId, strategyChecksum, costSha256, seedLastOpenTime, lastProcessedOpenTime,
                  lastProcessedCloseTime, lastProcessedSha256, lastObservedOpenTime, gapStartOpenTime, startedAt,
-                 lastPollAt, lastSuccessfulPollAt, updatedAt, blockReason, consecutivePollFailures, null, null, false, null);
+                 lastPollAt, lastSuccessfulPollAt, updatedAt, blockReason, consecutivePollFailures, null, null, false, null, null);
         }
     }
 }

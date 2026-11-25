@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
 import com.sun.net.httpserver.HttpServer;
 
@@ -274,6 +275,9 @@ class OkxClosedBarMarketFeedTest {
         Instant first = Instant.parse("2026-09-25T08:00:00Z");
         Instant serverTime = first.plusSeconds(2 * 3600 + 60);
         List<String> paths = new ArrayList<>();
+        var candleResponse = new AtomicReference<>("{\"code\":\"0\",\"data\":["
+                + candle(first, "1") + "," + candle(first.plusSeconds(3600), "1")
+                + "," + candle(first.plusSeconds(7200), "0") + "]}");
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/", exchange -> {
             String path = exchange.getRequestURI().toString();
@@ -291,9 +295,7 @@ class OkxClosedBarMarketFeedTest {
                 body = "{\"code\":\"0\",\"data\":[{\"instId\":\"BTC-USDT\",\"last\":\"105\",\"ts\":\""
                         + serverTime.plusSeconds(1).toEpochMilli() + "\"}]}";
             } else if (path.startsWith("/api/v5/market/history-candles")) {
-                body = "{\"code\":\"0\",\"data\":["
-                        + candle(first, "1") + "," + candle(first.plusSeconds(3600), "1")
-                        + "," + candle(first.plusSeconds(7200), "0") + "]}";
+                body = candleResponse.get();
             } else throw new IllegalStateException("unexpected public path");
             byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, bytes.length);
@@ -320,6 +322,33 @@ class OkxClosedBarMarketFeedTest {
             assertTrue(paths.getLast().contains("after=" + first.plusSeconds(7200).toEpochMilli()));
             assertTrue(paths.stream().allMatch(path -> path.startsWith("/api/v5/public/")
                     || path.startsWith("/api/v5/market/")));
+
+            String mixed = "{\"code\":\"0\",\"data\":[" + candle(first, "1")
+                    + ",\"scalar\",{\"nested\":[1,2]},null," + candle(first, "bad-confirmation")
+                    + "," + candle(first.plusSeconds(3600), "1");
+            var failures = List.of(new ClosedBarMarketFeed.RowParseFailure(1, "PUBLIC_MARKET_BAR_INVALID_SHAPE"),
+                    new ClosedBarMarketFeed.RowParseFailure(2, "PUBLIC_MARKET_BAR_INVALID_SHAPE"),
+                    new ClosedBarMarketFeed.RowParseFailure(3, "PUBLIC_MARKET_BAR_INVALID_SHAPE"),
+                    new ClosedBarMarketFeed.RowParseFailure(4, "PUBLIC_MARKET_BAR_INVALID"));
+            for (String suffix : List.of("]}", ",[\"truncated")) {
+                candleResponse.set(mixed + suffix);
+                var incomplete = assertThrows(ClosedBarMarketFeed.IncompleteObservation.class, () -> feed.observe(first, 24));
+                assertEquals(ClosedBarMarketFeed.ResponseKind.PARSE_FAILED, incomplete.kind());
+                assertEquals(failures, incomplete.rowFailures());
+                assertEquals(List.of(first, first.plusSeconds(3600)), incomplete.verifiedBars().stream()
+                        .map(HistoricalBar::openTime).toList());
+                assertArrayEquals(candleResponse.get().getBytes(StandardCharsets.UTF_8), incomplete.receivedPrefix());
+            }
+
+            candleResponse.set(mixed + "]}");
+            var oversized = assertThrows(ClosedBarMarketFeed.IncompleteObservation.class, () -> feed.observe(first, 5));
+            assertEquals(ClosedBarMarketFeed.ResponseKind.INCOMPLETE_RESPONSE, oversized.kind());
+            assertEquals(1, oversized.verifiedBars().size());
+            String broken = "{\"code\":\"0\",\"data\":[" + candle(first, "1") + ",bad-token," + candle(first.plusSeconds(3600), "1") + "]}";
+            candleResponse.set(broken);
+            var unscannable = assertThrows(ClosedBarMarketFeed.IncompleteObservation.class, () -> feed.observe(first, 24));
+            assertEquals(ClosedBarMarketFeed.ResponseKind.INCOMPLETE_RESPONSE, unscannable.kind());
+            assertEquals(1, unscannable.verifiedBars().size());
         } finally {
             server.stop(0);
         }

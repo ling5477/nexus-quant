@@ -240,7 +240,7 @@ public class ContinuousSimRunService {
                     String reason = "INCOMPLETE_HTTP_RESPONSE".equals(failure.getMessage())
                             ? failure.getMessage() : "OVERLAP_CHECK_INCOMPLETE";
                     progress.captureOverlapResponse(runId, check, failure.verifiedBars(), false, reason,
-                            failure.kind(), failure.receivedPrefix(), null, clock);
+                            failure.kind(), failure.receivedPrefix(), null, failure.rowFailures(), clock);
                     progress.finishOverlapCheck(runId, check);
                     if ("INCOMPLETE_HTTP_RESPONSE".equals(reason) || check.retry()) return status(runId);
                 }
@@ -258,7 +258,7 @@ public class ContinuousSimRunService {
                 boolean complete = verifiedBars.size() == observation.bars().size()
                         && coversRequestedPage(firstOpen, latestOpen, observation.serverTime(), verifiedBars);
                 progress.captureOverlapResponse(runId, check, verifiedBars, complete, "OVERLAP_CHECK_INCOMPLETE",
-                        ClosedBarMarketFeed.ResponseKind.COMPLETE_RESPONSE, new byte[0], observation.responseBodySha256(), clock);
+                        ClosedBarMarketFeed.ResponseKind.COMPLETE_RESPONSE, new byte[0], observation.responseBodySha256(), List.of(), clock);
                 progress.finishOverlapCheck(runId, check);
                 if (check.retry() && progress.recoverableOverlapCheck(runId) != null) return status(runId);
                 if (progress.closeAdmissionIfDue(runId)) return settle(runId);
