@@ -1,4 +1,51 @@
 {
+  "projectionRecovery": {
+    "preview": "Preview account projection differences",
+    "authorize": "Authorize SIM projection recovery",
+    "confirm": "Rebuild the derived projections for account {{account}} from the ledger and trades.",
+    "account": "SIM account",
+    "cash": "USDT actual → expected",
+    "holding": "BTC position actual → expected",
+    "average": "Average entry price actual → expected",
+    "watermark": "Ledger posting watermark",
+    "difference": "Reconciliation",
+    "cashConsistent": "Cash consistent",
+    "cashMismatch": "Cash differs",
+    "positionConsistent": "Position consistent",
+    "positionMismatch": "Position differs",
+    "finalize": "Recheck original manual end",
+    "verified": "Original manual end verified at final valuation"
+  },
+  "boundedSim": {
+    "deadline": "Run deadline (UTC)",
+    "manualEndAt": "Manual end requested at (UTC)",
+    "terminatedAt": "Run ended at (UTC)",
+    "optionalDeadline": "Continuous SIM deadline (UTC, optional)",
+    "inputHelp": "Leave empty for an open-ended run. A deadline is fixed at creation.",
+    "invalidDeadline": "Select a future UTC hour within 90 days, with minutes set to 00.",
+    "meaning": "The deadline closes new order admission. Previously accepted orders continue through settlement.",
+    "end": "End run early",
+    "endMeaning": "This closes new order admission for this run. Previously accepted orders continue settling. An ended run cannot resume.",
+    "finalValuation": "Final valuation status",
+    "lastValuation": "Last verified valuation boundary (UTC)",
+    "pendingOrders": "Unsettled orders",
+    "observationDeadline": "The linked run ends at {{endAt}} (UTC). This observation can end at that time or earlier.",
+    "beyondDeadline": "The observation ends after this run’s deadline.",
+    "states": {
+      "RUNNING": "Running",
+      "ADMISSION_CLOSED": "New order admission closed",
+      "SETTLING": "Settling",
+      "COMPLETED": "Settled after expiry",
+      "BLOCKED": "Settlement blocked",
+      "MANUALLY_STOPPED": "Manually ended"
+    },
+    "valuation": {
+      "PENDING": "Pending",
+      "VERIFIED": "Verified",
+      "UNAVAILABLE": "Unavailable",
+      "NOT_APPLICABLE": "Not applicable"
+    }
+  },
   "continuousOperationsView": {
     "title": "Run dependencies and recent checks",
     "meaning": "Jobs are shared by this instance. Job success or service health does not prove this run is advancing or its performance is available. This view only reads; controls use their existing entry points.",
@@ -10,7 +57,7 @@
     "cursorReadAt": "Cursor read at",
     "health": "Aggregate service health",
     "healthAt": "Service health checked at",
-    "freshness": {"STALE": "Poll timestamp is stale; inspect scheduling and run reasons", "RECENT": "Recent poll is within the check threshold", "UNKNOWN": "No successful poll or valid delay; freshness is unknown", "PAUSED": "Continuous advancement is paused; cursor retained"},
+    "freshness": {"STALE": "Poll timestamp is stale; inspect scheduling and run reasons", "RECENT": "Recent poll is within the check threshold", "UNKNOWN": "No successful poll or valid delay; freshness is unknown", "PAUSED": "Continuous advancement is paused; cursor retained", "ENDED": "Polling has ended for this bounded run"},
     "freshnessMeaning": "Operational hint only: inspect when the last poll is older than 2 × effective poll delay + 60 seconds. Business blocks, last successful polling and quote waits retain their original meanings.",
     "jobsFailed": "Shared scheduler state could not be read",
     "healthFailed": "Service health could not be read",
@@ -3609,6 +3656,7 @@
     "stale": "Previously read status; current progress is unconfirmed"
   },
   "continuousOperations": {
+    "END": "Request to end the run early",
     "submitting": "Submitting the original operation",
     "unknown": "A continuous SIM operation needs confirmation",
     "meaning": "The original ID and inputs are retained. Check its result first; refreshing will not create or change a run again.",

@@ -68,6 +68,12 @@ public class StrategyObservationService {
                     validateWindow(request, registeredAt);
                     var identity = requireRun(owner, request.paperRunId(), request.canonicalAccountId(),
                             request.strategyVersionId(), request.publishId());
+                    if ("FORWARD".equals(request.kind())) {
+                        boolean outside = Boolean.TRUE.equals(jdbc.queryForObject("""
+                            SELECT EXISTS(SELECT 1 FROM continuous_sim_runs WHERE paper_run_id=? AND end_at<?)
+                            """, Boolean.class, request.paperRunId(), at(request.observationTo())));
+                        require(!outside, "OBSERVATION_EXCEEDS_RUN_DEADLINE");
+                    }
                     var linked = comparison.compare(request.validationId(), request.selectedTrialId(),
                             request.strategyVersionId(), request.publishId(), request.paperRunId(), owner);
                     require(request.paperRunId().equals(linked.paperRunId()), "OBSERVATION_RESEARCH_BINDING_MISMATCH");

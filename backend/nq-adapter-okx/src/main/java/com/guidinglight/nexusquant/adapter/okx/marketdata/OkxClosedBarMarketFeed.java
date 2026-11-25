@@ -1,12 +1,19 @@
 package com.guidinglight.nexusquant.adapter.okx.marketdata;
 
+import com.guidinglight.nexusquant.adapter.okx.error.OkxApiException;
+import com.guidinglight.nexusquant.adapter.okx.http.OkxHttpClient;
+
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.io.JsonEOFException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.guidinglight.nexusquant.marketdata.domain.BarInterval;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
 import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
 import com.guidinglight.nexusquant.adapter.okx.model.OkxVenueRuleFact;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -14,15 +21,23 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,8 +50,8 @@ import org.springframework.stereotype.Component;
 @Profile("public-marketdata-manual")
 @ConditionalOnProperty(prefix = "nq.public-marketdata.outbound", name = "enabled", havingValue = "true")
 public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
-    private static final int MAX_RESPONSE_BYTES = 128_000;
     private static final int MAX_CATCH_UP_BARS = 168;
+    private static final int MAX_DECIMAL_DIGITS = 128;
     private static final URI OKX_ORIGIN = URI.create("https://www.okx.com");
     private static final String TIME_PATH = "/api/v5/public/time";
     private static final String RULE_PATH = "/api/v5/public/instruments?instType=SPOT&instId=BTC-USDT";
@@ -45,6 +60,7 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
     private final URI origin;
     private final ObjectMapper mapper;
     private final Clock clock;
+    private final OkxHttpClient finalBarHttp;
 
     public OkxClosedBarMarketFeed() {
         this(HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build(),
@@ -68,6 +84,9 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         this.http = Objects.requireNonNull(http);
         this.origin = Objects.requireNonNull(origin);
         this.mapper = Objects.requireNonNull(mapper);
+        this.finalBarHttp = new OkxHttpClient(http, mapper.copy().enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS,
+                        DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY), origin.getScheme() + "://" + origin.getRawAuthority(),
+                Duration.ofSeconds(4));
     }
 
     private static URI configuredOrigin(String value) {
@@ -94,11 +113,25 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
 
     @Override
     public Observation observe(Instant firstOpen, int maximumBars) {
+        try {
+            return observe(firstOpen, maximumBars, true);
+        } catch (IncompleteHttpResponse failure) {
+            // 时间、规则或成交价响应不完整时还没有可用的 K 线证据。
+            throw new IncompleteObservation(List.of(), failure.kind, failure.body, failure);
+        }
+    }
+
+    @Override
+    public Observation observeFinalBar(Instant open) {
+        return observe(open, 1, false);
+    }
+
+    private Observation observe(Instant firstOpen, int maximumBars, boolean includeExecution) {
         if (firstOpen == null || firstOpen.toEpochMilli() % Duration.ofHours(1).toMillis() != 0
                 || maximumBars < 1 || maximumBars > 24) {
             throw new IllegalArgumentException("CONTINUOUS_SIM_WINDOW_INVALID");
         }
-        JsonNode time = get(TIME_PATH);
+        JsonNode time = includeExecution ? get(TIME_PATH) : getForFinalBar(TIME_PATH);
         if (!"0".equals(time.path("code").asText()) || !time.path("data").isArray()
                 || time.path("data").size() != 1) {
             throw new IllegalStateException("PUBLIC_MARKET_TIME_UNAVAILABLE");
@@ -118,6 +151,142 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         }
         Instant pageEnd = firstOpen.plus(Duration.ofHours(maximumBars));
         if (pageEnd.isAfter(endExclusive)) pageEnd = endExclusive;
+        Rule rule = includeExecution ? currentRule(serverTime) : null;
+        Quote quote = includeExecution ? currentQuote(serverTime) : null;
+        if (firstOpen.equals(endExclusive)) {
+            return new Observation(serverTime, receivedAt(serverTime), List.of(),
+                    rule, quote);
+        }
+        String path = "/api/v5/market/history-candles?instId=BTC-USDT&bar=1H&after="
+                + pageEnd.toEpochMilli() + "&before=" + (firstOpen.toEpochMilli() - 1)
+                + "&limit=" + maximumBars;
+        JsonNode candles;
+        byte[] body;
+        try {
+            var response = includeExecution ? getResponse(path) : new DecodedResponse(getForFinalBar(path), null);
+            candles = response.json();
+            body = response.body();
+        } catch (IncompleteHttpResponse failure) {
+            var prefix = readConfirmedPrefix(failure.body, firstOpen, pageEnd, maximumBars, serverTime);
+            var kind = failure.kind == ResponseKind.PARSE_FAILED && !prefix.cleanlyTruncated()
+                    ? ResponseKind.INCOMPLETE_RESPONSE : failure.kind;
+            throw new IncompleteObservation(prefix.bars(), kind, failure.body, prefix.failures(), failure);
+        }
+        var rows = candles.path("data");
+        if (!"0".equals(candles.path("code").asText()) || !rows.isArray()) {
+            throw new IllegalStateException("PUBLIC_MARKET_RESPONSE_INVALID");
+        }
+        // 接收时刻在完整响应读取与解析之后取得，不把请求前的venue时间当作已经收到行情。
+        Instant receivedAt = receivedAt(serverTime);
+        List<HistoricalBar> bars = new ArrayList<>();
+        List<RowParseFailure> failures = new ArrayList<>();
+        for (int index = 0; index < Math.min(rows.size(), maximumBars); index++) {
+            collectBar(rows.get(index), index, firstOpen, pageEnd, serverTime, receivedAt, bars, failures);
+        }
+        bars.sort(Comparator.comparing(HistoricalBar::openTime));
+        if (rows.size() > maximumBars || !failures.isEmpty()) {
+            var kind = rows.size() > maximumBars ? ResponseKind.INCOMPLETE_RESPONSE : ResponseKind.PARSE_FAILED;
+            throw new IncompleteObservation(bars, kind, body == null ? new byte[0] : body, failures,
+                    new IllegalStateException("PUBLIC_MARKET_RESPONSE_INVALID"));
+        }
+        return new Observation(serverTime, receivedAt, List.copyOf(bars),
+                rule, quote, body == null ? null : responseSha256(body));
+    }
+
+    /** 只采纳已结束的 data 行。截断、无成功码或超界的剩余正文始终保留为不完整。 */
+    private CandlePrefix readConfirmedPrefix(byte[] body, Instant firstOpen, Instant pageEnd,
+            int maximumBars, Instant serverTime) {
+        Instant received = clock.instant().truncatedTo(ChronoUnit.MICROS);
+        if (received.isBefore(serverTime.minusSeconds(5)) || received.isAfter(serverTime.plusSeconds(120))) {
+            return new CandlePrefix(List.of(), List.of(), false);
+        }
+        List<HistoricalBar> found = new ArrayList<>();
+        List<RowParseFailure> failures = new ArrayList<>();
+        boolean codeSeen = false;
+        boolean dataSeen = false;
+        boolean successful = false;
+        boolean cleanlyTruncated = false;
+        try (var json = mapper.createParser(body)) {
+            if (json.nextToken() != JsonToken.START_OBJECT) return new CandlePrefix(List.of(), List.of(), false);
+            envelope: while (json.nextToken() == JsonToken.FIELD_NAME) {
+                String field = json.currentName();
+                var value = json.nextToken();
+                if ("code".equals(field)) {
+                    if (codeSeen) return new CandlePrefix(List.of(), failures, false);
+                    codeSeen = true;
+                    successful = value != null && value.isScalarValue() && "0".equals(json.getValueAsString());
+                    json.skipChildren();
+                } else if ("data".equals(field)) {
+                    if (dataSeen || value != JsonToken.START_ARRAY) break;
+                    dataSeen = true;
+                    int index = 0;
+                    for (var token = json.nextToken(); token != JsonToken.END_ARRAY; token = json.nextToken()) {
+                        if (token == null || index == maximumBars) break envelope;
+                        if (token == JsonToken.START_ARRAY) {
+                            collectBar(mapper.readTree(json), index, firstOpen, pageEnd, serverTime, received, found, failures);
+                        } else {
+                            json.skipChildren();
+                            json.finishToken();
+                            failures.add(new RowParseFailure(index, "PUBLIC_MARKET_BAR_INVALID_SHAPE"));
+                        }
+                        index++;
+                    }
+                } else {
+                    json.skipChildren();
+                }
+            }
+        } catch (JsonEOFException truncated) {
+            // 只有正文尾部耗尽才可补读；中途语法错误可能还有无法定位的完整行。
+            cleanlyTruncated = successful && dataSeen;
+        } catch (IOException truncated) {
+            // 保留已独立解出的行，异常结论由上层按核验尝试持久化。
+        }
+        return new CandlePrefix(successful ? found : List.of(), failures, cleanlyTruncated);
+    }
+
+    private void collectBar(JsonNode row, int index, Instant firstOpen, Instant pageEnd, Instant serverTime,
+                            Instant receivedAt, List<HistoricalBar> bars, List<RowParseFailure> failures) {
+        if (!row.isArray()) {
+            failures.add(new RowParseFailure(index, "PUBLIC_MARKET_BAR_INVALID_SHAPE"));
+            return;
+        }
+        try {
+            HistoricalBar bar = parseBar(row, serverTime, receivedAt);
+            if ("1".equals(row.get(8).asText()) && !bar.openTime().isBefore(firstOpen)
+                    && bar.openTime().isBefore(pageEnd)) {
+                bars.add(bar);
+            }
+        } catch (IllegalStateException failure) {
+            failures.add(new RowParseFailure(index, failure.getMessage()));
+        }
+    }
+
+    private record CandlePrefix(List<HistoricalBar> bars, List<RowParseFailure> failures, boolean cleanlyTruncated) {}
+
+    private HistoricalBar parseBar(JsonNode row, Instant serverTime, Instant receivedAt) {
+        if (!row.isArray() || row.size() < 9 || !Set.of("0", "1").contains(row.get(8).asText())) {
+            throw new IllegalStateException("PUBLIC_MARKET_BAR_INVALID");
+        }
+        Instant open;
+        try {
+            open = Instant.ofEpochMilli(Long.parseLong(row.get(0).asText()));
+        } catch (NumberFormatException failure) {
+            throw new IllegalStateException("PUBLIC_MARKET_BAR_INVALID", failure);
+        }
+        if (open.toEpochMilli() % Duration.ofHours(1).toMillis() != 0) {
+            throw new IllegalStateException("PUBLIC_MARKET_BAR_INVALID");
+        }
+        return new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_HOUR,
+                open, open.plus(Duration.ofHours(1)).minusMillis(1),
+                decimal(row, 1), decimal(row, 2), decimal(row, 3), decimal(row, 4),
+                decimal(row, 5), row.get(7).isNull() ? null : decimal(row, 7),
+                null, "OK", mapper.createObjectNode()
+                        .put("collectionMethod", "RESPONSE_COMPLETED_UTC_V1")
+                        .put("receivedAt", receivedAt.toString()).put("serverTime", serverTime.toString())
+                        .set("candle", row).toString(), serverTime);
+    }
+
+    private Rule currentRule(Instant serverTime) {
         JsonNode instruments = get(RULE_PATH);
         OkxVenueRuleFact rule;
         try {
@@ -130,6 +299,10 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
                 || rule.lotSize().signum() <= 0 || rule.minimumSize().signum() <= 0) {
             throw new IllegalStateException("VENUE_RULE_UNAVAILABLE");
         }
+        return new Rule(serverTime, rule.state(), rule.tickSize(), rule.lotSize(), rule.minimumSize());
+    }
+
+    private Quote currentQuote(Instant serverTime) {
         JsonNode ticker = get(TICKER_PATH);
         if (!"0".equals(ticker.path("code").asText()) || !ticker.path("data").isArray()
                 || ticker.path("data").size() != 1) {
@@ -151,43 +324,7 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         } catch (RuntimeException ex) {
             throw new IllegalStateException("PUBLIC_MARKET_QUOTE_UNAVAILABLE", ex);
         }
-        if (firstOpen.equals(endExclusive)) {
-            return new Observation(serverTime, receivedAt(serverTime), List.of(),
-                    new Rule(serverTime, rule.state(), rule.tickSize(), rule.lotSize(), rule.minimumSize()), quote);
-        }
-        String path = "/api/v5/market/history-candles?instId=BTC-USDT&bar=1H&after="
-                + pageEnd.toEpochMilli() + "&before=" + (firstOpen.toEpochMilli() - 1)
-                + "&limit=" + maximumBars;
-        JsonNode candles = get(path);
-        if (!"0".equals(candles.path("code").asText()) || !candles.path("data").isArray()
-                || candles.path("data").size() > maximumBars) {
-            throw new IllegalStateException("PUBLIC_MARKET_RESPONSE_INVALID");
-        }
-        // 接收时刻在完整响应读取与解析之后取得，不把请求前的venue时间当作已经收到行情。
-        Instant receivedAt = receivedAt(serverTime);
-        List<HistoricalBar> bars = new ArrayList<>();
-        for (JsonNode row : candles.path("data")) {
-            if (!row.isArray() || row.size() < 9) {
-                throw new IllegalStateException("PUBLIC_MARKET_BAR_INVALID");
-            }
-            Instant open = Instant.ofEpochMilli(row.get(0).asLong());
-            if (!"1".equals(row.get(8).asText()) || open.isBefore(firstOpen)
-                    || !open.isBefore(pageEnd)
-                    || open.toEpochMilli() % Duration.ofHours(1).toMillis() != 0) {
-                continue;
-            }
-            bars.add(new HistoricalBar("OKX", "SPOT", "BTC-USDT", BarInterval.ONE_HOUR,
-                    open, open.plus(Duration.ofHours(1)).minusMillis(1),
-                    decimal(row, 1), decimal(row, 2), decimal(row, 3), decimal(row, 4),
-                    decimal(row, 5), row.get(7).isNull() ? null : decimal(row, 7),
-                    null, "OK", mapper.createObjectNode()
-                            .put("collectionMethod", "RESPONSE_COMPLETED_UTC_V1")
-                            .put("receivedAt", receivedAt.toString()).put("serverTime", serverTime.toString())
-                            .set("candle", row).toString(), serverTime));
-        }
-        bars.sort(Comparator.comparing(HistoricalBar::openTime));
-        return new Observation(serverTime, receivedAt, List.copyOf(bars),
-                new Rule(serverTime, rule.state(), rule.tickSize(), rule.lotSize(), rule.minimumSize()), quote);
+        return quote;
     }
 
     private Instant receivedAt(Instant serverTime) {
@@ -201,7 +338,10 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
     private BigDecimal decimal(JsonNode row, int index) {
         try {
             BigDecimal value = new BigDecimal(row.get(index).asText());
-            if (value.signum() < 0 || (index != 5 && index != 7 && value.signum() == 0)) {
+            // 限制科学计数法展开后的摘要长度，短正文也可能携带极大的指数。
+            if (value.precision() > MAX_DECIMAL_DIGITS || value.scale() < -MAX_DECIMAL_DIGITS
+                    || value.scale() > MAX_DECIMAL_DIGITS || value.signum() < 0
+                    || (index != 5 && index != 7 && value.signum() == 0)) {
                 throw new IllegalStateException("PUBLIC_MARKET_BAR_INVALID");
             }
             return value;
@@ -210,19 +350,39 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
         }
     }
 
+    private JsonNode getForFinalBar(String path) {
+        try {
+            // 末价采集与人工 END 互斥。仅两次公开请求，每次约束正文完成且无网络重试。
+            return finalBarHttp.getBounded(path, "continuous-sim-final-bar", MAX_RESPONSE_BYTES);
+        } catch (OkxApiException failure) {
+            throw new IllegalStateException("PUBLIC_MARKET_FINAL_BAR_UNAVAILABLE", failure);
+        }
+    }
+
     private JsonNode get(String path) {
+        return getResponse(path).json();
+    }
+
+    private DecodedResponse getResponse(String path) {
         HttpRequest request = HttpRequest.newBuilder(origin.resolve(path))
                 .timeout(Duration.ofSeconds(8)).GET().build();
         for (int attempt = 0; attempt < 3; attempt++) {
             try {
+                long deadline = System.nanoTime() + request.timeout().orElseThrow().toNanos();
                 HttpResponse<InputStream> response = http.send(request, HttpResponse.BodyHandlers.ofInputStream());
                 try (InputStream body = response.body()) {
-                    byte[] bytes = body.readNBytes(MAX_RESPONSE_BYTES + 1);
-                    if (bytes.length > MAX_RESPONSE_BYTES) {
-                        throw new IllegalStateException("PUBLIC_MARKET_RESPONSE_TOO_LARGE");
-                    }
+                    byte[] bytes = readResponse(body, response.statusCode(), deadline);
                     if (response.statusCode() == 200) {
-                        return mapper.readTree(bytes);
+                        try {
+                            var decoded = mapper.reader().with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS,
+                                            DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY)
+                                    .readTree(bytes);
+                            if (decoded == null || decoded.isMissingNode() || !decoded.isObject())
+                                throw new IncompleteHttpResponse(ResponseKind.PARSE_FAILED, bytes, null);
+                            return new DecodedResponse(decoded, bytes);
+                        } catch (IOException failure) {
+                            throw new IncompleteHttpResponse(ResponseKind.PARSE_FAILED, bytes, failure);
+                        }
                     }
                     if (response.statusCode() < 500 || attempt == 2) {
                         throw new IllegalStateException("PUBLIC_MARKET_HTTP_" + response.statusCode());
@@ -241,5 +401,71 @@ public final class OkxClosedBarMarketFeed implements ClosedBarMarketFeed {
             }
         }
         throw new IllegalStateException("PUBLIC_MARKET_UNAVAILABLE");
+    }
+
+    private record DecodedResponse(JsonNode json, byte[] body) {}
+
+    private static String responseSha256(byte[] body) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(body));
+        } catch (NoSuchAlgorithmException unavailable) {
+            throw new IllegalStateException(unavailable);
+        }
+    }
+
+    private static byte[] readResponse(InputStream body, int status, long deadline)
+            throws IOException, InterruptedException {
+        var received = new ByteArrayOutputStream();
+        // JDK 的请求超时只约束响应头。正文停止流动时也要结束等待并保留已读数据。
+        var task = new FutureTask<>(() -> readBounded(body, status, received));
+        Thread.startVirtualThread(task);
+        try {
+            return task.get(Math.max(1L, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+        } catch (TimeoutException failure) {
+            var timeout = new HttpTimeoutException("public response deadline exceeded");
+            if (status == 200) {
+                throw new IncompleteHttpResponse(ResponseKind.TRANSPORT_INTERRUPTED, received.toByteArray(), timeout);
+            }
+            throw timeout;
+        } catch (ExecutionException failure) {
+            if (failure.getCause() instanceof IOException io) throw io;
+            if (failure.getCause() instanceof RuntimeException runtime) throw runtime;
+            if (failure.getCause() instanceof Error error) throw error;
+            throw new IOException("public response failed", failure.getCause());
+        } finally {
+            task.cancel(true);
+        }
+    }
+
+    private static byte[] readBounded(InputStream body, int status, ByteArrayOutputStream received) throws IOException {
+        byte[] buffer = new byte[8192];
+        try {
+            while (received.size() < MAX_RESPONSE_BYTES) {
+                int count = body.read(buffer, 0, Math.min(buffer.length, MAX_RESPONSE_BYTES - received.size()));
+                if (count < 0) return received.toByteArray();
+                received.write(buffer, 0, count);
+            }
+            if (body.read() < 0) return received.toByteArray();
+        } catch (IOException failure) {
+            if (status == 200) {
+                throw new IncompleteHttpResponse(ResponseKind.TRANSPORT_INTERRUPTED, received.toByteArray(), failure);
+            }
+            throw failure;
+        }
+        if (status == 200) {
+            throw new IncompleteHttpResponse(ResponseKind.INCOMPLETE_RESPONSE, received.toByteArray(), null);
+        }
+        throw new IllegalStateException("PUBLIC_MARKET_RESPONSE_TOO_LARGE");
+    }
+
+    private static final class IncompleteHttpResponse extends IllegalStateException {
+        private final ResponseKind kind;
+        private final byte[] body;
+
+        private IncompleteHttpResponse(ResponseKind kind, byte[] body, IOException cause) {
+            super("INCOMPLETE_HTTP_RESPONSE", cause);
+            this.kind = kind;
+            this.body = body;
+        }
     }
 }

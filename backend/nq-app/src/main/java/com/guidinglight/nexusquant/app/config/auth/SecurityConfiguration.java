@@ -238,6 +238,10 @@ public class SecurityConfiguration {
                                         .authenticated()
                                         .requestMatchers(DemoTenantApiPolicy::allows)
                                         .hasAnyRole("ADMIN", "OPERATOR", "DEMO_USER")
+                                        .requestMatchers(
+                                                "/api/paper-trading/strategy-sim/runs/*/projection-recovery",
+                                                "/api/paper-trading/strategy-sim/runs/*/projection-recovery/**")
+                                        .hasAnyRole("ADMIN", "OPERATOR")
                                         .requestMatchers(HttpMethod.GET, "/api/**")
                                         .authenticated()
                                         .requestMatchers(HttpMethod.PATCH, "/api/scheduler/jobs/*")

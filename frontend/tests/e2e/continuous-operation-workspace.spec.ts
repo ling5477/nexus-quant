@@ -1,4 +1,5 @@
 import {expect, test, type BrowserContext} from 'playwright/test';
+import type {ContinuousSimStatus} from '../../src/features/paper-trading/types/paper-trading';
 
 test.afterEach(async ({page}, info) => {
     if (info.status !== info.expectedStatus && !page.isClosed()) {
@@ -18,7 +19,8 @@ test.afterEach(async ({page}, info) => {
 const runId = 'ptr-11111111-1111-4111-8111-111111111111';
 const operationId = '22222222-2222-4222-8222-222222222222';
 const publishId = 'pub-continuous-original';
-const progress = (status = 'RUNNING') => ({
+const manualEndAt = '2026-10-15T00:02:01.123456Z';
+const progress = (status = 'RUNNING', bounded?: ContinuousSimStatus['bounded']) => ({
     paperRunId: runId,
     status,
     startedAt: '2026-10-15T00:00:00Z',
@@ -32,6 +34,7 @@ const progress = (status = 'RUNNING') => ({
     lastDecisionStatus: null,
     blockReason: status === 'STOPPED' ? 'STOPPED' : null,
     consecutivePollFailures: 0,
+    bounded,
 });
 
 /** 这里只证明浏览器状态与真实Web Locks；隔离接口替身不代表正式命令业务验收。 */
@@ -61,6 +64,13 @@ async function fixture(
         ...(options.pending === 'PAUSE' ? {paperRunId: runId} : {publishId, budget: '100'}),
     };
     function receipt(request: Record<string, unknown>) {
+        const bounded = request.type === 'CREATE' && typeof request.endAt === 'string'
+            ? {endAt: request.endAt, lifecycleStatus: 'RUNNING', finalValuationStatus: 'PENDING', lastValuationBoundary: null,
+                pendingOrders: null, reason: null, updatedAt: '2026-10-15T00:02:00Z', publishId, strategyVersionId: 'sv-continuous'}
+            : request.type === 'END' && state.cursor?.bounded
+              ? {...state.cursor.bounded, manualEndAt, terminatedAt: null, updatedAt: '2026-10-15T00:02:07Z',
+                  lifecycleStatus: 'SETTLING', pendingOrders: 1, reason: 'ORDER_PENDING'}
+              : undefined;
         return {
             operationId: request.operationId,
             type: request.type,
@@ -68,16 +78,19 @@ async function fixture(
             budget: request.type === 'CREATE' ? '100' : null,
             paperRunId: runId,
             status: 'COMPLETED',
-            result: progress(request.type === 'PAUSE' ? 'STOPPED' : 'RUNNING'),
+            result: progress(request.type === 'PAUSE' ? 'STOPPED' : 'RUNNING', bounded),
             completedAt: '2026-10-15T00:02:00Z',
         };
     }
     if (options.pending) receipts.set(operationId, receipt(original));
     await context.addInitScript(
         ({pending, corrupt, original, locale}) => {
+            // 同一浏览器上下文共用一次登录；新标签或刷新只读取原会话和未决操作。
+            if (localStorage.getItem('nq:e2e-continuous-seeded')) return;
             localStorage.setItem(
                 'nexus-quant.console.auth',
                 JSON.stringify({
+                    sessionId: 'continuous-browser-session',
                     accessToken: 'continuous-browser-fixture',
                     tokenType: 'Bearer',
                     expiresAt: '2099-01-01T00:00:00Z',
@@ -86,21 +99,19 @@ async function fixture(
                 }),
             );
             localStorage.setItem('nq.locale', locale);
-            if (!localStorage.getItem('nq:e2e-continuous-seeded')) {
-                if (pending || corrupt)
-                    localStorage.setItem(
-                        'nq:continuous-operation:v1:17',
-                        corrupt
-                            ? 'corrupt'
-                            : JSON.stringify({
-                                  ownerUserId: 17,
-                                  request: original,
-                                  phase: 'SUBMITTING',
-                                  recordedAt: Date.now(),
-                              }),
-                    );
-                localStorage.setItem('nq:e2e-continuous-seeded', 'yes');
-            }
+            if (pending || corrupt)
+                localStorage.setItem(
+                    'nq:continuous-operation:v1:17',
+                    corrupt
+                        ? 'corrupt'
+                        : JSON.stringify({
+                              ownerUserId: 17,
+                              request: original,
+                              phase: 'SUBMITTING',
+                              recordedAt: Date.now(),
+                          }),
+                );
+            localStorage.setItem('nq:e2e-continuous-seeded', 'yes');
         },
         {
             pending: options.pending,
@@ -135,6 +146,7 @@ async function fixture(
         const path = new URL(route.request().url()).pathname;
         if (!path.startsWith('/api/')) return route.fallback();
         const reply = (json: unknown, status = 200) => route.fulfill({json, status});
+        if (path === '/api/distribution') return reply({distribution: 'NQ_SELF_HOSTED'});
         if (path === '/api/auth/me')
             return reply({
                 userId: state.userId,
@@ -180,7 +192,7 @@ async function fixture(
             posts.push(request);
             const result = receipts.get(String(request.operationId)) ?? receipt(request);
             receipts.set(String(request.operationId), result);
-            state.cursor = progress(request.type === 'PAUSE' ? 'STOPPED' : 'RUNNING');
+            state.cursor = result.result as ContinuousSimStatus;
             if (state.holdPost) {
                 await new Promise<void>((resolve) => {
                     releasePost = resolve;
@@ -242,6 +254,8 @@ test('恢复只GET原结果，原创建快照不覆盖当前已暂停进度', as
     await expect(page.getByText('创建持续模拟已确认完成', {exact: true})).toBeVisible();
     const panel = page.getByTestId('continuous-sim-status');
     await expect(panel.getByText('连续处理已暂停', {exact: true})).toBeVisible();
+    await expect(panel.getByText('人工结束请求时间（UTC）')).toHaveCount(0);
+    await expect(panel.getByText('运行终止时间（UTC）')).toHaveCount(0);
     await expect(page.getByTestId('continuous-operation-recovery')).toHaveCount(0);
     expect(
         await page.evaluate(() => localStorage.getItem('nq:continuous-operation:v1:17')),
@@ -254,6 +268,65 @@ test('恢复只GET原结果，原创建快照不覆盖当前已暂停进度', as
     await page.getByRole('button', {name: '查看该运行', exact: true}).click();
     await expect(page).toHaveURL(new RegExp(`paperRunId=${runId}`));
     expect(errors).toEqual([]);
+});
+
+test('有界创建固定 UTC 期限，提前结束后展示待收敛事实', async ({page, context}) => {
+    const h = await fixture(context);
+    const next = new Date(Date.now() + 2 * 86400000);
+    next.setUTCMinutes(0, 0, 0);
+    const endAt = next.toISOString().replace('.000Z', 'Z');
+    await page.goto('/paper-trading/runs');
+    const publish = page.getByRole('combobox', {name: /已发布策略$/});
+    await publish.focus();
+    await publish.press('ArrowDown');
+    await page.getByTitle('Continuous SMA · sv-continuous', {exact: true}).click();
+    await page.getByRole('textbox', {name: /预算（USDT）$/}).fill('100');
+    const input = page.getByLabel('持续模拟截止时间（UTC，可选）', {exact: true});
+    await input.fill(endAt.slice(0, 14) + '30');
+    await page.getByRole('button', {name: '启动连续模拟', exact: true}).click();
+    await expect(page.getByText('请选择未来 90 天内的 UTC 整点，分钟须为 00。')).toBeVisible();
+    expect(h.posts).toHaveLength(0);
+    await input.fill(endAt.slice(0, 16));
+    await page.getByRole('button', {name: '启动连续模拟', exact: true}).click();
+    await expect.poll(() => h.posts.length).toBe(1);
+    expect(h.posts[0]).toMatchObject({type: 'CREATE', publishId, endAt, budget: '100'});
+    const panel = page.getByTestId('continuous-sim-status');
+    await expect(panel.getByText(endAt, {exact: true})).toBeVisible();
+    await expect(panel.getByText('人工结束请求时间（UTC）')).toHaveCount(0);
+    await panel.getByRole('button', {name: '提前结束运行'}).click();
+    await page.getByRole('dialog').getByRole('button', {name: '提前结束运行'}).click();
+    await expect.poll(() => h.posts.length).toBe(2);
+    expect(h.posts[1]).toMatchObject({type: 'END', paperRunId: runId});
+    await expect(panel.getByText('等待经济事实收敛', {exact: true})).toBeVisible();
+    await expect(panel.getByText('ORDER_PENDING', {exact: true})).toBeVisible();
+    await expect(panel.getByText('人工结束请求时间（UTC）')).toBeVisible();
+    await expect(panel.getByText(manualEndAt, {exact: true})).toHaveAttribute('datetime', manualEndAt);
+    await expect(panel.getByText('运行终止时间（UTC）')).toHaveCount(0);
+    const terminatedAt = '2026-10-15T00:03:13.654321Z';
+    h.state.cursor = progress('STOPPED', {...h.state.cursor!.bounded!, updatedAt: terminatedAt, terminatedAt,
+        lifecycleStatus: 'MANUALLY_STOPPED', pendingOrders: 0, reason: null});
+    await panel.getByRole('button', {name: /刷新/}).click();
+    await expect(panel.getByText('已手动结束', {exact: true})).toBeVisible();
+    await expect(panel.getByText(manualEndAt, {exact: true})).toBeVisible();
+    await expect(panel.getByText('运行终止时间（UTC）')).toBeVisible();
+    await expect(panel.getByText(terminatedAt, {exact: true})).toHaveAttribute('datetime', terminatedAt);
+    await expect(panel.getByRole('button', {name: /恢复|提前结束/})).toHaveCount(0);
+});
+
+test('自动到期仅展示服务端终止时间', async ({page, context}) => {
+    const h = await fixture(context, {locale: 'en-US'});
+    const endAt = '2026-10-16T00:00:00Z';
+    const terminatedAt = '2026-10-16T00:02:25.987654Z';
+    h.state.cursor = progress('STOPPED', {endAt, manualEndAt: null, terminatedAt,
+        lifecycleStatus: 'COMPLETED', finalValuationStatus: 'VERIFIED', lastValuationBoundary: endAt,
+        pendingOrders: 0, reason: 'DEADLINE_SETTLED', updatedAt: terminatedAt, publishId, strategyVersionId: 'sv-continuous'});
+    await page.goto(`/paper-trading/runs?paperRunId=${runId}`);
+    const panel = page.getByTestId('continuous-sim-status');
+    await expect(panel.getByText('Settled after expiry', {exact: true})).toBeVisible();
+    await expect(panel.getByText('Manual end requested at (UTC)')).toHaveCount(0);
+    await expect(panel.getByText('Run ended at (UTC)')).toBeVisible();
+    await expect(panel.getByText(terminatedAt, {exact: true})).toHaveAttribute('datetime', terminatedAt);
+    expect(h.posts).toHaveLength(0);
 });
 
 test('404显式同编号继续，丢响应和503刷新保持未知且不重发', async ({page, context}) => {
@@ -426,4 +499,75 @@ test('损坏的通知响应只显示读取失败，不让运行工作区崩溃�
     await expect(drawer.getByText(/NOTIFICATION_RESPONSE_INVALID/)).toBeVisible();
     await expect(page.getByRole('heading', {name: '控制台遇到一个错误'})).toHaveCount(0);
     expect(h.posts).toHaveLength(0);
+});
+
+test('OWNER 预览投影、确认授权、重放原编号并独立复核结束', async ({page, context}) => {
+    const h = await fixture(context);
+    const endAt = '2026-10-15T01:00:00Z';
+    const intentAt = '2026-10-15T01:00:05Z';
+    const terminatedAt = '2026-10-15T01:00:10Z';
+    h.state.cursor = progress('STALLED', {
+        endAt, manualEndAt: intentAt, terminatedAt: null, lifecycleStatus: 'BLOCKED', finalValuationStatus: 'UNAVAILABLE',
+        lastValuationBoundary: null, pendingOrders: 0, reason: 'SIM_ACCOUNT_PROJECTIONS_MISMATCH',
+        updatedAt: intentAt, publishId, strategyVersionId: 'sv-continuous',
+    });
+    const ledgerWatermark = {postedThrough: 5, sha256: 'a'.repeat(64)};
+    const projectionVersion = 'b'.repeat(64);
+    const expectedCash = {balance: '101.00000001', available: '101.00000001', frozen: '0',
+        tradeEnv: 'SIM', basis: 'LEDGER_CASH_PROJECTION', scope: 'NQ_MANAGED_ACCOUNT'};
+    const holding = {qty: '0.01234567', available: '0.01234567', frozen: '0', avgPrice: '50000'};
+    const requests: Record<string, unknown>[] = [];
+    let recovered: string | null = null;
+    await page.route('**/projection-recovery', async (route) => {
+        if (route.request().method() === 'GET') {
+            return route.fulfill({json: {accountId: 2, tenantId: 'local', endOperationId: operationId,
+                ledgerWatermark, projectionVersion, recoveryOperationId: recovered,
+                differences: {actualCash: recovered ? expectedCash : {...expectedCash, balance: '102.00000001'},
+                    expectedCash, actualPosition: holding, expectedPosition: holding, actualAsset: null,
+                    expectedAsset: null, cashConsistent: Boolean(recovered), positionConsistent: true}}});
+        }
+        const request = route.request().postDataJSON() as Record<string, unknown>;
+        requests.push(request);
+        if (requests.length === 1) return route.abort('failed');
+        recovered = String(request.operationId);
+        await route.fulfill({json: {operationId: recovered, endOperationId: operationId, finalization: null}});
+    });
+    await page.route('**/projection-recovery/finalization', async (route) => {
+        const request = route.request().postDataJSON() as Record<string, unknown>;
+        requests.push(request);
+        h.state.parent = 'STOPPED';
+        h.state.cursor = progress('STOPPED', {...h.state.cursor?.bounded!, lifecycleStatus: 'MANUALLY_STOPPED',
+            finalValuationStatus: 'VERIFIED', lastValuationBoundary: endAt, terminatedAt, updatedAt: terminatedAt});
+        await route.fulfill({json: {...request, finalization: {lifecycleStatus: 'MANUALLY_STOPPED', finalValuationStatus: 'VERIFIED'}}});
+    });
+
+    await page.setViewportSize({width: 390, height: 844});
+    await page.goto(`/paper-trading/runs?paperRunId=${runId}`);
+    const preview = page.getByRole('button', {name: '预览账户投影差异'});
+    await expect(preview).toBeVisible();
+    await preview.click();
+    await expect(page.getByText('102.00000001 → 101.00000001', {exact: true})).toBeVisible();
+
+    const recoveryPanel = page.getByRole('group', {name: '预览账户投影差异'});
+    const authorize = recoveryPanel.getByRole('button', {name: '授权恢复 SIM 投影'});
+    await authorize.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog.getByText('将按账本和成交重建账户 2 的派生投影。')).toBeVisible();
+    await dialog.getByRole('button', {name: '授权恢复 SIM 投影'}).click();
+    await expect.poll(() => requests.length).toBe(1);
+    await expect(dialog).toBeHidden();
+    await expect(authorize).toBeEnabled();
+    await authorize.click();
+    await dialog.getByRole('button', {name: '授权恢复 SIM 投影'}).click();
+
+    const recheck = page.getByRole('button', {name: '复核原人工结束'});
+    await expect(recheck).toBeVisible();
+    await recheck.click();
+    await expect(page.getByRole('alert').filter({hasText: '原人工结束已通过最终估值核验'})).toBeVisible();
+    expect(requests).toHaveLength(3);
+    expect(requests[0]).toEqual(requests[1]);
+    expect(requests[0]).toEqual({operationId: recovered, endOperationId: operationId,
+        ledgerWatermark: ledgerWatermark.sha256, projectionVersion});
+    expect(requests[2]).toEqual({operationId: expect.any(String), endOperationId: operationId, recoveryOperationId: recovered});
+    expect(requests[2].operationId).not.toBe(recovered);
 });

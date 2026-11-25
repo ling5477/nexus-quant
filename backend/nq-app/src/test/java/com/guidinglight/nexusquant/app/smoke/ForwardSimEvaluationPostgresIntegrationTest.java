@@ -52,7 +52,7 @@ class ForwardSimEvaluationPostgresIntegrationTest {
             int oldUsers = db.admin.queryForObject("SELECT count(*) FROM users", Integer.class);
             db.migrate(null); db.runtime(); db.migration(null).validate();
             assertEquals(oldUsers, db.admin.queryForObject("SELECT count(*) FROM users", Integer.class));
-            assertEquals("52", db.admin.queryForObject("SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1", String.class));
+            assertEquals(1, db.admin.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE version='52' AND success", Integer.class));
             assertEquals(16, db.admin.queryForObject("SELECT current_setting('server_version_num')::int/10000", Integer.class));
             try (var app = ResearchSimComparisonFixture.start(db);
                     var http = new TenantIsolationHttpIntegrationTest.Http(app.getWebServer().getPort())) {

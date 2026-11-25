@@ -61,4 +61,37 @@ describe('continuous state boundaries', () => {
         expect(continuousAction({...state, status: 'STOPPED'}, 'STOPPED')).toBeNull();
         expect(continuousAction(state, 'CREATED')).toBeNull();
     });
+    it('keeps bounded completion distinct from a reversible paused cursor', () => {
+        const bounded = {endAt: '2026-10-16T00:00:00Z', lifecycleStatus: 'SETTLING',
+            finalValuationStatus: 'PENDING', lastValuationBoundary: null, pendingOrders: 1,
+            reason: 'ORDER_PENDING', updatedAt: state.startedAt, publishId: 'pub-one', strategyVersionId: 'sv-one'};
+        const status = parseContinuousSimStatus({...state, bounded}, state.paperRunId)!;
+        expect(continuousAction(status, 'RUNNING')).toBe('end');
+        for (const lifecycleStatus of ['COMPLETED', 'MANUALLY_STOPPED', 'UNKNOWN']) {
+            expect(continuousAction({...status, bounded: {...bounded, lifecycleStatus}}, 'RUNNING')).toBeNull();
+        }
+        expect(continuousAction({...status, status: 'STOPPED'}, 'RUNNING')).toBeNull();
+        for (const patch of [{endAt: '2026-02-30T00:00:00Z'}, {endAt: '2026-10-16T00:01:00Z'}, {pendingOrders: -1}]) {
+            expect(() => parseContinuousSimStatus({...state, bounded: {...bounded, ...patch}}, state.paperRunId)).toThrow();
+        }
+    });
+    it('preserves optional persisted end times, including their subsecond precision', () => {
+        const bounded = {
+            endAt: '2026-10-16T00:00:00Z', lifecycleStatus: 'SETTLING', finalValuationStatus: 'PENDING',
+            lastValuationBoundary: null, pendingOrders: 1, reason: 'ORDER_PENDING', updatedAt: state.startedAt,
+            publishId: 'pub-one', strategyVersionId: 'sv-one',
+        };
+        const parse = (fields: Record<string, unknown>) =>
+            parseContinuousSimStatus({...state, bounded: {...bounded, ...fields}}, state.paperRunId)!.bounded!;
+        const manualEndAt = '2026-10-15T23:57:04.123456Z';
+        const terminatedAt = '2026-10-16T00:02:08.456789Z';
+        expect(parse({})).toEqual(bounded);
+        expect(parse({manualEndAt, terminatedAt: null})).toMatchObject({manualEndAt, terminatedAt: null});
+        expect(parse({manualEndAt: null, terminatedAt})).toMatchObject({manualEndAt: null, terminatedAt});
+        for (const field of ['manualEndAt', 'terminatedAt']) {
+            for (const invalid of [17, '2026-10-16', '2026-02-30T00:00:00Z']) {
+                expect(() => parse({[field]: invalid})).toThrow();
+            }
+        }
+    });
 });

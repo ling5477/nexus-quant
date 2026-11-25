@@ -54,6 +54,8 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
         return next;
     });};
     const query = useForwardSimObservations(run, invalidRange ? null : range, observationId, reviewId, offset, reviewsOffset, onSaved);
+    const runEndAt = !query.cursor.isError && query.cursor.data?.paperRunId === run.paperRunId
+        ? query.cursor.data.bounded?.endAt : undefined;
     const diagnosticOpen = diagnosticRequested && query.method === eventObservationMethod;
     const detail = !query.detail.isError ? query.detail.data : undefined;
     const savedReview = !query.review.isError && !invalidIdentity && query.targetReady
@@ -77,10 +79,10 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
         if (draftState.current.context !== context) draftState.current = {context, edited: false, exact: {}};
         if (draftState.current.edited) return;
         const exact = {from: from ?? observation?.observationFrom ?? rawFrom ?? run.createdAt,
-            to: to ?? observation?.observationTo ?? rawTo ?? dayjs.utc().toISOString(), asOf: asOf ?? dayjs.utc().toISOString()};
+            to: to ?? observation?.observationTo ?? (kind === 'FORWARD' ? runEndAt : undefined) ?? rawTo ?? dayjs.utc().toISOString(), asOf: asOf ?? dayjs.utc().toISOString()};
         draftState.current.exact = exact;
         form.setFieldsValue({from: dayjs.utc(exact.from), to: dayjs.utc(exact.to), asOf: dayjs.utc(exact.asOf)});
-    }, [form, from, to, asOf, observation?.observationId, observation?.observationFrom, observation?.observationTo, rawFrom, rawTo, run.createdAt]);
+    }, [form, from, to, asOf, observation?.observationId, observation?.observationFrom, observation?.observationTo, rawFrom, rawTo, run.createdAt, kind, runEndAt]);
     const value = (unknown: string | number | null | undefined) => unknown == null ? '—' : String(unknown);
     const state = (status: string) => t(`forwardObservation.states.${status}`, {defaultValue: status});
     const percent = (amount: string | null) => amount === null ? '—' : decimalDisplay(amount, 4, 2) + '%';
@@ -106,6 +108,8 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
             if (!contextValid || Date.parse(start) % 3_600_000 !== 0 || Date.parse(end) % 3_600_000 !== 0
                 || duration < 86_400_000 || duration > 90 * 86_400_000) throw new Error(t('forwardObservation.planRange'));
             if (kind === 'RETROSPECTIVE' && Date.parse(end) > Date.now()) throw new Error(t('forwardObservation.retroPastOnly'));
+            if (kind === 'FORWARD' && runEndAt && Date.parse(end) > Date.parse(runEndAt))
+                throw new Error(t('boundedSim.beyondDeadline'));
             setLocalError(null);
             query.mutation.mutate({kind: 'OBSERVATION', input: {paperRunId: run.paperRunId, canonicalAccountId: run.canonicalAccountId,
                 strategyVersionId: run.strategyVersionId, publishId: run.publishId, validationId: validationId!, selectedTrialId: trialId!,
@@ -242,6 +246,7 @@ export function ForwardSimObservationPanel({run}: {run: SimAnalysisRun}) {
                 available={!invalidIdentity && !invalidRange && (!observationId || (!!observation && !query.detail.isFetching))
                     && !!query.method && (!reviewId || !!savedReview)} fixedAsOf={evaluation?.observedAt ?? range?.asOf}/>
             <Typography.Title level={5}>{t('forwardObservation.records')}</Typography.Title>
+            {runEndAt && <Typography.Text>{t('boundedSim.observationDeadline', {endAt: runEndAt})}</Typography.Text>}
             <Select aria-label={t('forwardObservation.records')} allowClear style={{width: '100%'}} value={observationId ?? undefined}
                 onChange={selectObservation} options={query.list.data?.map(record => ({value: record.observationId, label: `${t(`forwardObservation.kinds.${record.kind}`)} · ${state(record.status)} · ${record.observationFrom} → ${record.observationTo} · ${record.observationId}`}))}/>
             <Space wrap><Button disabled={!offset} onClick={() => setOffset(Math.max(0, offset - 20))}>{t('experiments.previous')}</Button>

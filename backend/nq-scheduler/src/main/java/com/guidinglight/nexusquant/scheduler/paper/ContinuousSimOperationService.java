@@ -59,7 +59,10 @@ public class ContinuousSimOperationService {
         if (available == null) throw new IllegalStateException("CONTINUOUS_SIM_DISABLED");
         ContinuousSimRunService.Status result =
                 switch (request.type()) {
-                    case CREATE -> available.start(request.publishId(), request.budget(), actor);
+                    case CREATE -> request.endAt() == null
+                            ? available.start(request.publishId(), request.budget(), actor)
+                            : available.start(request.publishId(), request.budget(), actor, request.endAt());
+                    case END -> available.end(request.paperRunId(), request.operationId());
                     case PAUSE -> available.stop(request.paperRunId());
                     case RESUME -> available.resume(request.paperRunId());
                 };

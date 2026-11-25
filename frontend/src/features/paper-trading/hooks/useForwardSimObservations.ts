@@ -3,6 +3,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {selectSessionIdentity, useAuthStore} from '@/store/auth-store';
 import {paperTradingQueryKeys} from '@/api/query-keys';
 import {simAnalysisApi, type SimAnalysisRun} from '../api/analysis';
+import {paperTradingApi} from '../api/paper-trading';
 import {observationsApi, observationMethod, type EvaluationWindow, type ObservationCreateRequest, type ObservationReviewRequest} from '../api/observations';
 import {readObservationOperation, storeObservationOperation, executeObservationOperation, observationOperationChanged,
     clearObservationOperation, type PendingObservationOperation} from '../observation-operations';
@@ -28,6 +29,8 @@ export function useForwardSimObservations(run: SimAnalysisRun, range: Evaluation
     }, [owner, run.paperRunId]);
     const list = useQuery({queryKey: scoped(paperTradingQueryKeys.observations(owner, run.paperRunId, offset)),
         queryFn: ({signal}) => observationsApi.list(run, offset, signal), enabled: !!owner, retry: false});
+    const cursor = useQuery({queryKey: paperTradingQueryKeys.operations(owner, session, run.paperRunId, 'cursor'),
+        queryFn: ({signal}) => paperTradingApi.continuousSimStatus(run.paperRunId, signal), enabled: !!owner && !!session, retry: false});
     const detail = useQuery({queryKey: scoped(paperTradingQueryKeys.observation(owner, run.paperRunId, observationId, reviewsOffset)),
         queryFn: ({signal}) => observationsApi.detail(observationId!, run, signal, reviewsOffset), enabled: !!owner && !!observationId, retry: false});
     const method = observationMethod(detail.isError ? undefined : detail.data?.observation);
@@ -72,5 +75,5 @@ export function useForwardSimObservations(run: SimAnalysisRun, range: Evaluation
         if (owner && stored.pending?.rejected) clearObservationOperation(owner, run.paperRunId, stored.pending.operationId);
     };
     const visibleStorage = stored.owner === owner && stored.run === run.paperRunId ? stored : {pending: null, storageError: false};
-    return {rawPerformance, evaluation, list, detail, review, mutation, method, targetReady, pending: visibleStorage.pending, storageError: visibleStorage.storageError, discardRejected};
+    return {cursor, rawPerformance, evaluation, list, detail, review, mutation, method, targetReady, pending: visibleStorage.pending, storageError: visibleStorage.storageError, discardRejected};
 }

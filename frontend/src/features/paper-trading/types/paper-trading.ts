@@ -44,6 +44,19 @@ export interface ContinuousSimStatus {
     lastDecisionStatus: string | null;
     blockReason: string | null;
     consecutivePollFailures: number;
+    bounded?: {
+        endAt: string;
+        manualEndAt?: string | null;
+        terminatedAt?: string | null;
+        lifecycleStatus: string;
+        finalValuationStatus: string;
+        lastValuationBoundary: string | null;
+        pendingOrders: number | null;
+        reason: string | null;
+        updatedAt: string;
+        publishId: string;
+        strategyVersionId: string;
+    } | null;
 }
 
 export interface StrategySimDecision {

@@ -7,7 +7,8 @@ import {useQuery, useQueryClient} from '@tanstack/react-query';
 import {paperTradingQueryKeys, publishesQueryKeys} from '@/api/query-keys';
 import {CanonicalSimFacts} from './CanonicalSimFacts';
 import {ContinuousSimStatusPanel} from './ContinuousSimStatusPanel';
-import {continuousStateMatches} from '../continuous-state';
+import {SimAccountProjectionRecovery} from './SimAccountProjectionRecovery';
+import {continuousStateMatches, isUtcHour} from '../continuous-state';
 import {
     ContinuousOperationRecovery,
     usePendingContinuousOperation,
@@ -36,13 +37,20 @@ interface Props {
     onCreated: (paperRunId: string) => void;
 }
 
+interface CreateValues {
+    publishId: string;
+    budget: string;
+    deadline?: string;
+}
+
 /** Demo 预算由服务端固定；方向和数量始终来自冻结策略与服务端 sizing。 */
 export function StrategySimPanel({selectedRun, onCreated}: Props) {
     const {t} = useTranslation('pages');
     const {message, modal} = App.useApp();
     const [busy, setBusy] = useState(false);
     const queryClient = useQueryClient();
-    const [form] = Form.useForm<{publishId: string; budget: string}>();
+    const [form] = Form.useForm<CreateValues>();
+    const deadline = Form.useWatch('deadline', form);
     const [params] = useSearchParams();
     const strategyEnabled = import.meta.env.VITE_STRATEGY_SIM_ENABLED === 'true';
     const continuousEnabled = import.meta.env.VITE_CONTINUOUS_SIM_ENABLED === 'true';
@@ -110,7 +118,8 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
         else showApiError(problem, message);
     };
 
-    const create = async (values: {publishId: string; budget: string}, continuousMode = false) => {
+    const create = async (values: CreateValues, continuousMode = false) => {
+        if (continuousMode && continuousActionsAvailable !== true) return;
         const submittedScope = activeScope.current;
         setBusy(true);
         try {
@@ -119,6 +128,7 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
                     type: 'CREATE',
                     publishId: values.publishId.trim(),
                     budget: isPublicDemo ? '10000.00000000' : values.budget.trim(),
+                    ...(values.deadline ? {endAt: values.deadline + ':00Z'} : {}),
                 });
                 await confirmOperation(result);
                 if (
@@ -142,12 +152,12 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
         }
     };
 
-    const changeContinuous = async (action: 'stop' | 'resume') => {
+    const changeContinuous = async (action: 'stop' | 'resume' | 'end') => {
         if (!selectedId) return;
         setBusy(true);
         try {
             const result = await continuousOperations.submit({
-                type: action === 'stop' ? 'PAUSE' : 'RESUME',
+                type: action === 'end' ? 'END' : action === 'stop' ? 'PAUSE' : 'RESUME',
                 paperRunId: selectedId,
             });
             await confirmOperation(result);
@@ -272,7 +282,8 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
                                                 ...(isPublicDemo ? {budget: '10000.00000000'} : {}),
                                             }}
                                             onFinish={(values) => {
-                                                void create(values, isPublicDemo);
+                                                if (!commandBlocked && canOperate && !busy)
+                                                    void create(values, isPublicDemo || Boolean(values.deadline));
                                             }}
                                         >
                                             <Form.Item
@@ -316,11 +327,25 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
                                                     style={{width: 160}}
                                                 />
                                             </Form.Item>
+                                            {continuousEnabled && <Form.Item
+                                                name="deadline"
+                                                label={t('boundedSim.optionalDeadline')}
+                                                extra={t('boundedSim.inputHelp')}
+                                                rules={[{validator: async (_, value?: string) => {
+                                                    if (!value) return;
+                                                    const end = value + ':00Z';
+                                                    const remaining = Date.parse(end) - Date.now();
+                                                    if (!isUtcHour(end) || remaining <= 0 || remaining > 90 * 86_400_000)
+                                                        throw new Error(t('boundedSim.invalidDeadline'));
+                                                }}]}
+                                            >
+                                                <Input type="datetime-local" step={3600} disabled={continuousActionsAvailable !== true} style={{maxWidth: 260}}/>
+                                            </Form.Item>}
                                             {!isPublicDemo && <Button
                                                 type="primary"
                                                 htmlType="submit"
                                                 loading={busy}
-                                                disabled={commandBlocked || !canOperate}
+                                                disabled={commandBlocked || !canOperate || Boolean(deadline)}
                                             >
                                                 {t('pages:strategySimCreate')}
                                             </Button>}
@@ -368,10 +393,11 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
                             >
                                 {t('pages:startPaperRun')}
                             </Button>
-                            <Button
+                            {!continuous?.bounded && <Button
                                 danger
                                 disabled={
-                                    busy || commandBlocked || selectedRun?.status !== 'RUNNING'
+                                    busy || commandBlocked || continuousQuery.isPending ||
+                                    continuousQuery.isError || identityMismatch || selectedRun?.status !== 'RUNNING'
                                 }
                                 onClick={() =>
                                     modal.confirm({
@@ -382,7 +408,7 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
                                 }
                             >
                                 {t('pages:stopPaperRun')}
-                            </Button>
+                            </Button>}
                             <Button
                                 onClick={advance}
                                 disabled={
@@ -420,6 +446,21 @@ export function StrategySimPanel({selectedRun, onCreated}: Props) {
                             }}
                             onAction={(action) => void changeContinuous(action)}
                         />
+                        {continuousActionsAvailable === true && !isPublicDemo
+                            && currentUser?.username === selectedRun?.createdBy && (
+                            <SimAccountProjectionRecovery
+                                key={`projection/${currentUser?.userId}/${session}/${selectedId}`}
+                                run={selectedId}
+                                owner={currentUser?.userId}
+                                session={session}
+                                eligible={!continuousQuery.isError && Boolean(continuous?.bounded?.manualEndAt)
+                                    && continuous?.bounded?.lifecycleStatus === 'BLOCKED'
+                                    && ['SIM_CASH_PROJECTION_MISMATCH', 'SIM_POSITION_PROJECTION_MISMATCH',
+                                        'SIM_ACCOUNT_PROJECTIONS_MISMATCH', 'SIM_PROJECTION_FINALIZATION_REQUIRED']
+                                        .includes(continuous?.bounded?.reason ?? '')}
+                                onUpdated={() => void refresh(selectedId)}
+                            />
+                        )}
                         <ContinuousSimOperationsPanel key={`${currentUser?.userId}/${session}/${selectedId}`}
                             run={selectedId} status={continuousQuery.isError || identityMismatch ? null : continuous} readable={!continuousQuery.isError && !identityMismatch}
                             parentStatus={selectedRun?.status ?? ''} checkedAt={continuousQuery.dataUpdatedAt}

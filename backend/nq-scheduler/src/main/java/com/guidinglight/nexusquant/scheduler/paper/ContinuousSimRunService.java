@@ -1,5 +1,6 @@
 package com.guidinglight.nexusquant.scheduler.paper;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.guidinglight.nexusquant.common.tenant.TenantWorkAccess;
 import com.guidinglight.nexusquant.common.tenant.TenantContext;
 import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
@@ -8,11 +9,14 @@ import com.guidinglight.nexusquant.research.application.paper.service.PaperTradi
 import com.guidinglight.nexusquant.research.domain.paper.PaperTradingRunStatus;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.TransientDataAccessException;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
@@ -26,6 +30,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /** 单线程轮询受限 OKX 公开小时 bar；数据库会话锁保护同一 run 的跨实例推进。 */
@@ -75,6 +80,16 @@ public class ContinuousSimRunService {
     /** 正式命令沿用认证主体记录创建归属；调度和既有Java调用保留原两参数入口。 */
     @Transactional(timeout = 30)
     public Status start(String publishId, BigDecimal budget, String actor) {
+        return start(publishId, budget, actor, null);
+    }
+
+    @Transactional(timeout = 30)
+    public Status start(String publishId, BigDecimal budget, String actor, Instant endAt) {
+        Instant start = clock.instant();
+        if (endAt != null && (!endAt.equals(endAt.truncatedTo(ChronoUnit.HOURS))
+                || !endAt.isAfter(start) || endAt.isAfter(start.plus(Duration.ofDays(90))))) {
+            throw new IllegalArgumentException("INVALID_CONTINUOUS_SIM_DEADLINE");
+        }
         progress.requireAdmissionCapacity();
         StrategySimRunService.RunView created = sim.create(publishId, budget, actor);
         StrategySimRunService.ContinuousSeed seed = sim.continuousSeed(created.paperRunId());
@@ -85,7 +100,7 @@ public class ContinuousSimRunService {
                 seed.strategyChecksum(),
                 seed.costSha256(),
                 seed.bars(),
-                clock.instant());
+                start, endAt);
         return status(created.paperRunId());
     }
 
@@ -97,6 +112,7 @@ public class ContinuousSimRunService {
                 runId,
                 false,
                 () -> {
+                    if (progress.get(runId).bounded() != null) throw new IllegalStateException("BOUNDED_RUN_REQUIRES_END");
                     progress.stop(runId, clock.instant());
                     return status(runId);
                 });
@@ -110,6 +126,7 @@ public class ContinuousSimRunService {
                 false,
                 () -> {
                     ContinuousSimRepository.Cursor cursor = progress.get(runId);
+                    if (cursor.bounded() != null) throw new IllegalStateException("BOUNDED_RUN_CANNOT_RESUME");
                     checkBinding(cursor);
                     boolean manualResume = Boolean.TRUE.equals(jdbc.queryForObject(
                             "SELECT requires_manual_resume FROM tenant_execution_controls WHERE tenant_id=nq_current_tenant_id()", Boolean.class));
@@ -129,6 +146,19 @@ public class ContinuousSimRunService {
                     }
                     return status(runId);
                 });
+    }
+
+    @Transactional(timeout = 10)
+    public Status end(String runId) {
+        return end(runId, null);
+    }
+
+    @Transactional(timeout = 10)
+    public Status end(String runId, UUID operationId) {
+        paperRuns.getById(runId);
+        if (!progress.requestEnd(runId, clock.instant(), operationId))
+            throw new IllegalStateException("CONTINUOUS_SIM_NOT_BOUNDED");
+        return status(runId);
     }
 
     public Status status(String runId) {
@@ -156,7 +186,7 @@ public class ContinuousSimRunService {
                 latest == null ? null : latest.decisionId(),
                 latest == null ? null : latest.status(),
                 cursor.blockReason(),
-                cursor.consecutivePollFailures());
+                cursor.consecutivePollFailures(), cursor.bounded());
     }
 
     public boolean has(String runId) {
@@ -180,16 +210,62 @@ public class ContinuousSimRunService {
         ContinuousSimRepository.Cursor cursor = progress.get(runId);
         if ("STOPPED".equals(cursor.status())) return status(runId);
         Instant now = clock.instant();
+        var recovery = cursor.bounded() != null && cursor.overlapCheckPending()
+                && cursor.manualEndAt() == null && cursor.revisionDetectedAt() == null
+                ? progress.recoverableOverlapCheck(runId) : null;
+        if (cursor.bounded() != null && recovery == null && progress.closeAdmissionIfDue(runId)) return settle(runId);
         Instant latestAvailable = cursor.lastObservedOpenTime();
         Instant gapStart = null;
+        boolean resolvingOverlap = false;
         try {
             checkBinding(cursor);
             List<HistoricalBar> before = progress.recentBars(runId);
             if (before.isEmpty()) throw new IllegalStateException("STRATEGY_INPUT_REJECTED");
             Instant latestOpen = before.getLast().openTime();
             Instant firstOpen = latestOpen.minus(HOUR);
-            ClosedBarMarketFeed.Observation observation = feed.observe(firstOpen, 24);
+            boolean bounded = cursor.bounded() != null;
+            resolvingOverlap = bounded;
+            var check = bounded ? progress.beginOverlapCheck(runId, firstOpen, latestOpen, recovery) : null;
+            if (bounded && check == null)
+                return progress.closeAdmissionIfDue(runId) ? settle(runId) : status(runId);
+            if (check != null) {
+                firstOpen = check.firstOpen();
+                latestOpen = check.latestOpen();
+            }
+            ClosedBarMarketFeed.Observation observation;
+            try {
+                observation = feed.observe(firstOpen, 24);
+            } catch (ClosedBarMarketFeed.IncompleteObservation failure) {
+                if (bounded) {
+                    String reason = "INCOMPLETE_HTTP_RESPONSE".equals(failure.getMessage())
+                            ? failure.getMessage() : "OVERLAP_CHECK_INCOMPLETE";
+                    progress.captureOverlapResponse(runId, check, failure.verifiedBars(), false, reason,
+                            failure.kind(), failure.receivedPrefix(), null, failure.rowFailures(), clock);
+                    progress.finishOverlapCheck(runId, check);
+                    if ("INCOMPLETE_HTTP_RESPONSE".equals(reason) || check.retry()) return status(runId);
+                }
+                throw failure;
+            } catch (IllegalStateException failure) {
+                if (check != null && check.retry()) {
+                    // 请求已登记但没有可信响应，保留未完成的原尝试供后续判定。
+                    return status(runId);
+                }
+                throw failure;
+            }
+            if (bounded) {
+                var verifiedBars = observation.bars().stream()
+                        .filter(bar -> isClosedBar(bar, observation.serverTime())).toList();
+                boolean complete = verifiedBars.size() == observation.bars().size()
+                        && coversRequestedPage(firstOpen, latestOpen, observation.serverTime(), verifiedBars);
+                progress.captureOverlapResponse(runId, check, verifiedBars, complete, "OVERLAP_CHECK_INCOMPLETE",
+                        ClosedBarMarketFeed.ResponseKind.COMPLETE_RESPONSE, new byte[0], observation.responseBodySha256(), List.of(), clock);
+                progress.finishOverlapCheck(runId, check);
+                if (check.retry() && progress.recoverableOverlapCheck(runId) != null) return status(runId);
+                if (progress.closeAdmissionIfDue(runId)) return settle(runId);
+            }
+            resolvingOverlap = false;
             for (HistoricalBar bar : observation.bars()) {
+                if (cursor.bounded() != null && !bar.openTime().isBefore(cursor.bounded().endAt())) break;
                 if (bar.openTime().isAfter(latestAvailable)) latestAvailable = bar.openTime();
             }
             if (observation.serverTime() == null
@@ -220,12 +296,8 @@ public class ContinuousSimRunService {
             }
             Instant expected = firstOpen;
             for (HistoricalBar bar : observation.bars()) {
-                if (!"OKX".equals(bar.exchangeCode())
-                        || !"SPOT".equals(bar.marketType())
-                        || !"BTC-USDT".equals(bar.symbol())
-                        || !"1h".equals(bar.interval().wireValue())
-                        || bar.closeTime().isAfter(observation.serverTime())
-                        || bar.availableAt().isBefore(bar.closeTime())) {
+                if (cursor.bounded() != null && !bar.openTime().isBefore(cursor.bounded().endAt().minus(HOUR))) break;
+                if (!isClosedBar(bar, observation.serverTime())) {
                     throw new IllegalStateException("EXPECTED_BAR_MISSING");
                 }
                 if (!bar.openTime().equals(expected)) {
@@ -294,6 +366,8 @@ public class ContinuousSimRunService {
                     true);
             return status(runId);
         } catch (RuntimeException ex) {
+            if ((cursor.bounded() != null && ex instanceof TransientDataAccessException)
+                    || (resolvingOverlap && (ex instanceof DataAccessException || ex instanceof TransactionException))) throw ex;
             String reason = classify(ex);
             String next = "DATA_REVISION_DETECTED".equals(reason) ? "STOPPED" : "STALLED";
             // 修订直到响应校验完成才可知，不能把请求开始时刻当作历史评价已知修订的时间。
@@ -301,6 +375,116 @@ public class ContinuousSimRunService {
             progress.pollResult(runId, failedAt, latestAvailable, gapStart, next, reason, false);
             return status(runId);
         }
+    }
+
+    private static boolean isClosedBar(HistoricalBar bar, Instant serverTime) {
+        return serverTime != null && "OKX".equals(bar.exchangeCode()) && "SPOT".equals(bar.marketType())
+                && "BTC-USDT".equals(bar.symbol()) && "1h".equals(bar.interval().wireValue())
+                && !bar.closeTime().isAfter(serverTime) && !bar.availableAt().isBefore(bar.closeTime());
+    }
+
+    /** 每个请求范围内已收盘的小时必须恰好出现一次，且覆盖已存的两个重叠槽。 */
+    private static boolean coversRequestedPage(
+            Instant firstOpen, Instant latestOpen, Instant serverTime, List<HistoricalBar> bars) {
+        if (serverTime == null) return false;
+        Instant boundary = serverTime.truncatedTo(ChronoUnit.HOURS);
+        Instant maximum = firstOpen.plus(HOUR.multipliedBy(24));
+        Instant endExclusive = boundary.isBefore(maximum) ? boundary : maximum;
+        Instant expected = firstOpen;
+        for (HistoricalBar bar : bars) {
+            if (!bar.openTime().equals(expected) || !bar.closeTime().equals(expected.plus(HOUR).minusMillis(1))) {
+                return false;
+            }
+            expected = expected.plus(HOUR);
+        }
+        return expected.equals(endExclusive) && latestOpen.isBefore(endExclusive);
+    }
+
+    /** 到期通道只接收末槽证据、回收原执行；任何异常保留来源与未决状态。 */
+    private Status settle(String runId) {
+        try {
+            return settleLocked(runId);
+        } catch (TransientDataAccessException conflict) {
+            // 数据库事务冲突必须让该轮调度失败，下一轮按原身份重读，不把失败写成业务终态。
+            throw conflict;
+        } catch (IllegalStateException failure) {
+            String reason = switch (Objects.toString(failure.getMessage(), "")) {
+                case "SIM_EXECUTION_BINDING_UNKNOWN", "SIM_PREPARED_EXECUTION_UNRESOLVED",
+                     "SIM_CANCEL_FINALITY_UNAVAILABLE", "SIM_CANONICAL_RUN_NOT_TERMINAL",
+                     "CONTINUOUS_SIM_CURSOR_CONFLICT", "SIM_DECISION_RECOVERY_INVALID" -> failure.getMessage();
+                default -> "BOUNDED_SETTLEMENT_UNPROVEN";
+            };
+            progress.recordSettlement(runId, "BLOCKED", "UNAVAILABLE", null, reason, false);
+            return status(runId);
+        }
+    }
+
+    private Status settleLocked(String runId) {
+        var cursor = progress.get(runId);
+        Instant end = cursor.bounded().endAt();
+        String priceIssue = collectFinalPrice(runId, cursor, end);
+        String valuation = priceIssue == null ? "VERIFIED" : "UNAVAILABLE";
+        StrategySimRunService.Settlement economics = sim.settleBounded(runId);
+        cursor = progress.get(runId);
+        String reason = economics.blockingReason();
+        if (reason != null || economics.pendingOrders() != 0) {
+            boolean waiting = "SIM_PREVIOUS_EXECUTION_PENDING".equals(reason)
+                    || "SIM_DECISION_RECOVERY_PENDING".equals(reason) || "SIM_CANONICAL_RUN_NOT_TERMINAL".equals(reason);
+            // 末价可用仍不足以验证未完成经济核验的终态估值。
+            progress.recordSettlement(runId, waiting ? "SETTLING" : "BLOCKED",
+                    "UNAVAILABLE", economics.pendingOrders(), reason, false);
+            return status(runId);
+        }
+        if (cursor.manualEndAt() != null) {
+            progress.recordSettlement(runId, "MANUALLY_STOPPED", valuation,0, "MANUAL_END", true);
+            return status(runId);
+        }
+        if (priceIssue != null) {
+            boolean exhausted = cursor.overlapCheckPending() || cursor.revisionDetectedAt() != null
+                    || clock.instant().isAfter(end.plusSeconds(ClosedBarValuation.MAXIMUM_LATENESS_SECONDS));
+            progress.recordSettlement(runId, exhausted ? "BLOCKED" : "ADMISSION_CLOSED",
+                    valuation,0, priceIssue, exhausted);
+            return status(runId);
+        }
+
+        boolean covered = closeFinalSlot(runId, cursor, end);
+        progress.recordSettlement(runId, covered ? "COMPLETED" : "BLOCKED", valuation,0,
+                covered ? "DEADLINE_SETTLED" : "FINAL_SLOT_COVERAGE_INCOMPLETE", true);
+        return status(runId);
+    }
+
+    private String collectFinalPrice(String runId, ContinuousSimRepository.Cursor cursor, Instant end) {
+        if (cursor.revisionDetectedAt() != null) return "DATA_REVISION_DETECTED";
+        if (cursor.overlapCheckPending()) return "OVERLAP_CHECK_INCOMPLETE";
+        if (cursor.manualEndAt() != null && cursor.manualEndAt().isBefore(end)) return "MANUAL_END_BEFORE_DEADLINE";
+        String priceIssue = progress.closingPriceFailure(runId, end, clock.instant());
+        if (priceIssue != null && cursor.manualEndAt() == null
+                && !clock.instant().isAfter(end.plusSeconds(ClosedBarValuation.MAXIMUM_LATENESS_SECONDS))) {
+            try {
+                var observation = progress.observeMissingFinalBar(runId, end, clock,
+                        () -> feed.observeFinalBar(end.minus(HOUR)));
+                if (observation != null) progress.saveFinalBar(runId, end, observation);
+                priceIssue = progress.closingPriceFailure(runId, end, clock.instant());
+            } catch (IllegalStateException failure) {
+                priceIssue = classify(failure);
+            }
+        }
+        return priceIssue;
+    }
+
+    private boolean closeFinalSlot(String runId, ContinuousSimRepository.Cursor cursor, Instant end) {
+        // 最后一小时仍需真实策略判断才能证明覆盖；缺少先前槽位时不可跳过游标伪造完整运行。
+        Instant lastOpen = end.minus(HOUR);
+        if (cursor.lastProcessedOpenTime().equals(lastOpen.minus(HOUR))) {
+            var bars = progress.recentBars(runId);
+            var last = bars.stream().filter(bar -> bar.openTime().equals(lastOpen)).findFirst().orElseThrow();
+            var decision = sim.advanceContinuous(runId, bars, cursor.lastProcessedOpenTime(), null, null);
+            if (decision != null && lastOpen.equals(decision.signalOpenTime())
+                    && decision.orderId() == null && decision.strategyRunId() == null) {
+                progress.advanceCursor(runId, cursor.lastProcessedOpenTime(), last, clock.instant());
+            }
+        }
+        return progress.get(runId).lastProcessedOpenTime().equals(lastOpen);
     }
 
     private void checkBinding(ContinuousSimRepository.Cursor cursor) {
@@ -404,5 +588,19 @@ public class ContinuousSimRunService {
             String lastDecisionId,
             String lastDecisionStatus,
             String blockReason,
-            int consecutivePollFailures) {}
+            int consecutivePollFailures,
+            @JsonInclude(JsonInclude.Include.NON_NULL)
+            Bounded bounded) {
+        public Status(String paperRunId, String status, Instant startedAt, Instant lastPollAt, Instant lastSuccessfulPollAt,
+                      Instant lastProcessedBar, Instant nextExpectedBar, Instant lastObservedBar, Instant gapStartBar,
+                      String lastDecisionId, String lastDecisionStatus, String blockReason, int consecutivePollFailures) {
+            this(paperRunId, status, startedAt, lastPollAt, lastSuccessfulPollAt, lastProcessedBar, nextExpectedBar,
+                    lastObservedBar, gapStartBar, lastDecisionId, lastDecisionStatus, blockReason, consecutivePollFailures, null);
+        }
+    }
+
+    public record Bounded(Instant endAt, String lifecycleStatus, String finalValuationStatus, Instant lastValuationBoundary,
+                          Integer pendingOrders, String reason, Instant updatedAt, String publishId, String strategyVersionId,
+                          @JsonInclude(JsonInclude.Include.NON_NULL) Instant manualEndAt,
+                          @JsonInclude(JsonInclude.Include.NON_NULL) Instant terminatedAt) {}
 }

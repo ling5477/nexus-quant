@@ -22,7 +22,7 @@ export function continuousJobs(rows: ScheduledJobControl[]) {
 
 /** 新鲜度仅提示当前读取时刻的运营检查，不重算服务端状态或改变恢复资格。 */
 export function continuousPollFreshness(status: ContinuousSimStatus | null, delay: number | null, now: number) {
-    if (status?.status === 'STOPPED') return 'PAUSED';
+    if (status?.status === 'STOPPED') return status.bounded ? 'ENDED' : 'PAUSED';
     const last = status?.lastPollAt ? Date.parse(status.lastPollAt) : NaN;
     if (!status?.lastSuccessfulPollAt || !Number.isFinite(last) || !Number.isFinite(now)
         || last > now + 60000 || delay === null || !Number.isSafeInteger(delay) || delay < 30000 || delay > 86400000)

@@ -130,6 +130,9 @@ export function ContinuousOperationRecovery({
                                 {pending.request.budget}
                             </Descriptions.Item>
                         )}
+                        {pending.request.type === 'CREATE' && pending.request.endAt && (
+                            <Descriptions.Item label={t('boundedSim.deadline')}>{pending.request.endAt}</Descriptions.Item>
+                        )}
                         <Descriptions.Item label={t('continuousOperations.identity')}>
                             <Typography.Text copyable style={{overflowWrap: 'anywhere'}}>
                                 {pending.request.operationId}

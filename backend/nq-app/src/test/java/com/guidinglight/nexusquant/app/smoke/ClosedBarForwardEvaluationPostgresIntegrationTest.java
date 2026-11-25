@@ -56,7 +56,7 @@ class ClosedBarForwardEvaluationPostgresIntegrationTest {
             var owner = db.local("experiment-owner"); var other = db.local("closed-other");
             var tenant = db.demo("CLOSED_OTHER", "closed-demo");
             db.migration(null).validate();
-            assertEquals("52", db.admin.queryForObject("SELECT version FROM flyway_schema_history ORDER BY installed_rank DESC LIMIT 1", String.class));
+            assertEquals(1, db.admin.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE version='52' AND success", Integer.class));
             try (var app = ResearchSimComparisonFixture.start(db);
                     var http = new TenantIsolationHttpIntegrationTest.Http(app.getWebServer().getPort())) {
                 var scenario = ClosedBarForwardEvaluationFixture.prepare(app, db, owner, "SPOT_SMA_TARGET_V1");

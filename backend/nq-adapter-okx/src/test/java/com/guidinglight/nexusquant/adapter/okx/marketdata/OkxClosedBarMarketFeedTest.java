@@ -1,11 +1,14 @@
 package com.guidinglight.nexusquant.adapter.okx.marketdata;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.guidinglight.nexusquant.marketdata.domain.HistoricalBar;
+import com.guidinglight.nexusquant.marketdata.domain.port.ClosedBarMarketFeed;
 import com.sun.net.httpserver.HttpServer;
 
 import java.net.InetSocketAddress;
@@ -21,16 +24,83 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.time.ZoneId;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.SystemEnvironmentPropertySource;
 
 class OkxClosedBarMarketFeedTest {
+    @Test @Timeout(12)
+    void finalBarRequestTimesOutWhenServerStallsAfterHeaders() throws Exception {
+        AtomicInteger calls = new AtomicInteger();
+        var releaseBody = new CountDownLatch(1);
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/api/v5/public/time", exchange -> {
+            calls.incrementAndGet();
+            try (exchange) {
+                exchange.sendResponseHeaders(200, 0);
+                exchange.getResponseBody().write('{');
+                exchange.getResponseBody().flush();
+                // 响应头和首字节都已发出；必须由客户端的正文截止结束等待。
+                releaseBody.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException failure) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        server.start();
+        try {
+            var feed = new OkxClosedBarMarketFeed("http://127.0.0.1:" + server.getAddress().getPort() + "/");
+            long started = System.nanoTime();
+            var failure = assertThrows(IllegalStateException.class,
+                    () -> feed.observeFinalBar(Instant.now().truncatedTo(ChronoUnit.HOURS).minus(Duration.ofHours(1))));
+            assertEquals("PUBLIC_MARKET_FINAL_BAR_UNAVAILABLE", failure.getMessage());
+            assertTrue(Duration.ofNanos(System.nanoTime() - started).compareTo(Duration.ofSeconds(8)) < 0);
+            assertEquals(1, calls.get());
+        } finally {
+            releaseBody.countDown();
+            server.stop(0);
+        }
+    }
+
+    @Test @Timeout(15)
+    void ordinaryGetDeadlinePreservesReceivedPrefixWithoutRetry() throws Exception {
+        var calls = new AtomicInteger();
+        var release = new CountDownLatch(1);
+        byte[] prefix = "{\"code\":\"0\",\"data\":[".getBytes(StandardCharsets.UTF_8);
+        var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/api/v5/public/time", exchange -> {
+            calls.incrementAndGet();
+            try (exchange) {
+                exchange.sendResponseHeaders(200, 0);
+                exchange.getResponseBody().write(prefix);
+                exchange.getResponseBody().flush();
+                release.await(12, TimeUnit.SECONDS);
+            } catch (InterruptedException failure) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        server.start();
+        try {
+            var feed = new OkxClosedBarMarketFeed("http://127.0.0.1:" + server.getAddress().getPort());
+            var failure = assertThrows(ClosedBarMarketFeed.IncompleteObservation.class,
+                    () -> feed.observe(Instant.now().truncatedTo(ChronoUnit.HOURS).minus(Duration.ofHours(1)), 24));
+            assertEquals(ClosedBarMarketFeed.ResponseKind.TRANSPORT_INTERRUPTED, failure.kind());
+            assertArrayEquals(prefix, failure.receivedPrefix());
+            assertTrue(failure.verifiedBars().isEmpty());
+            assertEquals(1, calls.get());
+        } finally {
+            release.countDown();
+            server.stop(0);
+        }
+    }
+
     @Test
     void springDefaultOriginRemainsOfficialAndDoesNotMakeRequests() throws Exception {
         try (var context = context(Map.of(), Map.of(), "public-marketdata-manual", "true")) {
@@ -107,7 +177,8 @@ class OkxClosedBarMarketFeedTest {
                 body = "{\"code\":\"0\",\"data\":[{\"instId\":\"BTC-USDT\",\"last\":\"105\",\"ts\":\""
                         + serverTime.plusSeconds(1).toEpochMilli() + "\"}]}";
             } else {
-                body = "{\"code\":\"0\",\"data\":[" + candle(first.plusSeconds(3600), "1")
+                if (path.endsWith("&limit=1")) body = "{\"code\":\"0\",\"data\":[" + candle(first.plusSeconds(3600), "1") + "]}";
+                else body = "{\"code\":\"0\",\"data\":[" + candle(first.plusSeconds(3600), "1")
                         + "," + candle(first, "1") + "]}";
             }
             byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
@@ -155,6 +226,13 @@ class OkxClosedBarMarketFeedTest {
                     assertFalse(observation.quote().observedAt().isBefore(serverTime.minus(Duration.ofMinutes(2))));
                     assertFalse(observation.quote().observedAt().isAfter(serverTime.plusSeconds(5)));
                     assertEquals(4, calls.get() - before);
+                    paths.clear();
+                    var closing = feed.observeFinalBar(latest.openTime());
+                    assertEquals(List.of(latest), closing.bars());
+                    assertEquals(2, paths.size());
+                    assertTrue(paths.getLast().startsWith("/api/v5/market/history-candles?"));
+                    assertEquals(null, closing.quote());
+                    assertEquals(null, closing.rule());
                     System.out.println("FRESH_OBSERVATION_PROOF close=" + latest.closeTime()
                             + " availableAt=" + latest.availableAt() + " serverTime=" + observation.serverTime()
                             + " ruleObservedAt=" + observation.rule().observedAt()
@@ -197,6 +275,9 @@ class OkxClosedBarMarketFeedTest {
         Instant first = Instant.parse("2026-09-25T08:00:00Z");
         Instant serverTime = first.plusSeconds(2 * 3600 + 60);
         List<String> paths = new ArrayList<>();
+        var candleResponse = new AtomicReference<>("{\"code\":\"0\",\"data\":["
+                + candle(first, "1") + "," + candle(first.plusSeconds(3600), "1")
+                + "," + candle(first.plusSeconds(7200), "0") + "]}");
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/", exchange -> {
             String path = exchange.getRequestURI().toString();
@@ -214,9 +295,7 @@ class OkxClosedBarMarketFeedTest {
                 body = "{\"code\":\"0\",\"data\":[{\"instId\":\"BTC-USDT\",\"last\":\"105\",\"ts\":\""
                         + serverTime.plusSeconds(1).toEpochMilli() + "\"}]}";
             } else if (path.startsWith("/api/v5/market/history-candles")) {
-                body = "{\"code\":\"0\",\"data\":["
-                        + candle(first, "1") + "," + candle(first.plusSeconds(3600), "1")
-                        + "," + candle(first.plusSeconds(7200), "0") + "]}";
+                body = candleResponse.get();
             } else throw new IllegalStateException("unexpected public path");
             byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, bytes.length);
@@ -243,6 +322,33 @@ class OkxClosedBarMarketFeedTest {
             assertTrue(paths.getLast().contains("after=" + first.plusSeconds(7200).toEpochMilli()));
             assertTrue(paths.stream().allMatch(path -> path.startsWith("/api/v5/public/")
                     || path.startsWith("/api/v5/market/")));
+
+            String mixed = "{\"code\":\"0\",\"data\":[" + candle(first, "1")
+                    + ",\"scalar\",{\"nested\":[1,2]},null," + candle(first, "bad-confirmation")
+                    + "," + candle(first.plusSeconds(3600), "1");
+            var failures = List.of(new ClosedBarMarketFeed.RowParseFailure(1, "PUBLIC_MARKET_BAR_INVALID_SHAPE"),
+                    new ClosedBarMarketFeed.RowParseFailure(2, "PUBLIC_MARKET_BAR_INVALID_SHAPE"),
+                    new ClosedBarMarketFeed.RowParseFailure(3, "PUBLIC_MARKET_BAR_INVALID_SHAPE"),
+                    new ClosedBarMarketFeed.RowParseFailure(4, "PUBLIC_MARKET_BAR_INVALID"));
+            for (String suffix : List.of("]}", ",[\"truncated")) {
+                candleResponse.set(mixed + suffix);
+                var incomplete = assertThrows(ClosedBarMarketFeed.IncompleteObservation.class, () -> feed.observe(first, 24));
+                assertEquals(ClosedBarMarketFeed.ResponseKind.PARSE_FAILED, incomplete.kind());
+                assertEquals(failures, incomplete.rowFailures());
+                assertEquals(List.of(first, first.plusSeconds(3600)), incomplete.verifiedBars().stream()
+                        .map(HistoricalBar::openTime).toList());
+                assertArrayEquals(candleResponse.get().getBytes(StandardCharsets.UTF_8), incomplete.receivedPrefix());
+            }
+
+            candleResponse.set(mixed + "]}");
+            var oversized = assertThrows(ClosedBarMarketFeed.IncompleteObservation.class, () -> feed.observe(first, 5));
+            assertEquals(ClosedBarMarketFeed.ResponseKind.INCOMPLETE_RESPONSE, oversized.kind());
+            assertEquals(1, oversized.verifiedBars().size());
+            String broken = "{\"code\":\"0\",\"data\":[" + candle(first, "1") + ",bad-token," + candle(first.plusSeconds(3600), "1") + "]}";
+            candleResponse.set(broken);
+            var unscannable = assertThrows(ClosedBarMarketFeed.IncompleteObservation.class, () -> feed.observe(first, 24));
+            assertEquals(ClosedBarMarketFeed.ResponseKind.INCOMPLETE_RESPONSE, unscannable.kind());
+            assertEquals(1, unscannable.verifiedBars().size());
         } finally {
             server.stop(0);
         }
