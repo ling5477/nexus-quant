@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-V105-02-TRUSTED-FORWARD-VALUATION
+accepted_batch=NQ-V106-01-BOUNDED-CONTINUOUS-SIM
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=f8505f02186a980958fb785bb24ae77c678f5172
-accepted_batch_acceptance_head=f8505f02186a980958fb785bb24ae77c678f5172
-accepted_batch_ci_run=41586151641
-work_batch=NQ-V105-POST-RELEASE-CLOSEOUT
+accepted_batch_implementation_commit=f842c1a221e2a12b60d464b6c35d568877d442a5
+accepted_batch_acceptance_head=dd2cfcc495fa9b2e13d1a16534758e25ca461a23
+accepted_batch_ci_run=45562655075
+work_batch=NQ-V106-01-PR-CI-DELIVERY
 work_batch_status=ACCEPTED|CI_GREEN
-work_batch_commit=9ca936725d035758badfe0bcdf46271986096409
-work_batch_ci_run=45096425164
-next_action=NQ-V106-PLAN
+work_batch_commit=87cd096dc6e9a9ef56d570461160d8f521de3046
+work_batch_ci_run=45567052543
+next_action=NQ-V106-02-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -30,6 +30,20 @@ private_trading=NOT_IMPLEMENTED
 nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
+
+## V106-01 有界 Continuous SIM 收口（2026-11-25）
+
+**`NQ-V106-01-BOUNDED-CONTINUOUS-SIM / ACCEPTED|CI_GREEN`**。独立验收 `NQ_V106_01_FINAL_ACCEPTANCE_PASS`，P0 = 0，P1 = 0。PR #111 已合并，开发 Schema 为 `V58 / DEVELOPMENT`，公开发行仍为 `v1.0.5 / V52`。服务器部署为 `NOT_PERFORMED`。 [PR #111](https://github.com/ling5477/nexus-quant/pull/111)
+
+| 证据 | 固定身份 |
+| --- | --- |
+| 完成功能与独立验收的候选 | `f842c1a221e2a12b60d464b6c35d568877d442a5` |
+| 最终 PR Head / PR CI | `dd2cfcc495fa9b2e13d1a16534758e25ca461a23`（仅追加 CI 超时配置及指纹更新） / [45562655075](https://github.com/ling5477/nexus-quant/actions/runs/45562655075/attempts/1)，attempt 1，9/9 SUCCESS |
+| 实际合并 / 合并后 dev Push CI | `87cd096dc6e9a9ef56d570461160d8f521de3046` / [45567052543](https://github.com/ling5477/nexus-quant/actions/runs/45567052543/attempts/1)，attempt 1，9/9 SUCCESS |
+
+有界 Run 具有不可变 UTC 截止时间。数据库在截止后关闭新订单准入，截止前已受理的订单沿原 Canonical 路径收敛，模拟成交及费用按实际发生时间分窗。JVM 重启后恢复原游标、订单和行情证据，行情不完整或发现修订时保留核验阻断。人工 END 具有幂等回执和 Run 级唯一终止意图。终态核对 Canonical 账务一致性，授权 OWNER 可按已证明的首次 END 恢复派生投影。
+
+无法证明首次 END 关联的历史记录保持自动恢复阻断。V106-01 的证据覆盖功能验收和源码交付，新版本正式发行资格及策略盈利能力仍未建立。安全状态为 `LIVE=DISABLED`、`KILL_SWITCH=ENGAGED`。下一项为 `NQ-V106-02-IMPLEMENTATION`，实现尚未开始。 [当前路线](ROADMAP.md)
 
 ## v1.0.5 正式发行（2026-11-23）
 
@@ -62,9 +76,9 @@ nq-current-authority:end -->
 
 Self-Hosted 资格覆盖 Windows 11 amd64、Docker Desktop Linux Containers、PostgreSQL 16.15、Flyway V52。普通升级资格仅覆盖 **v1.0.4 / V52 → v1.0.5 / V52**。独立离线 Python Research Companion 资格覆盖 Windows amd64、CPython 3.11.9 和 NumPy 2.3.5。Linux 正式发行资格为 `NOT_QUALIFIED`，阿里云七日运行仅提供 `SCOPED_OPERATIONAL_EVIDENCE`。
 
-原工作批次 `NQ-V105-RELEASE-READINESS / ACCEPTED|CI_GREEN` 的记录为 Qualified Source `eb323eddbf5a81416e623b6ece083026b7dd5f67` 与 CI `44046457785`。原功能接受批次及 GateZ 冻结身份见上方机器区块。本轮 Authority 的 work pair 指向发行事实文档提交 `9ca936725d035758badfe0bcdf46271986096409` 与 PR #110 的 CI `45096425164` attempt 1，9/9 SUCCESS。最终 PR head 与合并后 CI 另由维护者交付报告 `NQ_V105_POST_RELEASE_CLOSEOUT.md` 登记。
+原工作批次 `NQ-V105-RELEASE-READINESS / ACCEPTED|CI_GREEN` 的记录为 Qualified Source `eb323eddbf5a81416e623b6ece083026b7dd5f67` 与 CI `44046457785`。当时的功能接受批次为 `NQ-V105-02-TRUSTED-FORWARD-VALUATION`。该次发行后收口的 work pair 指向发行事实文档提交 `9ca936725d035758badfe0bcdf46271986096409` 与 PR #110 的 CI `45096425164` attempt 1，9/9 SUCCESS。最终 PR head 与合并后 CI 另由维护者交付报告 `NQ_V105_POST_RELEASE_CLOSEOUT.md` 登记。
 
-收口后的规划入口为 **`NQ-V106-PLAN / NOT_STARTED`**。运行状态沿用已封存的运营收口：`LIVE=DISABLED`、`KILL_SWITCH=ENGAGED`、`Continuous SIM=STOPPED`、`CONTINUOUS_SIM_POLL=DISABLED`、`PAPER_MATCHING=DISABLED`。
+发行后收口当时登记的规划入口为 `NQ-V106-PLAN / NOT_STARTED`。该次已封存的运营状态为 `LIVE=DISABLED`、`KILL_SWITCH=ENGAGED`、`Continuous SIM=STOPPED`、`CONTINUOUS_SIM_POLL=DISABLED`、`PAPER_MATCHING=DISABLED`。
 
 ## 历史记录：v1.0.5功能收口与候选资格（2026-11-17）
 
