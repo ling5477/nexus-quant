@@ -12,6 +12,9 @@ export interface NqKlineBar {
     qualityStatus?: string | null;
     closeTime?: string | null;
     availableAt?: string | null;
+    status?: 'FORMING' | 'CLOSED';
+    source?: string | null;
+    comparedSource?: string | null;
     exact?: Partial<Record<'open' | 'high' | 'low' | 'close' | 'volume', string>>;
 }
 

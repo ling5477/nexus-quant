@@ -60,6 +60,13 @@ describe('正式OHLCV指标边界', () => {
         expect(candleChange(Number.NaN, 100)).toBeNull();
         expect(movingAverage([bar(60, 1)], 201, 60)).toEqual([]);
     });
+    it('快照 K 线越过时间桶后仍须等交易所确认闭合才能进入均值', () => {
+        const next = {...bar(120, 4), closeTime: '1970-01-01T00:02:59.999Z'};
+        expect(movingAverage([bar(60, 2), {...next, status: 'FORMING'}], 2, 60, 500_000))
+            .toEqual([{time: 60}, {time: 120}]);
+        expect(movingAverage([bar(60, 2), {...next, status: 'CLOSED'}], 2, 60, 500_000))
+            .toEqual([{time: 60}, {time: 120, value: 3}]);
+    });
     it('时间范围比较包含秒、时区偏移和毫秒，逆序或相等不能提交', async () => {
         const rule = endAfterStartRule('start')({
             getFieldValue: () => '2026-10-12T09:00:00.123+08:00',

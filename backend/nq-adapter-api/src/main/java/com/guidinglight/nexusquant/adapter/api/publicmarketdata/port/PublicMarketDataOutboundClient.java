@@ -2,6 +2,8 @@ package com.guidinglight.nexusquant.adapter.api.publicmarketdata.port;
 
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundRequest;
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundResult;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundErrorCategory;
+import java.time.Instant;
 
 /**
  * PublicMarketDataOutboundClient 是公开行情出站策略 public marketdata outbound 的最小抽象。
@@ -19,4 +21,15 @@ public interface PublicMarketDataOutboundClient {
      * @return 不含 raw response/header/query/credential 的结果模型
      */
     PublicMarketDataOutboundResult fetch(PublicMarketDataOutboundRequest request);
+
+    /** 有界 OKX 展示载荷只供协议解析，禁止记录或从接口返回原始正文。 */
+    default SnapshotResponse fetchSnapshot(PublicMarketDataOutboundRequest request) {
+        return new SnapshotResponse(PublicMarketDataOutboundErrorCategory.DISABLED, null, null, null);
+    }
+
+    record SnapshotResponse(
+            PublicMarketDataOutboundErrorCategory error,
+            byte[] body,
+            Instant observedAt,
+            Instant retryAt) {}
 }

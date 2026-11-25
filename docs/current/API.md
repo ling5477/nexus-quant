@@ -1,5 +1,21 @@
 # Current API
 
+## 公开现货行情快照
+
+`GET /api/marketdata/public-snapshot` 沿用 Self-Hosted 已认证 GET 的角色与租户范围，并返回 `Cache-Control: no-store`。查询参数为 `exchangeCode=OKX`、`marketType=SPOT`、可见目录中的启用现货 `symbol` 及 `interval`（`1m`、`5m`、`15m`、`1h`、`4h`、`1d`）。不支持的组合返回 400 和 `PUBLIC_MARKET_SNAPSHOT_UNSUPPORTED`。
+
+| 响应字段 | 含义 |
+| --- | --- |
+| `exchangeCode`、`marketType`、`symbol`、`interval` | 请求的市场和周期身份 |
+| `lastPrice`、`lastPriceObservedAt`、`lastPriceReceivedAt`、`lastPriceSource` | OKX ticker 的成交价、交易所 ticker 时间、服务端收到该响应的时间和 `OKX_PUBLIC_TICKER` 来源 |
+| `bars`、`barsObservedAt`、`source` | 最多 100 根按 `openTime` 升序排列的近期 K 线、该响应的接收时间和 `OKX_PUBLIC_CANDLES` 来源 |
+| `observedAt`、`freshness` | 本次两部分中最后成功的接收时间，以及 `FRESH`、`STALE`、`PARTIAL` 或 `UNAVAILABLE` |
+| `tickerStatus`、`barsStatus`、`tickerFreshness`、`barsFreshness`、`retryAt` | 各部分的读取结果与新鲜度，以及限流后的最早读取时间 |
+
+每根 K 线包含 `openTime`、`closeTime`、`openPrice`、`highPrice`、`lowPrice`、`closePrice`、`volume` 和 `status`。时间为 UTC Instant，`closeTime` 是周期末最后一毫秒，OKX `1D` 按 UTC+8 零点分桶。所有价格和成交量以十进制字符串传输。仅 OKX `confirm=0` 产生 `FORMING`，仅 `confirm=1` 产生 `CLOSED`。ticker 来源时间或接收时间超过 90 秒即过期。形成中 K 线越过所属桶或最近接收超过 90 秒即过期。
+
+上游失败通过 HTTP 200 的部分状态表达，可用部分仍返回本次事实。状态包括 `AVAILABLE`、`DISABLED`、`DENIED`、`RATE_LIMITED`、`TIMEOUT`、`SOURCE_UNAVAILABLE`、`INVALID_RESPONSE`、`INCOMPLETE_RESPONSE` 和 `BUSY`。不可用 ticker 的金额与时间为 null，不可用 K 线为 `[]`。现有手动公开出站 profile、开关和 no-outbound／CI 守卫共同控制实际读取，默认返回 `DISABLED`。网络端点限于经现有 policy 审核的 OKX 公开 ticker 和 candles GET。该接口只供展示，历史入库、运行行情、策略、订单、成交、账务与估值均在其调用链之外。
+
 ## 离线 Python 因子研究
 
 `GET /api/marketdata/datasets/{datasetId}/factor-research/input` 仅对当前认证本地owner读取已冻结V2；返回 `frozen-research-export.v1` 的原Dataset引用、Manifest与全部有序分块规范字符串。支持OKX SPOT BTC/ETH 1h、721～4320根，最多8MiB；未冻结、越权或损坏返回404，不创建版本、不查询可变行情。实际sourceObservedAt与回放availableAt/EXPERIMENT_ASSUMPTION分别保留。

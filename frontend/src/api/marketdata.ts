@@ -12,6 +12,8 @@ import type {
     MarketdataQualityOverviewQuery,
     MarketdataReadinessQuery,
     MarketdataReadinessSummary,
+    PublicMarketSelection,
+    PublicMarketSnapshot,
 } from '@/types/marketdata';
 
 const barDecimalFields = new Set([
@@ -68,10 +70,21 @@ export function validateDatasetPage(value: unknown, request: DatasetPageRequest)
 }
 
 export const marketdataApi = {
-    async listBars(query: MarketdataBarsQuery): Promise<MarketdataBar[]> {
+    async listBars(query: MarketdataBarsQuery, signal?: AbortSignal): Promise<MarketdataBar[]> {
         const {data} = await apiClient.get<MarketdataBar[]>('/marketdata/bars', {
             params: query,
+            signal,
             transformResponse: [(raw: string) => parseExactJson(raw, barDecimalFields)],
+        });
+        return data;
+    },
+    async getPublicSnapshot(
+        selection: PublicMarketSelection,
+        signal: AbortSignal,
+    ): Promise<PublicMarketSnapshot> {
+        const {data} = await apiClient.get<PublicMarketSnapshot>('/marketdata/public-snapshot', {
+            params: selection,
+            signal,
         });
         return data;
     },

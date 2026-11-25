@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.app.marketdata;
 
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.BoundedPublicResponseReader;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -36,7 +38,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
@@ -79,7 +80,7 @@ public final class PublicMarketReplayCaptureService {
                 jdbc,
                 transactions,
                 Clock.systemUTC(),
-                () -> publicReadAllowed(environment));
+                () -> ManualPublicMarketRead.allowed(environment));
     }
 
     public PublicMarketReplayCaptureService(
@@ -290,7 +291,7 @@ public final class PublicMarketReplayCaptureService {
             requirePublicRead();
             try {
                 var response =
-                        PublicCaptureResponseReader.read(http, request, timeout);
+                        BoundedPublicResponseReader.read(http, request, timeout);
                 if (response.statusCode() == 200
                         && response.body().length > 0
                         && response.body().length <= 256_000) return response.body();
@@ -383,22 +384,6 @@ public final class PublicMarketReplayCaptureService {
     private void requirePublicRead() {
         if (!outboundAllowed.getAsBoolean())
             throw new IllegalStateException("PUBLIC_CAPTURE_OUTBOUND_DISABLED");
-    }
-
-    private static boolean publicReadAllowed(Environment environment) {
-        Set<String> profiles = Set.copyOf(Arrays.asList(environment.getActiveProfiles()));
-        return profiles.contains("public-marketdata-manual")
-                && Set.of("local", "prod", "public-marketdata-manual").containsAll(profiles)
-                && environment.getProperty(
-                        "nq.public-marketdata.outbound.enabled", Boolean.class, false)
-                && !environment.getProperty(
-                        "nq.env-safety.no-outbound",
-                        Boolean.class,
-                        environment.getProperty("NQ_NO_OUTBOUND", Boolean.class, false))
-                && !environment.getProperty(
-                        "nq.env-safety.ci",
-                        Boolean.class,
-                        environment.getProperty("CI", Boolean.class, false));
     }
 
     record PreparedCapture(

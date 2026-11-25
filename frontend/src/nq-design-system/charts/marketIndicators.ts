@@ -17,9 +17,11 @@ export function movingAverage(
         const time = toChartTime(bar.time);
         if (typeof time !== 'number') continue;
         const openMs = time * 1000;
-        const closed = bar.closeTime
-            ? Date.parse(bar.closeTime) < now
-            : openMs + stepSeconds * 1000 <= now;
+        const closed = bar.status !== undefined
+            ? bar.status === 'CLOSED'
+            : bar.closeTime
+              ? Date.parse(bar.closeTime) < now
+              : openMs + stepSeconds * 1000 <= now;
         const valid =
             Number.isFinite(bar.close) &&
             bar.close > 0 &&

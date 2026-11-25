@@ -18,7 +18,15 @@ import java.net.http.HttpTimeoutException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.DateTimeException;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
+
+import static com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundErrorCategory.*;
 
 /**
  * JdkPublicMarketDataOutboundClient 是受控 public REST outbound 的最小 JDK HTTP 实现。
@@ -32,6 +40,12 @@ import java.util.Objects;
  */
 public final class JdkPublicMarketDataOutboundClient implements PublicMarketDataOutboundClient {
 
+    private static final Duration SNAPSHOT_MAX_TIMEOUT = Duration.ofSeconds(8);
+    private static final String SPOT_ID = "[A-Z0-9]{1,24}-[A-Z0-9]{1,24}";
+    private static final Pattern TICKER_PATH = Pattern.compile("/api/v5/market/ticker\\?instId=" + SPOT_ID);
+    private static final Pattern CANDLES_PATH = Pattern.compile(
+            "/api/v5/market/candles\\?instId=" + SPOT_ID + "&bar=(1m|5m|15m|1H|4H|1D)&limit=100");
+
     @FunctionalInterface
     interface BackoffSleeper {
         void sleep(Duration backoff) throws InterruptedException;
@@ -43,6 +57,7 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
     private final HttpClient httpClient;
     private final Clock clock;
     private final BackoffSleeper sleeper;
+    private final AtomicReference<Instant> snapshotRetryAt = new AtomicReference<>(Instant.EPOCH);
 
     /**
      * 生产构造器；只应由 `public-marketdata-manual` profile + enabled=true 装配。
@@ -79,6 +94,102 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
         this.sleeper = Objects.requireNonNull(sleeper, "sleeper must not be null");
+    }
+
+    @Override
+    public SnapshotResponse fetchSnapshot(PublicMarketDataOutboundRequest request) {
+        String path = request.endpointPath();
+        boolean allowedPath = switch (request.endpointCategory()) {
+            case TICKER -> TICKER_PATH.matcher(path).matches();
+            case OHLCV -> CANDLES_PATH.matcher(path).matches();
+            default -> false;
+        };
+        if (!"OKX".equals(request.exchange()) || !allowedPath || !snapshotOriginAllowed()
+                || !policy.evaluate(request).allowed() || !resolvedTargetDecision(request).allowed()) {
+            return snapshotFailure(DENIED);
+        }
+
+        Duration timeout = settings.totalRequestTimeout().compareTo(SNAPSHOT_MAX_TIMEOUT) > 0
+                ? SNAPSHOT_MAX_TIMEOUT : settings.totalRequestTimeout();
+        long deadline = System.nanoTime() + timeout.toNanos();
+        for (int attempt = 1; ; attempt++) {
+            Instant cooldown = snapshotRetryAt.get();
+            if (clock.instant().isBefore(cooldown)) {
+                return new SnapshotResponse(RATE_LIMITED, null, null, cooldown);
+            }
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0) return snapshotFailure(TIMEOUT);
+            if (!policy.evaluate(request).allowed()) return snapshotFailure(DENIED);
+            SnapshotResponse result = readSnapshot(path, Duration.ofNanos(remaining));
+            // 限流按上游冷却时间处理；超时已经耗尽本次请求预算。
+            if ((result.error() != TEMPORARY_FAILURE && result.error() != TRANSPORT_ERROR)
+                    || attempt >= settings.maxAttempts()) return result;
+            Duration delay = settings.backoffForRetry(attempt);
+            if (delay.compareTo(Duration.ofNanos(Math.max(0, deadline - System.nanoTime()))) >= 0) {
+                return result;
+            }
+            try {
+                sleeper.sleep(delay);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                return snapshotFailure(TRANSPORT_ERROR);
+            }
+        }
+    }
+
+    private SnapshotResponse readSnapshot(String path, Duration timeout) {
+        var request = HttpRequest.newBuilder(resolve(path)).timeout(timeout).GET().build();
+        try {
+            var response = BoundedPublicResponseReader.read(httpClient, request, timeout, status -> status == 200);
+            int status = response.statusCode();
+            Instant receivedAt = clock.instant();
+            if (status == 429) {
+                Instant retryAt = retryAfter(response.headers().firstValue("Retry-After").orElse(""), receivedAt);
+                Instant cooldown = snapshotRetryAt.accumulateAndGet(retryAt,
+                        (previous, next) -> previous.isAfter(next) ? previous : next);
+                return new SnapshotResponse(RATE_LIMITED, null, null, cooldown);
+            }
+            if (status >= 500) return snapshotFailure(TEMPORARY_FAILURE);
+            return status == 200
+                    ? new SnapshotResponse(NONE, response.body(), receivedAt, null)
+                    : snapshotFailure(INVALID_RESPONSE);
+        } catch (HttpTimeoutException ex) {
+            return snapshotFailure(TIMEOUT);
+        } catch (IOException ex) {
+            return snapshotFailure(TRANSPORT_ERROR);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            return snapshotFailure(TRANSPORT_ERROR);
+        } catch (IllegalStateException ex) {
+            return snapshotFailure(INVALID_RESPONSE);
+        }
+    }
+
+    private static Instant retryAfter(String value, Instant receivedAt) {
+        try {
+            Instant retryAt = value.matches("[0-9]{1,10}")
+                    ? receivedAt.plusSeconds(Long.parseLong(value))
+                    : ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant();
+            if (retryAt.isAfter(receivedAt)) return retryAt;
+        } catch (DateTimeException ignored) {
+            // 请求端至少等待一个刷新周期，避免无有效 Retry-After 时立即重试。
+        }
+        return receivedAt.plusSeconds(30);
+    }
+
+    private boolean snapshotOriginAllowed() {
+        String host = baseUri.getHost();
+        String path = baseUri.getPath();
+        if (baseUri.getRawQuery() != null || baseUri.getRawFragment() != null
+                || !(path.isEmpty() || "/".equals(path))) return false;
+        return ("https".equals(baseUri.getScheme()) && effectivePort(baseUri) == 443
+                        && Set.of("www.okx.com", "okx.com").contains(host))
+                || ("http".equals(baseUri.getScheme()) && Set.of("127.0.0.1", "localhost").contains(host)
+                        && baseUri.getPort() > 0);
+    }
+
+    private static SnapshotResponse snapshotFailure(PublicMarketDataOutboundErrorCategory error) {
+        return new SnapshotResponse(error, null, null, null);
     }
 
     @Override

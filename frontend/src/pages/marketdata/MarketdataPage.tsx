@@ -20,6 +20,7 @@ import {
     Form,
     Input,
     InputNumber,
+    Segmented,
     Select,
     Space,
     Table,
@@ -62,7 +63,6 @@ import {
     NqVolumeChart,
     applyNqCssVars,
     type FreshnessState,
-    type NqKlineBar,
 } from '@/nq-design-system';
 import {useAccountContextStore} from '@/store/account-context-store';
 import type {AppApiError} from '@/types/api';
@@ -87,6 +87,9 @@ import {PublicDepthPanel} from '@/features/marketdata/PublicDepthPanel';
 import {PriceEventSourceDrawer} from '@/features/marketdata/PriceEventSourceDrawer';
 import {MarketdataIngestionWorkspace} from '@/features/marketdata/MarketdataIngestionWorkspace';
 import {PublicMarketCaptureWorkspace} from '@/features/marketdata/PublicMarketCaptureWorkspace';
+import {PublicMarketSnapshotStatus} from '@/features/marketdata/PublicMarketSnapshotStatus';
+import {usePublicMarketSnapshot} from '@/features/marketdata/hooks/usePublicMarketSnapshot';
+import {recentStoredBars, storedChartBar} from '@/features/marketdata/public-market-snapshot';
 
 const columns: ColumnsType<MarketdataBar> = [
     {
@@ -397,27 +400,6 @@ function normalizeDataset(
         ...values,
         startTime: toIsoString(values.startTime),
         endTime: toIsoString(values.endTime),
-    };
-}
-
-function toNqKlineBar(bar: MarketdataBar): NqKlineBar {
-    return {
-        time: bar.openTime,
-        open: Number(bar.openPrice),
-        high: Number(bar.highPrice),
-        low: Number(bar.lowPrice),
-        close: Number(bar.closePrice),
-        volume: Number(bar.volume),
-        closeTime: bar.closeTime,
-        availableAt: bar.availableAt,
-        exact: {
-            open: String(bar.openPrice),
-            high: String(bar.highPrice),
-            low: String(bar.lowPrice),
-            close: String(bar.closePrice),
-            volume: String(bar.volume),
-        },
-        qualityStatus: bar.qualityStatus ?? null,
     };
 }
 
@@ -2020,6 +2002,9 @@ export function MarketdataPage() {
         queryFn: () => instrumentsApi.list(),
     });
     const queryExchange = Form.useWatch('exchangeCode', form);
+    const queryMarketType = Form.useWatch('marketType', form);
+    const querySymbol = Form.useWatch('symbol', form);
+    const queryInterval = Form.useWatch('interval', form);
     const datasetExchange = Form.useWatch('exchangeCode', datasetForm);
     const datasetSymbol = Form.useWatch('symbol', datasetForm);
     const datasetInterval = Form.useWatch('interval', datasetForm);
@@ -2055,7 +2040,8 @@ export function MarketdataPage() {
             ),
         [],
     );
-    const [submittedQuery, setSubmittedQuery] = useState<MarketdataBarsQuery | null>(null);
+    const [fixedQuery, setSubmittedQuery] = useState<MarketdataBarsQuery | null>(null);
+    const followLatest = searchParams.get('mode') === 'latest';
     const requestedSection = searchParams.get('section');
     const [activeSection, setActiveSection] = useState(
         requestedSection && ['market', 'depth', 'preparation', 'quality'].includes(requestedSection)
@@ -2130,7 +2116,7 @@ export function MarketdataPage() {
         ) {
             form.setFieldsValue({startTime: dayjs(startTime), endTime: dayjs(endTime)});
         }
-        const values = form.getFieldsValue();
+        const values = form.getFieldsValue(true);
         const valid = catalogQuery.data.some(
             (item) =>
                 isActiveSpot(item) &&
@@ -2152,11 +2138,25 @@ export function MarketdataPage() {
         searchParams,
     ]);
 
-    const barsQuery = useQuery({
-        queryKey: marketdataQueryKeys.bars(submittedQuery),
-        queryFn: () => marketdataApi.listBars(submittedQuery as MarketdataBarsQuery),
-        enabled: submittedQuery !== null,
+    const activeLatest = followLatest && activeSection === 'market';
+    const selectedMarket = (catalogQuery.data ?? []).find((item) => isActiveSpot(item)
+        && item.exchangeCode === queryExchange && item.internalSymbol === querySymbol);
+    const liveSelection = useMemo(() => selectedMarket && queryMarketType && queryInterval ? {
+        exchangeCode: selectedMarket.exchangeCode, marketType: queryMarketType,
+        symbol: selectedMarket.internalSymbol, interval: queryInterval,
+    } : null, [selectedMarket, queryMarketType, queryInterval]);
+    const publicMarket = usePublicMarketSnapshot(liveSelection, activeLatest);
+    const recentQuery = useMemo(
+        () => liveSelection ? recentStoredBars(liveSelection, Date.now()) : null,
+        [liveSelection],
+    );
+    const submittedQuery = activeLatest ? recentQuery : fixedQuery;
+    const fixedBars = useQuery({
+        queryKey: marketdataQueryKeys.bars(fixedQuery),
+        queryFn: ({signal}) => marketdataApi.listBars(fixedQuery!, signal),
+        enabled: !activeLatest && fixedQuery !== null,
     });
+    const barsQuery = activeLatest ? publicMarket.history : fixedBars;
     const readinessQueryInput = useMemo(
         () => (submittedQuery ? toReadinessQuery(submittedQuery) : null),
         [submittedQuery],
@@ -2263,7 +2263,10 @@ export function MarketdataPage() {
     const readinessError = readinessQuery.error
         ? formatApiError(readinessQuery.error as AppApiError)
         : null;
-    const chartBars = useMemo(() => bars.map(toNqKlineBar), [bars]);
+    const storedChartBars = useMemo(() => bars.map(storedChartBar), [bars]);
+    const chartBars = activeLatest ? publicMarket.chart.bars : storedChartBars;
+    const chartLoading = !chartBars.length &&
+        (barsQuery.isLoading || (activeLatest && publicMarket.snapshot.isLoading));
     const barsQuality = useMemo(
         () => summarizeBarsQuality(bars, submittedQuery?.interval),
         [bars, submittedQuery?.interval],
@@ -2332,6 +2335,7 @@ export function MarketdataPage() {
         : t('pages:searchToViewCandlesticks');
     const chartSourceLabel = submittedQuery
         ? `${submittedQuery.exchangeCode} ${submittedQuery.symbol} ${submittedQuery.interval}`
+            + (activeLatest && publicMarket.supported ? ' · ' + t('product:snapshotMarketSource') : '')
         : t('pages:marketDataBars');
 
     return (
@@ -2362,7 +2366,8 @@ export function MarketdataPage() {
                                     symbol: market.symbol,
                                 });
                                 setActiveSection('market');
-                                form.submit();
+                                if (followLatest) setVisibleRange(null);
+                                else form.submit();
                             }}
                         >
                             {market.symbol}
@@ -2423,12 +2428,29 @@ export function MarketdataPage() {
                         children: (
                             <Space className="market-terminal-grid" direction="vertical" size={16} style={{display: 'flex'}}>
                                 <Card className="page-section market-terminal-controls" bordered={false}>
+                                    <Segmented
+                                        aria-label={t('markets.snapshot.mode')}
+                                        value={followLatest ? 'latest' : 'fixed'}
+                                        options={[
+                                            {value: 'latest', label: t('markets.snapshot.follow')},
+                                            {value: 'fixed', label: t('markets.snapshot.fixed')},
+                                        ]}
+                                        onChange={(mode) => {
+                                            setVisibleRange(null);
+                                            setSearchParams((params) => {
+                                                const next = new URLSearchParams(params);
+                                                next.set('mode', mode);
+                                                return next;
+                                            });
+                                        }}
+                                    />
                                     <Form<MarketdataBarsFormValues>
                                         name="marketdata-query"
                                         form={form}
                                         layout="vertical"
                                         onValuesChange={() => {
                                             queryEdited.current = true;
+                                            if (followLatest) setVisibleRange(null);
                                         }}
                                         initialValues={{
                                             exchangeCode: contextExchangeCode ?? 'BINANCE',
@@ -2439,6 +2461,7 @@ export function MarketdataPage() {
                                             ...defaultRange,
                                         }}
                                         onFinish={(values) => {
+                                            if (followLatest) return;
                                             const query = normalizeBarsQuery(values);
                                             setActiveSection('market');
                                             setVisibleRange(null);
@@ -2448,6 +2471,7 @@ export function MarketdataPage() {
                                                     params.set(key, String(value)),
                                                 );
                                                 params.set('section', 'market');
+                                                params.set('mode', 'fixed');
                                                 return params;
                                             });
                                         }}
@@ -2488,7 +2512,7 @@ export function MarketdataPage() {
                                                     options={INTERVAL_OPTIONS}
                                                 />
                                             </Form.Item>
-                                            <Form.Item
+                                            {!followLatest && <Form.Item
                                                 label={t('pages:startTime')}
                                                 name="startTime"
                                                 rules={[
@@ -2504,8 +2528,8 @@ export function MarketdataPage() {
                                                     format="YYYY-MM-DD HH:mm:ss"
                                                     style={{width: 195}}
                                                 />
-                                            </Form.Item>
-                                            <Form.Item
+                                            </Form.Item>}
+                                            {!followLatest && <Form.Item
                                                 label={t('pages:endTime')}
                                                 name="endTime"
                                                 dependencies={['startTime']}
@@ -2523,15 +2547,24 @@ export function MarketdataPage() {
                                                     format="YYYY-MM-DD HH:mm:ss"
                                                     style={{width: 195}}
                                                 />
-                                            </Form.Item>
+                                            </Form.Item>}
                                             <Form.Item label=" ">
-                                                <Button
+                                                {followLatest ? (
+                                                    <Button
+                                                        type="primary"
+                                                        disabled={!publicMarket.active || !publicMarket.ready}
+                                                        loading={barsQuery.isFetching || publicMarket.snapshot.isFetching}
+                                                        onClick={publicMarket.refresh}
+                                                    >
+                                                        {t('product:read')}
+                                                    </Button>
+                                                ) : <Button
                                                     type="primary"
                                                     htmlType="submit"
                                                     loading={barsQuery.isFetching}
                                                 >
                                                     {t('pages:search')}
-                                                </Button>
+                                                </Button>}
                                             </Form.Item>
                                         </Space>
                                     </Form>
@@ -2581,6 +2614,9 @@ export function MarketdataPage() {
                                         data-testid="marketdata-kline-readiness-view"
                                         style={{display: 'flex', flexDirection: 'column', gap: 16}}
                                     >
+                                        {activeLatest && <PublicMarketSnapshotStatus
+                                            market={publicMarket} quoteAsset={selectedMarket?.quoteAsset}
+                                        />}
                                         <details className="market-chart-metadata">
                                             <summary>
                                                 {t('markets.dataSummary', {
@@ -2725,10 +2761,10 @@ export function MarketdataPage() {
                                         >
                                             <NqKlineChart
                                                 bars={chartBars}
-                                                loading={barsQuery.isLoading}
-                                                error={chartError}
-                                                stale={barsFreshness.stale}
-                                                staleDetail={barsFreshness.detail}
+                                                loading={chartLoading}
+                                                error={activeLatest && chartBars.length ? null : chartError}
+                                                stale={activeLatest ? Boolean(publicMarket.view?.candles && publicMarket.staleCandles) : barsFreshness.stale}
+                                                staleDetail={activeLatest ? undefined : barsFreshness.detail}
                                                 sourceLabel={chartSourceLabel}
                                                 title={t('pages:ohlcvCandlesticks')}
                                                 emptyText={chartEmptyText}
@@ -2742,8 +2778,8 @@ export function MarketdataPage() {
                                             />
                                             <NqVolumeChart
                                                 bars={chartBars}
-                                                loading={barsQuery.isLoading}
-                                                error={chartError}
+                                                loading={chartLoading}
+                                                error={activeLatest && chartBars.length ? null : chartError}
                                                 sourceLabel={chartSourceLabel}
                                                 title={`${t('pages:volume')} · ${(catalogQuery.data ?? []).find((item) => item.exchangeCode === submittedQuery?.exchangeCode && item.internalSymbol === submittedQuery?.symbol)?.baseAsset ?? '—'}`}
                                                 emptyText={
@@ -2759,7 +2795,7 @@ export function MarketdataPage() {
                                             />
                                         </div>
                                         <Typography.Text type="secondary">
-                                            {t('pages:marketdataHistoricalViewBoundary')}
+                                            {t(activeLatest ? 'product:marketBoundary' : 'pages:marketdataHistoricalViewBoundary')}
                                         </Typography.Text>
                                         <Link to="/settings#legal">{t('preferences.legal')}</Link>
                                     </div>
