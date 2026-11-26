@@ -7,20 +7,28 @@ import com.guidinglight.nexusquant.adapter.api.publicmarketdata.policy.PublicMar
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataEndpointCategory;
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundRequest;
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundErrorCategory;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.port.PublicMarketDataOutboundClient;
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.DisabledPublicMarketDataOutboundClient;
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.JdkPublicMarketDataOutboundClient;
 import com.guidinglight.nexusquant.adapter.okx.marketdata.OkxHistoricalKlineAdapter;
 import com.guidinglight.nexusquant.api.web.ApiExceptionHandler;
+import com.guidinglight.nexusquant.app.config.PublicMarketDataOutboundConfiguration;
 import com.guidinglight.nexusquant.marketdata.api.web.PublicMarketSnapshotController;
 import com.guidinglight.nexusquant.marketdata.domain.PublicMarketSnapshot;
 import com.guidinglight.nexusquant.marketdata.domain.instrument.InstrumentCatalogItem;
+import com.guidinglight.nexusquant.marketdata.domain.instrument.port.InstrumentCatalogReadPort;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -28,6 +36,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -161,46 +170,74 @@ class PublicMarketSnapshotTest {
                 .andExpect(jsonPath("$.message").value("PUBLIC_MARKET_SNAPSHOT_UNSUPPORTED"));
         assertEquals(0, tickerCalls.get());
         assertEquals(0, candleCalls.get());
-
-        var environment = environment(Map.of());
-        assertFalse(ManualPublicMarketRead.allowed(environment));
-        environment.setActiveProfiles("local", "public-marketdata-manual");
-        environment.setProperty("nq.public-marketdata.outbound.enabled", "true");
-        assertTrue(ManualPublicMarketRead.allowed(environment));
-        environment.setProperty("nq.env-safety.no-outbound", "true");
-        assertFalse(ManualPublicMarketRead.allowed(environment));
-        environment.setProperty("nq.env-safety.no-outbound", "false");
-        environment.setProperty("nq.env-safety.ci", "true");
-        assertFalse(ManualPublicMarketRead.allowed(environment));
-        environment.setProperty("nq.env-safety.ci", "false");
-        environment.setActiveProfiles("test", "public-marketdata-manual");
-        assertFalse(ManualPublicMarketRead.allowed(environment));
     }
 
-    @Test
-    void processVetoBlocksBothSnapshotAndDirectTransportWhenSpringExplicitlyAllows() throws Exception {
-        var request = PublicMarketDataOutboundRequest.publicGet("OKX", PublicMarketDataEndpointCategory.TICKER,
-                "/api/v5/market/ticker?instId=BTC-USDT");
-        for (var process : List.<Map<String, Object>>of(
-                Map.of("CI", "true"), Map.of("NQ_NO_OUTBOUND", "TRUE"),
-                Map.of("CI", "true", "NQ_NO_OUTBOUND", "true"))) {
-            var environment = environment(process);
+    enum PermissionCase {
+        PROCESS_CI(Map.of("CI", "true")),
+        PROCESS_NO_OUTBOUND(Map.of("NQ_NO_OUTBOUND", "true")),
+        PROCESS_BOTH(Map.of("CI", "true", "NQ_NO_OUTBOUND", "true")),
+        SPRING_CI(Map.of()), SPRING_NO_OUTBOUND(Map.of()), AUTHORIZED(Map.of());
+
+        final Map<String, String> vetoes;
+        PermissionCase(Map<String, String> vetoes) { this.vetoes = vetoes; }
+    }
+
+    @ParameterizedTest
+    @EnumSource(PermissionCase.class)
+    @Timeout(40)
+    void hiddenProcessEnvironmentCannotGrantOutbound(PermissionCase scenario, @TempDir Path directory)
+            throws Exception {
+        PublicMarketReadProcess.run(getClass(), directory.resolve("permission.log"), scenario.vetoes,
+                scenario.name(), Integer.toString(upstream.getAddress().getPort()));
+        int expected = scenario == PermissionCase.AUTHORIZED ? 1 : 0;
+        assertEquals(expected, tickerCalls.get());
+        assertEquals(expected, candleCalls.get());
+        System.out.printf("%s ticker=%d candles=%d unexpected=%d%n", scenario,
+                tickerCalls.get(), candleCalls.get(), unexpectedRequests.size());
+    }
+
+    public static void main(String[] args) {
+        PermissionCase scenario = PermissionCase.valueOf(args[0]);
+        URI origin = URI.create("http://127.0.0.1:" + Integer.parseInt(args[1]));
+        boolean authorized = scenario == PermissionCase.AUTHORIZED;
+        try (var context = new AnnotationConfigApplicationContext()) {
+            var environment = context.getEnvironment();
+            for (String variable : List.of("CI", "NQ_NO_OUTBOUND")) {
+                assertEquals(scenario.vetoes.get(variable), System.getenv(variable));
+                assertNull(environment.getProperty(variable));
+                assertFalse(environment.getSystemEnvironment().containsKey(variable));
+            }
+            environment.getPropertySources().addFirst(new MapPropertySource("snapshot-test", Map.of(
+                    "nq.public-marketdata.outbound.enabled", "true",
+                    "nq.public-marketdata.outbound.base-url", origin.toString(),
+                    "nq.env-safety.ci", scenario == PermissionCase.SPRING_CI,
+                    "nq.env-safety.no-outbound", scenario == PermissionCase.SPRING_NO_OUTBOUND)));
+            environment.setActiveProfiles("test", "public-marketdata-manual");
+            assertFalse(ManualPublicMarketRead.allowed(environment));
             environment.setActiveProfiles("local", "public-marketdata-manual");
-            environment.setProperty("nq.public-marketdata.outbound.enabled", "true");
-            environment.setProperty("nq.env-safety.ci", "false");
-            environment.setProperty("nq.env-safety.no-outbound", "false");
-            BooleanSupplier allowed = () -> ManualPublicMarketRead.allowed(environment);
-            var client = setup(allowed, allowed, Duration.ofSeconds(2), origin(), Duration.ofMillis(1));
-            try {
-                mvc().perform(get("/api/marketdata/public-snapshot")
-                                .param("exchangeCode", "OKX").param("marketType", "SPOT")
-                                .param("symbol", "BTC-USDT").param("interval", "1m"))
-                        .andExpect(status().isOk()).andExpect(jsonPath("$.tickerStatus").value("DISABLED"))
-                        .andExpect(jsonPath("$.barsStatus").value("DISABLED"));
-                assertEquals(PublicMarketDataOutboundErrorCategory.DISABLED, client.fetchSnapshot(request).error());
-                assertEquals(0, tickerCalls.get() + candleCalls.get());
-            } finally {
-                snapshots.stop();
+            assertEquals(authorized, ManualPublicMarketRead.allowed(environment));
+            context.registerBean(ObjectMapper.class, () -> new ObjectMapper().findAndRegisterModules());
+            context.registerBean(InstrumentCatalogReadPort.class, () -> (exchange, symbols) -> List.of(
+                    new InstrumentCatalogItem("OKX", "SPOT", "BTC-USDT", "BTC-USDT", "BTC", "USDT",
+                            "LIVE", null, null, null, "FIXTURE")));
+            context.register(PublicMarketDataOutboundConfiguration.class, PublicMarketSnapshotService.class);
+            context.refresh();
+            var client = context.getBean(PublicMarketDataOutboundClient.class);
+            var service = context.getBean(PublicMarketSnapshotService.class);
+            var result = new PublicMarketSnapshotController(service).read("OKX", "SPOT", "BTC-USDT", "1m").getBody();
+            assertNotNull(result);
+            assertEquals(authorized ? AVAILABLE : DISABLED, result.tickerStatus());
+            assertEquals(authorized ? AVAILABLE : DISABLED, result.barsStatus());
+            if (authorized) {
+                assertInstanceOf(JdkPublicMarketDataOutboundClient.class, client);
+            } else {
+                assertInstanceOf(DisabledPublicMarketDataOutboundClient.class, client);
+                // 即使直接进入 JDK transport，每次 HTTP 尝试也必须复核相同的许可。
+                var transport = new JdkPublicMarketDataOutboundClient(origin, new PublicMarketDataOutboundPolicy(),
+                        PublicMarketDataOutboundSettings.defaults(), () -> ManualPublicMarketRead.allowed(environment));
+                var request = PublicMarketDataOutboundRequest.publicGet("OKX", PublicMarketDataEndpointCategory.TICKER,
+                        "/api/v5/market/ticker?instId=BTC-USDT");
+                assertEquals(PublicMarketDataOutboundErrorCategory.DISABLED, transport.fetchSnapshot(request).error());
             }
         }
     }
@@ -334,15 +371,6 @@ class PublicMarketSnapshotTest {
                 com.guidinglight.nexusquant.marketdata.domain.BarInterval.ONE_DAY, received);
         assertEquals("1D", OkxHistoricalKlineAdapter.venueInterval("1d"));
         assertEquals(opened.plusSeconds(86400).minusMillis(1), parsed.getFirst().closeTime());
-    }
-
-    private MockEnvironment environment(Map<String, Object> processEnvironment) {
-        return new MockEnvironment() {
-            @Override
-            public Map<String, Object> getSystemEnvironment() {
-                return processEnvironment;
-            }
-        };
     }
 
     private URI origin() {
