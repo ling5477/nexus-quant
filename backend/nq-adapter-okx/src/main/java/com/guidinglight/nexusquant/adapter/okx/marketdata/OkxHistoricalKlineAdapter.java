@@ -96,7 +96,7 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
                         + "?instId="
                         + encode(mapSymbol(request.symbol()))
                         + "&bar="
-                        + encode(mapInterval(request.interval()))
+                        + encode(venueInterval(request.interval()))
                         + "&after="
                         + request.endTime().toEpochMilli()
                         // 供应方游标为排他，NQ范围包含起始bar；否则最早一根会被跳过。
@@ -204,7 +204,8 @@ public class OkxHistoricalKlineAdapter implements HistoricalKlineAdapter {
         return mapped;
     }
 
-    private String mapInterval(String interval) {
+    /** 历史与近期 candles 共用 OKX 周期编码，日线沿用 UTC+8 开盘锚点。 */
+    public static String venueInterval(String interval) {
         String mapped = INTERVALS.get(interval == null ? "" : interval.toLowerCase(Locale.ROOT));
         if (mapped == null) {
             throw new HistoricalKlineAdapterException(

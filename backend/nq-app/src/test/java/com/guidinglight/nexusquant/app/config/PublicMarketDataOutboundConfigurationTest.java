@@ -10,16 +10,23 @@ import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.Disabl
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.JdkPublicMarketDataOutboundClient;
 import com.guidinglight.nexusquant.adapter.api.publicmarketdata.port.PublicMarketDataOutboundClient;
 import com.guidinglight.nexusquant.adapter.okx.marketdata.OkxClosedBarMarketFeed;
+import com.guidinglight.nexusquant.app.marketdata.PublicMarketReadProcess;
 
 import java.net.URI;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.env.YamlPropertySourceLoader;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.core.env.SystemEnvironmentPropertySource;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -33,7 +40,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 class PublicMarketDataOutboundConfigurationTest {
 
     private ApplicationContextRunner configuredFeedRunner(Map<String, Object> environment) {
-        return new ApplicationContextRunner()
+        return isolatedRunner(Map.of())
                 .withUserConfiguration(PublicMarketDataOutboundConfiguration.class, OkxClosedBarMarketFeed.class)
                 .withInitializer(context -> {
                     context.getEnvironment().setActiveProfiles("public-marketdata-manual");
@@ -62,8 +69,7 @@ class PublicMarketDataOutboundConfigurationTest {
         });
     }
 
-    @Test
-    void canonicalEnvironmentOriginWinsAndLegacyEnvironmentRemainsFallback() {
+    private void canonicalEnvironmentOriginWinsAndLegacyEnvironmentRemainsFallback() {
         configuredFeedRunner(Map.of("NQ_PUBLIC_MARKETDATA_OUTBOUND_BASE_URL", "http://127.0.0.1:32123",
                 "NQ_PUBLIC_MARKETDATA_BASE_URL", "http://localhost:32124")).run(context ->
                 assertEquals(URI.create("http://127.0.0.1:32123"),
@@ -76,8 +82,7 @@ class PublicMarketDataOutboundConfigurationTest {
         });
     }
 
-    @Test
-    void malformedConfiguredOriginNeverAppearsInStartupExceptionChain() {
+    private void malformedConfiguredOriginNeverAppearsInStartupExceptionChain() {
         String value = "https://user:REDACTION_SENTINEL@invalid host?secret=REDACTION_SENTINEL";
         contextRunner
                 .withInitializer(context -> context.getEnvironment().setActiveProfiles("public-marketdata-manual"))
@@ -96,7 +101,20 @@ class PublicMarketDataOutboundConfigurationTest {
                 });
     }
 
-    private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
+    private static ApplicationContextRunner isolatedRunner(Map<String, Object> springEnvironment) {
+        return new ApplicationContextRunner(() -> {
+            var context = new AnnotationConfigApplicationContext();
+            context.setEnvironment(new StandardEnvironment() {
+                @Override
+                public Map<String, Object> getSystemEnvironment() {
+                    return springEnvironment;
+                }
+            });
+            return context;
+        });
+    }
+
+    private final ApplicationContextRunner contextRunner = isolatedRunner(Map.of())
             .withUserConfiguration(PublicMarketDataOutboundConfiguration.class);
 
     @Test
@@ -134,7 +152,38 @@ class PublicMarketDataOutboundConfigurationTest {
     }
 
     @Test
-    void manualProfileWithFlagTrueShouldConstructJdkHttpClientOnly() {
+    void springVariableVetoPreventsAssemblyEvenWhenOutboundIsEnabled() {
+        for (var variables : java.util.List.<Map<String, Object>>of(
+                Map.of("CI", "true"), Map.of("NQ_NO_OUTBOUND", "true"),
+                Map.of("CI", "true", "NQ_NO_OUTBOUND", "true"))) {
+            isolatedRunner(variables).withUserConfiguration(PublicMarketDataOutboundConfiguration.class)
+                    .withInitializer(context -> context.getEnvironment().setActiveProfiles("local", "public-marketdata-manual"))
+                    .withPropertyValues("nq.public-marketdata.outbound.enabled=true",
+                            "nq.env-safety.ci=false", "nq.env-safety.no-outbound=false")
+                    .run(context -> assertInstanceOf(DisabledPublicMarketDataOutboundClient.class,
+                            context.getBean(PublicMarketDataOutboundClient.class)));
+        }
+    }
+
+    enum AuthorizedConfiguration { MANUAL_CLIENT, ORIGIN_PRECEDENCE, INVALID_ORIGIN }
+
+    @ParameterizedTest
+    @EnumSource(AuthorizedConfiguration.class)
+    void authorizedProcessWiresJdkClientAndValidatesOrigins(AuthorizedConfiguration scenario,
+                                                             @TempDir Path directory) throws Exception {
+        PublicMarketReadProcess.run(getClass(), directory.resolve("configuration.log"), Map.of(), scenario.name());
+    }
+
+    public static void main(String[] args) {
+        var fixture = new PublicMarketDataOutboundConfigurationTest();
+        switch (AuthorizedConfiguration.valueOf(args[0])) {
+            case MANUAL_CLIENT -> fixture.manualProfileWithFlagTrueShouldConstructJdkHttpClientOnly();
+            case ORIGIN_PRECEDENCE -> fixture.canonicalEnvironmentOriginWinsAndLegacyEnvironmentRemainsFallback();
+            case INVALID_ORIGIN -> fixture.malformedConfiguredOriginNeverAppearsInStartupExceptionChain();
+        }
+    }
+
+    private void manualProfileWithFlagTrueShouldConstructJdkHttpClientOnly() {
         contextRunner
                 .withInitializer(context -> context.getEnvironment().setActiveProfiles("public-marketdata-manual"))
                 .withPropertyValues(

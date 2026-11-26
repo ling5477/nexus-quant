@@ -18,6 +18,43 @@ export interface MarketdataBar {
     barId?: string | null;
     barIdentitySha256?: string | null;
     priceEventTimes?: PriceEventTimes;
+    venueCloseConfirmed?: boolean;
+}
+
+export type PublicMarketSelection = Pick<MarketdataBar, 'exchangeCode' | 'marketType' | 'symbol' | 'interval'>;
+
+export type PublicMarketSourceStatus =
+    | 'AVAILABLE' | 'DISABLED' | 'DENIED' | 'RATE_LIMITED' | 'TIMEOUT' | 'SOURCE_UNAVAILABLE'
+    | 'INVALID_RESPONSE' | 'INCOMPLETE_RESPONSE' | 'BUSY';
+
+export type PublicMarketFreshness = 'FRESH' | 'STALE' | 'PARTIAL' | 'UNAVAILABLE';
+
+export interface PublicMarketBar {
+    openTime: string;
+    closeTime: string;
+    openPrice: string;
+    highPrice: string;
+    lowPrice: string;
+    closePrice: string;
+    volume: string;
+    status: 'FORMING' | 'CLOSED';
+}
+
+export interface PublicMarketSnapshot extends PublicMarketSelection {
+    lastPrice: string | null;
+    lastPriceObservedAt: string | null;
+    lastPriceReceivedAt: string | null;
+    lastPriceSource: 'OKX_PUBLIC_TICKER';
+    bars: PublicMarketBar[];
+    source: 'OKX_PUBLIC_CANDLES';
+    barsObservedAt: string | null;
+    observedAt: string | null;
+    freshness: PublicMarketFreshness;
+    tickerFreshness: PublicMarketFreshness;
+    barsFreshness: PublicMarketFreshness;
+    tickerStatus: PublicMarketSourceStatus;
+    barsStatus: PublicMarketSourceStatus;
+    retryAt: string | null;
 }
 
 /** 原始边界、可见时间和四价发生时点是不同事实；缺来源不能补成区间起止。 */

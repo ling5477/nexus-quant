@@ -39,6 +39,8 @@ export const schedulerQueryKeys = {
 };
 
 export const marketdataQueryKeys = {
+    publicSnapshot: (session: string | null, selection: unknown) =>
+        ['marketdata', 'public-snapshot', session, selection] as const,
     depth: (symbol: string) => ['marketdata', 'public-depth', 'OKX', 'SPOT', symbol] as const,
     all: ['marketdata'] as const,
     publicCapture: (owner: number | undefined, id: string | null) =>

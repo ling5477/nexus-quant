@@ -1,5 +1,7 @@
 package com.guidinglight.nexusquant.app.marketdata;
 
+import com.guidinglight.nexusquant.adapter.api.publicmarketdata.transport.BoundedPublicResponseReader;
+
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -46,7 +48,7 @@ class PublicCaptureResponseReaderTest {
             assertThrows(
                     HttpTimeoutException.class,
                     () ->
-                            PublicCaptureResponseReader.read(
+                            BoundedPublicResponseReader.read(
                                     HttpClient.newHttpClient(),
                                     request(server),
                                     Duration.ofMillis(200)));
@@ -75,7 +77,7 @@ class PublicCaptureResponseReaderTest {
                     if (length == 256000) {
                         assertArrayEquals(
                                 bytes,
-                                PublicCaptureResponseReader.read(
+                                BoundedPublicResponseReader.read(
                                                 HttpClient.newHttpClient(),
                                                 request(server),
                                                 Duration.ofSeconds(2))
@@ -86,7 +88,7 @@ class PublicCaptureResponseReaderTest {
                                 assertThrows(
                                                 IllegalStateException.class,
                                                 () ->
-                                                        PublicCaptureResponseReader.read(
+                                                        BoundedPublicResponseReader.read(
                                                                 HttpClient.newHttpClient(),
                                                                 request(server),
                                                                 Duration.ofSeconds(2)))
@@ -118,7 +120,7 @@ class PublicCaptureResponseReaderTest {
                     assertThrows(
                                     IllegalStateException.class,
                                     () ->
-                                            PublicCaptureResponseReader.read(
+                                            BoundedPublicResponseReader.read(
                                                     HttpClient.newHttpClient(),
                                                     request(server),
                                                     Duration.ofSeconds(2)))

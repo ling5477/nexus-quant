@@ -1476,6 +1476,16 @@
         },
         {
           "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
+          "callerMember": "JdkPublicMarketDataOutboundClient#<init>(URI,PublicMarketDataOutboundPolicy,PublicMarketDataOutboundSettings,BooleanSupplier)",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
+          "callerMember": "JdkPublicMarketDataOutboundClient#<init>(URI,PublicMarketDataOutboundPolicy,PublicMarketDataOutboundSettings,BooleanSupplier)",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
           "callerMember": "JdkPublicMarketDataOutboundClient#<init>(URI,PublicMarketDataOutboundPolicy,PublicMarketDataOutboundSettings,HttpClient,Clock,BackoffSleeper)",
           "contractMember": "<typed-use>"
         },
@@ -1486,7 +1496,22 @@
         },
         {
           "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
+          "callerMember": "JdkPublicMarketDataOutboundClient#<init>(URI,PublicMarketDataOutboundPolicy,PublicMarketDataOutboundSettings,HttpClient,Clock,BackoffSleeper,BooleanSupplier)",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
+          "callerMember": "JdkPublicMarketDataOutboundClient#<init>(URI,PublicMarketDataOutboundPolicy,PublicMarketDataOutboundSettings,HttpClient,Clock,BackoffSleeper,BooleanSupplier)",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
           "callerMember": "JdkPublicMarketDataOutboundClient#fetch(PublicMarketDataOutboundRequest)",
+          "contractMember": "<typed-use>"
+        },
+        {
+          "path": "backend/nq-adapter-api/src/main/java/com/guidinglight/nexusquant/adapter/api/publicmarketdata/transport/JdkPublicMarketDataOutboundClient.java",
+          "callerMember": "JdkPublicMarketDataOutboundClient#fetchSnapshot(PublicMarketDataOutboundRequest)",
           "contractMember": "<typed-use>"
         },
         {
@@ -1601,7 +1626,22 @@
         },
         {
           "path": "backend/nq-app/src/main/java/com/guidinglight/nexusquant/app/config/PublicMarketDataOutboundConfiguration.java",
-          "callerMember": "PublicMarketDataOutboundConfiguration#publicMarketDataOutboundClient(String,String,String,String,int,String,String)",
+          "callerMember": "PublicMarketDataOutboundConfiguration#publicMarketDataOutboundClient(Environment,String,String,String,String,String,int,String,String)",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/marketdata/PublicMarketSnapshotTest.java",
+          "callerMember": "<unit>#<type>",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/marketdata/PublicMarketSnapshotTest.java",
+          "callerMember": "PublicMarketSnapshotTest#main(String[])",
+          "contractMember": "PublicMarketDataOutboundPolicy"
+        },
+        {
+          "path": "backend/nq-app/src/test/java/com/guidinglight/nexusquant/app/marketdata/PublicMarketSnapshotTest.java",
+          "callerMember": "PublicMarketSnapshotTest#setup(BooleanSupplier,BooleanSupplier,Duration,URI,Duration)",
           "contractMember": "PublicMarketDataOutboundPolicy"
         },
         {

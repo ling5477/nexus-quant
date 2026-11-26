@@ -30,7 +30,8 @@ public record MarketdataBarResponse(
         Instant availableAt,
         String barId,
         String barIdentitySha256,
-        PriceEventTimes priceEventTimes) {
+        PriceEventTimes priceEventTimes,
+        boolean venueCloseConfirmed) {
     /** 旧调用方没有来源记录时明确缺失，不能把区间边界补成实际发生时点。 */
     public MarketdataBarResponse(
             String exchangeCode,
@@ -68,6 +69,7 @@ public record MarketdataBarResponse(
                 availableAt,
                 null,
                 null,
-                PriceEventTimes.unavailable("NOT_PROVIDED"));
+                PriceEventTimes.unavailable("NOT_PROVIDED"),
+                false);
     }
 }

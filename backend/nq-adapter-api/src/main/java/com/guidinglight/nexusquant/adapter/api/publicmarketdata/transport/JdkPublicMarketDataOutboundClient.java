@@ -18,7 +18,15 @@ import java.net.http.HttpTimeoutException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.DateTimeException;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.BooleanSupplier;
+import java.util.regex.Pattern;
+
+import static com.guidinglight.nexusquant.adapter.api.publicmarketdata.model.PublicMarketDataOutboundErrorCategory.*;
 
 /**
  * JdkPublicMarketDataOutboundClient 是受控 public REST outbound 的最小 JDK HTTP 实现。
@@ -32,6 +40,12 @@ import java.util.Objects;
  */
 public final class JdkPublicMarketDataOutboundClient implements PublicMarketDataOutboundClient {
 
+    private static final Duration SNAPSHOT_MAX_TIMEOUT = Duration.ofSeconds(8);
+    private static final String SPOT_ID = "[A-Z0-9]{1,24}-[A-Z0-9]{1,24}";
+    private static final Pattern TICKER_PATH = Pattern.compile("/api/v5/market/ticker\\?instId=" + SPOT_ID);
+    private static final Pattern CANDLES_PATH = Pattern.compile(
+            "/api/v5/market/candles\\?instId=" + SPOT_ID + "&bar=(1m|5m|15m|1H|4H|1D)&limit=100");
+
     @FunctionalInterface
     interface BackoffSleeper {
         void sleep(Duration backoff) throws InterruptedException;
@@ -43,6 +57,8 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
     private final HttpClient httpClient;
     private final Clock clock;
     private final BackoffSleeper sleeper;
+    private final BooleanSupplier outboundAllowed;
+    private Instant snapshotRetryAt = Instant.EPOCH;
 
     /**
      * 生产构造器；只应由 `public-marketdata-manual` profile + enabled=true 装配。
@@ -56,13 +72,16 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
             PublicMarketDataOutboundPolicy policy,
             PublicMarketDataOutboundSettings settings
     ) {
-        this(
-                baseUri,
-                policy,
-                settings,
+        this(baseUri, policy, settings, () -> true);
+    }
+
+    public JdkPublicMarketDataOutboundClient(
+            URI baseUri, PublicMarketDataOutboundPolicy policy,
+            PublicMarketDataOutboundSettings settings, BooleanSupplier outboundAllowed
+    ) {
+        this(baseUri, policy, settings,
                 HttpClient.newBuilder().connectTimeout(settings.connectTimeout()).build(),
-                Clock.systemUTC(),
-                backoff -> Thread.sleep(backoff.toMillis()));
+                Clock.systemUTC(), backoff -> Thread.sleep(backoff.toMillis()), outboundAllowed);
     }
 
     JdkPublicMarketDataOutboundClient(
@@ -73,17 +92,138 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
             Clock clock,
             BackoffSleeper sleeper
     ) {
+        this(baseUri, policy, settings, httpClient, clock, sleeper, () -> true);
+    }
+
+    private JdkPublicMarketDataOutboundClient(
+            URI baseUri, PublicMarketDataOutboundPolicy policy, PublicMarketDataOutboundSettings settings,
+            HttpClient httpClient, Clock clock, BackoffSleeper sleeper, BooleanSupplier outboundAllowed
+    ) {
         this.baseUri = validateBaseUri(baseUri);
         this.policy = Objects.requireNonNull(policy, "policy must not be null");
         this.settings = Objects.requireNonNull(settings, "settings must not be null");
         this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
         this.sleeper = Objects.requireNonNull(sleeper, "sleeper must not be null");
+        this.outboundAllowed = Objects.requireNonNull(outboundAllowed);
+    }
+
+    @Override
+    public SnapshotResponse fetchSnapshot(PublicMarketDataOutboundRequest request) {
+        String path = request.endpointPath();
+        boolean allowedPath = switch (request.endpointCategory()) {
+            case TICKER -> TICKER_PATH.matcher(path).matches();
+            case OHLCV -> CANDLES_PATH.matcher(path).matches();
+            default -> false;
+        };
+        if (!"OKX".equals(request.exchange()) || !allowedPath || !snapshotOriginAllowed()
+                || !policy.evaluate(request).allowed() || !resolvedTargetDecision(request).allowed()) {
+            return snapshotFailure(DENIED);
+        }
+
+        Duration timeout = settings.totalRequestTimeout().compareTo(SNAPSHOT_MAX_TIMEOUT) > 0
+                ? SNAPSHOT_MAX_TIMEOUT : settings.totalRequestTimeout();
+        long deadline = System.nanoTime() + timeout.toNanos();
+        for (int attempt = 1; ; attempt++) {
+            if (!policy.evaluate(request).allowed()) return snapshotFailure(DENIED);
+            SnapshotResponse result = readSnapshot(path, deadline);
+            // 限流按上游冷却时间处理；超时已经耗尽本次请求预算。
+            if ((result.error() != TEMPORARY_FAILURE && result.error() != TRANSPORT_ERROR)
+                    || attempt >= settings.maxAttempts()) return result;
+            Duration delay = settings.backoffForRetry(attempt);
+            if (delay.compareTo(Duration.ofNanos(Math.max(0, deadline - System.nanoTime()))) >= 0) {
+                return result;
+            }
+            try {
+                sleeper.sleep(delay);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                return snapshotFailure(TRANSPORT_ERROR);
+            }
+        }
+    }
+
+    @Override
+    public synchronized Instant snapshotRetryAt() {
+        return snapshotRetryAt;
+    }
+
+    @Override
+    public synchronized Instant deferSnapshotUntil(Instant retryAt) {
+        if (retryAt.isAfter(snapshotRetryAt)) snapshotRetryAt = retryAt;
+        return snapshotRetryAt;
+    }
+
+    private SnapshotResponse readSnapshot(String path, long deadline) {
+        BoundedPublicResponseReader.SnapshotRead read;
+        synchronized (this) {
+            // 限流登记与启动请求使用同一把锁。等待响应和退避均在锁外。
+            if (!outboundAllowed.getAsBoolean()) return snapshotFailure(DISABLED);
+            if (clock.instant().isBefore(snapshotRetryAt)) {
+                return new SnapshotResponse(RATE_LIMITED, null, null, snapshotRetryAt);
+            }
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0) return snapshotFailure(TIMEOUT);
+            var request = HttpRequest.newBuilder(resolve(path)).timeout(Duration.ofNanos(remaining)).GET().build();
+            read = BoundedPublicResponseReader.startSnapshot(httpClient, request, headers -> {
+                if (headers.statusCode() == 429) {
+                    deferSnapshotUntil(retryAfter(headers.headers().firstValue("Retry-After").orElse(""),
+                            clock.instant()));
+                }
+            });
+        }
+        try {
+            var response = read.awaitBody(Duration.ofNanos(deadline - System.nanoTime()));
+            int status = response.statusCode();
+            Instant receivedAt = clock.instant();
+            if (status == 429) return new SnapshotResponse(RATE_LIMITED, null, null, snapshotRetryAt());
+            if (status >= 500) return snapshotFailure(TEMPORARY_FAILURE);
+            return status == 200
+                    ? new SnapshotResponse(NONE, response.body(), receivedAt, null)
+                    : snapshotFailure(INVALID_RESPONSE);
+        } catch (HttpTimeoutException ex) {
+            return snapshotFailure(TIMEOUT);
+        } catch (IOException ex) {
+            return snapshotFailure(TRANSPORT_ERROR);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            return snapshotFailure(TRANSPORT_ERROR);
+        } catch (IllegalStateException ex) {
+            return snapshotFailure(INVALID_RESPONSE);
+        }
+    }
+
+    private static Instant retryAfter(String value, Instant receivedAt) {
+        try {
+            Instant retryAt = value.matches("[0-9]{1,10}")
+                    ? receivedAt.plusSeconds(Long.parseLong(value))
+                    : ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant();
+            if (!retryAt.isBefore(receivedAt)) return retryAt;
+        } catch (DateTimeException ignored) {
+            // 请求端至少等待一个刷新周期，避免无有效 Retry-After 时立即重试。
+        }
+        return receivedAt.plusSeconds(30);
+    }
+
+    private boolean snapshotOriginAllowed() {
+        String host = baseUri.getHost();
+        String path = baseUri.getPath();
+        if (baseUri.getRawQuery() != null || baseUri.getRawFragment() != null
+                || !(path.isEmpty() || "/".equals(path))) return false;
+        return ("https".equals(baseUri.getScheme()) && effectivePort(baseUri) == 443
+                        && Set.of("www.okx.com", "okx.com").contains(host))
+                || ("http".equals(baseUri.getScheme()) && Set.of("127.0.0.1", "localhost").contains(host)
+                        && baseUri.getPort() > 0);
+    }
+
+    private static SnapshotResponse snapshotFailure(PublicMarketDataOutboundErrorCategory error) {
+        return new SnapshotResponse(error, null, null, null);
     }
 
     @Override
     public PublicMarketDataOutboundResult fetch(PublicMarketDataOutboundRequest request) {
         Objects.requireNonNull(request, "request must not be null");
+        if (!outboundAllowed.getAsBoolean()) return disabledFallback(request);
         PublicMarketDataOutboundDecision decision = policy.evaluate(request);
         if (!decision.allowed()) {
             return PublicMarketDataOutboundResult.denied(request, decision);
@@ -96,6 +236,7 @@ public final class JdkPublicMarketDataOutboundClient implements PublicMarketData
         Instant startedAt = Instant.now(clock);
         PublicMarketDataOutboundResult latest = null;
         for (int attempt = 1; attempt <= settings.maxAttempts(); attempt++) {
+            if (!outboundAllowed.getAsBoolean()) return disabledFallback(request);
             PublicMarketDataOutboundDecision retryDecision = policy.evaluate(request);
             if (!retryDecision.allowed()) {
                 return PublicMarketDataOutboundResult.denied(request, retryDecision);
