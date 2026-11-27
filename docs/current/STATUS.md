@@ -8,16 +8,16 @@ last_frozen_gate_tag=nq-gatez-freeze
 last_frozen_gate_commit=d106775b6c8a9e17cddb6b99e96c9420fa46df63
 active_gate=GateZ
 active_gate_status=FROZEN|ACCEPTED|TAGGED
-accepted_batch=NQ-V106-01-BOUNDED-CONTINUOUS-SIM
+accepted_batch=NQ-V106-02-PUBLIC-MARKET-SNAPSHOT
 accepted_batch_status=ACCEPTED|CI_GREEN
-accepted_batch_implementation_commit=f842c1a221e2a12b60d464b6c35d568877d442a5
-accepted_batch_acceptance_head=dd2cfcc495fa9b2e13d1a16534758e25ca461a23
-accepted_batch_ci_run=45562655075
-work_batch=NQ-V106-01-PR-CI-DELIVERY
+accepted_batch_implementation_commit=16b1ccdde981f22ba52a34d0d05090f18559f8b8
+accepted_batch_acceptance_head=70359e64a78870f427154843117e77951c98b4d1
+accepted_batch_ci_run=45784848609
+work_batch=NQ-V106-02-PR-CI-DELIVERY
 work_batch_status=ACCEPTED|CI_GREEN
-work_batch_commit=87cd096dc6e9a9ef56d570461160d8f521de3046
-work_batch_ci_run=45567052543
-next_action=NQ-V106-02-IMPLEMENTATION
+work_batch_commit=ce24d3fdfdcf7968c279cd3ae191a35f39c968a3
+work_batch_ci_run=45790049164
+next_action=NQ-V106-03-IMPLEMENTATION
 production_soak=COMPLETED
 kill_switch=ENGAGED
 live=DISABLED
@@ -31,6 +31,22 @@ nq-current-authority:end -->
 
 `docs/current/STATUS.md` 是 NexusQuant 当前阶段状态的唯一 authority。其他 current 文档只能引用或解释本文件。
 
+## V106-02 OKX SPOT 公开行情快照收口（2026-11-27）
+
+**`NQ-V106-02-PUBLIC-MARKET-SNAPSHOT / ACCEPTED|CI_GREEN`**。独立审查 `PASS`，IR-01～IR-05 均为 `CLOSED`，P0 = 0，P1 = 0。两项 P2 保留为非阻断 Backlog，分别涉及 Marketdata 跟随模式的质量上下文和 K 线检查器的选择保留。[PR #113](https://github.com/ling5477/nexus-quant/pull/113)
+
+| 证据 | 固定身份 |
+| --- | --- |
+| 完成功能与独立验收的候选 | `16b1ccdde981f22ba52a34d0d05090f18559f8b8` |
+| 最终 PR Head / PR CI | `70359e64a78870f427154843117e77951c98b4d1`（仅追加已批准的兼容调用登记） / [45784848609](https://github.com/ling5477/nexus-quant/actions/runs/45784848609/attempts/1)，attempt 1，9/9 SUCCESS |
+| 实际合并 / 合并后 dev Push CI | `ce24d3fdfdcf7968c279cd3ae191a35f39c968a3` / [45790049164](https://github.com/ling5477/nexus-quant/actions/runs/45790049164/attempts/1)，attempt 1，9/9 SUCCESS |
+
+- Dashboard 与 Marketdata 共用 OKX SPOT 公开行情快照合同。最新公开成交价与 K 线收盘价分列，K 线按交易所确认事实标记为 `FORMING` 或 `CLOSED`。
+- 「跟随最新」在页面可见且在线时每 30 秒刷新。页面隐藏、离线或切换到固定历史区间时，停止对应的跟随自动请求。快照失败时，本地可信历史在跟随模式下继续独立刷新。
+- 本地可信历史接管同时间桶的闭合展示。闭合来源冲突时标记差异并保留来源。公开出站受进程与 Spring 配置的双重禁令约束，HTTP 429 与交易所业务限流共享冷却时间。
+
+公开交易所访问使用本地模拟上游验证，真实 OKX 长期运行未验证。开发 Schema 为 `V58 / DEVELOPMENT`，正式发行仍为 `v1.0.5 / V52`，服务器部署为 `NOT_PERFORMED`。策略稳定盈利能力为 `NOT_ESTABLISHED`，仓库安全状态为 `LIVE=DISABLED`、`KILL_SWITCH=ENGAGED`。下一项为 `NQ-V106-03-IMPLEMENTATION`，仅登记入口，状态为 `NOT_STARTED`。[当前路线](ROADMAP.md)
+
 ## V106-01 有界 Continuous SIM 收口（2026-11-25）
 
 **`NQ-V106-01-BOUNDED-CONTINUOUS-SIM / ACCEPTED|CI_GREEN`**。独立验收 `NQ_V106_01_FINAL_ACCEPTANCE_PASS`，P0 = 0，P1 = 0。PR #111 已合并，开发 Schema 为 `V58 / DEVELOPMENT`，公开发行仍为 `v1.0.5 / V52`。服务器部署为 `NOT_PERFORMED`。 [PR #111](https://github.com/ling5477/nexus-quant/pull/111)
@@ -43,7 +59,7 @@ nq-current-authority:end -->
 
 有界 Run 具有不可变 UTC 截止时间。数据库在截止后关闭新订单准入，截止前已受理的订单沿原 Canonical 路径收敛，模拟成交及费用按实际发生时间分窗。JVM 重启后恢复原游标、订单和行情证据，行情不完整或发现修订时保留核验阻断。人工 END 具有幂等回执和 Run 级唯一终止意图。终态核对 Canonical 账务一致性，授权 OWNER 可按已证明的首次 END 恢复派生投影。
 
-无法证明首次 END 关联的历史记录保持自动恢复阻断。V106-01 的证据覆盖功能验收和源码交付，新版本正式发行资格及策略盈利能力仍未建立。安全状态为 `LIVE=DISABLED`、`KILL_SWITCH=ENGAGED`。下一项为 `NQ-V106-02-IMPLEMENTATION`，实现尚未开始。 [当前路线](ROADMAP.md)
+无法证明首次 END 关联的历史记录保持自动恢复阻断。V106-01 的证据覆盖功能验收和源码交付，新版本正式发行资格及策略盈利能力仍未建立。安全状态为 `LIVE=DISABLED`、`KILL_SWITCH=ENGAGED`。V106-01 收口时登记的下一项为 `NQ-V106-02-IMPLEMENTATION`，当时尚未开始。 [当前路线](ROADMAP.md)
 
 ## v1.0.5 正式发行（2026-11-23）
 
